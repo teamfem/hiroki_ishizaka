@@ -103,6 +103,14 @@
 <h1 class="section-title">Research</h1>
 
 <h3>Research Keywords</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+
+</p>
+</article>
+</div>
+
 
 <h3>Research Memo</h3>
 <div class="news">
@@ -133,9 +141,417 @@
 </article>
 </div>
 
+<h2>有限要素法における誤差解析再考(仮)</h2>
+<h3>新しい幾何パラメーターを用いた補間誤差解析</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+標準的な有限要素法の本で扱われていない方法で補間誤差評価を導きます．<br>
+新しい幾何パラメーターを導入し，それを用いた新しい幾何条件を紹介します．<br>
+新しい幾何パラメーターから多くの情報を得ることができます．<br>
+この幾何条件から，精密な補間誤差評価が導かれます．<br>
+これにより有効なアダプティブ有限要素法のアルゴリズムが得られる可能性があります．(目指すはこの場所です)<br>
+標準的な補間誤差評価もまた別な表現で示されます．<br>
+もう少し初学者用にした方がいいのでしょうか?入門的文章もいつか書きたいですね．<br>
+多くは論文からのトピックです．以下のPDFファイルにまとめます．当初は日本語で書く予定でしたが，Texifierが日本語対応しなくなったため英語で書きます(下手な英語で申し訳ないです)．<br><br>
+PDFファイル: <a href="../fem/Interpolation error analysis using a new geometric parameter_ver2.pdf" target="_blank">Interpolation error analysis using a new geometric parameter</a><br>
+(27th April 2025 <span class="cat cat001">Update</span>)<br><br>
+Topics:
+<ol>
+<li>準備</li>
+<li>等方性メッシュ要素と異方性メッシュ要素</li>
+<li>古典的な幾何条件</li>
+<li>古典的な緩和された幾何条件</li>
+<li>新しい補間理論のための設定</li>
+<li>新しい準正則条件</li>
+<li>新しい準正則条件と最大角条件</li>
+<li>良い要素とは?</li>
+<li>数値計算で使う異方性メッシュ分割列の例</li>
+<li>有限要素生成</li>
+<li>新しいスケーリング アーギュメント: Part 1</li>
+<li>古典的な補間誤差評価</li>
+<li>参照要素上の異方性補間</li>
+<li>異方性補間解析に関する注意</li>
+<li>新しい補間誤差評価</li>
+<li>ラグランジュ補間誤差評価</li>
+<li>\( L^2 \)射影誤差評価</li>
+<li>新しい非適合有限要素補間誤差評価</li>
+<li>新しいスケーリング アーギュメント: Part 2</li>
+<li>新しいRaviart-Thomas補間誤差評価</li>
+<li>逆不等式</li>
+<li>【発展】N&eacuted&eacutelec補間誤差評価(仮)</li>
+<li>【発展】Cl&eacutement補間誤差評価(仮)</li>
+<li>【発展】Scott&Zhang補間誤差評価(仮)</li>
+<li>【発展】要素形状の多様化へ向けてのトピック(仮)</li>
+<li>【発展】空間4次元以上の補間誤差評価へ拡張できるのか(仮)</li>
+<li>【発展】多様体上の補間誤差評価(仮)</li>
+<!--<li>Admissible meshes(仮)</li>-->
+</ol>
+</p>
+</article>
+</div>
+				
+<h3>様々な有限要素法の誤差解析再考(仮)</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+異方性補間誤差評価を用いて，偏微分方程式の有限要素誤差解析を行います．<br>
+現在，多くの有限要素法が開発されていますが，ここでは比較的古典的なものを扱います．<br>
+多くは論文からのトピックです．以下のPDFファイルにまとめます．<br><br>
+PDFファイル: <a href="../fem/Error analysis for various finite element methods_ver2.pdf" target="_blank">Reconsidered error analysis for finite element methods</a><br>
+(27th April 2025 <span class="cat cat001">Update</span>)<br><br>
+
+Part1: 連続問題<br>
+Topics:
+<ol>
+<li>抽象問題の適切性(仮)</li>
+<li>Poisson方程式(仮)</li>
+<li>拡散移流方程式(仮)</li>
+<li>Stokes方程式(仮)</li>
+<li>Navier-Stokes方程式(仮)</li>
+<li>重調和方程式(仮)</li>
+<li>【発展】Cahn–Hilliard方程式(仮)</li>
+<li>【発展】Maxwell方程式(仮)</li>
+<li>【発展】プリミティブ方程式(仮)</li>
+</ol>
+
+Part2: 有限要素解析のための準備<br>
+Topics:
+<ol>
+<li>メッシュ, メッシュフェイス, 平均, ジャンプ</li>
+<li>有限要素空間</li>
+<li>補間誤差評価</li>
+</ol>
+
+Part3: 適合有限要素法<br>
+Topics:
+<ol>
+<li>Poisson方程式のLagrange有限要素誤差評価(仮)</li>
+<li>(仮)</li>
+</ol>
+
+Part4: 非適合有限要素法<br>
+Topics:
+<ol>
+<li>離散ソボレフ・ポアンカレ不等式と未解決問題(仮)</li>
+<li>トレース不等式(仮)</li>
+<li>Poisson方程式に対する古典的な誤差評価(仮)</li>
+<li>CR有限要素とRT有限要素の間の関係(仮)</li>
+<li>Poisson方程式に対するCR有限要素法(仮)</li>
+<li>ある同等性(仮)</li>
+<li>Poisson方程式に対する不連続有限要素法(仮)</li>
+<li>Poisson方程式に対するハイブリッド不連続有限要素法(仮)</li>
+<li>Poisson方程式に対するニッチェ法(仮)</li>
+<li>【発展】単調性と離散最大値原理(仮)</li>
+<li>【発展】拡散移流方程式に対する誤差解析(仮)</li>
+<li>Morley有限要素とRT有限要素の間の関係(仮)</li>
+<li>重調和方程式に対するMorley有限要素法(仮)</li>
+<li>非適合有限要素法における思いがけない誤差の混入 その1(仮)</li>
+<li>Arnord&Brezziの論文の紹介(仮)</li>
+<li>【発展】重調和方程式に対する不連続有限要素法(仮)</li>
+<li>【発展】重調和方程式に対するハイブリッド不連続有限要素法(仮)</li>
+<li>【発展】重調和方程式に対するニッチェ法(仮)</li>
+<!--<li>未解決問題(仮)</li>-->
+</ol>
+
+Part5: 混合型有限要素法<br>
+Topics:
+<ol>
+<li>非適合Fortin作用素とInf-sup条件(仮)</li>
+<li>非適合有限要素法における思いがけない誤差の混入 その2(仮)</li>
+<li>ヘルムホルツ分解と圧力強靭化法(仮)</li>
+<li>Stokes方程式に対するニッチェ法(仮)</li>
+<li>定常Navier-Stokes方程式に対する圧力強靭化法(仮)</li>
+<li>未解決問題(仮)</li>
+</ol>
+
+Part6: 【発展】Space-Time有限要素法(仮)<br>
+Topics:
+<ol>
+<li></li>
+</ol>
 
 
+</p>
+</article>
+</div>
 
+
+<h3>Moving boundary problems, Two-phase flow problems(仮)</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+多くは論文からのトピックです．以下のPDFファイルにまとめます．<br><br>
+PDFファイル: <a href="../fem/" target="_blank"></a><br>
+(th  2025 <span class="cat cat001">Update</span>)<br><br>
+
+Part 1: 連続問題<br>
+Topics:<br>
+<ol>
+<li>Interface problems(仮)</li>
+<li>Two-phase flow problems(仮)</li>
+</ol>
+
+Part 2: 有限要素法<br>
+Topics:<br>
+<ol>
+<li></li>
+<li>【発展】メッシュ分割を利用した精度向上における課題(仮)</li>
+</ol>
+</p>
+</article>
+</div>
+
+<h3>異方性偏微分方程式(仮)</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+多くは論文からのトピックです．以下のPDFファイルにまとめます．<br><br>
+PDFファイル: <a href="../fem/" target="_blank"></a><br>
+(th  2025 <span class="cat cat001">Update</span>)<br><br>
+
+Part 1: 連続問題<br>
+Topics:<br>
+<ol>
+<li></li>
+<li>【発展】異方性Navier-Stokes方程式(仮)</li>
+</ol>
+
+Part 2: 有限要素法<br>
+Topics:<br>
+<ol>
+<li></li>
+<li></li>
+<li>時間遅れを持つ熱輸送偏微分方程式(仮)</li>
+<li>Non-Fourier heat transfer equation(仮)</li>
+</ol>
+</p>
+</article>
+</div>
+
+<h3>確率偏微分方程式(仮)</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+多くは論文からのトピックです．以下のPDFファイルにまとめます．<br><br>
+PDFファイル: <a href="../fem/" target="_blank"></a><br>
+(th  2025 <span class="cat cat001">Update</span>)<br><br>
+
+Part : 異方性メッシュ上での誤差解析(仮)<br>
+Topics:<br>
+<ol>
+<li>(仮)</li>
+</ol>
+
+</p>
+</article>
+</div>
+
+<h3>最適化問題(仮)</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+多くは論文からのトピックです．以下のPDFファイルにまとめます．<br><br>
+PDFファイル: <a href="../fem/" target="_blank"></a><br>
+(th  2025 <span class="cat cat001">Update</span>)<br><br>
+
+Part : 異方性メッシュ上での誤差解析(仮)<br>
+Topics:<br>
+<ol>
+<li>(仮)</li>
+</ol>
+
+</p>
+</article>
+</div>
+
+<h2>有限要素法2.0(仮)</h2>
+<h3>有限要素計算自動化への一歩(仮)</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+こういう問題を解きたいといくつかの情報を与えれば可視化される　そのような未来が実現されるだろうか？<br>
+個人的な意見ですが，過去から現在の時間の流れの中で行われてきたことは，上のような未来のための準備だと考えます．<br>
+ここでは有限要素法に限定します．<br>
+どんな未来にも最初の一歩があります．有限要素法2.0 創造を楽しみます．<br>
+【補足】しかしながら，伝統的な数値解析(安定性と収束性)(有限要素法1.0)は今もそしてこれからも重要です．
+理由は，数値計算する前に全てのリスクを取り除かなければならないからです．また，実際の現象を有限要素スキームで表現できているかも重要であるし，
+計算時間がかからない精度が良い近似解を得る手法の開発も必要です．そして偏微分方程式の解の性質を調べることも必要です．<br>
+以下のPDFファイルにまとめます．<br><br>
+PDFファイル: <a href="../fem/" target="_blank"></a><br>
+(th  2025 <span class="cat cat001">Update</span>)<br><br>
+
+Part 1: Accuracy verification methods<br>
+Topics:<br>
+<ol>
+<li>【発展】誤差コントロールと事後評価(仮)</li>
+<li>【発展】アダプティブ有限要素法の限界?(仮)</li>
+<li>【発展】Hypercircle method(仮)</li>
+<li>【発展】新アダプティブ有限要素法(仮)</li>
+<li>【発展】その他のメッシュ分割を利用した有限要素解の精度向上(仮)</li>
+<li>【発展】特異点解や境界層が現れる偏微分方程式への応用(仮)</li>
+<li>【発展】\( L^{\infty} \)評価(仮)</li>
+</ol>
+
+Part2: 【発展】hp有限要素法(仮)<br>
+Topics:<br>
+<ol>
+<li></li>
+</ol>
+
+</p>
+</article>
+</div>
+
+<h3>有限要素法と科学的機械学習(仮)</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+<br>
+以下のPDFファイルにまとめます．<br><br>
+PDFファイル: <a href="../fem/" target="_blank"></a><br>
+(th  2025 <span class="cat cat001">Update</span>)<br><br>
+
+Part 1: 有限要素法<br>
+Topics:<br>
+<ol>
+<li>【発展】事後評価(仮)</li>
+<li></li>
+</ol>
+
+</p>
+</article>
+</div>
+
+<h2>時間発展問題に対する数値解の精度向上</h2>
+<h3>FEMs for Fractional Calculus</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+非局所性・メモリー効果を持つ数理モデル<br>
+多くは論文からのトピックです．以下のPDFファイルにまとめます．<br><br>
+PDFファイル: <a href="../fem/" target="_blank"></a><br>
+(th  2025 <span class="cat cat001">Update</span>)<br><br>
+
+Part 1: 連続問題<br>
+Topics:<br>
+<ol>
+<li>Fractional Navier-Stokes Equations(仮)</li>
+<li>Fractional Rayleigh-Stokes Equations(仮)</li>
+<li>Fractional Fokker-Planck Equations(仮)</li>
+<li>Fractional Schr&oumldinger Equations(仮)</li>
+</ol>
+
+Part 2: 有限要素法<br>
+<ol>
+<li>Fractional Navier-Stokes Equations(仮)</li>
+<li>Fractional Rayleigh-Stokes Equations(仮)</li>
+</ol>
+
+</p>
+</article>
+</div>
+
+<h3>データ同化と有限要素法(仮)</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+多くは論文からのトピックです．以下のPDFファイルにまとめます．<br><br>
+PDFファイル: <a href="../fem/" target="_blank"></a><br>
+(th  2025 <span class="cat cat001">Update</span>)<br><br>
+
+Part : (仮)<br>
+Topics:<br>
+<ol>
+<li>(仮)</li>
+</ol>
+
+</p>
+</article>
+</div>
+
+<h2>異常気象・災害現象の数理モデルと数値解析(仮) </h2>
+<h3>気候モデルと異常気象の再現と解析(仮)</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+多くは論文からのトピックです．以下のPDFファイルにまとめます．<br><br>
+PDFファイル: <a href="../fem/" target="_blank"></a><br>
+(th  2025 <span class="cat cat001">Update</span>)<br><br>
+
+Part : (仮)<br>
+Topics:<br>
+<ol>
+<li>マルチスケール法(仮)</li>
+</ol>
+
+</p>
+</article>
+</div>
+
+<h2>精度保証付き数値計算(仮)</h2>
+<h3>有限要素法における精度保証付き数値計算(仮)</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+多くは論文からのトピックです．以下のPDFファイルにまとめます．<br><br>
+PDFファイル: <a href="../fem/" target="_blank"></a><br>
+(th  2025 <span class="cat cat001">Update</span>)<br><br>
+
+Part : 異方性メッシュ上での精度保証(仮)<br>
+Topics:<br>
+<ol>
+<li>(仮)</li>
+</ol>
+
+</p>
+</article>
+</div>
+
+
+<h2>Implementation</h2>
+<h3>有限要素法のプログラム</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+有限要素法のプログラムは菊地先生の有限要素法概説で学び始めました．<br>
+現代風に基礎から発展まで書いていきたいですね.<br>
+将来的には，自動で必要なプログラムコードが作成されるかもしれない．<br><br>
+以下のPDFファイルにまとめます．<br><br>
+PDFファイル: <a href="../fem/" target="_blank"></a><br>
+(th  2025 <span class="cat cat001">Update</span>)<br><br>
+
+Topics:<br>
+<ol>
+  <li>1</li>
+  <li>2</li>
+  <li>3</li>
+</ol>
+</p>
+</article>
+</div>
+
+<h3>有限要素ソフトウェア(仮)</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+<a href="https://freefem.org/" target="_blank">The official website of FreeFEM</a><br>
+<!--test \( \displaystyle \int_0^T \) テスト \( \int_0^T \)-->
+
+以下のPDFファイルにまとめます．<br><br>
+PDFファイル: <a href="../fem/" target="_blank"></a><br>
+(th  2025 <span class="cat cat001">Update</span>)<br><br>
+
+Topics:<br>
+<ol>
+  <li>FreeFEM(仮)</li>
+  <li>Netgen/NGSolve(仮)</li>
+  <li>3</li>
+</ol>
+
+</p>
+</article>
+</div>
 
 <!--Research-->
 
