@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Visions | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematical and Numerical Analysis for Partial Differential Equations">
+
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+<link rel="apple-touch-icon" href="../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../favicon.ico">
+<link rel="icon" href="../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../js/html5.js"></script>
+<![endif]-->
+<script src="../js/jquery.js" charset="utf-8"></script>
+<script src="../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../">Home</a>
+				</li>
+			
+				<li><a href="../publications/">Publications/Talks</a></li>
+				
+				<li>
+					<a href="../research/">Research</a>
+					<!--
+					<ul>
+						<li><a href="./research/research01/">Research1</a></li>
+						<li><a href="./research/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../fem/">Visions</a>
+				</li>
+				
+				<li>
+					<a href="./geo/">History of Geometric Conditions in FEM</a>
+				</li>
+				
+				<li>
+					<a href="../links/">Links</a>
+				</li>
+				
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Visions
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+	<!--▼メインコンテンツ-->
+	<main>
+		<div class="main-conts">
+
+		<article class="section-wrap">
+			<div class="section-in">
+
+<h1 class="section-title">History of Geometric Conditions in FEM</h1>
+<h2>有限要素法における幾何条件の歴史</h2>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+有限要素法（FEM）は，1943年にクーランが論文でその原型を提示して以来，80年以上にわたり発展を続けています．その中で早くから注目されてきたテーマの一つが，メッシュ分割列に課す幾何条件です．<br><br>
+有限要素近似の精度は，関数空間や弱形式といった解析的枠組みだけでなく，メッシュを構成する三角形・四面体の形の良し悪しにも強く依存します．そのため「どのような要素形状を許容すべきか」を明確にすることは，誤差評価やアルゴリズムの基盤そのものを規定する重要な課題です．<br><br>
+
+<b>2次元（三角形要素）の発展</b>
+<ul>
+  <li>1957年 シンゲ (Synge)</li>
+  三角形要素に対して「最大角が一定値より小さいこと」を仮定する最大角条件を初めて導入しました．この条件は，補間誤差が発散せず，安定した近似を保証する最初の幾何条件でした．FEM の理論における「幾何制約」という考え方はここから始まります．
+  <li>1968年 ズラマール (Zlámal)</li>
+  「三角形の最小角が一定値より大きい」という最小角条件を提案しました．これは，三角形が極端に潰れるのを防ぐ条件ですが，graded mesh のように意図的に細長い要素を使う異方性メッシュには適用できないため，汎用性は限定的でした．
+  <li>1970年代 shape-regularity 条件</li>
+  ズラマールの最小角条件と同値なshape-regularityが導入されました．この条件は，数学的に扱いやすく，多くの理論的性質を兼ね備えているため，現在でも有限要素法解析の「標準条件」として広く利用されています．
+  <li>1976年 バブシュカ・アジズ (Babuška–Aziz)</li>
+  最大角条件が「最適オーダーの補間誤差を与える十分条件」であるだけでなく，ある意味において「必要条件」でもあることを示しました．これにより，最大角条件が単なる技術的仮定ではなく，理論的に根本的な役割を持つことが明確化されました．
+  <li>1991年 クリゼック (Křížek)</li>
+  三角形において，最大角条件が外接円半径条件と同値であることを示しました．これにより，幾何条件の表現には複数の等価な見方があることが分かり，研究の幅が広がりました．
+</ul>
+
+<b>3次元（四面体要素）への拡張</b>
+<ul>
+  <li>1992年 クリゼック</li>
+  2次元の最大角条件を四面体要素に拡張しました．これにより，三次元有限要素解析における幾何条件の理論的基盤が確立されました．
+  <li>2021年 石坂・鈴木・小林・土屋</li>
+  四面体における最大角条件と同値な新しい幾何条件を世界で初めて提案しました．長年，三次元では「最大角条件に代わる表現」が見つかっていませんでしたが，この研究によって理論的な空白が埋められ，異方性メッシュ解析の可能性が広がりました．
+</ul>
+
+<b>異方性補間誤差評価の誕生と発展</b>
+<ul>
+  <li>1990年代〜2000年代 アペル (Apel) ら</li>
+  本格的な異方性補間誤差評価が始まりました．最大角条件と座標条件を組み合わせて，極端に細長い要素（アスペクト比の大きな要素）に対しても誤差解析を行えるようにしました．この成果は，境界層や特異点を効率よく解くために不可欠なものであり，Apel の1999年のモノグラフ『Anisotropic Finite Element Methods』に体系化されています．
+  <li>2020年代 石坂・小林・土屋による新展開</li>
+  新しい2ステップアフィン変換と幾何パラメータを導入し，異方性補間誤差をこれまでよりも単純かつ精密に解析できる手法を開発しました．このパラメータは計算が容易であり，事後誤差評価やアダプティブ FEM への応用に直結することが期待されています．
+</ul>
+
+<b>展望</b>
+このように，幾何条件の研究は
+<ul>
+  <li>1957年のシンゲによる最大角条件に始まり，</li>
+  <li>最小角条件，shape-regularity 条件を経て，</li>
+  <li>最大角条件の拡張と外接円半径条件へと発展し，</li>
+  <li>1990年代からは異方性補間誤差評価の理論へと進みました．</li>
+</ul>
+そして現在，新しい幾何パラメータの導入によって異方性 FEM の理論がさらに整理され，アダプティブメッシュや自動化への応用が可能になりつつあります．<br><br>
+<br>私たちの研究は，この70年にわたる歴史の系譜の最前線に位置づけられます．</b><br><br>
+
+Under construction<br><br>
+(30th August 2025 <span class="cat cat001">Update</span>)
+</p>
+</article>
+</div>
+
+<h2>参考文献（代表）</h2>
+  <ol>
+    <li>J. L. Synge, <i>The Hypercircle in Mathematical Physics</i>, Cambridge Univ. Press, 1957.</li>
+    <li>M. Zlámal, “On the finite element method,” <i>Numer. Math.</i> 12 (1968), 394–409.</li>
+    <li>P. G. Ciarlet, <i>The Finite Element Method for Elliptic Problems</i>, North-Holland, 1978.</li>
+    <li>I. Babuška and A. Aziz, “On the angle condition in the finite element method,” <i>SIAM J. Numer. Anal.</i> 13 (1976), 214–226.</li>
+    <li>M. Křížek, “On the maximum angle condition for linear tetrahedral elements,” <i>Numer. Math.</i> 59 (1991), 195–210.</li>
+    <li>M. Křížek, “On semiregular families of triangulations and linear interpolation,” <i>Appl. Math.</i> 37 (1992), 223–232.</li>
+    <li>R. Apel, <i>Anisotropic Finite Element Methods</i>, Teubner, Stuttgart, 1999.</li>
+    <li>H. Ishizaka, "Anisotropic Raviart--Thomas interpolation error estimates using a new geometric parameter," <i>Calcolo</i> 59 (4), (2022)</li>
+    <li>H. Ishizaka, "Morley finite element analysis for fourth-order elliptic equations under a semi-regular mesh condition," <i>Applications of Mathematics</i> 69 (6), (2024)</li>
+    <li>H. Ishizaka, R. Suzuki, K. Kobayashi, T. Tsuchiya, “A new geometric condition equivalent to the maximum angle condition for tetrahedrons,” <i>Comput. Math. Appl.</i> 81 (2021), 746-758.</li>
+    <li>H. Ishizaka, K. Kobayashi, T. Tsuchiya, “Anisotropic interpolation error estimates using a new geometric parameter,” <i>Jpn. J. Ind. Appl. Math. </i> 40 (1) (2023), 475-512.</li>
+  </ol>
+
+<!--<h3>(仮)</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+Under construction
+</p>
+</article>
+</div>
+<li>Data-driven(仮)</li>-->
+
+
+
+
+
+<!--Gallery-->
+
+			</div><!--section-in-->
+		</article>
+
+		</div>	
+	</main>
+	<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2022 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
