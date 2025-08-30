@@ -130,8 +130,10 @@
 <ul>
   <li>1992年 クリゼック</li>
   2次元の最大角条件を四面体要素に拡張しました．これにより，三次元有限要素解析における幾何条件の理論的基盤が確立されました．
+  <li>2021年 石坂・小林・土屋</li>
+  補間誤差理論における新しいパラメーターと幾何条件を提案しました．このパラメータは要素の形状を簡潔に記述でき，異方性メッシュ上の補間誤差解析を統一的に説明するための基盤を与えます．
   <li>2021年 石坂・鈴木・小林・土屋</li>
-  四面体における最大角条件と同値な新しい幾何条件を世界で初めて提案しました．長年，三次元では「最大角条件に代わる表現」が見つかっていませんでしたが，この研究によって理論的な空白が埋められ，異方性メッシュ解析の可能性が広がりました．
+  四面体における新しい帰化条件と最大角条件が同値なことを示しました．長年，三次元では「最大角条件に代わる表現」が見つかっていませんでしたが，この研究によって理論的な空白が埋められ，異方性メッシュ解析の可能性が広がりました．
 </ul>
 
 <b>異方性補間誤差評価の誕生と発展</b>
@@ -139,7 +141,7 @@
   <li>1990年代〜2000年代 アペル (Apel) ら</li>
   本格的な異方性補間誤差評価が始まりました．最大角条件と座標条件を組み合わせて，極端に細長い要素（アスペクト比の大きな要素）に対しても誤差解析を行えるようにしました．この成果は，境界層や特異点を効率よく解くために不可欠なものであり，Apel の1999年のモノグラフ『Anisotropic Finite Element Methods』に体系化されています．
   <li>2020年代 石坂・小林・土屋による新展開</li>
-  新しい2ステップアフィン変換と幾何パラメータを導入し，異方性補間誤差をこれまでよりも単純かつ精密に解析できる手法を開発しました．このパラメータは計算が容易であり，事後誤差評価やアダプティブ FEM への応用に直結することが期待されています．
+  新しい2ステップアフィン変換を導入し，異方性補間誤差をこれまでよりも単純かつ精密に解析できる手法を開発しました．このパラメータは計算が容易であり，事後誤差評価やアダプティブ FEM への応用に直結することが期待されています．
 </ul>
 
 <b>展望</b><br><br>
@@ -166,11 +168,12 @@ Under construction<br><br>
   <ol>
     <li>J. L. Synge, <i>The Hypercircle in Mathematical Physics</i>, Cambridge Univ. Press, 1957.</li>
     <li>M. Zlámal, “On the finite element method,” <i>Numer. Math.</i> 12 (1968), 394–409.</li>
-	<li>I. Babuška and A. Aziz, “On the angle condition in the finite element method,” <i>SIAM J. Numer. Anal.</i> 13 (1976), 214–226.</li>
+    <li>I. Babuška and A. Aziz, “On the angle condition in the finite element method,” <i>SIAM J. Numer. Anal.</i> 13 (1976), 214–226.</li>
     <li>P. G. Ciarlet, <i>The Finite Element Method for Elliptic Problems</i>, North-Holland, 1978.</li>
     <li>M. Křížek, “On the maximum angle condition for linear tetrahedral elements,” <i>Numer. Math.</i> 59 (1991), 195–210.</li>
     <li>M. Křížek, “On semiregular families of triangulations and linear interpolation,” <i>Appl. Math.</i> 37 (1992), 223–232.</li>
     <li>R. Apel, <i>Anisotropic Finite Element Methods</i>, Teubner, Stuttgart, 1999.</li>
+    <li>H. Ishizaka, K. Kobayashi, T. Tsuchiya, “General theory of interpolation error estimates on anisotropic meshes,” <i>Jpn. J. Ind. Appl. Math.</i> 38 (1) (2021), 163-191 .</li>
     <li>H. Ishizaka, R. Suzuki, K. Kobayashi, T. Tsuchiya, “A new geometric condition equivalent to the maximum angle condition for tetrahedrons,” <i>Comput. Math. Appl.</i> 81 (2021), 746-758.</li>
     <li>H. Ishizaka, "Anisotropic Raviart-Thomas interpolation error estimates using a new geometric parameter," <i>Calcolo</i> 59 (4), (2022)</li>
     <li>H. Ishizaka, K. Kobayashi, T. Tsuchiya, “Anisotropic interpolation error estimates using a new geometric parameter,” <i>Jpn. J. Ind. Appl. Math. </i> 40 (1) (2023), 475-512.</li>
