@@ -308,6 +308,25 @@ Under construction<br><br>
 </article>
 </div>
 
+<h3>Vision 9: Defect Collection と数値解法の横断</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+有限要素法（FEM）では，古くから誤差解析の手法のひとつとして Defect Collection（欠陥収集法） が用いられてきました．これは，近似解を弱形式に代入したときに現れる「不整合（defect）」を収集し，それを評価することで誤差を間接的に捉える方法です．特に非適合要素や混合型要素において，整合性誤差を制御するために重要な役割を果たしてきました．<br><br>
+
+私の関心は，この Defect Collection の枠組みを FEM のみにとどめず，メッシュレス法や深層学習数値解法にまで拡張することです．例えばメッシュレス法（SPH，EFG など）では，点配置の不均衡に起因する不整合が計算の安定性を左右します．これを defect として体系的に扱えば，点配置の良し悪しを評価する基準として活用できるでしょう．さらに，PINNs や Deep Ritz 法といった深層学習数値解法でも，損失関数を「弱形式における残差の集約」と解釈することができ，Defect Collection の概念と自然に対応します．<br><br>
+
+ここで重要なのは，Vision 2 で展開している「点配置と幾何条件」の視点と，Vision 9 の「不整合の収集」という視点が補完的であるという点です．前者は「どのような点配置が良い近似を生むか」を探求し，後者は「その近似がどのように偏差を残すか」を解析します．両者を組み合わせることで，点配置と誤差，残差の関係を統一的に捉えることが可能になり，FEM，メッシュレス法，深層学習数値解法を横断する強固な理論基盤を築くことができると考えています．<br><br>
+
+挑戦的ではありますが，Defect Collection を軸としたこの取り組みは，古典的な誤差解析と最新の機械学習的アプローチを橋渡しする新しい研究ビジョンになるはずです．<br><br>
+
+Under construction<br><br>
+(1st September 2025 <span class="cat cat001">Update</span>)
+</p>
+</article>
+</div>
+
+
 
 <h2>Finite Element Methods 2.0 + Machine Learning</h2>
 <div class="news">
