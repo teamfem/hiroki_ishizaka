@@ -191,7 +191,7 @@ Under construction<br><br>
 <p class="news-cont">
 有限要素法（FEM）では，計算領域を小さな要素に分割して数値計算を行います．二次元では三角形や四角形，三次元では四面体や六面体などがよく使われますが，理論の基盤となる最小単位は三角形や四面体です．なぜなら，任意の多角形や多面体も，三角形や四面体に分割することで 理論的には扱えるからです．<br><br>
 
-1980年代から1990年代，四角形や五角形などの多角形要素を直接使う試みが一部で始まりました．しかし，まだ理論的な安定性条件は十分に整備されていませんでした．2000年代以降，Polygonal FEM や Virtual Element Method (VEM) など，多角形要素を直接扱う枠組みが本格的に登場しました．このとき，数値解の安定性を保証するためにstar-shaped 条件が用いられることがあります．これは要素内部に基準点を置いたとき，その点から全ての辺（あるいは面）が見えるという条件です．凸多角形であれば自動的に満たされますが，凸でなくても star-shaped であればよい点が特長です．さらに実際の解析では，基準点から辺までの距離が極端に不均衡でないこと（均衡性条件）も仮定されます．この条件により，star-shaped な多角形であれば安定した有限要素解析が可能になります．<br><br>
+1980年代から1990年代，四角形や五角形などの多角形要素を直接使う試みが一部で始まりました．しかし，まだ理論的な安定性条件は十分に整備されていませんでした．2000年代以降，Polygonal FEM や Virtual Element Method (VEM) など，多角形要素を直接扱う枠組みが本格的に登場しました．このとき，数値解の安定性を保証するためにstar-shaped 条件 が用いられることがあります．これは要素内部に基準点を置いたとき，その点から全ての辺（あるいは面）が見えるという条件です．凸多角形であれば自動的に満たされますが，凸でなくても star-shaped であればよい点が特長です．さらに実際の解析では，基準点から辺までの距離が極端に不均衡でないこと（均衡性条件）も仮定されます．この条件により，star-shaped な多角形であれば安定した有限要素解析が可能になります．<br><br>
 
 一方で，異方性メッシュ（例えば境界層や特異点近傍で必要となる極端に細長い要素）では，この均衡性条件を必ずしも満たさない場合があるかもしれません．長細い長方形や graded mesh のような要素では，内部基準点から近い辺と遠い辺の距離の差が大きくなり，その結果として star-shaped 条件の枠組みだけでは誤差評価を十分に制御できない可能性があります．<br><br>
 
@@ -205,6 +205,21 @@ Under construction<br><br>
 </article>
 </div>
 
+<h2>球面・多様体上の幾何条件の研究のこれまで</h2>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+有限要素法は本来，平面や三次元空間を対象として発展しました．その中で，要素形状が誤差や安定性を左右することが早くから認識され，最大角条件や shape-regularity 条件といった幾何条件が定式化されました．<br><br>
+
+1980年代になると，球面を計算領域とする気候モデルが発展し，icosahedral grid や geodesic grid といった分割法が提案され，良い分割がシミュレーションの精度を大きく左右することが実感されました．さらに Dziuk (1988) による曲面上の有限要素法は，リーマン多様体上で PDE を解くための理論的基盤を与える研究として広く知られています．その後，Demlow (2009) や Dziuk & Elliott (2013) により，曲面 FEM の誤差解析が体系化され，Euclid 空間での shape-regularity に相当する「要素の均衡性条件」が曲面上にも必要であることが示されました．<br><br>
+
+ただし，これらの成果は主に「Euclid 空間での条件を多様体に翻訳する」という範囲にとどまっており，異方性を許容する条件や最大角条件と同値な簡潔な条件は十分に議論されていません．<br><br>
+
+Under construction<br><br>
+(31th August 2025 <span class="cat cat001">Update</span>)
+</p>
+</article>
+</div>
 
 
 <h2>参考文献（代表）</h2>
@@ -237,6 +252,19 @@ Under construction<br><br>
 </p>
 </article>
 </div>
+
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+  <ol>
+    <li>Dziuk, G. Finite elements for the Beltrami operator on arbitrary surfaces. Lecture Notes in Mathematics, 1357, 142–155　(1988).</li>
+    <li>Demlow, A. Higher-order finite element methods and pointwise error estimates for elliptic problems on surfaces. Math. Comp., 78(267), 889–917　(2009).</li>
+    <li>Dziuk, G., & Elliott, C. M. Finite element methods for surface PDEs. Acta Numerica, 22, 289–396　(2013).</li>
+  </ol>
+</p>
+</article>
+</div>
+
 
 <!--<h3>(仮)</h3>
 <div class="news">
