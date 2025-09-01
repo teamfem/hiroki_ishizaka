@@ -117,11 +117,12 @@
 私はこれまでに，最大角条件と同値な新しい幾何条件や異方性有限要素法の理論を構築し，従来の shape regularity に基づく古典的解析を超えた，より精密な補間誤差評価を与えてきました．これらの成果は，境界層や特異点を含む「難しい問題」に対して有効なアダプティブ FEM の基盤となります．さらに，Nitsche 法の異方性解析やCrouzeix–Raviart要素を用いた誤差評価など，従来は十分に研究されていなかった非適合要素の理論も発展させています．<br><br>
 
 今後は，これらの数理的成果を活かしつつ，機械学習（ML）とFEMの融合を進めていきます．たとえば，私が提案した幾何パラメータを特徴量として利用し，シミュレーションデータから誤差分布や最適メッシュ分割を学習することで，理論とデータ駆動を組み合わせた「解釈可能で安全な ML × FEM」を実現します．また，時間発展問題におけるドリフト抑制や圧力ロバスト性といったテーマを ML と組み合わせることで，長時間計算でも精度と保存性を維持できる新しい枠組みを構築したいと考えています．<br><br>
-長期的な視点で，以下の3点を柱としています．
+長期的な視点で，以下の4つの柱を中心に展開しています．これらは，有限要素法の理論深化から応用分野への展開までをつなぐ道筋であり，基礎と応用の両輪を兼ね備えた研究の方向性を示しています．
 <ol> 
 <li><b>複雑な問題を効率的に近似する数値計算手法の開発と解析</b><br> 移流拡散方程式，ナヴィエ–ストークス方程式，インターフェイス問題，確率モデルや最適化問題など，幅広い偏微分方程式を対象とします．私は，新しい幾何パラメータや異方性メッシュ条件を活かし，従来より少ない計算資源で高精度を実現できる手法を探ります．これは，気候シミュレーションや異常気象予測のように，大域スケールと局所スケールが混在する現象にもつながる挑戦です．</li><br> 
 <li><b>計算スキームの数理構造の解明と抽象化</b><br> 数値スキームは経験や試行錯誤に基づいて作られることが多く，その背後にある数理構造が十分に明らかでない場合もあります．私は，スキームの共通パターンや本質的性質を数理的に整理し，異なる手法を統一的に理解できる理論の構築を目指しています．さらに，機械学習を併用することで，理論では表しきれない複雑な依存関係をデータから補完し，理論とデータ駆動のハイブリッドによる柔軟で拡張性の高い数値解析フレームワークを築きます．</li><br> 
 <li><b>FEMの自動化と，MLによる最適化・誤差予測・メッシュ適応</b><br> 有限要素法には，メッシュ生成，近似空間の設定，方程式ソルバー，誤差評価，結果の可視化など，多段階の工程があります．これらは従来，専門家の知識と判断に依存してきました．私は，機械学習を組み込んだアルゴリズムで，これらのプロセスをできる限り自動化します．具体的には，過去のデータから誤差を予測してメッシュ分割方針を決定したり，問題の特徴に応じて最適な数値スキームを自動で選ぶ仕組みを作ります．特に異方性有限要素法は，MLと組み合わせることで，解の特異性や境界層に応じた分割方向を自動的に判断できるようになり，大幅な効率化が期待できます．最終的には，専門家だけでなく，学生や異分野の研究者でも「条件を入力すれば高度なシミュレーションが動く」環境を実現します．</li> 
+<li><b>異常気象・災害現象の数理モデルと数値解析</b><br> 気候変動や異常気象，洪水・土砂災害のような現象は，大域スケールと局所スケールが複雑に絡み合い，数値解析の限界を試す挑戦的な課題です．私は，異方性メッシュや幾何パラメータの理論を活かし，強い勾配や特異性を効率的に捉える新しい数値シミュレーションを開発したいと考えています．さらに確率的要素を取り込むことで，不確実性を含む災害リスク評価や「リスクの可視化」にも挑戦します．この第四の柱は，純粋理論と応用社会課題の双方を結びつける研究として大きな意義を持つと考えています．</li> 
 </ol>
 効率性，抽象化，自動化にデータ駆動の力を融合することで，私は「Finite Element Methods 2.0」をさらに進化させます．将来的には，ユーザーが現象や条件を入力するだけで，理論解析と機械学習が連携し，自動的に最適な数値解法を選択して高精度な結果を返す環境を実現したいと考えています．
 <br><br>
@@ -373,7 +374,7 @@ Under construction<br><br>
 時間発展を伴う数理モデルの中には，過去の状態が将来の振る舞いに影響を与える 記憶効果 を持つものが多く存在します．材料科学における粘弾性モデル，生体システムの時間遅れ反応，熱伝導における非フーリエ現象，さらには確率的ゆらぎを伴う拡散現象などがその例です．これらは従来，時間遅れモデル や 異常拡散モデル として個別に研究されてきましたが，実際には密接に関連しており，その統一的理解が強く求められています．これらは一見バラバラの現象に見えますが，数学的には分数階微分という共通の枠組みで統一的に捉えることが可能です．分数階時間微分は，記憶効果や遅れを自然に表現でき，通常の整数階の時間発展方程式を拡張する柔軟な言語を提供します．<br><br>
 
 私は，このテーマを一つの柱として据え，分数階時間微分 を共通の枠組みとして利用することで，記憶効果・時間遅れ・異常拡散を統一的に扱う理論基盤を構築したいと考えています．分数階時間微分は，単なる形式的拡張ではなく，系が持つ「過去からの影響の重み付け」を自然に表現するものであり，さまざまな物理・工学現象に適用可能です．<br><br>
-	
+
 この方向性の魅力は，解析学と数値解析の両面で新しい挑戦を含む点にあります．解析学的には，分数階時間微分を含む偏微分方程式の 弱解の存在・一意性 を確立し，その解の正則性や長時間挙動を明らかにする必要があります．数値解析の側面では，これらのモデルに対して 安定かつ高精度な時間離散スキームを設計し，誤差評価を与えることが大きな課題となります．<br><br>
 
 特に，私がこれまで取り組んできた異方性メッシュ解析を組み合わせることで，空間的な特異構造（境界層・特異点）と時間的な記憶効果を同時に制御する新しい誤差評価が可能になると期待しています．これにより，記憶を伴う複雑な現象に対しても，効率的で精密な数値解を提供できる枠組みが構築できるはずです．例えば，時間方向に分数階微分を導入したストークス方程式に対して，圧力ロバスト性や長時間安定性を保証できるスキーム設計は，その重要なステップです．<br><br>
@@ -411,6 +412,7 @@ Under construction<br><br>
 </div>
 
 
+
 <h2>Supplementary Visions</h2>
 <h3>A. 教育コラム</h3>
 <div class="news">
@@ -442,34 +444,6 @@ Under construction<br><br>
 <br><br>
 Under construction<br><br>
 (1st September 2025 <span class="cat cat001">Update</span>)
-</p>
-</article>
-</div>
-
-
-<h2>Finite Element Methods 2.0 + Machine Learning</h2>
-<div class="news">
-<article class="news-item">
-<p class="news-cont">
-<b>To represent complex phenomena in a way that is accurate, efficient, and accessible to everyone.</b><br>
-This has been the consistent goal of my research.<br><br>
-The finite element method (FEM) has its origin in Courant’s paper in 1943, and it has developed continuously for more than 80 years. Although the theory may appear mature, many challenges remain when it comes to simulating real-world phenomena. Modern problems in science and engineering often involve nonlinearity, anisotropy, multiscale structures, complex geometries, and diverse boundary conditions. Developing numerical methods that can handle these efficiently and accurately is one of the central tasks in computational mathematics.<br><br>
-In my work, I have introduced a new geometric condition equivalent to the classical maximum angle condition, and developed the theory of anisotropic finite elements to provide sharper interpolation error estimates beyond the classical framework of shape regularity. These results have laid a mathematical foundation for adaptive FEMs in challenging settings such as boundary layers and singularities. I have also contributed to the analysis of Nitsche’s method on anisotropic meshes and nonconforming elements such as the Crouzeix–Raviart element, areas that had not been sufficiently investigated before.<br><br>
-Looking ahead, I aim to integrate these mathematical advances with machine learning (ML). By using my geometric parameter as a feature for learning, error distributions and optimal mesh configurations can be predicted directly from data. This will lead to a new paradigm of interpretable and reliable ML × FEM. Furthermore, I plan to address time-dependent problems by combining ML with pressure-robust discretisations and drift suppression techniques, ensuring long-time accuracy and stability in numerical simulations.<br><br>
-Three Pillars of My Research
-<ol>
-<li>Developing efficient numerical methods for complex problems</li>
-Target PDEs include advection–diffusion equations, the Navier–Stokes system, interface problems, stochastic models, and optimisation problems. By exploiting new geometric parameters and anisotropic mesh conditions, I seek methods that achieve high accuracy with fewer computational resources. These approaches will also contribute to applications such as climate modelling and extreme weather prediction, where global and local scales coexist.
-<li>Clarifying and abstracting the mathematical structure of numerical schemes</li>
-Many numerical schemes have been designed empirically, and their underlying mathematical structures are not always fully understood. My goal is to identify common patterns, extract essential properties, and build a unified theoretical framework. At the same time, I use machine learning to complement the theory in situations where complex dependencies defy purely analytical treatment. This hybrid approach will yield a more flexible and generalizable framework for numerical analysis.
-<li>Automation of FEM, with ML-driven optimisation, error prediction, and anisotropic adaptation</li>
-Finite element analysis involves many steps: mesh generation, selection of approximation spaces, solvers for linear systems, error estimation, and visualisation. Traditionally, these require expert knowledge and manual intervention. I aim to automate these processes by designing algorithms enhanced with machine learning. In particular, combining ML with anisotropic FEM will enable the automatic detection of singularities and boundary layers, guiding mesh refinement in the most effective directions. Ultimately, I envision an environment where not only experts but also students and researchers from other fields can perform advanced simulations simply by specifying the physical problem.
-</ol>
-By unifying efficiency, abstraction, and automation with the power of data-driven approaches, I aim to push Finite Element Methods 2.0 to the next stage. In the future, users will only need to specify the phenomenon and conditions, while behind the scenes, mathematical theory and machine learning will work together to automatically select the optimal numerical method and deliver highly accurate results.
-<br><br>
-
-Under construction<br><br>
-(30th August 2025 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
