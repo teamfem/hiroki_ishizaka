@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Supplementary Visions | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematical and Numerical Analysis for Partial Differential Equations">
+
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+<link rel="apple-touch-icon" href="../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../favicon.ico">
+<link rel="icon" href="../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../js/html5.js"></script>
+<![endif]-->
+<script src="../js/jquery.js" charset="utf-8"></script>
+<script src="../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../">Home</a>
+				</li>
+			
+				<li><a href="../publications/">Publications/Talks</a></li>
+				
+				<li>
+					<a href="../research/">Research</a>
+					<!--
+					<ul>
+						<li><a href="./research/research01/">Research1</a></li>
+						<li><a href="./research/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../fem/">Research Visions</a>
+				</li>
+				
+				<li>
+					<a href="../suppl/">Supplementary Visions</a>
+				</li>
+
+				
+				<li>
+					<a href="../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+				
+				<li>
+					<a href="../links/">Links</a>
+				</li>
+				
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Supplementary Visions
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+	<!--▼メインコンテンツ-->
+	<main>
+		<div class="main-conts">
+
+		<article class="section-wrap">
+			<div class="section-in">
+
+<h1 class="section-title">Supplementary Visions</h1>
+<h2>Visions of Education</h2>
+<h3>Introduction</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+ここでは，Research Visionsの主軸テーマから少し離れたアイディアをまとめます．内容は「教育コラム」的題材です．
+
+<br><br>
+Under construction<br><br>
+(1st September 2025 <span class="cat cat001">Update</span>)
+</p>
+</article>
+</div>
+
+<h3>Supplementary Vision A1: 複素PDEと有限要素法</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+複素数を変数に含む偏微分方程式は，量子力学や時間調和波動問題などに現れます．実数 PDE と理論的な構造は似ていますが，エネルギー保存や半ノルム誤差評価など，複素数特有の性質を考慮する必要があります．この違いを調べることは，Céa 補題や安定性の理解を深める教材として有効です．教育的には「実と複素の違いを通して理論の本質を学ぶ」場となり，学生にとって身近なテーマとして取り組みやすい内容だと思います．
+<br><br>
+Under construction<br><br>
+(1st September 2025 <span class="cat cat001">Update</span>)
+</p>
+</article>
+</div>
+
+<h3>Supplementary Vision A2: 有限要素法に残る未解決問題 ― Never Ending Story</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+有限要素法（FEM）は，熱伝導や流体，構造解析など幅広い分野で標準的に使われる数値解析手法です．一見，完成された理論に見えますが，実際には「まだ解けていない」重要な課題が数多く残されています．<br><br>
+
+このことを象徴するのが，V. Johnらによる論文 "Finite elements for scalar convection-dominated equations and incompressible flow problems – a never ending story?" です．論文タイトルが示すように，FEMには「終わらない物語」とも言うべき未解決問題が存在します．
+<ol>
+  <li>移流支配問題での数値振動</li>
+  古典的な有限要素法を移流支配型の方程式にそのまま使うと，数値解が大きく振動してしまいます．なぜうまくいかないのか，どの条件なら安定になるのか，完全な理解はいまだ得られていません．
+  <li>安定化手法の多様性と普遍性</li>
+  SUPG法，CIP法，局所投影安定化（LPS）など，数多くの安定化スキームが提案されています．しかし「どの手法が最も普遍的か」「理論と実装の両面で最適なのか」という問いには，まだ明確な答えがありません．
+  <li>誤差評価と適応メッシュ</li>
+  数値解の信頼性を保証するために，誤差を事後的に評価し，メッシュを細かく調整する（適応メッシュ）手法があります．ただし「誤差評価がどこまで信頼できるか」「異方性メッシュで本当に最適化できるか」は未解決の部分が多く残っています．
+  <li>非線形流体方程式への挑戦</li>
+  ナヴィエ–ストークス方程式のような非線形流体方程式では，数値安定性と物理的安定性の両立が難題です．長時間の計算で解が破綻しないスキームをどう設計するか，いまだに挑戦が続けられています．
+</ol>
+こうした未解決問題の存在は，「数学や数値解析は完成された学問ではなく，今も発展し続けている」ことを示しています．大学や大学院で学ぶときに，単に定理や公式を覚えるのではなく，「なぜこれが難しいのか」「どこに改良の余地があるのか」を知ることは，研究への入り口として大きな意義があります．「既存の理論を学ぶこと」と「残された課題に挑むこと」が地続きであることを理解するきっかけになるでしょう．<br><br>
+
+有限要素法の Never Ending Story は，まさに「次の世代が続きを書いていく物語」なのです．
+
+<br><br>
+Under construction<br><br>
+(1st September 2025 <span class="cat cat001">Update</span>)
+</p>
+</article>
+</div>
+
+
+
+
+<!--<h3>(仮)</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+Under construction
+</p>
+</article>
+</div>
+<li>Data-driven(仮)</li>-->
+
+
+
+
+
+<!--Gallery-->
+
+			</div><!--section-in-->
+		</article>
+
+		</div>	
+	</main>
+	<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2022 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
