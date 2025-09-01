@@ -193,6 +193,82 @@ Under construction<br><br>
 </article>
 </div>
 
+<h3>不連続 Galerkin (DG) 法 - 基礎から応用まで</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+<b>なぜ DG 法か？なぜ Nitsche 法か？</b><br>
+有限要素法（FEM）は「要素境界での連続性」を仮定することが多いですが，これをあえて外して「不連続」を許すことで新しい自由度と柔軟性が得られます．これが Discontinuous Galerkin (DG) 法です．一方，境界条件を「強制」せずに弱く課す方法として，Nitsche 法があります．「ペナルティ」と「整合項」をうまく組み合わせることで，安定性と精度を同時に保証できるのが特長です．どちらも「連続性や境界条件をあえて弱める」という柔軟な発想から生まれた数値解法です．
+
+<ol>
+  <li>DG 法とは何か</li>
+  <ul>
+  <li>弱形式の導出</li>
+  <li>要素間で不連続を許すメリット</li>
+  <li>境界条件や数値流束の基本</li>
+  </ul>
+  <li>代表的な DG 手法</li>
+  <ul>
+  <li>Interior Penalty (IP) 法</li>
+  <li>SIP/NIP 法の比較</li>
+  <li>ペナルティと安定性の考え方</li>
+  </ul>
+  <li>Nitsche 法の理論的基盤</li>
+  <ul>
+  <li>Dirichlet 条件を弱く課すアイデア</li>
+  <li>ペナルティ項と整合項の役割</li>
+  <li>連続 FEM との比較と橋渡し</li>
+  </ul>
+  <li>境界条件処理の応用</li>
+  <ul>
+  <li>Robin・Neumann 条件の扱い</li>
+  <li>混合境界条件の一体的処理</li>
+  </ul>
+  <li>拡張 DG と Nitsche 法の関係</li>
+  <ul>
+  <li>weakly over-penalised SIP</li>
+  <li>CutFEM への展開</li>
+  </ul>
+  <li>異方性メッシュと DG</li>
+  <ul>
+  <li>異方性要素での安定性と誤差評価</li>
+  <li>幾何条件と DG 法の関係</li>
+  <li>Nitsche 法＋異方性補間誤差評価の展望</li>
+  </ul>
+  <li>Medius Analysis の登場</li>
+  <ul>
+  <li>誤差解析を簡潔化し，かつ安定性を保証する新手法</li>
+  <li>DG法における適用例</li>
+  </ul>
+  <li>応用：流体問題とインターフェイス問題</li>
+  <ul>
+  <li>Stokes/Navier–Stokes 方程式</li>
+  <li>インターフェイスを含む拡散問題</li>
+  </ul>
+  <li>まとめと発展</li>
+  <ul>
+  <li>DG 法の数理構造の抽象化</li>
+  <li>Medius Analysis による非適合要素・DG の統一解析の可能性</li>
+  <li>CutFEM・異方性 FEM への接続</li>
+  <li>今後の研究課題と未解決問題</li>
+  </ul>
+</ol>
+到達目標
+<ul>
+  <li>DG 法の弱形式を自分で導出できる．</li>
+  <li>代表的な DG スキーム（IP 法，SIP/NIP 法）の特徴を説明できる．</li>
+  <li>Nitsche 法を通して境界条件処理の仕組みを理解する．</li>
+  <li>異方性や移動境界問題など応用的テーマに接続できる．</li>
+</ul>
+
+<br><br>
+Under construction<br><br>
+(1st September 2025 <span class="cat cat001">Update</span>)
+</p>
+</article>
+</div>
+
+
 
 <h3>複素PDEと有限要素法</h3>
 <div class="news">
