@@ -397,58 +397,35 @@ Under construction<br><br>
 <article class="news-item">
 <p class="news-cont">
 ここでは，Visionsの主軸テーマから少し離れたアイディアをまとめます．内容は未解決問題や教育的題材を含みます．<br><br>
+「A. 教育的テーマ」です．
 
-Under construction<br><br>
-(1st September 2025 <span class="cat cat001">Update</span>)
-</p>
-</article>
-</div>
-
-<h3>A. 教育的テーマ</h3>
-<h4>Supplementary Vision A1: 複素 PDE と有限要素法</h4>
-<div class="news">
-<article class="news-item">
-<p class="news-cont">
+<h4>Supplementary Vision A1: 複素PDEと有限要素法</h4>
 複素数を変数に含む偏微分方程式は，量子力学や時間調和波動問題などに現れます．実数 PDE と理論的な構造は似ていますが，エネルギー保存や半ノルム誤差評価など，複素数特有の性質を考慮する必要があります．この違いを調べることは，Céa 補題や安定性の理解を深める教材として有効です．教育的には「実と複素の違いを通して理論の本質を学ぶ」場となり，学生にとって身近なテーマとして取り組みやすい内容だと思います．
 
-<br><br>
+<h4>Supplementary Vision A2: 有限要素法に残る未解決問題 ― Never Ending Story</h4>
+有限要素法（FEM）は，熱伝導や流体，構造解析など幅広い分野で標準的に使われる数値解析手法です．一見，完成された理論に見えますが，実際には「まだ解けていない」重要な課題が数多く残されています．<br><br>
 
+このことを象徴するのが，V. Johnらによる論文 "Finite elements for scalar convection-dominated equations and incompressible flow problems – a never ending story?" です．論文タイトルが示すように，FEMには「終わらない物語」とも言うべき未解決問題が存在します．
+<ol>
+  <li>移流支配問題での数値振動</li>
+  古典的な有限要素法を移流支配型の方程式にそのまま使うと，数値解が大きく振動してしまいます．なぜうまくいかないのか，どの条件なら安定になるのか，完全な理解はいまだ得られていません．
+  <li>安定化手法の多様性と普遍性</li>
+  SUPG法，CIP法，局所投影安定化（LPS）など，数多くの安定化スキームが提案されています．しかし「どの手法が最も普遍的か」「理論と実装の両面で最適なのか」という問いには，まだ明確な答えがありません．
+  <li>誤差評価と適応メッシュ</li>
+  数値解の信頼性を保証するために，誤差を事後的に評価し，メッシュを細かく調整する（適応メッシュ）手法があります．ただし「誤差評価がどこまで信頼できるか」「異方性メッシュで本当に最適化できるか」は未解決の部分が多く残っています．
+  <li>非線形流体方程式への挑戦</li>
+  ナヴィエ–ストークス方程式のような非線形流体方程式では，数値安定性と物理的安定性の両立が難題です．長時間の計算で解が破綻しないスキームをどう設計するか，いまだに挑戦が続けられています．
+</ol>
+こうした未解決問題の存在は，「数学や数値解析は完成された学問ではなく，今も発展し続けている」ことを示しています．大学や大学院で学ぶときに，単に定理や公式を覚えるのではなく，「なぜこれが難しいのか」「どこに改良の余地があるのか」を知ることは，研究への入り口として大きな意義があります．既存の理論を学ぶこと」と「残された課題に挑むこと」が地続きであることを理解するきっかけになるでしょう．<br><br>
+
+有限要素法の Never Ending Story は，まさに「次の世代が続きを書いていく物語」なのです．
+
+<br><br>
 Under construction<br><br>
 (1st September 2025 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
-
-<h3>B. 挑戦的研究テーマ</h3>
-<h4>Supplementary Vision B1: 多角形要素と star-shaped 条件の拡張</h4>
-<div class="news">
-<article class="news-item">
-<p class="news-cont">
-Polygonal FEM や Virtual Element Method (VEM) では，多角形要素の安定性を保証するために star-shaped 条件が広く用いられています．しかし極端な異方性を持つ要素に対しては均衡性条件が破れる可能性があり，「異方性を許容する新しい幾何条件」の構築が課題です．この方向は，FEM の幾何条件理論と多角形 FEM の橋渡しを担う挑戦的テーマです．
-
-<br><br>
-
-Under construction<br><br>
-(1st September 2025 <span class="cat cat001">Update</span>)
-</p>
-</article>
-</div>
-
-<h4>Supplementary Vision B2: メッシュレス手法と幾何条件</h4>
-<div class="news">
-<article class="news-item">
-<p class="news-cont">
-SPH，EFG，PINNs などのメッシュレス法でも，点配置の不均衡が不安定性や誤差増大を引き起こすことが知られています．これは FEM における shape-regularity 条件に対応する「暗黙の幾何条件」とみなせます．幾何パラメータを利用して，粒子法や PINNs のサンプリング点配置の安定性を保証する理論を構築できれば，機械学習・シミュレーション双方に新しい基盤を与えることになります．
-
-
-<br><br>
-
-Under construction<br><br>
-(1st September 2025 <span class="cat cat001">Update</span>)
-</p>
-</article>
-</div>
-
 
 
 
