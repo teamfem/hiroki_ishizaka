@@ -220,16 +220,17 @@ Under construction<br><br>
 </div>
 
 
+
 <h3>Research Memo</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
-<font color="red">できるだけ早く解決したいテーマ</font><br>
+<font color="red"><b>できるだけ早く解決したいテーマ</b></font><br>
 <ol>
 <li>非適合有限要素法における離散ポアンカレ・ソボレフの不等式
 	<ul>
 	<li>準正則幾何条件下での解析</li>
-	<li>領域の凸性の仮定をはずすこと(ポアンカレ不等式)</li>
+	<li>領域の凸性の仮定をはずすこと(ポアンカレ不等式) ⇦ これは完成した？</li>
 	</ul>
 </li>
 </ol>
@@ -252,12 +253,20 @@ Under construction<br><br>
 </li>
 </ol>
 
+ラグランジュ有限要素法についてのメモ
+<ol>
+<li>【可能性】ラグランジュ有限要素法のように要素間連続性を課す場合でも，Hypercircle 法を介して RT 型の異方性誤差評価を利用することで，ラグランジュ系に対しても異方性誤差評価を導ける可能性があります．</li>
+<li>【注意（3次元の補間について）】ラグランジュ法の古典的誤差解析は，多くの場合，ガレルキン直交性 → 関数近似へと帰着させ，その過程で古典的補間を用います．しかし三次元異方性誤差評価では \( p > 2 \) といった条件が付随します．Scott–Zhang や Clément 補間への置換で無条件に回避できるかは要検証であり，Hypercircle 法を経由できれば，特異点近傍の評価まで同時に得られることが期待されます．</li>
+</ol>
+
+
 <br><br>
 Under construction<br><br>
-(  2025 <span class="cat cat001">Update</span>)
+(3rd September 2025 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
+
 
 <h2>A. 有限要素法における誤差解析再考(仮)</h2>
 <h3>新しい視点からの補間誤差解析</h3>
