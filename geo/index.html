@@ -227,6 +227,30 @@ Under construction<br><br>
 </article>
 </div>
 
+<h2>Flatness 条件の利点</h2>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+有限要素法の補間誤差評価において，古典的には 最大角条件（Babuška–Aziz, 1976 など）や 最小角条件 が主要な役割を果たしてきました．しかし，これらの角度条件は要素の局所的な角度に依存するため，理論的にも計算実装的にも扱いにくい側面がありました．<br><br>
+
+Apel (1999) による Anisotropic Finite Element Methods では，oordinate system condition を導入し，局所座標変換を用いて異方性誤差評価を確立しました．この条件は回転を含めて定式化できますが，依然として 座標依存的 であり，反映を自然に含めることは想定されていません．<br><br>
+
+これに対して，我々が導入した flatness 条件 は，単体の「つぶれ具合」を一つの指標で定量化するものであり，以下の利点を持ちます：
+<ul>
+      <li><b>計算の容易さ：</b> 角度の逐次的検査ではなく，単純な式で容易に評価できる．</li>
+      <li><b>理論の透明性：</b> 補間誤差評価における証明を整理し，従来より透明な形で与えることができる．</li>
+      <li><b>座標非依存性：</b> 回転や反映を区別せず包含でき，条件の記述が座標系に依存しない．</li>
+      <li><b>実装への直結性：</b> 事後誤差評価や適応 FEM に組み込みやすい．</li>
+ </ul>
+ さらに，2-step affine 変換と組み合わせることで，異方性補間誤差を従来の角度条件とは異なる表現で 統一的かつ簡潔に 扱えることを示しました．この枠組みは，事後誤差評価や適応 FEM の実装にも直接的に結びつき，今後は space–time FEM や高次非適合要素への拡張が期待されます．
+ 
+<br><br>
+Under construction<br><br>
+(10th September 2025 <span class="cat cat001">Update</span>)
+</p>
+</article>
+</div>
+
 
 <h2>球面・多様体上の幾何条件のこれまで</h2>
 <div class="news">
