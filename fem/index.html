@@ -566,6 +566,25 @@ Under construction<br><br>
 </article>
 </div>
 
+<h3>Vision 16: 異方性メッシュを許容する VEM 理論の構築</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+Virtual Element Method (VEM) は polygon/polyhedron 要素を直接扱える柔軟な枠組みとして発展してきました．しかし，その安定性と収束性の理論は star-shaped 性や shape-regularity といった「均衡性条件」を前提にしており，極端に細長い要素や graded mesh といった異方性要素には対応できていません．境界層や特異点近傍のシミュレーションには異方性メッシュが不可欠ですが，現行の VEM ではその効果を理論的に正しく扱えないという制約があります．<br><br>
+
+私が導入した flatness 条件や 2-step affine 変換の枠組みを VEM に拡張することで，座標非依存かつ透明な形で異方性誤差評価を可能にし，shape-regularity に依存しない VEM 理論を確立することを目指します．これにより，FEM と VEM の理論をつなぎ，より柔軟で精密な数値解析の基盤を提供できると考えています．長期的には，CutFEM や Deep Ritz 法とも連携させ，非適合境界・異方性・幾何条件を統合的に扱う自動化解析へと展開することを視野に入れています．<br><br>
+
+関連する Vision:
+<ul>
+  <li>Vision 3：多角形要素と star-shaped 条件</li>
+  <li>Vision 2c / Vision 2： 異方性を含む新手法への応用可能性</li>
+</ul>
+
+Under construction<br><br>
+(10th September 2025 <span class="cat cat001">Update</span>)
+</p>
+</article>
+</div>
 
 
 <!--<h3>(仮)</h3>
