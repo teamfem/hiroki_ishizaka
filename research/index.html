@@ -62,7 +62,7 @@
 				<li>
 					<a href="../fem/">Research Visions</a>
 				</li>
-
+				
 				<li>
 					<a href="../suppl/">Supplementary Visions</a>
 				</li>
@@ -132,9 +132,58 @@
 </ol>
 
 
-この４本柱を基盤として，このページで紹介する内容は，私が掲げている将来構想「Research Visions」と密接に結びついています．Visions では，幾何条件理論の深化，深層学習との融合，数値計算の自動化，気候変動や異常現象の数理解析など，今後の研究の方向性を体系的に整理しています．これまでの研究の積み重ねを「過去と現在」，そして Visions を「未来」として位置づけることで，全体としてひとつのストーリーを形にしています．<br><br>
+この４本柱を基盤として，このページで紹介する内容は，私が掲げている将来構想「Research Visions」と密接に結びついています．これらの４本柱は，有限要素法を「FEM 2.0」として再設計するうえでの目標（横軸）を表しています．一方で，実際の研究テーマは，これらの目標を貫く3つの Research Line（縦軸）に整理できます．3つの Research Line（縦軸）：
 
-また，幾何条件の歴史を整理したページ「History of Geometric Conditions in FEM」も公開しており，1950年代から現代までの発展をまとめています．これは，異方性解析や新しい幾何パラメータの提案といった私の研究の背景を理解する上でも重要な資料となっています．研究ページ，Visions，そして History ページをあわせてご覧いただくことで，研究の広がりと一貫性を感じていただけるはずです．<br><br>
+<ul>
+  <li>Research Line G：Geometry & Anisotropic FEM Theory<br>
+  flatness parameter・準正則条件・二段変換などの幾何パラメータを用いて，異方性メッシュ上の補間誤差評価，非適合・混合・DGの解析，離散Sobolev/Korn不等式や幾何条件の体系化を行うラインです．（最大角条件と同値な新しい幾何条件や異方性補間理論など，既発表論文の多くがここに属します．）</li>
+  <li>Research Line R：Reliable & Goal-Oriented PDE Simulation<br>
+  BDF/FBDFや分数階時間微分を含む時間発展問題，圧力ロバストなStokes/ナヴィエ–ストークス方程などを対象に，functional型誤差評価やhypercircle法，平衡化フラックスを用いた，目的量志向・精度保証付き（verified）シミュレーションを構築するラインです．</li>
+  <li>Research Line A：Automation, Learning & New Numerical Methods<br>
+  幾何パラメータや誤差指標を特徴量として利用し，アダプティブFEM・メッシュ生成・スキーム選択の自動化や，PINNs・Deep Ritz・メッシュレス法との比較・統合を行うラインです．「表現・計量・射影」という共通の視点から，FEMsと機械学習ベース手法を比較します．</li>
+</ul>
+
+<h4>FEM 2.0 の 4本柱（目標） × 3つの Research Line（流れ）</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>Research Line \ Goal</th>
+      <th>効率性（Efficiency）</th>
+      <th>抽象化（Abstraction）</th>
+      <th>自動化（Automation）</th>
+      <th>応用（Application）</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th><strong>G：幾何・異方性 FEM 理論</strong></th>
+      <td>異方性補間誤差による計算量削減，必要な部分だけを細かくするメッシュ設計</td>
+      <td>flatness parameter・準正則条件・離散Sobolev不等式など，幾何条件の抽象化</td>
+      <td>幾何パラメータに基づく anisotropic AFEM の設計</td>
+      <td>球面，多角形，CutFEMなど複雑形状領域でのFEM理論</td>
+    </tr>
+    <tr>
+      <th><strong>R：信頼性・目的量志向シミュレーション</strong></th>
+      <td>半ノルム誤差や主誤差に注目した「必要なところだけ高精度」な計算</td>
+      <td>目的量 J と dual 問題の抽象化，goal-oriented 誤差評価枠組みの整理</td>
+      <td>functional / hypercircle 型 majorant による精度保証付き AFEM，CR/RT を用いた verified 計算</td>
+      <td>圧力ロバスト Stokes/NS，分数階時間 PDE，長時間安定シミュレーションへの適用</td>
+    </tr>
+    <tr>
+      <th><strong>A：自動化・機械学習・新解法</strong></th>
+      <td>学習に基づくパラメータ・メッシュ戦略の自動チューニング</td>
+      <td>「表現・計量・射影」による FEM／PINNs／Deep Ritz の共通フレーム</td>
+      <td>幾何パラメータ・誤差指標を特徴量とする AFEM・メッシュ生成・スキーム選択の自動化</td>
+      <td>気候・防災・工学系シミュレーションとデータサイエンスとの接続</td>
+    </tr>
+  </tbody>
+</table>
+
+
+Visionsでは，幾何条件理論の深化，深層学習との融合，数値計算の自動化，気候変動や異常現象の数理解析など，今後の研究の方向性を体系的に整理しています．これまでの研究の積み重ねを「過去と現在」，そしてVisionsを「未来」として位置づけることで，全体としてひとつのストーリーを形にしています．各Visionは，上の 3つのResearch Line（G／R／A）のいずれか（または複数）に属しており，このページでは主に「これまでの到達点」，Visions では「今後の展開」を表しています．<br><br>
+
+また，幾何条件の歴史を整理したページ「History of Geometric Conditions in FEM」も公開しており，1950年代から現代までの発展をまとめています．これは，異方性解析や新しい幾何パラメータの提案といった私の研究の背景を理解する上でも重要な資料となっています．研究ページ，Visions，そして Historyページをあわせてご覧いただくことで，研究の広がりと一貫性を感じていただけるはずです．<br><br>
 
 これらのページとあわせて読んでいただくことで，研究の背景（History），現在の試行錯誤（Research），そして将来の展望（Visions）がひとつのストーリーとして見えてくると思います．<br><br>
 
@@ -220,7 +269,6 @@ Under construction<br><br>
 </div>
 
 
-
 <h3>Research Memo</h3>
 <div class="news">
 <article class="news-item">
@@ -266,11 +314,10 @@ Under construction<br><br>
 
 <br><br>
 Under construction<br><br>
-(15th September 2025 <span class="cat cat001">Update</span>)
+(3rd September 2025 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
-
 
 <h2>A. 有限要素法における誤差解析再考(仮)</h2>
 <h3>新しい視点からの補間誤差解析</h3>
