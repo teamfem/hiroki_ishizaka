@@ -203,8 +203,9 @@ DWR（Dual Weighted Residual）で目標汎関数の中心推定を作り，ハ�
 <h3>Short papers (1D-first, quick-to-publish)</h3>
 
 [O7] <b>H. Ishizaka</b>: (temporary title) Weak-moment CIP finite elements within a unified semi-Lagrangian projection framework <br>
-CIP（Constrained Interpolation Profile）系の「プロファイル（モーメント）を持つDOF」を“弱DOF（weak moments）”として再定式化し，semi-Lagrangian / Lagrange–Galerkin 型の射影フレームワークに統一します．まず，空間1次元で，安定性・誤差評価・（可能なら）高解像度性の理論的説明までまとめます．
- <br><hr>
+<!--CIP（Constrained Interpolation Profile）系の「プロファイル（モーメント）を持つDOF」を“弱DOF（weak moments）”として再定式化し，semi-Lagrangian / Lagrange–Galerkin 型の射影フレームワークに統一します．まず，空間1次元で，安定性・誤差評価・（可能なら）高解像度性の理論的説明までまとめます．-->
+CIPにはConstrained Interpolation Profile（プロファイル復元型）とContinuous Interior Penalty（内点ペナルティ型）の2系統があり，どちらも「正則化（regularisation）」に関わります．本研究では前者（プロファイル復元型CIP）を対象とし，点値の導関数DOFに依存せず，弱モーメント（weak moments）でプロファイル情報を保持することで，より弱い正則性仮定の下で semi-Lagrangian / Lagrange–Galerkin 型の射影フレームワークへ統一します．まず空間1次元で安定性・誤差評価・（可能なら）高解像度性の理論的説明までまとめます．
+<br><hr>
 
 [O6] <b>H. Ishizaka</b>: (temporary title)　Richardson extrapolation for time-fractional diffusion: a unified analysis for three convolution schemes <br>
 分数時間拡散に対する3種類の畳み込み型時間離散（例：L1，L2-1σ，convolution quadrature 等）を同一の解析枠で扱い，Richardson extrapolation による高次化を理論的に整理します．初期特異性による次数低下に対して，補正・刻み（graded mesh）・外挿の関係を統一的に説明します．
