@@ -61,11 +61,11 @@
 				<li>
 					<a href="../fem/">Research Visions</a>
 				</li>
-
+				
 				<li>
 					<a href="../suppl/">Supplementary Visions</a>
 				</li>
-
+				
 				<li>
 					<a href="../geo/">History of Geometric Conditions in FEM</a>
 				</li>
@@ -114,8 +114,6 @@
 
 <h1 class="section-title">Publications/Talks</h1>
 
-
-
 <h2>Publications</h2>
 * Corresponding author
 
@@ -147,7 +145,7 @@ Correction to: General theory of interpolation error estimates on anisotropic me
 </p>
 </article>
 </div>
-				
+
 <h3>NotebookLM</h3>
 <div class="news">
 <article class="news-item">
@@ -160,6 +158,7 @@ Correction to: General theory of interpolation error estimates on anisotropic me
 </p>
 </article>
 </div>
+
 
 <h2>Notes</h2>
 <div class="news">
@@ -178,33 +177,46 @@ Poisson equation, Ver. 1. [<a href="https://arxiv.org/abs/2403.07899" target="_b
 <article class="news-item">
 <p class="news-cont">
 
-[O6] <b>H. Ishizaka</b>: (temporary title) Goal-oriented anisotropic error control on semi-regular meshes: synthesising residual and hypercircle estimators (6th September 2025 <span class="cat cat001">Update</span>)<br>
-DWR（Dual Weighted Residual）をハイパーサークルの平衡化主量で包み，目標汎関数の保証付き上界を構成します．異方性下での等価性と DWR を両立し，ゴール指向 AFEM の基盤を与えます．
+25th December 2025 <span class="cat cat001">Last updated</span>
+
+<h3>Flagship (Top priority)</h3>
+
+[O6] <b>H. Ishizaka</b>: (temporary title) Certified DWR with explicit CR–RT equilibrated fluxes on anisotropic meshes <br>
+DWR（Dual Weighted Residual）で目標汎関数の中心推定を作り，ハイパーサークル型の平衡化主量で「外さない半径」を与えて，目的量を区間として確定（Verified Output）します．CR-RT の明示同値性（3D・最大角条件なし）を平衡フラックス構成に直結させ，局所混合問題を解かずに認証を軽量化します．半線形モデルに拡張し，Newton–Kantorovich 型の a posteriori existence（局所一意性つき）と目的量の区間確定を与えます．
 <br><hr>
 
+<h3>Active (Near-term)</h3>
 
-[O5] <b>H. Ishizaka</b>: (temporary title) Anisotropic a posteriori error estimates via the hypercircle method on semi-regular meshes (6th September 2025 <span class="cat cat001">Update</span>)<br>
-Poisson を原型に，ハイパーサークル法を異方性対応へ拡張します．保証付き上界と効率性を明示します．異方性 AFEMへの実装指針も示します．
-<br><hr>
-
-[O4] <b>H. Ishizaka</b>: (temporary title) Pressure-robust CR Stokes with symmetric gradient on semi-regular meshes: a discrete Korn with minimal jump control (6th September 2025 <span class="cat cat001">Update</span>)<br>
-準正則（異方性）メッシュ上で，CR 要素に安定化を入れることで離散 Kornを確立することを目指す．さらに再構成（H(div)への持上げ）により圧力ロバストな対称勾配型 Stokes 離散化を与え，速度誤差が圧力に依存しない主定理と異方性レートを示す．
+[O4] <b>H. Ishizaka</b>: (temporary title) Pressure-robust CR Stokes with symmetric gradient on semi-regular meshes: a discrete Korn with minimal jump control <br>
+準正則（異方性）メッシュ上で，CR要素＋最小ジャンプ制御で離散Kornを確立し，再構成（H(div)への持ち上げ）により圧力ロバストな対称勾配型 Stokes 離散化を与えます．
 <br><hr>
  
-[O3] <b>H. Ishizaka</b>: (temporary title) Pressure-robust time-discretisations for the Stokes problem: from BDF2 to fractional BDF schemes (4th September 2025 <span class="cat cat001">Update</span>)<br>
-圧力ロバスト性を保証する時間発展スキームはまだ体系化されていません．BDF2 のような古典スキームから，分数階 BDF（FBDF）まで拡張し，長時間積分でも安定に動作することを理論的に示します．
+[O3] <b>H. Ishizaka</b>: (temporary title) Pressure-robust time-discretisations for the Stokes problem: from BDF2 to fractional BDF schemes <br>
+圧力ロバスト性を保つ時間発展スキームを体系化します．BDF2 から分数階BDF（FBDF）まで拡張し，長時間積分でも安定に動作する理論保証を与えます．
  <br><hr>
  
-[O2] <b>H. Ishizaka</b>: (temporary title)　Analysis of Nitsche's method for the diffusion-advection equation on semi-regular meshes　(4th September 2025 <span class="cat cat001">Update</span>)<br>
-歪対称＋流入寄与付きニッチェ＋準整合SUPGからなるスキームを提示し，それをCR要素と準正則幾何条件に直結させます．
+[O2] <b>H. Ishizaka</b>: (temporary title)　Analysis of Nitsche's method for the diffusion-advection equation on semi-regular meshes <br>
+歪対称＋流入寄与付きNitsche＋（準整合）安定化からなるスキームを提示し，CR要素と準正則幾何条件に直結させます．
 <br><hr>
 
-[O1b] <b>H. Ishizaka</b>: (temporary title) Average-type quasi-interpolation for H(div)/H(curl) on anisotropic meshes: fractional-order error estimates via two-step transformations　(22nd September 2025 <span class="cat cat001">Update</span>)<br>
+<h3>Short papers (1D-first, quick-to-publish)</h3>
+
+[O8] <b>H. Ishizaka</b>: (temporary title) Weak-moment CIP finite elements within a unified semi-Lagrangian projection framework <br>
+CIP（Constrained Interpolation Profile）系の「プロファイル（モーメント）を持つDOF」を“弱DOF（weak moments）”として再定式化し，semi-Lagrangian / Lagrange–Galerkin 型の射影フレームワークに統一します．まず，空間1次元で，安定性・誤差評価・（可能なら）高解像度性の理論的説明までまとめます．
+ <br><hr>
+
+[O7] <b>H. Ishizaka</b>: (temporary title)　Richardson extrapolation for time-fractional diffusion: a unified analysis for three convolution schemes <br>
+分数時間拡散に対する3種類の畳み込み型時間離散（例：L1，L2-1σ，convolution quadrature 等）を同一の解析枠で扱い，Richardson extrapolation による高次化を理論的に整理します．初期特異性による次数低下に対して，補正・刻み（graded mesh）・外挿の関係を統一的に説明します．
 <br><hr>
 
-[O1a] <b>H. Ishizaka</b>: (temporary title) Unified anisotropic interpolation error estimates for H(div)/H(curl) elements via two-step transformations and weakly-defined boundary moments　(22nd September 2025 <span class="cat cat001">Update</span>)<br>
+
+<h3>Technical backbone (Longer-term)</h3>
+
+[O1b] <b>H. Ishizaka</b>: (temporary title) Average-type quasi-interpolation for H(div)/H(curl) on anisotropic meshes: fractional-order error estimates via two-step transformations <br>
 <br><hr>
 
+[O1a] <b>H. Ishizaka</b>: (temporary title) Unified anisotropic interpolation error estimates for H(div)/H(curl) elements via two-step transformations and weakly-defined boundary moments <br>
+<br><hr>
 
 </p>
 </article>
@@ -229,8 +241,6 @@ Poisson を原型に，ハイパーサークル法を異方性対応へ拡張し
 </p>
 </article>
 </div>
-
-
 
 <h2>Presentations</h2>
 <div class="news">
