@@ -180,7 +180,7 @@ Poisson equation, Ver. 1. [<a href="https://arxiv.org/abs/2403.07899" target="_b
 <p class="news-cont">
 現在進行中の探索的トピックです．論文化は今後の検証次第ですが，発展性が高いと考えており，最小モデルから体系化を進めています．既存手法との関係（同値性／差別化点）を整理し，論文化の射程を定めています．
 <br><br>
-7th January 2026 <span class="cat cat001">Last Update</span>
+9th January 2026 <span class="cat cat001">Last Update</span>
 
 <h3>Flagship (Top priority)</h3>
 
@@ -227,14 +227,26 @@ Burman型CIP（Continuous Interior Penalty）を「要素間の高周波勾配�
 
 <h3>Technical backbone (Longer-term)</h3>
 
-[O1c] <b>H. Ishizaka</b>: (temporary title) Coordinate-free anisotropic error estimates via exterior algebra and the de Rham complex <br>
-準正則（異方性）メッシュ上の two-step transformations/Piola 変換に基づく補間理論を，外部代数（Λk）と de Rham complex（微分形式の観点）により座標自由（coordinate-free）に再定式化し，一般次元での拡張可能性とボトルネック（RTのfacet momentsの異方性評価）を整理する．
+[O8a] <b>H. Ishizaka</b>: (temporary title) Certified learning-assisted anisotropic mesh adaptation under a semi-regular mesh condition. <br>
+GNN（グラフニューラルネット）で局所誤差指標や細分化方向を提案し，DWR/残差型の事後誤差評価で信頼性を“検定”して破綻を防ぐ枠組みを構築します．
+<br><hr>
+
+[O8b] <b>H. Ishizaka</b>: (temporary title) Geometry-aware neural operators on anisotropic meshes with a semi-regularity parameter. <br>
+非構造・異方性メッシュでも一般化しやすいように，メッシュ幾何（要素形状・局所スケール・準正則性を表す量など）を特徴量としてニューラル・オペレータに組み込み，解写像（関数→関数）近似の頑健化を狙います．
+<br><hr>
+
+[O8c] <b>H. Ishizaka</b>: (temporary title) PINN–FEM hybrid with computable error auditing on stabilised discretisations. <br>
+PINN（Physics-Informed Neural Networks）を近似器として用いつつ，最終的な精度保証は安定化FEMと計算可能な事後誤差評価で行う「監査付き」ハイブリッド解法を検討します（学習が外しても検出できる設計）．
+<br><hr>
+
+[O1a] <b>H. Ishizaka</b>: (temporary title) Unified anisotropic interpolation error estimates for H(div)/H(curl) elements via two-step transformations and weakly-defined boundary moments <br>
 <br><hr>
 
 [O1b] <b>H. Ishizaka</b>: (temporary title) Average-type quasi-interpolation for H(div)/H(curl) on anisotropic meshes: fractional-order error estimates via two-step transformations <br>
 <br><hr>
 
-[O1a] <b>H. Ishizaka</b>: (temporary title) Unified anisotropic interpolation error estimates for H(div)/H(curl) elements via two-step transformations and weakly-defined boundary moments <br>
+[O1c] <b>H. Ishizaka</b>: (temporary title) Coordinate-free anisotropic error estimates via exterior algebra and the de Rham complex <br>
+準正則（異方性）メッシュ上の two-step transformations/Piola 変換に基づく補間理論を，外部代数（Λk）と de Rham complex（微分形式の観点）により座標自由（coordinate-free）に再定式化し，一般次元での拡張可能性とボトルネック（RTのfacet momentsの異方性評価）を整理する．
 <br><hr>
 
 </p>
@@ -293,7 +305,7 @@ Burman型CIP（Continuous Interior Penalty）を「要素間の高周波勾配�
 <h3>Crouzeix-Raviart FEMs</h3>
 <article class="news-item">
 <p class="news-cont">
-Papers: [2][9][10][PhD Thesis]<br><br>
+Papers: [2][9][10][11][PhD Thesis]<br><br>
 Presentations: [P2][P3][P4]<br><br>
 Notes: [N2]
 </p>
