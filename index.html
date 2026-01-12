@@ -130,7 +130,7 @@ PhD-level Numerical Analyst｜Scientific‑Computing SME (PDEs & FEMs)｜AI Eval
 デジタルツインとは, 現実世界の情報をデジタル空間にコピーし, 将来予測などのシミュレーションを行い, その結果を現実の意思決定へフィードバックする枠組みです. <br>
 実際に, 防災・都市計画の文脈でデジタルツイン活用 (例: <a href="https://www.city.kobe.lg.jp/a93584/516920176162.html" target="_blank">神戸市×ドコモ×理研R-CCS「富岳」を活用したデジタルツインシミュレーション</a>)が進んでいます.<br>
 この段階で重要になるのは"見た目がもっともらしい"ではなく, "どこまで信じてよいか"を説明できるモデルの信憑性(credibility)です. そのために工学ではVerification/Validation/Uncertainty Quantification (<a href="https://www.asme.org/codes-standards/publications-information/verification-validation-uncertainty" target="_blank">VVUQ (ASME)</a>)が重視されます. <br>
-一方、物理系ML (PINNs等)は, 課題が難しくなると重要な物理現象を学べずに失敗することが報告されており, "信頼性レイヤ(＝予測値に誤差・不確かさ・危険領域の情報を付与し, 意思決定に耐える形にする枠組み)"が不可欠です.<br>
+一方, 物理系ML (PINNs等)は, 課題が難しくなると重要な物理現象を学べずに失敗することが報告されており, "信頼性レイヤ(＝予測値に誤差・不確かさ・危険領域の情報を付与し, 意思決定に耐える形にする枠組み)"が不可欠です.<br>
 そこで, 幾何 (メッシュ)・異方性解析・誤差評価 (error control)を核に、シミュレーションやデータ駆動モデルに対して"危ない領域" "必要な解像度" "目的量に対する誤差"を定量化し, 意思決定に耐えうるtrustworthy simulationを数学で支えることを目指します.<br><br>
 
 <b>Research Attitude and Perspectives</b><br>
@@ -157,8 +157,15 @@ This website is organised accordingly:
   <li>Research Visions collects open directions and long-term ideas, indexed by the three lines above.</li>
   <li>History of Geometric Conditions in FEMs records the geometric side of Line G.</li>
 </ul>
+<br><br>
+<b>What this enables</b><br>
+<ul>
+  <li>Decision-ready simulation: 目的量(QoI)に対して"どこまで信じてよいか"を誤差・不確かさで定量化</li>
+  <li>Beyond ideal meshes: 現実的な(歪んだ/異方性)メッシュでも理論と実装が噛み合う枠組み</li>
+  <li>Automation hooks: 要素ごとに計算できる幾何量＋誤差指標で, 適応・品質管理・設計判断を半自動化</li>
+</ul>
 
-
+<br><br>
 <p><b><span style="color:red;">
 This site includes open directions (proposals). Published results are clearly labelled and linked on the Publications and Research pages.
 </span></b></p>
