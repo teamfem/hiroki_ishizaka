@@ -124,15 +124,16 @@ PhD-level Numerical Analyst｜Scientific‑Computing SME (PDEs & FEMs)｜AI Eval
 <br><br>
 <b>"Mathematics for trustworthy simulation, built on geometry. Reliable methods, quantified uncertainty."</b><br>
 <b>有限要素解の精度を上げる3つの戦略</b><br>
-"スキーム設計" × "メッシュ制御" × "コデザイン" = "誤差制御 (error control)"<br><br>
+"スキーム設計" × "メッシュ制御" × "コデザイン" = "誤差制御 (error control)"<br>
 これを, 数理(解析)×計算(実装)×データ(AI/同定)の協調設計として拡張します．<br><br>
 
 <b>Why “Trustworthy Simulation” now? - Digital Twins & Model Credibility</b><br>
+<b>"予測を作る"のではなく, "予測の信用度"を数学で作る</b><br>
 デジタルツインとは, 現実世界の情報をデジタル空間にコピーし, 将来予測などのシミュレーションを行い, その結果を現実の意思決定へフィードバックする枠組みです. <br>
 実際に, 防災・都市計画の文脈でデジタルツイン活用 (例: <a href="https://www.city.kobe.lg.jp/a93584/516920176162.html" target="_blank">神戸市×ドコモ×理研R-CCS「富岳」を活用したデジタルツインシミュレーション</a>)が進んでいます.<br>
 この段階で重要になるのは"見た目がもっともらしい"ではなく, "どこまで信じてよいか"を説明できるモデルの信憑性(credibility)です. そのために工学ではVerification/Validation/Uncertainty Quantification (<a href="https://www.asme.org/codes-standards/publications-information/verification-validation-uncertainty" target="_blank">VVUQ (ASME)</a>)が重視されます. <br>
 一方, 物理系ML(PINNs等)は, 単純な設定では成功例が多い一方, 対流・反応・多スケール・高周波成分などで問題が少し複雑になると, 重要な物理現象を十分に学べず失敗するケースが報告されており(参考: <a href="https://arxiv.org/abs/2109.01050" target="_blank">Characterizing possible failure modes in physics-informed neural networks</a>), "信頼性レイヤ(＝予測値に誤差・不確かさ・危険領域の情報を付与し, 意思決定に耐える形にする枠組み)"が不可欠です.<br>
-つまり, 数値計算で難しい問題(境界層・多スケール・保存則・外挿など)は，物理系ML(PINNs等)でも同様に難しく, "もっともらしく外れる"ことがあります. だからこそ, 予測値だけでなく, 誤差や不確かさ, 危険領域を定量化する“信頼性の枠組み(誤差制御)”が重要になってきます.<br>
+つまり, 数値計算で難しい問題(境界層・多スケール・保存則・外挿など)は，物理系ML(PINNs等)でも同様に難しく, "もっともらしく外れる"ことがあります. だからこそ, 予測値だけでなく, 誤差や不確かさ, 危険領域を定量化する“信頼性の枠組み(誤差制御)”が重要になってます.<br>
 そこで, 幾何 (メッシュ)・異方性解析・誤差評価 (error control)を核に、シミュレーションやデータ駆動モデルに対して"危ない領域" "必要な解像度" "目的量に対する誤差"を定量化し, 意思決定に耐えうるtrustworthy simulationを数学で支えることを目指します.<br><br>
 
 <b>Local outreach (Matsuyama)</b><br>
