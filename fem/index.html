@@ -183,7 +183,7 @@ Research LineとVisionの対応（暫定マップ）:
 
 <br><br>
 This page is updated periodically.<br><br>
-(12th January 2026 <span class="cat cat001">Update</span>)
+(6th February 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
@@ -374,6 +374,105 @@ Linke らによる圧力ロバスト法は，強圧力場でも速度誤差を�
 </p>
 </article>
 </div>
+
+<h3>Vision 7b: 確率係数・データ同定係数・離散安定性を統合した「推論の信頼性」【G】【R】【A】</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+データ同定係数と確率係数を「係数上の測度（分布）」という共通の視点で統一し，PDE前進写像のa posteriori certificate（計算可能な誤差保証）を用いて，(i)データ摂動と(ii)数値離散化が推論出力（推定量・事後期待値・信用区間等）に与える影響を定量化・上界評価する（＝推論の離散安定性を確立する）．<br><br>
+<b>背景・動機（問題意識）</b>
+<ul>
+  <li>不確実性定量評価（UQ）や高次元確率モデルでは計算量と信頼性が課題</li>
+  <li>データ駆動型数値解析（PINNs等を含む）では，従来と異なるV&V（validation & verification）枠組みが必要</li>
+  <li>離散構成を介する解析は摂動に対して不安定になり得るため「離散安定性」の概念が重要</li>
+</ul>
+本Visionは“推論付きシミュレーションの説明責任（reliability/traceability）”を数学的に支えることを狙う．<br><br>
+<b>統一的な見方：係数は「分布」で持つ</b>
+係数\(\nu\)を関数として固定する代わりに，係数空間上の確率測度\(\mu\)として表現する．
+<ul>
+  <li>データ同定（決定論）：\(\mu=\delta_{\nu^\*}\)（一点集中＝ディラック測度）と見なせる極限</li>
+  <li>確率係数モデル：\(\mu\)が幅を持つ（確率係数・確率場）</li>
+  <li>べイズ同定：観測データ\(y\)によって事後分布\(\mu(\cdot|y)\ を得る（広がりは主に推定不確かさを表す）</li>
+</ul>
+この枠組みにより「同定」と「確率係数」を同一言語で扱う．<br><br>
+<b>数学的コア：前進写像とa posteriori certificate</b>
+PDEの前進写像\(G(\nu)\)（係数→解→観測）とその数値近似 \(G_h(nu)\)を考える.  <br><br> 
+目標は計算可能な保証:
+\[
+\|G(\nu)-G_h(\nu)\| \leq \varepsilon_h(\nu)
+\]
+を構成すること（例：equilibrated flux/残差型/DWR型など）.  <br><br>
+ここで重要なのは\(\varepsilon_h(\nu)\)を準正則などの最小限のメッシュ幾何仮定で設計する点.<br><br>
+<b>離散安定性：2つの意味での「安定」</b>
+<ul>
+  <li>データ摂動に対する安定性：観測\(y\)が微小に変化したとき，推論結果（推定量・事後期待値・事後分布）がどれだけ変わるか</li>
+  <li>離散化に対する安定性：前進写像を\(G\)から\(G_h\)に置き換えたとき，推論結果がどれだけ歪むか</li>
+  <li>3つめの項目</li>
+</ul>
+2項目目をa posteriori certificateにより上から抑えることで「推論の信頼性」を数値解析の側から保証する．<br><br>
+<b>近い段階の論文化に向けた“大雑把なの設定</b>
+統一理論をいきなりやらず，主定理1本が閉じる代表クラスで始める．
+<ul>
+  <li>PDE：線形楕円（拡散）問題（次段で Stokes も視野）</li>
+  <li>観測：点観測より先に平均観測（有界線形汎関数）</li>
+  <li>係数：有限次元パラメータ化（KL打ち切り・区分定数など）</li>
+  <li>出力：MAP/事後平均/目的量（QoI）の事後期待値</li>
+</ul>
+
+<b>主定理候補</b>
+証明のターゲットは，例えば次のような形：
+<ul>
+  <li>尤度（あるいは負の対数尤度）差の評価：\(|\Phi(\nu)-\Phi_h(\nu)|\) を \(\varepsilon_h(\nu)\) で抑える</li>
+  <li>その結果として，事後分布の距離（例：Hellinger距離など）やQoI\(f\)の事後期待値誤差
+\[
+|\mathbb{E}_{\mu(\cdot|y)}[f]-\mathbb{E}_{\muμ_h(\cdot|y)}[f]|
+\ \lesssim\ 
+\mathbb{E}_{\mu(\cdot|y)}[\varepsilon_h(\nu)]
+\]
+</li>
+</ul>
+（距離・ノルム・定数依存性はモデルクラスに合わせて選ぶ）<br><br>
+
+<b>新規性</b>
+<ul>
+  <li>「同定係数」と「確率係数」を同一枠組み（測度）で整理（δ-measureが同定の極限）</li>
+  <li>a posteriori certificate → 事後推論誤差という“誤差伝播の橋渡し”を計算可能な形で与える</li>
+  <li>準正則などの幾何条件に基づく定数依存性の透明化によりVerified Outputと自然に接続</li>
+</ul>
+
+<b>数値実験の設計（Evidence plan）</b>
+<ul>
+  <li>高精度参照解（メッシュ極細or別手法）との比較で事後期待値・信用区間の収束を確認</li>
+  <li>certificate駆動の適応化により事後分布の歪みが効率よく減ることを示す</li>
+  <li>データ摂動（ノイズ，観測点/観測領域の変更）に対する頑健性を可視化</li>
+</ul>
+
+<b>論文化の出口条件（Exit criteria）</b>
+<ul>
+  <li>拡散＋平均観測＋有限次元係数）でcertificateに依存する形の主定理</li>
+  <li>実装可能な誤差評価（\(\varepsilon_h\)）と仮定するメッシュ条件が明確</li>
+  <li>数値実験で「収束」「安定性」「コストvs精度」が一貫して示せる</li>
+</ul>
+
+<b>将来拡張</b>
+<ul>
+  <li>無限次元係数（Gaussian random field）や階層モデルへの拡張</li>
+  <li>目的量（QoI）に特化したDWR certificate による “goal-oriented posterior certification”</li>
+  <li>離散構造（グラフ等）を介するデータ解析の安定性とメッシュ幾何・再構成の関係の整理</li>
+</ul>
+
+
+<br><br>
+関連する Vision:
+<ul>
+  <li>Vision 7:確率PDEと幾何条件 </li>
+</ul>
+
+
+</p>
+</article>
+</div>
+
 
 <h3>Vision 8: Richardson外挿法と幾何条件 ― 古典FEM × 深層学習数値解法【R】【A】</h3>
 <div class="news">
