@@ -1,1 +1,11 @@
+---
+title: "Blog"
+listing:
+  contents: posts
+  sort: "date desc"
+  type: default
+  categories: true
+  feed: true
+---
 
+研究ノート，論文メモ，数値実験記録を置いていきます．
