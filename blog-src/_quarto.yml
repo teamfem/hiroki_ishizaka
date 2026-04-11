@@ -4,12 +4,27 @@ project:
 
 website:
   title: "Blog"
+  site-url: "https://teamfem.github.io/hiroki_ishizaka/blog/"
   navbar:
     left:
       - href: index.qmd
-        text: Blog Home
+        text: Blog
+      - href: "https://teamfem.github.io/hiroki_ishizaka/"
+        text: Main Site
+  page-footer:
+    left: "Hiroki Ishizaka"
+    right: "Built with Quarto"
 
 format:
   html:
-    toc: true
+    lang: ja
     theme: cosmo
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-copy: true
+    code-overflow: wrap
+    html-math-method: mathjax
+
+execute:
+  freeze: auto
