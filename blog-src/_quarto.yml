@@ -1,1 +1,15 @@
+project:
+  type: website
+  output-dir: ../blog
 
+website:
+  title: "Blog"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Blog Home
+
+format:
+  html:
+    toc: true
+    theme: cosmo
