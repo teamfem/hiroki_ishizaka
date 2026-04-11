@@ -1,0 +1,11 @@
+project:
+  type: website
+  output-dir: _site
+
+website:
+  title: "Blog"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+  site-url: "https://teamfem.github.io/hiroki_ishizaka/blog/"
