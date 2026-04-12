@@ -3,156 +3,360 @@
 <head>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-<title>Blog | ISHIZAKA Hiroki Website</title>
+<title>FEniCSx を Google Colab で動かし，相対誤差と可視化を確認する | Blog | ISHIZAKA Hiroki Website</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
-<meta name="description" content="Mathematics for Trustworthy Simulation">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,FEniCSx,Google Colab,Finite Element Method,有限要素法">
+<meta name="description" content="FEniCSx を Google Colab で導入し，半線形楕円問題の P1 有限要素近似，相対誤差，メッシュ図，2D/3D 可視化を確認する手順をまとめました．">
 
-<link rel="stylesheet" href="../css/base.css">
-<link rel="stylesheet" href="../css/rwd.css">
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
 
-<link rel="shortcut icon" type="image/x-icon" href="./favicon.ico">
-<link rel="apple-touch-icon" href="./favicon.ico">
-<link rel="apple-touch-icon-precomposed" href="./favicon.ico">
-<link rel="icon" href="./favicon.ico">
+<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
+<link rel="apple-touch-icon" href="../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../favicon.ico">
+<link rel="icon" href="../favicon.ico">
 
 <!--[if lt IE 9]>
-<script src="../js/html5.js"></script>
+<script src="../../js/html5.js"></script>
 <![endif]-->
-<script src="../js/jquery.js" charset="utf-8"></script>
-<script src="../js/jquery-migrate.js" charset="utf-8"></script>
-
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+<style>
+.article-body { line-height: 1.9; }
+.article-body h2 { margin-top: 2.2em; }
+.article-body h3 { margin-top: 1.6em; }
+.article-body pre {
+  background: #f7f7f7;
+  border: 1px solid #ddd;
+  padding: 1em;
+  overflow-x: auto;
+  font-size: 0.92em;
+}
+.article-body code {
+  font-family: Menlo, Consolas, Monaco, monospace;
+}
+.article-meta {
+  color: #666;
+  margin-bottom: 1.2em;
+}
+.note-box {
+  background: #fafafa;
+  border-left: 4px solid #999;
+  padding: 0.8em 1em;
+  margin: 1em 0;
+}
+</style>
 </head>
 
 <body class="page">
 
-<!--▼サイトヘッダー-->
 <header id="top" class="site-header">
-	
 	<div class="site-header-in">
 		<div class="site-header-conts">
-			<p class="site-title"><a href="../">ISHIZAKA Hiroki Website</a></p>
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
 		</div>
 	</div>
 
-	<!--▼グローバルナビ-->
 	<nav class="global-nav">
 		<div class="global-nav-in">
 			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
 			<ul id="menu">
-				<li>
-					<a href="../">Home</a>
-				</li>
-			
-				<li><a href="../publications/">Publications</a></li>
-				
-				<li>
-					<a href="../research/">Research</a>
-				</li>
-				
-				<li>
-					<a href="../fem/">Research Visions</a>
-					<!--
-					<ul>
-						<li><a href="../fem/research01/">Research1</a></li>
-						<li><a href="../fem/research02/">Research2</a></li>
-					</ul>
-					-->
-				</li>
-				
-				<li>
-					<a href="../suppl/">Supplementary Visions</a>
-				</li>
-				
-				<li>
-					<a href="../geo/">History of Geometric Conditions in FEM</a>
-				</li>
-				
-				<li>
-					<a href="../blog/">Blog</a>
-				</li>
-				
-				<li>
-					<a href="../links/">Links</a>
-				</li>
+				<li><a href="../../">Home</a></li>
+				<li><a href="../../publications/">Publications</a></li>
+				<li><a href="../../research/">Research</a></li>
+				<li><a href="../../fem/">Research Visions</a></li>
+				<li><a href="../../suppl/">Supplementary Visions</a></li>
+				<li><a href="../../blog/">Blog</a></li>
+				<li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+				<li><a href="../../links/">Links</a></li>
 			</ul>
 		</div>
 	</nav>
-	<!--▲グローバルナビ-->
-
 </header>
-<!--▲サイトヘッダー-->
 
 <div class="main-body">
 <div class="main-body-in">
 
-	<!--▼パンくずリスト-->
 	<nav class="breadcrumbs">
 		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
 			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
-				<a href="../" itemprop="item">
-				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
-				</a>
+				<a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a>
 				<meta itemprop="position" content="1">
 			</li>
-			<li class="bcl-last">
-				Blog
+			<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../blog/" itemprop="item"><span itemprop="name">Blog</span></a>
+				<meta itemprop="position" content="2">
 			</li>
+			<li class="bcl-last">FEniCSx を Google Colab で動かし，相対誤差と可視化を確認する</li>
 		</ol>
 	</nav>
-	<!--▲パンくずリスト-->
 
-<!--▼メインコンテンツ-->
 <main>
 <div class="main-conts">
 <article class="section-wrap">
-<div class="section-in">
+<div class="section-in article-body">
 
+<h1 class="section-title">FEniCSx を Google Colab で動かし，相対誤差と可視化を確認する</h1>
+<p class="article-meta">2026年4月12日</p>
 
-<h1 class="section-title">Blog</h1>
-<!---->
-<h2>Blog</h2>
-
-<div class="news">
-<article class="news-item">
-<h3 class="news-title">Blog</h3>
-<p class="news-cont">
-<ul>
-    <li><a href="./posts/article1.html">Test</a></li>
-</ul>
+<p>
+このページでは，FEniCSx で書かれた研究用コードを出発点として，主問題の P1 有限要素近似だけを切り出し，Google Colab 上で動かせる形に整理した流れをまとめます．
+あわせて，相対誤差
+\[
+\frac{|u-u_h|_{H^1}}{|u|_{H^1}},\qquad
+\frac{\|u-u_h\|_{L^2}}{\|u\|_{L^2}}
+\]
+の確認，メッシュ分割図の表示，近似解 \(u_h\) の 2D 可視化，さらに 3D surface plot まで行います．
 </p>
-</article>
+
+<h2>1．出発点となったコード</h2>
+
+<p>
+最初に確認した元コードは，単なる PDE ソルバではなく，FEniCSx 上で半線形楕円問題
+\[
+-\Delta u + u^3 = f \quad \text{in }\Omega=(0,1)^2,
+\qquad
+u=0 \quad \text{on }\partial\Omega
+\]
+を解きつつ，検証半径や目的量の認証まで行う研究用スクリプトでした．
+その中から，まずは主問題を解く部分だけを抜き出して，標準的な誤差収束を確認できるように整えました．
+</p>
+
+<h2>2．主問題だけを取り出した簡潔版</h2>
+
+<p>
+主問題では，空間離散として P1 の Lagrange 有限要素を用い，非線形項 \(u^3\) は Newton 法で処理します．
+弱形式は
+\[
+\int_{\Omega} \nabla u_h\cdot\nabla v_h\,dx
++
+\int_{\Omega} u_h^3 v_h\,dx
+=
+\int_{\Omega} f v_h\,dx
+\qquad (\forall v_h\in V_h)
+\]
+です．
+今回の確認では，厳密解として
+\[
+u(x,y)=\sin(\pi x)\sin(\pi y)
+\]
+を用い，それに対応する右辺
+\[
+f=2\pi^2 u + u^3
+\]
+を作りました．
+この設定なら，有限要素近似 \(u_h\) の誤差を直接測ることができます．
+</p>
+
+<h2>3．相対誤差の定義</h2>
+
+<p>
+今回は誤差を絶対誤差ではなく，相対誤差で見ました．具体的には
+</p>
+
+\[
+E_{H^1}^{\mathrm{rel}}
+=
+\frac{|u-u_h|_{H^1}}{|u|_{H^1}},
+\qquad
+E_{L^2}^{\mathrm{rel}}
+=
+\frac{\|u-u_h\|_{L^2}}{\|u\|_{L^2}}
+\]
+
+<p>
+です．厳密解が十分滑らかで，P1 有限要素を用いているので，観測される収束率としては通常
+</p>
+
+<ul>
+<li>relative H1 seminorm error \(\sim O(h)\)</li>
+<li>relative L2 norm error \(\sim O(h^2)\)</li>
+</ul>
+
+<p>
+が期待されます．したがって，メッシュを細かくしたときに，相対 \(H^1\) 半ノルム誤差の rate が 1 に近づき，相対 \(L^2\) 誤差の rate が 2 に近づけば，実装が筋よく動いていると判断しやすくなります．
+</p>
+
+<h2>4．可視化の追加</h2>
+
+<p>
+相対誤差だけでなく，結果が目で確認できるように次の可視化も追加しました．
+</p>
+
+<ul>
+<li>粗いレベルでのメッシュ分割図</li>
+<li>最も細かいレベルでの近似解 \(u_h\) の 2D プロット</li>
+<li>最も細かいレベルでの近似解 \(u_h\) の 3D surface plot</li>
+</ul>
+
+<p>
+2D 領域上のスカラー値 \(u_h(x,y)\) を 3D で描くときは，\((x,y)\) を平面座標，高さを \(u_h\) にした surface plot にします．これは 3 次元問題を解いているという意味ではなく，2 次元領域上の解の形を見やすくするための表示です．
+</p>
+
+<h2>5．Google Colab での実行手順</h2>
+
+<p>
+ここからは，Google Colab 上で実際に動かす手順をまとめます．
+まず，ChatGPT で作成した Python ファイルをローカルに保存しておきます．今回は最終的に
+<code>extract_fem_primal_with_relative_error_checks_and_plots_colab_fix4_3d.py</code>
+を使いました．
+</p>
+
+<h3>5.1 FEniCSx のインストール</h3>
+
+<p>
+Colab では最初に FEniCSx を導入します．最初のセルで次を実行します．
+</p>
+
+<pre><code>try:
+    import dolfinx
+except ImportError:
+    !wget "https://fem-on-colab.github.io/releases/fenicsx-install-release-real.sh" -O "/tmp/fenicsx-install.sh"
+    !bash "/tmp/fenicsx-install.sh"
+    import dolfinx
+
+print("FEniCSx ready")</code></pre>
+
+<h3>5.2 導入確認</h3>
+
+<pre><code>import dolfinx
+import ufl
+from mpi4py import MPI
+from petsc4py import PETSc
+
+print("dolfinx OK")</code></pre>
+
+<h3>5.3 スクリプトのアップロード</h3>
+
+<p>
+左側のファイル欄からアップロードしてもよいですし，セルから次を実行してアップロードしてもかまいません．
+</p>
+
+<pre><code>from google.colab import files
+uploaded = files.upload()</code></pre>
+
+<h3>5.4 実行</h3>
+
+<pre><code>!python extract_fem_primal_with_relative_error_checks_and_plots_colab_fix4_3d.py</code></pre>
+
+<p>
+実行後には，相対誤差表と画像ファイルが出力されます．
+</p>
+
+<h3>5.5 出力確認</h3>
+
+<pre><code>!ls -l</code></pre>
+
+<p>
+画像をノートブック上に表示するには，例えば次を使います．
+</p>
+
+<pre><code>from IPython.display import Image, display
+
+display(Image(filename="mesh_level_0.png"))
+display(Image(filename="uh_level_4.png"))
+display(Image(filename="uh_level_4_3d.png"))</code></pre>
+
+<h2>6．途中で出たエラーと修正点</h2>
+
+<p>
+今回は，計算本体よりも可視化まわりでいくつか修正が必要でした．
+</p>
+
+<h3>6.1 出力先 <code>/mnt/data</code> の問題</h3>
+
+<p>
+Colab では <code>/mnt/data</code> が最初から存在しない場合があるため，
+</p>
+
+<pre><code>FileNotFoundError: [Errno 2] No such file or directory: '/mnt/data/fem_relative_error_rows.tex'</code></pre>
+
+<p>
+というエラーが出ました．これは FEniCSx の問題ではなく，単に出力先ディレクトリの問題です．最終版では，出力先をカレントディレクトリにするか，自動作成するようにしました．
+</p>
+
+<h3>6.2 dof 座標の reshape 問題</h3>
+
+<p>
+次に，可視化用の自由度座標を
+<code>reshape(-1, 2)</code>
+のように固定して扱っていたため，Colab の環境で 3 成分座標が返るケースに当たり，描画部分が落ちました．計算自体は終わっていたので，問題は plot 関数だけでした．
+</p>
+
+<h3>6.3 <code>V.dofmap.list.array</code> の API 差</h3>
+
+<p>
+さらに，FEniCSx のバージョン差により，
+<code>V.dofmap.list.array</code>
+がある環境と，
+<code>V.dofmap.list</code>
+そのものが NumPy 配列で返る環境がありました．
+この差を避けるために，最終版では内部表現に直接触れず，
+<code>dolfinx.plot.vtk_mesh(V)</code>
+を使って描画用の三角形分割を作るようにしました．これで Colab 上でも安定しやすくなりました．
+</p>
+
+<h2>7．出力されるファイル</h2>
+
+<p>
+最終版を実行すると，例えば次のようなファイルが得られます．
+</p>
+
+<ul>
+<li><code>fem_relative_error_rows.tex</code>：相対誤差と実験収束率の表</li>
+<li><code>mesh_level_0.png</code>：粗いメッシュ分割図</li>
+<li><code>uh_level_4.png</code>：近似解の 2D 可視化</li>
+<li><code>uh_level_4_3d.png</code>：近似解の 3D surface plot</li>
+</ul>
+
+<p>
+これらはそのままノートやスライド，あるいは研究メモに流用しやすい形です．
+</p>
+
+<h2>8．今回の流れのまとめ</h2>
+
+<ol>
+<li>研究用の FEniCSx コードを確認し，主問題の有限要素部分を取り出した．</li>
+<li>絶対誤差ではなく，相対 \(H^1\) 半ノルム誤差と相対 \(L^2\) 誤差を出す形にした．</li>
+<li>メッシュ図と近似解の 2D 可視化を加えた．</li>
+<li>さらに 3D surface plot を加えた．</li>
+<li>Google Colab で動かすために，導入手順と実行手順を整理した．</li>
+<li>Colab 固有のファイル出力や可視化まわりのエラーを修正した．</li>
+</ol>
+
+<div class="note-box">
+<p>
+今回の作業は，「複雑な研究コード全体をいきなり動かす」のではなく，まず主問題・誤差確認・可視化という最小限で堅い部分を切り出して整える，という意味でも有益でした．
+研究用コードを整理するときは，このように小さな確認可能単位へ分解するのが実用的です．
+</p>
 </div>
 
+<h2>9．公開時の配置</h2>
 
+<p>
+このページを公開するときは，この HTML ファイルを
+<code>blog/posts/article1.html</code>
+に置き，ブログ一覧ページからリンクを張る構成が自然です．
+相対パスもその想定で整えてあります．
+</p>
 
-
-<!--section-in-->
 </div>
 </article>
-</div>	
+</div>
 </main>
-<!--▲メインコンテンツ-->
 
-	
-</div><!--main-body-in-->
-</div><!--main-body-->
+</div>
+</div>
 
-
-<!--▼サイトフッター-->
 <footer class="site-footer">
 	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
 </footer>
-<!--▲サイトフッター-->
 
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
 
-<!--▼ページトップ-->
-<p class="page-top"><a href="#top"><img class="over" src="../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
-<!--▲ページトップ-->
-
-<script src="../js/utility.js" charset="utf-8"></script>
+<script src="../../js/utility.js" charset="utf-8"></script>
 
 </body>
 </html>
