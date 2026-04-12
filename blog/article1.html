@@ -3,12 +3,12 @@
 <head>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-<title>FEniCSx を Google Colab で動かし，相対誤差と可視化を確認する | Blog | ISHIZAKA Hiroki Website</title>
+<title>FEniCSx を Google Colab で動かし，コードを1行ずつ解説する | Blog | ISHIZAKA Hiroki Website</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,FEniCSx,Google Colab,Finite Element Method,有限要素法">
-<meta name="description" content="FEniCSx を Google Colab で導入し，半線形楕円問題の P1 有限要素近似，相対誤差，メッシュ図，2D/3D 可視化を確認する手順をまとめました．">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,FEniCSx,Google Colab,Finite Element Method,有限要素法,Python">
+<meta name="description" content="FEniCSx を Google Colab 上で動かし，半線形楕円問題の P1 有限要素近似，相対誤差，2D/3D 可視化を確認するまでの流れと，最終コードの1行ごとの解説をまとめました．">
 
 <link rel="stylesheet" href="../../css/base.css">
 <link rel="stylesheet" href="../../css/rwd.css">
@@ -33,6 +33,7 @@
   padding: 1em;
   overflow-x: auto;
   font-size: 0.92em;
+  line-height: 1.55;
 }
 .article-body code {
   font-family: Menlo, Consolas, Monaco, monospace;
@@ -44,6 +45,72 @@
 .note-box {
   background: #fafafa;
   border-left: 4px solid #999;
+  padding: 0.8em 1em;
+  margin: 1em 0;
+}
+.code-block {
+  background: #fbfbfb;
+  border: 1px solid #ddd;
+  padding: 1em;
+  overflow-x: auto;
+  font-family: Menlo, Consolas, Monaco, monospace;
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+.code-line {
+  display: block;
+  white-space: pre;
+}
+.line-no {
+  display: inline-block;
+  width: 3.6em;
+  color: #777;
+  user-select: none;
+}
+.code-detail {
+  margin: 1.1em 0;
+  border: 1px solid #ddd;
+  background: #fff;
+}
+.code-detail summary {
+  cursor: pointer;
+  font-weight: bold;
+  padding: 0.7em 0.9em;
+  background: #f4f4f4;
+}
+.table-wrap {
+  overflow-x: auto;
+}
+.line-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92em;
+}
+.line-table th,
+.line-table td {
+  border: 1px solid #ddd;
+  vertical-align: top;
+  padding: 0.55em 0.7em;
+}
+.line-table th {
+  background: #f8f8f8;
+}
+.line-table td.ln {
+  width: 4em;
+  text-align: right;
+  white-space: nowrap;
+  color: #555;
+}
+.line-table td pre {
+  margin: 0;
+  background: transparent;
+  border: none;
+  padding: 0;
+  white-space: pre;
+}
+.step-box {
+  background: #fcfcfc;
+  border: 1px solid #ddd;
   padding: 0.8em 1em;
   margin: 1em 0;
 }
@@ -89,7 +156,7 @@
 				<a href="../../blog/" itemprop="item"><span itemprop="name">Blog</span></a>
 				<meta itemprop="position" content="2">
 			</li>
-			<li class="bcl-last">FEniCSx を Google Colab で動かし，相対誤差と可視化を確認する</li>
+			<li class="bcl-last">FEniCSx を Google Colab で動かし，コードを1行ずつ解説する</li>
 		</ol>
 	</nav>
 
@@ -98,118 +165,64 @@
 <article class="section-wrap">
 <div class="section-in article-body">
 
-<h1 class="section-title">FEniCSx を Google Colab で動かし，相対誤差と可視化を確認する</h1>
+<h1 class="section-title">FEniCSx を Google Colab で動かし，コードを1行ずつ解説する</h1>
 <p class="article-meta">2026年4月12日</p>
 
 <p>
-このページでは，FEniCSx で書かれた研究用コードを出発点として，主問題の P1 有限要素近似だけを切り出し，Google Colab 上で動かせる形に整理した流れをまとめます．
-あわせて，相対誤差
-\[
-\frac{|u-u_h|_{H^1}}{|u|_{H^1}},\qquad
-\frac{\|u-u_h\|_{L^2}}{\|u\|_{L^2}}
-\]
-の確認，メッシュ分割図の表示，近似解 \(u_h\) の 2D 可視化，さらに 3D surface plot まで行います．
+このページでは，FEniCSx で書かれた研究用コードから，主問題の P1 有限要素近似だけを取り出し，
+Google Colab 上で実行できるように整理した流れをまとめます．
+さらに，最終的に使った Python スクリプトを全文掲載し，
+<strong>1 行ごとに丁寧な解説</strong>も付けました．
 </p>
 
-<h2>1．出発点となったコード</h2>
-
 <p>
-最初に確認した元コードは，単なる PDE ソルバではなく，FEniCSx 上で半線形楕円問題
+対象とする問題は
 \[
--\Delta u + u^3 = f \quad \text{in }\Omega=(0,1)^2,
-\qquad
-u=0 \quad \text{on }\partial\Omega
-\]
-を解きつつ，検証半径や目的量の認証まで行う研究用スクリプトでした．
-その中から，まずは主問題を解く部分だけを抜き出して，標準的な誤差収束を確認できるように整えました．
-</p>
-
-<h2>2．主問題だけを取り出した簡潔版</h2>
-
-<p>
-主問題では，空間離散として P1 の Lagrange 有限要素を用い，非線形項 \(u^3\) は Newton 法で処理します．
-弱形式は
-\[
-\int_{\Omega} \nabla u_h\cdot\nabla v_h\,dx
-+
-\int_{\Omega} u_h^3 v_h\,dx
-=
-\int_{\Omega} f v_h\,dx
-\qquad (\forall v_h\in V_h)
+-\Delta u + u^3 = f \quad 	ext{in } \Omega=(0,1)^2,\qquad
+u=0 \quad 	ext{on } \partial\Omega
 \]
 です．
-今回の確認では，厳密解として
+厳密解として
 \[
 u(x,y)=\sin(\pi x)\sin(\pi y)
 \]
-を用い，それに対応する右辺
+を用い，
 \[
-f=2\pi^2 u + u^3
+f=2\pi^2u+u^3
 \]
-を作りました．
-この設定なら，有限要素近似 \(u_h\) の誤差を直接測ることができます．
-</p>
-
-<h2>3．相対誤差の定義</h2>
-
-<p>
-今回は誤差を絶対誤差ではなく，相対誤差で見ました．具体的には
-</p>
-
+を右辺として与えます．
+この設定により，相対誤差
 \[
-E_{H^1}^{\mathrm{rel}}
-=
-\frac{|u-u_h|_{H^1}}{|u|_{H^1}},
-\qquad
-E_{L^2}^{\mathrm{rel}}
-=
-\frac{\|u-u_h\|_{L^2}}{\|u\|_{L^2}}
+rac{|u-u_h|_{H^1}}{|u|_{H^1}},\qquad
+rac{\|u-u_h\|_{L^2}}{\|u\|_{L^2}}
 \]
-
-<p>
-です．厳密解が十分滑らかで，P1 有限要素を用いているので，観測される収束率としては通常
+を直接確かめることができます．
 </p>
 
-<ul>
-<li>relative H1 seminorm error \(\sim O(h)\)</li>
-<li>relative L2 norm error \(\sim O(h^2)\)</li>
-</ul>
+<h2>1．今回やったことの全体像</h2>
+
+<ol>
+<li>元の大きな FEniCSx 研究コードを確認した．</li>
+<li>主問題を解く部分だけを取り出して，最小版スクリプトを作った．</li>
+<li>相対 \(H^1\) 半ノルム誤差と相対 \(L^2\) 誤差を出すようにした．</li>
+<li>メッシュ図と 2D 解プロットを加えた．</li>
+<li>さらに 3D surface plot を加えた．</li>
+<li>Google Colab での導入手順，アップロード方法，実行方法を整理した．</li>
+<li>Colab 固有の描画エラーや出力先エラーを修正した．</li>
+<li>最後に，完成版コードを 1 行ずつ解説する記事にまとめた．</li>
+</ol>
+
+<h2>2．Google Colab での実行手順</h2>
 
 <p>
-が期待されます．したがって，メッシュを細かくしたときに，相対 \(H^1\) 半ノルム誤差の rate が 1 に近づき，相対 \(L^2\) 誤差の rate が 2 に近づけば，実装が筋よく動いていると判断しやすくなります．
-</p>
-
-<h2>4．可視化の追加</h2>
-
-<p>
-相対誤差だけでなく，結果が目で確認できるように次の可視化も追加しました．
-</p>
-
-<ul>
-<li>粗いレベルでのメッシュ分割図</li>
-<li>最も細かいレベルでの近似解 \(u_h\) の 2D プロット</li>
-<li>最も細かいレベルでの近似解 \(u_h\) の 3D surface plot</li>
-</ul>
-
-<p>
-2D 領域上のスカラー値 \(u_h(x,y)\) を 3D で描くときは，\((x,y)\) を平面座標，高さを \(u_h\) にした surface plot にします．これは 3 次元問題を解いているという意味ではなく，2 次元領域上の解の形を見やすくするための表示です．
-</p>
-
-<h2>5．Google Colab での実行手順</h2>
-
-<p>
-ここからは，Google Colab 上で実際に動かす手順をまとめます．
-まず，ChatGPT で作成した Python ファイルをローカルに保存しておきます．今回は最終的に
+ここでは，最終版スクリプト
 <code>extract_fem_primal_with_relative_error_checks_and_plots_colab_fix4_3d.py</code>
-を使いました．
+を Colab で動かすときの流れを，セルごとに書いておきます．
 </p>
 
-<h3>5.1 FEniCSx のインストール</h3>
+<h3>2.1 FEniCSx の導入</h3>
 
-<p>
-Colab では最初に FEniCSx を導入します．最初のセルで次を実行します．
-</p>
-
+<div class="step-box">
 <pre><code>try:
     import dolfinx
 except ImportError:
@@ -218,128 +231,1039 @@ except ImportError:
     import dolfinx
 
 print("FEniCSx ready")</code></pre>
+</div>
 
-<h3>5.2 導入確認</h3>
+<p>
+最初のセルでは，Colab 上に FEniCSx を入れます．
+すでに入っていればそのまま import し，入っていなければインストールスクリプトを走らせます．
+</p>
 
+<h3>2.2 導入確認</h3>
+
+<div class="step-box">
 <pre><code>import dolfinx
 import ufl
 from mpi4py import MPI
 from petsc4py import PETSc
 
 print("dolfinx OK")</code></pre>
-
-<h3>5.3 スクリプトのアップロード</h3>
+</div>
 
 <p>
-左側のファイル欄からアップロードしてもよいですし，セルから次を実行してアップロードしてもかまいません．
+ここで import が通れば，環境はかなり整っています．
 </p>
 
+<h3>2.3 スクリプトのアップロード</h3>
+
+<div class="step-box">
 <pre><code>from google.colab import files
 uploaded = files.upload()</code></pre>
+</div>
 
-<h3>5.4 実行</h3>
+<p>
+ローカルに保存した Python ファイルを Colab へアップロードします．
+左側のファイル欄からドラッグ＆ドロップしても構いません．
+</p>
 
+<h3>2.4 実行</h3>
+
+<div class="step-box">
 <pre><code>!python extract_fem_primal_with_relative_error_checks_and_plots_colab_fix4_3d.py</code></pre>
+</div>
 
 <p>
-実行後には，相対誤差表と画像ファイルが出力されます．
+これで計算が走り，相対誤差表，メッシュ図，2D 解図，3D surface plot が出力されます．
 </p>
 
-<h3>5.5 出力確認</h3>
+<h3>2.5 出力確認</h3>
 
+<div class="step-box">
 <pre><code>!ls -l</code></pre>
+</div>
 
 <p>
-画像をノートブック上に表示するには，例えば次を使います．
+画像を見るには，次のようにします．
 </p>
 
+<div class="step-box">
 <pre><code>from IPython.display import Image, display
-
 display(Image(filename="mesh_level_0.png"))
 display(Image(filename="uh_level_4.png"))
 display(Image(filename="uh_level_4_3d.png"))</code></pre>
+</div>
 
-<h2>6．途中で出たエラーと修正点</h2>
-
-<p>
-今回は，計算本体よりも可視化まわりでいくつか修正が必要でした．
-</p>
-
-<h3>6.1 出力先 <code>/mnt/data</code> の問題</h3>
+<h2>3．途中で出たエラーと修正点</h2>
 
 <p>
-Colab では <code>/mnt/data</code> が最初から存在しない場合があるため，
+今回，計算本体よりも可視化まわりでいくつか修正が必要でした．
 </p>
 
-<pre><code>FileNotFoundError: [Errno 2] No such file or directory: '/mnt/data/fem_relative_error_rows.tex'</code></pre>
+<ul>
+<li><code>/mnt/data</code> が Colab で存在せず，出力ファイルを書けなかった．</li>
+<li>自由度座標の reshape が環境によって壊れた．</li>
+<li><code>V.dofmap.list.array</code> の内部表現が FEniCSx のバージョン差で揺れた．</li>
+<li>そのため，可視化は <code>dolfinx.plot.vtk_mesh(V)</code> を使う方針へ切り替えた．</li>
+</ul>
 
 <p>
-というエラーが出ました．これは FEniCSx の問題ではなく，単に出力先ディレクトリの問題です．最終版では，出力先をカレントディレクトリにするか，自動作成するようにしました．
+この修正により，Colab 上でも比較的安定して 2D/3D 可視化まで通るようになりました．
 </p>
 
-<h3>6.2 dof 座標の reshape 問題</h3>
+<h2>4．最終版コード全文</h2>
 
 <p>
-次に，可視化用の自由度座標を
-<code>reshape(-1, 2)</code>
-のように固定して扱っていたため，Colab の環境で 3 成分座標が返るケースに当たり，描画部分が落ちました．計算自体は終わっていたので，問題は plot 関数だけでした．
+以下が，最終的に公開用記事に載せる Python スクリプトです．
+そのまま Colab やローカルに保存して使える形になっています．
 </p>
 
-<h3>6.3 <code>V.dofmap.list.array</code> の API 差</h3>
+<div class="code-block">
+<span class='code-line'><span class='line-no'>  1</span> #!/usr/bin/env python3</span>
+<span class='code-line'><span class='line-no'>  2</span> # -*- coding: utf-8 -*-</span>
+<span class='code-line'><span class='line-no'>  3</span> &quot;&quot;&quot;</span>
+<span class='code-line'><span class='line-no'>  4</span> Minimal FEniCSx script extracted from a larger verified-numerics code.</span>
+<span class='code-line'><span class='line-no'>  5</span> </span>
+<span class='code-line'><span class='line-no'>  6</span> Problem:</span>
+<span class='code-line'><span class='line-no'>  7</span>     -Δu + u^3 = f   in Ω=(0,1)^2,</span>
+<span class='code-line'><span class='line-no'>  8</span>     u = 0           on ∂Ω.</span>
+<span class='code-line'><span class='line-no'>  9</span> </span>
+<span class='code-line'><span class='line-no'> 10</span> Purpose:</span>
+<span class='code-line'><span class='line-no'> 11</span>   1. Solve the primal problem by P1 FEM + Newton&#x27;s method.</span>
+<span class='code-line'><span class='line-no'> 12</span>   2. Compare with a manufactured exact solution.</span>
+<span class='code-line'><span class='line-no'> 13</span>   3. Check empirical convergence in relative errors:</span>
+<span class='code-line'><span class='line-no'> 14</span>        - relative H1 seminorm error</span>
+<span class='code-line'><span class='line-no'> 15</span>        - relative L2 norm error</span>
+<span class='code-line'><span class='line-no'> 16</span>   4. Plot a mesh triangulation and the computed finite element solution.</span>
+<span class='code-line'><span class='line-no'> 17</span>   5. Also plot the computed solution as a 3D surface.</span>
+<span class='code-line'><span class='line-no'> 18</span> </span>
+<span class='code-line'><span class='line-no'> 19</span> Default manufactured solution:</span>
+<span class='code-line'><span class='line-no'> 20</span>     u_exact(x,y) = sin(pi x) sin(pi y)</span>
+<span class='code-line'><span class='line-no'> 21</span> so that</span>
+<span class='code-line'><span class='line-no'> 22</span>     f = 2*pi^2*u_exact + u_exact^3.</span>
+<span class='code-line'><span class='line-no'> 23</span> </span>
+<span class='code-line'><span class='line-no'> 24</span> Notes:</span>
+<span class='code-line'><span class='line-no'> 25</span> - Tested style: dolfinx 0.10.x.</span>
+<span class='code-line'><span class='line-no'> 26</span> - The plotting helpers are intended for the usual Colab / local serial run</span>
+<span class='code-line'><span class='line-no'> 27</span>   (one MPI rank). For genuinely distributed MPI runs, write XDMF instead.</span>
+<span class='code-line'><span class='line-no'> 28</span> &quot;&quot;&quot;</span>
+<span class='code-line'><span class='line-no'> 29</span> </span>
+<span class='code-line'><span class='line-no'> 30</span> from __future__ import annotations</span>
+<span class='code-line'><span class='line-no'> 31</span> </span>
+<span class='code-line'><span class='line-no'> 32</span> import math</span>
+<span class='code-line'><span class='line-no'> 33</span> from dataclasses import dataclass</span>
+<span class='code-line'><span class='line-no'> 34</span> from typing import List</span>
+<span class='code-line'><span class='line-no'> 35</span> </span>
+<span class='code-line'><span class='line-no'> 36</span> import matplotlib.pyplot as plt</span>
+<span class='code-line'><span class='line-no'> 37</span> import matplotlib.tri as mtri</span>
+<span class='code-line'><span class='line-no'> 38</span> import numpy as np</span>
+<span class='code-line'><span class='line-no'> 39</span> import ufl</span>
+<span class='code-line'><span class='line-no'> 40</span> from mpi4py import MPI</span>
+<span class='code-line'><span class='line-no'> 41</span> from petsc4py import PETSc</span>
+<span class='code-line'><span class='line-no'> 42</span> </span>
+<span class='code-line'><span class='line-no'> 43</span> from dolfinx import fem, mesh, plot as dxplot</span>
+<span class='code-line'><span class='line-no'> 44</span> from dolfinx.fem import petsc as fp</span>
+<span class='code-line'><span class='line-no'> 45</span> </span>
+<span class='code-line'><span class='line-no'> 46</span> </span>
+<span class='code-line'><span class='line-no'> 47</span> # ------------------------- user parameters -------------------------</span>
+<span class='code-line'><span class='line-no'> 48</span> N0 = 8                 # initial subdivisions in each direction</span>
+<span class='code-line'><span class='line-no'> 49</span> N_LEVELS = 5           # total meshes: N0, 2*N0, 4*N0, ...</span>
+<span class='code-line'><span class='line-no'> 50</span> MAX_NEWTON = 25</span>
+<span class='code-line'><span class='line-no'> 51</span> NEWTON_TOL = 1.0e-12   # stop when ||du||_{H1-semi} &lt; NEWTON_TOL</span>
+<span class='code-line'><span class='line-no'> 52</span> QUAD_DEGREE = 8        # slightly higher quadrature for smooth manufactured data</span>
+<span class='code-line'><span class='line-no'> 53</span> </span>
+<span class='code-line'><span class='line-no'> 54</span> # Plot controls</span>
+<span class='code-line'><span class='line-no'> 55</span> SAVE_PLOTS = True</span>
+<span class='code-line'><span class='line-no'> 56</span> SHOW_PLOTS = True</span>
+<span class='code-line'><span class='line-no'> 57</span> MESH_PLOT_LEVEL = 0               # usually a coarse mesh is easier to read</span>
+<span class='code-line'><span class='line-no'> 58</span> SOLUTION_PLOT_LEVEL = N_LEVELS-1  # plot uh on the finest mesh by default</span>
+<span class='code-line'><span class='line-no'> 59</span> PLOT_DIR = &quot;.&quot;</span>
+<span class='code-line'><span class='line-no'> 60</span> PLOT_SOLUTION_2D = True</span>
+<span class='code-line'><span class='line-no'> 61</span> PLOT_SOLUTION_3D = True</span>
+<span class='code-line'><span class='line-no'> 62</span> </span>
+<span class='code-line'><span class='line-no'> 63</span> </span>
+<span class='code-line'><span class='line-no'> 64</span> # ------------------------- MPI helpers -------------------------</span>
+<span class='code-line'><span class='line-no'> 65</span> comm = MPI.COMM_WORLD</span>
+<span class='code-line'><span class='line-no'> 66</span> rank = comm.rank</span>
+<span class='code-line'><span class='line-no'> 67</span> size = comm.size</span>
+<span class='code-line'><span class='line-no'> 68</span> </span>
+<span class='code-line'><span class='line-no'> 69</span> </span>
+<span class='code-line'><span class='line-no'> 70</span> def assemble_scalar(expr) -&gt; float:</span>
+<span class='code-line'><span class='line-no'> 71</span>     &quot;&quot;&quot;Assemble a scalar and sum across MPI ranks.&quot;&quot;&quot;</span>
+<span class='code-line'><span class='line-no'> 72</span>     local = fem.assemble_scalar(fem.form(expr))</span>
+<span class='code-line'><span class='line-no'> 73</span>     return comm.allreduce(local, op=MPI.SUM)</span>
+<span class='code-line'><span class='line-no'> 74</span> </span>
+<span class='code-line'><span class='line-no'> 75</span> </span>
+<span class='code-line'><span class='line-no'> 76</span> def h1_seminorm_expr(v, dxm) -&gt; float:</span>
+<span class='code-line'><span class='line-no'> 77</span>     &quot;&quot;&quot;Return |v|_{H1} = ||grad v||_{L2}. Works for UFL expressions/functions.&quot;&quot;&quot;</span>
+<span class='code-line'><span class='line-no'> 78</span>     return math.sqrt(max(assemble_scalar(ufl.inner(ufl.grad(v), ufl.grad(v)) * dxm), 0.0))</span>
+<span class='code-line'><span class='line-no'> 79</span> </span>
+<span class='code-line'><span class='line-no'> 80</span> </span>
+<span class='code-line'><span class='line-no'> 81</span> def l2_norm_expr(v, dxm) -&gt; float:</span>
+<span class='code-line'><span class='line-no'> 82</span>     &quot;&quot;&quot;Return ||v||_{L2}. Works for UFL expressions/functions.&quot;&quot;&quot;</span>
+<span class='code-line'><span class='line-no'> 83</span>     return math.sqrt(max(assemble_scalar((v * v) * dxm), 0.0))</span>
+<span class='code-line'><span class='line-no'> 84</span> </span>
+<span class='code-line'><span class='line-no'> 85</span> </span>
+<span class='code-line'><span class='line-no'> 86</span> def boundary_dofs(V, msh):</span>
+<span class='code-line'><span class='line-no'> 87</span>     &quot;&quot;&quot;Dirichlet dofs on the whole boundary of the unit square.&quot;&quot;&quot;</span>
+<span class='code-line'><span class='line-no'> 88</span>     facets = mesh.locate_entities_boundary(</span>
+<span class='code-line'><span class='line-no'> 89</span>         msh,</span>
+<span class='code-line'><span class='line-no'> 90</span>         msh.topology.dim - 1,</span>
+<span class='code-line'><span class='line-no'> 91</span>         lambda x: np.full(x.shape[1], True, dtype=bool),</span>
+<span class='code-line'><span class='line-no'> 92</span>     )</span>
+<span class='code-line'><span class='line-no'> 93</span>     return fem.locate_dofs_topological(V, msh.topology.dim - 1, facets)</span>
+<span class='code-line'><span class='line-no'> 94</span> </span>
+<span class='code-line'><span class='line-no'> 95</span> </span>
+<span class='code-line'><span class='line-no'> 96</span> # ------------------------- nonlinear primal solve -------------------------</span>
+<span class='code-line'><span class='line-no'> 97</span> def newton_solve_primal(msh, V, bc_V, f_expr, dxm):</span>
+<span class='code-line'><span class='line-no'> 98</span>     &quot;&quot;&quot;</span>
+<span class='code-line'><span class='line-no'> 99</span>     Solve</span>
+<span class='code-line'><span class='line-no'>100</span>         -Δu + u^3 = f,  u|_{∂Ω}=0</span>
+<span class='code-line'><span class='line-no'>101</span>     in the P1 FEM space by Newton&#x27;s method.</span>
+<span class='code-line'><span class='line-no'>102</span>     &quot;&quot;&quot;</span>
+<span class='code-line'><span class='line-no'>103</span>     u = fem.Function(V)</span>
+<span class='code-line'><span class='line-no'>104</span>     du = fem.Function(V)</span>
+<span class='code-line'><span class='line-no'>105</span> </span>
+<span class='code-line'><span class='line-no'>106</span>     v = ufl.TestFunction(V)</span>
+<span class='code-line'><span class='line-no'>107</span>     w = ufl.TrialFunction(V)</span>
+<span class='code-line'><span class='line-no'>108</span> </span>
+<span class='code-line'><span class='line-no'>109</span>     # Nonlinear residual F(u;v)</span>
+<span class='code-line'><span class='line-no'>110</span>     F_form = (ufl.inner(ufl.grad(u), ufl.grad(v)) + (u**3 - f_expr) * v) * dxm</span>
+<span class='code-line'><span class='line-no'>111</span> </span>
+<span class='code-line'><span class='line-no'>112</span>     # Jacobian J(u)[w,v]</span>
+<span class='code-line'><span class='line-no'>113</span>     J_form = ufl.derivative(F_form, u, w)</span>
+<span class='code-line'><span class='line-no'>114</span> </span>
+<span class='code-line'><span class='line-no'>115</span>     A = fp.assemble_matrix(fem.form(J_form), bcs=[bc_V])</span>
+<span class='code-line'><span class='line-no'>116</span>     A.assemble()</span>
+<span class='code-line'><span class='line-no'>117</span>     b = fp.assemble_vector(fem.form(F_form))</span>
+<span class='code-line'><span class='line-no'>118</span> </span>
+<span class='code-line'><span class='line-no'>119</span>     ksp = PETSc.KSP().create(comm)</span>
+<span class='code-line'><span class='line-no'>120</span>     ksp.setOperators(A)</span>
+<span class='code-line'><span class='line-no'>121</span>     ksp.setType(&quot;preonly&quot;)</span>
+<span class='code-line'><span class='line-no'>122</span>     ksp.getPC().setType(&quot;lu&quot;)</span>
+<span class='code-line'><span class='line-no'>123</span> </span>
+<span class='code-line'><span class='line-no'>124</span>     for it in range(MAX_NEWTON):</span>
+<span class='code-line'><span class='line-no'>125</span>         # Reassemble Jacobian</span>
+<span class='code-line'><span class='line-no'>126</span>         A.zeroEntries()</span>
+<span class='code-line'><span class='line-no'>127</span>         fp.assemble_matrix(A, fem.form(J_form), bcs=[bc_V])</span>
+<span class='code-line'><span class='line-no'>128</span>         A.assemble()</span>
+<span class='code-line'><span class='line-no'>129</span> </span>
+<span class='code-line'><span class='line-no'>130</span>         # Assemble residual vector F(u)</span>
+<span class='code-line'><span class='line-no'>131</span>         b.zeroEntries()</span>
+<span class='code-line'><span class='line-no'>132</span>         fp.assemble_vector(b, fem.form(F_form))</span>
+<span class='code-line'><span class='line-no'>133</span>         fp.apply_lifting(b, [fem.form(J_form)], bcs=[[bc_V]])</span>
+<span class='code-line'><span class='line-no'>134</span>         b.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)</span>
+<span class='code-line'><span class='line-no'>135</span>         fp.set_bc(b, [bc_V])</span>
+<span class='code-line'><span class='line-no'>136</span> </span>
+<span class='code-line'><span class='line-no'>137</span>         # Solve J(u) du = -F(u)</span>
+<span class='code-line'><span class='line-no'>138</span>         b.scale(-1.0)</span>
+<span class='code-line'><span class='line-no'>139</span>         du.x.petsc_vec.set(0.0)</span>
+<span class='code-line'><span class='line-no'>140</span>         ksp.solve(b, du.x.petsc_vec)</span>
+<span class='code-line'><span class='line-no'>141</span>         du.x.scatter_forward()</span>
+<span class='code-line'><span class='line-no'>142</span> </span>
+<span class='code-line'><span class='line-no'>143</span>         # Update u &lt;- u + du</span>
+<span class='code-line'><span class='line-no'>144</span>         u.x.petsc_vec.axpy(1.0, du.x.petsc_vec)</span>
+<span class='code-line'><span class='line-no'>145</span>         u.x.scatter_forward()</span>
+<span class='code-line'><span class='line-no'>146</span> </span>
+<span class='code-line'><span class='line-no'>147</span>         step_h1 = h1_seminorm_expr(du, dxm)</span>
+<span class='code-line'><span class='line-no'>148</span>         if rank == 0:</span>
+<span class='code-line'><span class='line-no'>149</span>             print(f&quot;[Newton] iteration={it:2d}, |du|_H1={step_h1:.3e}&quot;)</span>
+<span class='code-line'><span class='line-no'>150</span> </span>
+<span class='code-line'><span class='line-no'>151</span>         if step_h1 &lt; NEWTON_TOL:</span>
+<span class='code-line'><span class='line-no'>152</span>             break</span>
+<span class='code-line'><span class='line-no'>153</span>     else:</span>
+<span class='code-line'><span class='line-no'>154</span>         if rank == 0:</span>
+<span class='code-line'><span class='line-no'>155</span>             print(&quot;[warning] Newton did not satisfy the stopping criterion.&quot;)</span>
+<span class='code-line'><span class='line-no'>156</span> </span>
+<span class='code-line'><span class='line-no'>157</span>     A.destroy()</span>
+<span class='code-line'><span class='line-no'>158</span>     b.destroy()</span>
+<span class='code-line'><span class='line-no'>159</span>     ksp.destroy()</span>
+<span class='code-line'><span class='line-no'>160</span>     return u</span>
+<span class='code-line'><span class='line-no'>161</span> </span>
+<span class='code-line'><span class='line-no'>162</span> </span>
+<span class='code-line'><span class='line-no'>163</span> # ------------------------- plotting helpers -------------------------</span>
+<span class='code-line'><span class='line-no'>164</span> def _ensure_serial_plotting() -&gt; None:</span>
+<span class='code-line'><span class='line-no'>165</span>     if size != 1:</span>
+<span class='code-line'><span class='line-no'>166</span>         raise RuntimeError(</span>
+<span class='code-line'><span class='line-no'>167</span>             &quot;This plotting helper assumes a single MPI rank. &quot;</span>
+<span class='code-line'><span class='line-no'>168</span>             &quot;For multi-rank runs, export XDMF or gather mesh/function data first.&quot;</span>
+<span class='code-line'><span class='line-no'>169</span>         )</span>
+<span class='code-line'><span class='line-no'>170</span> </span>
+<span class='code-line'><span class='line-no'>171</span> </span>
+<span class='code-line'><span class='line-no'>172</span> def mesh_triangulation(msh) -&gt; tuple[np.ndarray, np.ndarray, np.ndarray]:</span>
+<span class='code-line'><span class='line-no'>173</span>     &quot;&quot;&quot;Return vertex coordinates and triangle connectivity of the mesh geometry.&quot;&quot;&quot;</span>
+<span class='code-line'><span class='line-no'>174</span>     _ensure_serial_plotting()</span>
+<span class='code-line'><span class='line-no'>175</span>     msh.topology.create_connectivity(msh.topology.dim, 0)</span>
+<span class='code-line'><span class='line-no'>176</span>     cells = msh.topology.connectivity(msh.topology.dim, 0).array.reshape(-1, 3)</span>
+<span class='code-line'><span class='line-no'>177</span>     coords = msh.geometry.x[:, :2]</span>
+<span class='code-line'><span class='line-no'>178</span>     return coords[:, 0], coords[:, 1], cells</span>
+<span class='code-line'><span class='line-no'>179</span> </span>
+<span class='code-line'><span class='line-no'>180</span> </span>
+<span class='code-line'><span class='line-no'>181</span> def solution_triangulation(V, uh) -&gt; tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:</span>
+<span class='code-line'><span class='line-no'>182</span>     &quot;&quot;&quot;</span>
+<span class='code-line'><span class='line-no'>183</span>     Return coordinates, triangle connectivity, and nodal values for a scalar</span>
+<span class='code-line'><span class='line-no'>184</span>     Lagrange function using dolfinx.plot.vtk_mesh.</span>
+<span class='code-line'><span class='line-no'>185</span> </span>
+<span class='code-line'><span class='line-no'>186</span>     This is more robust across FEniCSx versions than touching V.dofmap internals</span>
+<span class='code-line'><span class='line-no'>187</span>     directly. The official helper returns topology based on degree-of-freedom</span>
+<span class='code-line'><span class='line-no'>188</span>     coordinates for Lagrange elements.</span>
+<span class='code-line'><span class='line-no'>189</span>     &quot;&quot;&quot;</span>
+<span class='code-line'><span class='line-no'>190</span>     _ensure_serial_plotting()</span>
+<span class='code-line'><span class='line-no'>191</span> </span>
+<span class='code-line'><span class='line-no'>192</span>     topology, _, geometry = dxplot.vtk_mesh(V)</span>
+<span class='code-line'><span class='line-no'>193</span>     topology = np.asarray(topology, dtype=np.int64)</span>
+<span class='code-line'><span class='line-no'>194</span>     geometry = np.asarray(geometry)</span>
+<span class='code-line'><span class='line-no'>195</span> </span>
+<span class='code-line'><span class='line-no'>196</span>     num_nodes_per_cell = int(topology[0])</span>
+<span class='code-line'><span class='line-no'>197</span>     cells = topology.reshape(-1, num_nodes_per_cell + 1)[:, 1:]</span>
+<span class='code-line'><span class='line-no'>198</span>     coords = geometry[:, :2]</span>
+<span class='code-line'><span class='line-no'>199</span>     values = uh.x.array.real.copy()</span>
+<span class='code-line'><span class='line-no'>200</span>     return coords[:, 0], coords[:, 1], cells, values</span>
+<span class='code-line'><span class='line-no'>201</span> </span>
+<span class='code-line'><span class='line-no'>202</span> </span>
+<span class='code-line'><span class='line-no'>203</span> def plot_mesh(msh, filename: str | None = None, show: bool = True) -&gt; None:</span>
+<span class='code-line'><span class='line-no'>204</span>     &quot;&quot;&quot;Plot the triangulation of the mesh.&quot;&quot;&quot;</span>
+<span class='code-line'><span class='line-no'>205</span>     x, y, cells = mesh_triangulation(msh)</span>
+<span class='code-line'><span class='line-no'>206</span>     triang = mtri.Triangulation(x, y, cells)</span>
+<span class='code-line'><span class='line-no'>207</span> </span>
+<span class='code-line'><span class='line-no'>208</span>     fig, ax = plt.subplots(figsize=(6, 6))</span>
+<span class='code-line'><span class='line-no'>209</span>     ax.triplot(triang, linewidth=0.7)</span>
+<span class='code-line'><span class='line-no'>210</span>     ax.set_aspect(&quot;equal&quot;)</span>
+<span class='code-line'><span class='line-no'>211</span>     ax.set_title(&quot;Mesh triangulation&quot;)</span>
+<span class='code-line'><span class='line-no'>212</span>     ax.set_xlabel(&quot;x&quot;)</span>
+<span class='code-line'><span class='line-no'>213</span>     ax.set_ylabel(&quot;y&quot;)</span>
+<span class='code-line'><span class='line-no'>214</span>     fig.tight_layout()</span>
+<span class='code-line'><span class='line-no'>215</span> </span>
+<span class='code-line'><span class='line-no'>216</span>     if filename is not None:</span>
+<span class='code-line'><span class='line-no'>217</span>         fig.savefig(filename, dpi=200, bbox_inches=&quot;tight&quot;)</span>
+<span class='code-line'><span class='line-no'>218</span>     if show:</span>
+<span class='code-line'><span class='line-no'>219</span>         plt.show()</span>
+<span class='code-line'><span class='line-no'>220</span>     else:</span>
+<span class='code-line'><span class='line-no'>221</span>         plt.close(fig)</span>
+<span class='code-line'><span class='line-no'>222</span> </span>
+<span class='code-line'><span class='line-no'>223</span> </span>
+<span class='code-line'><span class='line-no'>224</span> def plot_solution(V, uh, filename: str | None = None, show: bool = True) -&gt; None:</span>
+<span class='code-line'><span class='line-no'>225</span>     &quot;&quot;&quot;Plot the computed P1 finite element solution.&quot;&quot;&quot;</span>
+<span class='code-line'><span class='line-no'>226</span>     x, y, cells, values = solution_triangulation(V, uh)</span>
+<span class='code-line'><span class='line-no'>227</span>     triang = mtri.Triangulation(x, y, cells)</span>
+<span class='code-line'><span class='line-no'>228</span> </span>
+<span class='code-line'><span class='line-no'>229</span>     fig, ax = plt.subplots(figsize=(7, 6))</span>
+<span class='code-line'><span class='line-no'>230</span>     tpc = ax.tripcolor(triang, values, shading=&quot;gouraud&quot;)</span>
+<span class='code-line'><span class='line-no'>231</span>     ax.triplot(triang, color=&quot;k&quot;, linewidth=0.15, alpha=0.35)</span>
+<span class='code-line'><span class='line-no'>232</span>     ax.set_aspect(&quot;equal&quot;)</span>
+<span class='code-line'><span class='line-no'>233</span>     ax.set_title(&quot;Computed FEM solution $u_h$&quot;)</span>
+<span class='code-line'><span class='line-no'>234</span>     ax.set_xlabel(&quot;x&quot;)</span>
+<span class='code-line'><span class='line-no'>235</span>     ax.set_ylabel(&quot;y&quot;)</span>
+<span class='code-line'><span class='line-no'>236</span>     fig.colorbar(tpc, ax=ax, label=&quot;$u_h$&quot;)</span>
+<span class='code-line'><span class='line-no'>237</span>     fig.tight_layout()</span>
+<span class='code-line'><span class='line-no'>238</span> </span>
+<span class='code-line'><span class='line-no'>239</span>     if filename is not None:</span>
+<span class='code-line'><span class='line-no'>240</span>         fig.savefig(filename, dpi=200, bbox_inches=&quot;tight&quot;)</span>
+<span class='code-line'><span class='line-no'>241</span>     if show:</span>
+<span class='code-line'><span class='line-no'>242</span>         plt.show()</span>
+<span class='code-line'><span class='line-no'>243</span>     else:</span>
+<span class='code-line'><span class='line-no'>244</span>         plt.close(fig)</span>
+<span class='code-line'><span class='line-no'>245</span> </span>
+<span class='code-line'><span class='line-no'>246</span> </span>
+<span class='code-line'><span class='line-no'>247</span> def plot_solution_3d(V, uh, filename: str | None = None, show: bool = True) -&gt; None:</span>
+<span class='code-line'><span class='line-no'>248</span>     &quot;&quot;&quot;</span>
+<span class='code-line'><span class='line-no'>249</span>     Plot the computed P1 finite element solution as a 3D surface z = u_h(x, y).</span>
+<span class='code-line'><span class='line-no'>250</span>     &quot;&quot;&quot;</span>
+<span class='code-line'><span class='line-no'>251</span>     x, y, cells, values = solution_triangulation(V, uh)</span>
+<span class='code-line'><span class='line-no'>252</span> </span>
+<span class='code-line'><span class='line-no'>253</span>     fig = plt.figure(figsize=(8, 6))</span>
+<span class='code-line'><span class='line-no'>254</span>     ax = fig.add_subplot(111, projection=&quot;3d&quot;)</span>
+<span class='code-line'><span class='line-no'>255</span>     surf = ax.plot_trisurf(</span>
+<span class='code-line'><span class='line-no'>256</span>         x,</span>
+<span class='code-line'><span class='line-no'>257</span>         y,</span>
+<span class='code-line'><span class='line-no'>258</span>         values,</span>
+<span class='code-line'><span class='line-no'>259</span>         triangles=cells,</span>
+<span class='code-line'><span class='line-no'>260</span>         cmap=&quot;viridis&quot;,</span>
+<span class='code-line'><span class='line-no'>261</span>         linewidth=0.15,</span>
+<span class='code-line'><span class='line-no'>262</span>         antialiased=True,</span>
+<span class='code-line'><span class='line-no'>263</span>     )</span>
+<span class='code-line'><span class='line-no'>264</span>     ax.set_title(&quot;Computed FEM solution $u_h$ (3D surface)&quot;)</span>
+<span class='code-line'><span class='line-no'>265</span>     ax.set_xlabel(&quot;x&quot;)</span>
+<span class='code-line'><span class='line-no'>266</span>     ax.set_ylabel(&quot;y&quot;)</span>
+<span class='code-line'><span class='line-no'>267</span>     ax.set_zlabel(&quot;$u_h$&quot;)</span>
+<span class='code-line'><span class='line-no'>268</span>     fig.colorbar(surf, ax=ax, shrink=0.75, pad=0.08, label=&quot;$u_h$&quot;)</span>
+<span class='code-line'><span class='line-no'>269</span>     fig.tight_layout()</span>
+<span class='code-line'><span class='line-no'>270</span> </span>
+<span class='code-line'><span class='line-no'>271</span>     if filename is not None:</span>
+<span class='code-line'><span class='line-no'>272</span>         fig.savefig(filename, dpi=200, bbox_inches=&quot;tight&quot;)</span>
+<span class='code-line'><span class='line-no'>273</span>     if show:</span>
+<span class='code-line'><span class='line-no'>274</span>         plt.show()</span>
+<span class='code-line'><span class='line-no'>275</span>     else:</span>
+<span class='code-line'><span class='line-no'>276</span>         plt.close(fig)</span>
+<span class='code-line'><span class='line-no'>277</span> </span>
+<span class='code-line'><span class='line-no'>278</span> </span>
+<span class='code-line'><span class='line-no'>279</span> # ------------------------- error study -------------------------</span>
+<span class='code-line'><span class='line-no'>280</span> @dataclass</span>
+<span class='code-line'><span class='line-no'>281</span> class ErrorRow:</span>
+<span class='code-line'><span class='line-no'>282</span>     N: int</span>
+<span class='code-line'><span class='line-no'>283</span>     hmax: float</span>
+<span class='code-line'><span class='line-no'>284</span>     exact_h1: float</span>
+<span class='code-line'><span class='line-no'>285</span>     exact_l2: float</span>
+<span class='code-line'><span class='line-no'>286</span>     rel_err_h1: float</span>
+<span class='code-line'><span class='line-no'>287</span>     rate_h1: float | None</span>
+<span class='code-line'><span class='line-no'>288</span>     rel_err_l2: float</span>
+<span class='code-line'><span class='line-no'>289</span>     rate_l2: float | None</span>
+<span class='code-line'><span class='line-no'>290</span> </span>
+<span class='code-line'><span class='line-no'>291</span> </span>
+<span class='code-line'><span class='line-no'>292</span> @dataclass</span>
+<span class='code-line'><span class='line-no'>293</span> class LevelResult:</span>
+<span class='code-line'><span class='line-no'>294</span>     row: ErrorRow</span>
+<span class='code-line'><span class='line-no'>295</span>     msh: mesh.Mesh</span>
+<span class='code-line'><span class='line-no'>296</span>     V: fem.FunctionSpace</span>
+<span class='code-line'><span class='line-no'>297</span>     uh: fem.Function</span>
+<span class='code-line'><span class='line-no'>298</span> </span>
+<span class='code-line'><span class='line-no'>299</span> </span>
+<span class='code-line'><span class='line-no'>300</span> def run_one_level(N: int) -&gt; LevelResult:</span>
+<span class='code-line'><span class='line-no'>301</span>     msh = mesh.create_unit_square(comm, N, N, cell_type=mesh.CellType.triangle)</span>
+<span class='code-line'><span class='line-no'>302</span>     dxm = ufl.Measure(&quot;dx&quot;, domain=msh, metadata={&quot;quadrature_degree&quot;: QUAD_DEGREE})</span>
+<span class='code-line'><span class='line-no'>303</span> </span>
+<span class='code-line'><span class='line-no'>304</span>     V = fem.functionspace(msh, (&quot;Lagrange&quot;, 1))</span>
+<span class='code-line'><span class='line-no'>305</span>     bc_V = fem.dirichletbc(PETSc.ScalarType(0.0), boundary_dofs(V, msh), V)</span>
+<span class='code-line'><span class='line-no'>306</span> </span>
+<span class='code-line'><span class='line-no'>307</span>     x = ufl.SpatialCoordinate(msh)</span>
+<span class='code-line'><span class='line-no'>308</span> </span>
+<span class='code-line'><span class='line-no'>309</span>     # Manufactured exact solution and matching source term.</span>
+<span class='code-line'><span class='line-no'>310</span>     u_exact = ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])</span>
+<span class='code-line'><span class='line-no'>311</span>     f_expr = 2.0 * (ufl.pi**2) * u_exact + u_exact**3</span>
+<span class='code-line'><span class='line-no'>312</span> </span>
+<span class='code-line'><span class='line-no'>313</span>     uh = newton_solve_primal(msh, V, bc_V, f_expr, dxm)</span>
+<span class='code-line'><span class='line-no'>314</span> </span>
+<span class='code-line'><span class='line-no'>315</span>     e = u_exact - uh</span>
+<span class='code-line'><span class='line-no'>316</span>     exact_h1 = h1_seminorm_expr(u_exact, dxm)</span>
+<span class='code-line'><span class='line-no'>317</span>     exact_l2 = l2_norm_expr(u_exact, dxm)</span>
+<span class='code-line'><span class='line-no'>318</span>     abs_err_h1 = h1_seminorm_expr(e, dxm)</span>
+<span class='code-line'><span class='line-no'>319</span>     abs_err_l2 = l2_norm_expr(e, dxm)</span>
+<span class='code-line'><span class='line-no'>320</span> </span>
+<span class='code-line'><span class='line-no'>321</span>     rel_err_h1 = abs_err_h1 / exact_h1</span>
+<span class='code-line'><span class='line-no'>322</span>     rel_err_l2 = abs_err_l2 / exact_l2</span>
+<span class='code-line'><span class='line-no'>323</span> </span>
+<span class='code-line'><span class='line-no'>324</span>     # For the uniform right-triangle mesh from create_unit_square.</span>
+<span class='code-line'><span class='line-no'>325</span>     hmax = math.sqrt(2.0) / float(N)</span>
+<span class='code-line'><span class='line-no'>326</span> </span>
+<span class='code-line'><span class='line-no'>327</span>     row = ErrorRow(</span>
+<span class='code-line'><span class='line-no'>328</span>         N=N,</span>
+<span class='code-line'><span class='line-no'>329</span>         hmax=hmax,</span>
+<span class='code-line'><span class='line-no'>330</span>         exact_h1=exact_h1,</span>
+<span class='code-line'><span class='line-no'>331</span>         exact_l2=exact_l2,</span>
+<span class='code-line'><span class='line-no'>332</span>         rel_err_h1=rel_err_h1,</span>
+<span class='code-line'><span class='line-no'>333</span>         rate_h1=None,</span>
+<span class='code-line'><span class='line-no'>334</span>         rel_err_l2=rel_err_l2,</span>
+<span class='code-line'><span class='line-no'>335</span>         rate_l2=None,</span>
+<span class='code-line'><span class='line-no'>336</span>     )</span>
+<span class='code-line'><span class='line-no'>337</span>     return LevelResult(row=row, msh=msh, V=V, uh=uh)</span>
+<span class='code-line'><span class='line-no'>338</span> </span>
+<span class='code-line'><span class='line-no'>339</span> </span>
+<span class='code-line'><span class='line-no'>340</span> def add_rates(rows: List[ErrorRow]) -&gt; None:</span>
+<span class='code-line'><span class='line-no'>341</span>     for j in range(1, len(rows)):</span>
+<span class='code-line'><span class='line-no'>342</span>         prev = rows[j - 1]</span>
+<span class='code-line'><span class='line-no'>343</span>         cur = rows[j]</span>
+<span class='code-line'><span class='line-no'>344</span>         cur.rate_h1 = math.log(prev.rel_err_h1 / cur.rel_err_h1) / math.log(prev.hmax / cur.hmax)</span>
+<span class='code-line'><span class='line-no'>345</span>         cur.rate_l2 = math.log(prev.rel_err_l2 / cur.rel_err_l2) / math.log(prev.hmax / cur.hmax)</span>
+<span class='code-line'><span class='line-no'>346</span> </span>
+<span class='code-line'><span class='line-no'>347</span> </span>
+<span class='code-line'><span class='line-no'>348</span> # ------------------------- main -------------------------</span>
+<span class='code-line'><span class='line-no'>349</span> def main() -&gt; None:</span>
+<span class='code-line'><span class='line-no'>350</span>     import os</span>
+<span class='code-line'><span class='line-no'>351</span> </span>
+<span class='code-line'><span class='line-no'>352</span>     os.makedirs(PLOT_DIR, exist_ok=True)</span>
+<span class='code-line'><span class='line-no'>353</span>     rows: List[ErrorRow] = []</span>
+<span class='code-line'><span class='line-no'>354</span>     level_results: List[LevelResult] = []</span>
+<span class='code-line'><span class='line-no'>355</span> </span>
+<span class='code-line'><span class='line-no'>356</span>     for lev in range(N_LEVELS):</span>
+<span class='code-line'><span class='line-no'>357</span>         N = N0 * (2**lev)</span>
+<span class='code-line'><span class='line-no'>358</span>         result = run_one_level(N)</span>
+<span class='code-line'><span class='line-no'>359</span>         rows.append(result.row)</span>
+<span class='code-line'><span class='line-no'>360</span>         level_results.append(result)</span>
+<span class='code-line'><span class='line-no'>361</span> </span>
+<span class='code-line'><span class='line-no'>362</span>     add_rates(rows)</span>
+<span class='code-line'><span class='line-no'>363</span> </span>
+<span class='code-line'><span class='line-no'>364</span>     if rank == 0:</span>
+<span class='code-line'><span class='line-no'>365</span>         print(&quot;\nEmpirical convergence table (relative errors)&quot;)</span>
+<span class='code-line'><span class='line-no'>366</span>         print(&quot;-&quot; * 106)</span>
+<span class='code-line'><span class='line-no'>367</span>         print(</span>
+<span class='code-line'><span class='line-no'>368</span>             f&quot;{&#x27;N&#x27;:&gt;6} {&#x27;hmax&#x27;:&gt;12} {&#x27;|u-u_h|_H1/|u|_H1&#x27;:&gt;24} {&#x27;rate&#x27;:&gt;8} &quot;</span>
+<span class='code-line'><span class='line-no'>369</span>             f&quot;{&#x27;||u-u_h||_L2/||u||_L2&#x27;:&gt;28} {&#x27;rate&#x27;:&gt;8}&quot;</span>
+<span class='code-line'><span class='line-no'>370</span>         )</span>
+<span class='code-line'><span class='line-no'>371</span>         print(&quot;-&quot; * 106)</span>
+<span class='code-line'><span class='line-no'>372</span>         for row in rows:</span>
+<span class='code-line'><span class='line-no'>373</span>             rate_h1 = &quot;-&quot; if row.rate_h1 is None else f&quot;{row.rate_h1:.4f}&quot;</span>
+<span class='code-line'><span class='line-no'>374</span>             rate_l2 = &quot;-&quot; if row.rate_l2 is None else f&quot;{row.rate_l2:.4f}&quot;</span>
+<span class='code-line'><span class='line-no'>375</span>             print(</span>
+<span class='code-line'><span class='line-no'>376</span>                 f&quot;{row.N:6d} {row.hmax:12.4e} {row.rel_err_h1:24.10e} {rate_h1:&gt;8} &quot;</span>
+<span class='code-line'><span class='line-no'>377</span>                 f&quot;{row.rel_err_l2:28.10e} {rate_l2:&gt;8}&quot;</span>
+<span class='code-line'><span class='line-no'>378</span>             )</span>
+<span class='code-line'><span class='line-no'>379</span> </span>
+<span class='code-line'><span class='line-no'>380</span>         print(&quot;\nRelative errors are defined by&quot;)</span>
+<span class='code-line'><span class='line-no'>381</span>         print(&quot;  |u-u_h|_H1 / |u|_H1&quot;)</span>
+<span class='code-line'><span class='line-no'>382</span>         print(&quot;  ||u-u_h||_L2 / ||u||_L2&quot;)</span>
+<span class='code-line'><span class='line-no'>383</span>         print(&quot;For smooth solutions with P1 FEM, the observed rates should still be&quot;)</span>
+<span class='code-line'><span class='line-no'>384</span>         print(&quot;  relative H1 seminorm error  ~ O(h)&quot;)</span>
+<span class='code-line'><span class='line-no'>385</span>         print(&quot;  relative L2 norm error      ~ O(h^2)&quot;)</span>
+<span class='code-line'><span class='line-no'>386</span> </span>
+<span class='code-line'><span class='line-no'>387</span>         # Write a small LaTeX-ready table.</span>
+<span class='code-line'><span class='line-no'>388</span>         out = f&quot;{PLOT_DIR}/fem_relative_error_rows.tex&quot;</span>
+<span class='code-line'><span class='line-no'>389</span>         with open(out, &quot;w&quot;, encoding=&quot;utf-8&quot;) as f:</span>
+<span class='code-line'><span class='line-no'>390</span>             f.write(</span>
+<span class='code-line'><span class='line-no'>391</span>                 &quot;% N &amp; hmax &amp; |u-u_h|_{H^1}/|u|_{H^1} &amp; rate_{H^1} &amp; &quot;</span>
+<span class='code-line'><span class='line-no'>392</span>                 &quot;||u-u_h||_{L^2}/||u||_{L^2} &amp; rate_{L^2} \\\n&quot;</span>
+<span class='code-line'><span class='line-no'>393</span>             )</span>
+<span class='code-line'><span class='line-no'>394</span>             for row in rows:</span>
+<span class='code-line'><span class='line-no'>395</span>                 rate_h1 = &quot;-&quot; if row.rate_h1 is None else f&quot;{row.rate_h1:.6f}&quot;</span>
+<span class='code-line'><span class='line-no'>396</span>                 rate_l2 = &quot;-&quot; if row.rate_l2 is None else f&quot;{row.rate_l2:.6f}&quot;</span>
+<span class='code-line'><span class='line-no'>397</span>                 f.write(</span>
+<span class='code-line'><span class='line-no'>398</span>                     f&quot;{row.N} &amp; {row.hmax:.6e} &amp; {row.rel_err_h1:.16e} &amp; {rate_h1} &amp; &quot;</span>
+<span class='code-line'><span class='line-no'>399</span>                     f&quot;{row.rel_err_l2:.16e} &amp; {rate_l2} \\\n&quot;</span>
+<span class='code-line'><span class='line-no'>400</span>                 )</span>
+<span class='code-line'><span class='line-no'>401</span>         print(f&quot;\nWrote LaTeX rows to: {out}&quot;)</span>
+<span class='code-line'><span class='line-no'>402</span> </span>
+<span class='code-line'><span class='line-no'>403</span>         mesh_level = max(0, min(MESH_PLOT_LEVEL, N_LEVELS - 1))</span>
+<span class='code-line'><span class='line-no'>404</span>         sol_level = max(0, min(SOLUTION_PLOT_LEVEL, N_LEVELS - 1))</span>
+<span class='code-line'><span class='line-no'>405</span> </span>
+<span class='code-line'><span class='line-no'>406</span>         if SAVE_PLOTS or SHOW_PLOTS:</span>
+<span class='code-line'><span class='line-no'>407</span>             mesh_png = f&quot;{PLOT_DIR}/mesh_level_{mesh_level}.png&quot;</span>
+<span class='code-line'><span class='line-no'>408</span>             sol_png = f&quot;{PLOT_DIR}/uh_level_{sol_level}.png&quot;</span>
+<span class='code-line'><span class='line-no'>409</span>             sol3d_png = f&quot;{PLOT_DIR}/uh_level_{sol_level}_3d.png&quot;</span>
+<span class='code-line'><span class='line-no'>410</span> </span>
+<span class='code-line'><span class='line-no'>411</span>             plot_mesh(</span>
+<span class='code-line'><span class='line-no'>412</span>                 level_results[mesh_level].msh,</span>
+<span class='code-line'><span class='line-no'>413</span>                 filename=mesh_png if SAVE_PLOTS else None,</span>
+<span class='code-line'><span class='line-no'>414</span>                 show=SHOW_PLOTS,</span>
+<span class='code-line'><span class='line-no'>415</span>             )</span>
+<span class='code-line'><span class='line-no'>416</span> </span>
+<span class='code-line'><span class='line-no'>417</span>             if PLOT_SOLUTION_2D:</span>
+<span class='code-line'><span class='line-no'>418</span>                 plot_solution(</span>
+<span class='code-line'><span class='line-no'>419</span>                     level_results[sol_level].V,</span>
+<span class='code-line'><span class='line-no'>420</span>                     level_results[sol_level].uh,</span>
+<span class='code-line'><span class='line-no'>421</span>                     filename=sol_png if SAVE_PLOTS else None,</span>
+<span class='code-line'><span class='line-no'>422</span>                     show=SHOW_PLOTS,</span>
+<span class='code-line'><span class='line-no'>423</span>                 )</span>
+<span class='code-line'><span class='line-no'>424</span> </span>
+<span class='code-line'><span class='line-no'>425</span>             if PLOT_SOLUTION_3D:</span>
+<span class='code-line'><span class='line-no'>426</span>                 plot_solution_3d(</span>
+<span class='code-line'><span class='line-no'>427</span>                     level_results[sol_level].V,</span>
+<span class='code-line'><span class='line-no'>428</span>                     level_results[sol_level].uh,</span>
+<span class='code-line'><span class='line-no'>429</span>                     filename=sol3d_png if SAVE_PLOTS else None,</span>
+<span class='code-line'><span class='line-no'>430</span>                     show=SHOW_PLOTS,</span>
+<span class='code-line'><span class='line-no'>431</span>                 )</span>
+<span class='code-line'><span class='line-no'>432</span> </span>
+<span class='code-line'><span class='line-no'>433</span>             if SAVE_PLOTS:</span>
+<span class='code-line'><span class='line-no'>434</span>                 print(f&quot;Wrote mesh figure to: {mesh_png}&quot;)</span>
+<span class='code-line'><span class='line-no'>435</span>                 if PLOT_SOLUTION_2D:</span>
+<span class='code-line'><span class='line-no'>436</span>                     print(f&quot;Wrote 2D solution figure to: {sol_png}&quot;)</span>
+<span class='code-line'><span class='line-no'>437</span>                 if PLOT_SOLUTION_3D:</span>
+<span class='code-line'><span class='line-no'>438</span>                     print(f&quot;Wrote 3D solution figure to: {sol3d_png}&quot;)</span>
+<span class='code-line'><span class='line-no'>439</span> </span>
+<span class='code-line'><span class='line-no'>440</span> </span>
+<span class='code-line'><span class='line-no'>441</span> if __name__ == &quot;__main__&quot;:</span>
+<span class='code-line'><span class='line-no'>442</span>     main()</span>
+</div>
+
+<h2>5．1 行ごとの丁寧な解説</h2>
 
 <p>
-さらに，FEniCSx のバージョン差により，
-<code>V.dofmap.list.array</code>
-がある環境と，
-<code>V.dofmap.list</code>
-そのものが NumPy 配列で返る環境がありました．
-この差を避けるために，最終版では内部表現に直接触れず，
-<code>dolfinx.plot.vtk_mesh(V)</code>
-を使って描画用の三角形分割を作るようにしました．これで Colab 上でも安定しやすくなりました．
+以下では，コードをまとまりごとに折りたたみ表示しつつ，
+各行に対して
+「何をしているか」
+を 1 行ずつ説明しています．
+細かいところまで追いたいときに使ってください．
 </p>
 
-<h2>7．出力されるファイル</h2>
+<details class='code-detail'><summary>行 1–28：冒頭の説明と目的</summary>
+<div class='table-wrap'><table class='line-table'><thead><tr><th>行</th><th>コード</th><th>解説</th></tr></thead><tbody>
+<tr><td class='ln'>1</td><td><pre>#!/usr/bin/env python3</pre></td><td>Unix 系環境でこのファイルを Python 3 スクリプトとして実行するための shebang です．</td></tr>
+<tr><td class='ln'>2</td><td><pre># -*- coding: utf-8 -*-</pre></td><td>ソースコードの文字コードが UTF-8 であることを明示しています．日本語コメントを安心して書くための指定です．</td></tr>
+<tr><td class='ln'>3</td><td><pre>&quot;&quot;&quot;</pre></td><td>ここからモジュール全体の説明用 docstring が始まります．</td></tr>
+<tr><td class='ln'>4</td><td><pre>Minimal FEniCSx script extracted from a larger verified-numerics code.</pre></td><td>このスクリプトが，大きな verified numerics コードから切り出した最小版であることを述べています．</td></tr>
+<tr><td class='ln'>5</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>6</td><td><pre>Problem:</pre></td><td>解く偏微分方程式の説明を始めています．</td></tr>
+<tr><td class='ln'>7</td><td><pre>    -Δu + u^3 = f   in Ω=(0,1)^2,</pre></td><td>領域内での方程式 −Δu+u^3=f を書いています．</td></tr>
+<tr><td class='ln'>8</td><td><pre>    u = 0           on ∂Ω.</pre></td><td>境界条件 u=0 を書いています．</td></tr>
+<tr><td class='ln'>9</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>10</td><td><pre>Purpose:</pre></td><td>このスクリプトの目的の列挙を始めています．</td></tr>
+<tr><td class='ln'>11</td><td><pre>  1. Solve the primal problem by P1 FEM + Newton&#x27;s method.</pre></td><td>P1 有限要素法と Newton 法で主問題を解くことを述べています．</td></tr>
+<tr><td class='ln'>12</td><td><pre>  2. Compare with a manufactured exact solution.</pre></td><td>製造解を使って数値解を比較することを述べています．</td></tr>
+<tr><td class='ln'>13</td><td><pre>  3. Check empirical convergence in relative errors:</pre></td><td>相対誤差で経験的収束率を見ることを述べています．</td></tr>
+<tr><td class='ln'>14</td><td><pre>       - relative H1 seminorm error</pre></td><td>相対 H1 半ノルム誤差を見ることを明示しています．</td></tr>
+<tr><td class='ln'>15</td><td><pre>       - relative L2 norm error</pre></td><td>相対 L2 誤差を見ることを明示しています．</td></tr>
+<tr><td class='ln'>16</td><td><pre>  4. Plot a mesh triangulation and the computed finite element solution.</pre></td><td>メッシュ図と有限要素解を可視化することを述べています．</td></tr>
+<tr><td class='ln'>17</td><td><pre>  5. Also plot the computed solution as a 3D surface.</pre></td><td>さらに 3D surface plot も出すことを述べています．</td></tr>
+<tr><td class='ln'>18</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>19</td><td><pre>Default manufactured solution:</pre></td><td>既定で使う厳密解の説明を始めています．</td></tr>
+<tr><td class='ln'>20</td><td><pre>    u_exact(x,y) = sin(pi x) sin(pi y)</pre></td><td>厳密解 \(u_{exact}(x,y)=\sin(\pi x)\sin(\pi y)\) を記しています．</td></tr>
+<tr><td class='ln'>21</td><td><pre>so that</pre></td><td>その厳密解に対応する右辺を用意することを説明しています．</td></tr>
+<tr><td class='ln'>22</td><td><pre>    f = 2*pi^2*u_exact + u_exact^3.</pre></td><td>右辺 \(f=2\pi^2u_{exact}+u_{exact}^3\) を書いています．</td></tr>
+<tr><td class='ln'>23</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>24</td><td><pre>Notes:</pre></td><td>実行環境や可視化に関する注意の説明を始めています．</td></tr>
+<tr><td class='ln'>25</td><td><pre>- Tested style: dolfinx 0.10.x.</pre></td><td>dolfinx 0.10.x を想定していることを書いています．</td></tr>
+<tr><td class='ln'>26</td><td><pre>- The plotting helpers are intended for the usual Colab / local serial run</pre></td><td>描画補助関数が Colab やローカルの 1 プロセス実行向けであることを述べています．</td></tr>
+<tr><td class='ln'>27</td><td><pre>  (one MPI rank). For genuinely distributed MPI runs, write XDMF instead.</pre></td><td>本格的な MPI 並列では XDMF 出力の方が適切だと注意しています．</td></tr>
+<tr><td class='ln'>28</td><td><pre>&quot;&quot;&quot;</pre></td><td>モジュール docstring を閉じています．</td></tr>
+</tbody></table></div></details>
+<details class='code-detail'><summary>行 30–44：import と使用ライブラリ</summary>
+<div class='table-wrap'><table class='line-table'><thead><tr><th>行</th><th>コード</th><th>解説</th></tr></thead><tbody>
+<tr><td class='ln'>30</td><td><pre>from __future__ import annotations</pre></td><td>型ヒントの前方参照を扱いやすくするための future import です．</td></tr>
+<tr><td class='ln'>31</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>32</td><td><pre>import math</pre></td><td>標準ライブラリ math を読み込みます．平方根や対数を使うためです．</td></tr>
+<tr><td class='ln'>33</td><td><pre>from dataclasses import dataclass</pre></td><td>dataclass デコレータを読み込みます．誤差表の行を整理するために使います．</td></tr>
+<tr><td class='ln'>34</td><td><pre>from typing import List</pre></td><td>型ヒント用の List を読み込みます．</td></tr>
+<tr><td class='ln'>35</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>36</td><td><pre>import matplotlib.pyplot as plt</pre></td><td>matplotlib.pyplot を読み込みます．通常の 2D/3D 描画に使います．</td></tr>
+<tr><td class='ln'>37</td><td><pre>import matplotlib.tri as mtri</pre></td><td>matplotlib.tri を読み込みます．三角形分割の 2D 可視化に使います．</td></tr>
+<tr><td class='ln'>38</td><td><pre>import numpy as np</pre></td><td>NumPy を読み込みます．配列処理に使います．</td></tr>
+<tr><td class='ln'>39</td><td><pre>import ufl</pre></td><td>UFL を読み込みます．弱形式や微分演算子を書く中心ライブラリです．</td></tr>
+<tr><td class='ln'>40</td><td><pre>from mpi4py import MPI</pre></td><td>MPI 通信のために mpi4py を読み込みます．</td></tr>
+<tr><td class='ln'>41</td><td><pre>from petsc4py import PETSc</pre></td><td>線形ソルバやベクトル・行列を扱う PETSc を読み込みます．</td></tr>
+<tr><td class='ln'>42</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>43</td><td><pre>from dolfinx import fem, mesh, plot as dxplot</pre></td><td>dolfinx から有限要素，メッシュ，描画補助を読み込みます．</td></tr>
+<tr><td class='ln'>44</td><td><pre>from dolfinx.fem import petsc as fp</pre></td><td>dolfinx.fem の PETSc 補助を fp という短い名前で使えるようにしています．</td></tr>
+</tbody></table></div></details>
+<details class='code-detail'><summary>行 47–61：ユーザー設定</summary>
+<div class='table-wrap'><table class='line-table'><thead><tr><th>行</th><th>コード</th><th>解説</th></tr></thead><tbody>
+<tr><td class='ln'>47</td><td><pre># ------------------------- user parameters -------------------------</pre></td><td>ここからユーザーが調整しやすいパラメータ群です．</td></tr>
+<tr><td class='ln'>48</td><td><pre>N0 = 8                 # initial subdivisions in each direction</pre></td><td>各方向の初期分割数 N0 を 8 に設定しています．</td></tr>
+<tr><td class='ln'>49</td><td><pre>N_LEVELS = 5           # total meshes: N0, 2*N0, 4*N0, ...</pre></td><td>メッシュレベル数を 5 に設定しています．したがって N は 8,16,32,64,128 となります．</td></tr>
+<tr><td class='ln'>50</td><td><pre>MAX_NEWTON = 25</pre></td><td>Newton 反復の最大回数を 25 回に設定しています．</td></tr>
+<tr><td class='ln'>51</td><td><pre>NEWTON_TOL = 1.0e-12   # stop when ||du||_{H1-semi} &lt; NEWTON_TOL</pre></td><td>Newton の停止判定を H1 半ノルムで 1.0e-12 に設定しています．</td></tr>
+<tr><td class='ln'>52</td><td><pre>QUAD_DEGREE = 8        # slightly higher quadrature for smooth manufactured data</pre></td><td>積分の求積次数を 8 に設定しています．滑らかな製造解に対して少し高めの設定です．</td></tr>
+<tr><td class='ln'>53</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>54</td><td><pre># Plot controls</pre></td><td>ここから描画まわりの設定です．</td></tr>
+<tr><td class='ln'>55</td><td><pre>SAVE_PLOTS = True</pre></td><td>画像ファイルを保存する設定を True にしています．</td></tr>
+<tr><td class='ln'>56</td><td><pre>SHOW_PLOTS = True</pre></td><td>実行時に図を画面にも表示する設定を True にしています．</td></tr>
+<tr><td class='ln'>57</td><td><pre>MESH_PLOT_LEVEL = 0               # usually a coarse mesh is easier to read</pre></td><td>メッシュ図は最も粗いレベルを描く設定です．見やすさ優先です．</td></tr>
+<tr><td class='ln'>58</td><td><pre>SOLUTION_PLOT_LEVEL = N_LEVELS-1  # plot uh on the finest mesh by default</pre></td><td>解の図は既定で最細メッシュを使う設定です．</td></tr>
+<tr><td class='ln'>59</td><td><pre>PLOT_DIR = &quot;.&quot;</pre></td><td>出力先ディレクトリをカレントディレクトリにしています．Colab でも扱いやすい設定です．</td></tr>
+<tr><td class='ln'>60</td><td><pre>PLOT_SOLUTION_2D = True</pre></td><td>2D の解プロットを有効にしています．</td></tr>
+<tr><td class='ln'>61</td><td><pre>PLOT_SOLUTION_3D = True</pre></td><td>3D surface plot も有効にしています．</td></tr>
+</tbody></table></div></details>
+<details class='code-detail'><summary>行 64–83：MPI とノルム計算補助</summary>
+<div class='table-wrap'><table class='line-table'><thead><tr><th>行</th><th>コード</th><th>解説</th></tr></thead><tbody>
+<tr><td class='ln'>64</td><td><pre># ------------------------- MPI helpers -------------------------</pre></td><td>ここから MPI 関連の補助設定です．</td></tr>
+<tr><td class='ln'>65</td><td><pre>comm = MPI.COMM_WORLD</pre></td><td>全 MPI ランクをまとめた COMM_WORLD を取得しています．</td></tr>
+<tr><td class='ln'>66</td><td><pre>rank = comm.rank</pre></td><td>自分自身のランク番号を取得しています．</td></tr>
+<tr><td class='ln'>67</td><td><pre>size = comm.size</pre></td><td>実行ランク数を取得しています．</td></tr>
+<tr><td class='ln'>68</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>69</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>70</td><td><pre>def assemble_scalar(expr) -&gt; float:</pre></td><td>スカラー量を組み立てて全ランクで和を取る補助関数を定義しています．</td></tr>
+<tr><td class='ln'>71</td><td><pre>    &quot;&quot;&quot;Assemble a scalar and sum across MPI ranks.&quot;&quot;&quot;</pre></td><td>この関数の役割を docstring で説明しています．</td></tr>
+<tr><td class='ln'>72</td><td><pre>    local = fem.assemble_scalar(fem.form(expr))</pre></td><td>与えられた UFL 式を dolfinx の form にして局所スカラー値を assemble しています．</td></tr>
+<tr><td class='ln'>73</td><td><pre>    return comm.allreduce(local, op=MPI.SUM)</pre></td><td>各ランクの局所値を MPI の総和で集めて返しています．</td></tr>
+<tr><td class='ln'>74</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>75</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>76</td><td><pre>def h1_seminorm_expr(v, dxm) -&gt; float:</pre></td><td>H1 半ノルムを計算する補助関数を定義しています．</td></tr>
+<tr><td class='ln'>77</td><td><pre>    &quot;&quot;&quot;Return |v|_{H1} = ||grad v||_{L2}. Works for UFL expressions/functions.&quot;&quot;&quot;</pre></td><td>この関数が |v|_{H1}=||grad v||_{L2} を返すことを説明しています．</td></tr>
+<tr><td class='ln'>78</td><td><pre>    return math.sqrt(max(assemble_scalar(ufl.inner(ufl.grad(v), ufl.grad(v)) * dxm), 0.0))</pre></td><td>勾配の二乗積分を assemble して平方根を取り，非負性のため max を噛ませています．</td></tr>
+<tr><td class='ln'>79</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>80</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>81</td><td><pre>def l2_norm_expr(v, dxm) -&gt; float:</pre></td><td>L2 ノルムを計算する補助関数を定義しています．</td></tr>
+<tr><td class='ln'>82</td><td><pre>    &quot;&quot;&quot;Return ||v||_{L2}. Works for UFL expressions/functions.&quot;&quot;&quot;</pre></td><td>この関数が \(||v||_{L2}\) を返すことを説明しています．</td></tr>
+<tr><td class='ln'>83</td><td><pre>    return math.sqrt(max(assemble_scalar((v * v) * dxm), 0.0))</pre></td><td>\(v^2\) の積分を assemble して平方根を返しています．</td></tr>
+</tbody></table></div></details>
+<details class='code-detail'><summary>行 86–93：境界自由度の抽出</summary>
+<div class='table-wrap'><table class='line-table'><thead><tr><th>行</th><th>コード</th><th>解説</th></tr></thead><tbody>
+<tr><td class='ln'>86</td><td><pre>def boundary_dofs(V, msh):</pre></td><td>境界上の自由度番号を抽出する補助関数を定義しています．</td></tr>
+<tr><td class='ln'>87</td><td><pre>    &quot;&quot;&quot;Dirichlet dofs on the whole boundary of the unit square.&quot;&quot;&quot;</pre></td><td>この関数が単位正方形の境界全体の Dirichlet 自由度を返すことを説明しています．</td></tr>
+<tr><td class='ln'>88</td><td><pre>    facets = mesh.locate_entities_boundary(</pre></td><td>境界ファセットを探す処理を開始しています．</td></tr>
+<tr><td class='ln'>89</td><td><pre>        msh,</pre></td><td>対象メッシュ msh を渡しています．</td></tr>
+<tr><td class='ln'>90</td><td><pre>        msh.topology.dim - 1,</pre></td><td>境界はトポロジー次元より 1 低い次元なので，facet 次元を指定しています．</td></tr>
+<tr><td class='ln'>91</td><td><pre>        lambda x: np.full(x.shape[1], True, dtype=bool),</pre></td><td>全境界点で True を返す関数を与え，境界全体を選ぶようにしています．</td></tr>
+<tr><td class='ln'>92</td><td><pre>    )</pre></td><td>境界ファセット探索の引数を閉じています．</td></tr>
+<tr><td class='ln'>93</td><td><pre>    return fem.locate_dofs_topological(V, msh.topology.dim - 1, facets)</pre></td><td>見つかったファセットから境界自由度番号を返しています．</td></tr>
+</tbody></table></div></details>
+<details class='code-detail'><summary>行 97–160：Newton 法による主問題の有限要素解</summary>
+<div class='table-wrap'><table class='line-table'><thead><tr><th>行</th><th>コード</th><th>解説</th></tr></thead><tbody>
+<tr><td class='ln'>97</td><td><pre>def newton_solve_primal(msh, V, bc_V, f_expr, dxm):</pre></td><td>主問題を Newton 法で解く関数を定義しています．</td></tr>
+<tr><td class='ln'>98</td><td><pre>    &quot;&quot;&quot;</pre></td><td>ここから関数 docstring が始まります．</td></tr>
+<tr><td class='ln'>99</td><td><pre>    Solve</pre></td><td>解く方程式を改めて書いています．</td></tr>
+<tr><td class='ln'>100</td><td><pre>        -Δu + u^3 = f,  u|_{∂Ω}=0</pre></td><td>境界条件付きであることも含めて方程式を説明しています．</td></tr>
+<tr><td class='ln'>101</td><td><pre>    in the P1 FEM space by Newton&#x27;s method.</pre></td><td>P1 有限要素空間で Newton 法を用いて解くことを述べています．</td></tr>
+<tr><td class='ln'>102</td><td><pre>    &quot;&quot;&quot;</pre></td><td>関数 docstring を閉じています．</td></tr>
+<tr><td class='ln'>103</td><td><pre>    u = fem.Function(V)</pre></td><td>未知関数 u を有限要素関数として初期化しています．最初は 0 から始まります．</td></tr>
+<tr><td class='ln'>104</td><td><pre>    du = fem.Function(V)</pre></td><td>Newton 更新量 du を保持する有限要素関数を用意しています．</td></tr>
+<tr><td class='ln'>105</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>106</td><td><pre>    v = ufl.TestFunction(V)</pre></td><td>試験関数 v を作っています．弱形式で任意のテスト関数として使います．</td></tr>
+<tr><td class='ln'>107</td><td><pre>    w = ufl.TrialFunction(V)</pre></td><td>線形化の方向に使う trial function w を作っています．</td></tr>
+<tr><td class='ln'>108</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>109</td><td><pre>    # Nonlinear residual F(u;v)</pre></td><td>ここで非線形残差 \(F(u;v)\) を定義するというコメントです．</td></tr>
+<tr><td class='ln'>110</td><td><pre>    F_form = (ufl.inner(ufl.grad(u), ufl.grad(v)) + (u**3 - f_expr) * v) * dxm</pre></td><td>\((
+abla u,
+abla v)+(u^3-f,v)\) という弱残差を UFL で書いています．</td></tr>
+<tr><td class='ln'>111</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>112</td><td><pre>    # Jacobian J(u)[w,v]</pre></td><td>ここで Jacobian を定義するというコメントです．</td></tr>
+<tr><td class='ln'>113</td><td><pre>    J_form = ufl.derivative(F_form, u, w)</pre></td><td>残差 F を u で Gateaux 微分して Jacobian \(J(u)[w,v]\) を作っています．</td></tr>
+<tr><td class='ln'>114</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>115</td><td><pre>    A = fp.assemble_matrix(fem.form(J_form), bcs=[bc_V])</pre></td><td>Jacobian 行列を assemble して A を作っています．境界条件もここで反映します．</td></tr>
+<tr><td class='ln'>116</td><td><pre>    A.assemble()</pre></td><td>組み立てた行列 A を確定しています．</td></tr>
+<tr><td class='ln'>117</td><td><pre>    b = fp.assemble_vector(fem.form(F_form))</pre></td><td>残差ベクトル用に F_form からベクトル b を assemble しています．</td></tr>
+<tr><td class='ln'>118</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>119</td><td><pre>    ksp = PETSc.KSP().create(comm)</pre></td><td>PETSc の KSP 線形ソルバを作っています．</td></tr>
+<tr><td class='ln'>120</td><td><pre>    ksp.setOperators(A)</pre></td><td>そのソルバに行列 A を渡しています．</td></tr>
+<tr><td class='ln'>121</td><td><pre>    ksp.setType(&quot;preonly&quot;)</pre></td><td>KSP 自体は前処理なし直接解法に近い preonly を使う設定です．</td></tr>
+<tr><td class='ln'>122</td><td><pre>    ksp.getPC().setType(&quot;lu&quot;)</pre></td><td>前処理として LU 分解を使うように設定しています．小規模問題なので素直です．</td></tr>
+<tr><td class='ln'>123</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>124</td><td><pre>    for it in range(MAX_NEWTON):</pre></td><td>Newton 反復を最大 MAX_NEWTON 回まで回すループです．</td></tr>
+<tr><td class='ln'>125</td><td><pre>        # Reassemble Jacobian</pre></td><td>各反復で Jacobian を再組立てすることを示すコメントです．</td></tr>
+<tr><td class='ln'>126</td><td><pre>        A.zeroEntries()</pre></td><td>前回の行列エントリをゼロに戻しています．</td></tr>
+<tr><td class='ln'>127</td><td><pre>        fp.assemble_matrix(A, fem.form(J_form), bcs=[bc_V])</pre></td><td>現在の u に対応する Jacobian を再 assemble しています．</td></tr>
+<tr><td class='ln'>128</td><td><pre>        A.assemble()</pre></td><td>再組立てした行列を確定しています．</td></tr>
+<tr><td class='ln'>129</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>130</td><td><pre>        # Assemble residual vector F(u)</pre></td><td>残差ベクトル \(F(u)\) を assemble し直すことを示すコメントです．</td></tr>
+<tr><td class='ln'>131</td><td><pre>        b.zeroEntries()</pre></td><td>右辺ベクトル b をゼロに戻しています．</td></tr>
+<tr><td class='ln'>132</td><td><pre>        fp.assemble_vector(b, fem.form(F_form))</pre></td><td>現在の u に対応する残差ベクトルを assemble しています．</td></tr>
+<tr><td class='ln'>133</td><td><pre>        fp.apply_lifting(b, [fem.form(J_form)], bcs=[[bc_V]])</pre></td><td>境界条件に対応する lifting を b に適用しています．</td></tr>
+<tr><td class='ln'>134</td><td><pre>        b.ghostUpdate(addv=PETSc.InsertMode.ADD_VALUES, mode=PETSc.ScatterMode.REVERSE)</pre></td><td>ゴースト領域の値を逆散乱で集約しています．並列対応の定型処理です．</td></tr>
+<tr><td class='ln'>135</td><td><pre>        fp.set_bc(b, [bc_V])</pre></td><td>境界条件による右辺修正を b に施しています．</td></tr>
+<tr><td class='ln'>136</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>137</td><td><pre>        # Solve J(u) du = -F(u)</pre></td><td>解く線形化方程式が \(J(u)du=-F(u)\) であることを示すコメントです．</td></tr>
+<tr><td class='ln'>138</td><td><pre>        b.scale(-1.0)</pre></td><td>いま b には \(F(u)\) が入っているので，-1 を掛けて \(-F(u)\) にしています．</td></tr>
+<tr><td class='ln'>139</td><td><pre>        du.x.petsc_vec.set(0.0)</pre></td><td>更新量 du のベクトルを 0 で初期化しています．</td></tr>
+<tr><td class='ln'>140</td><td><pre>        ksp.solve(b, du.x.petsc_vec)</pre></td><td>線形ソルバで更新量 du を解いています．</td></tr>
+<tr><td class='ln'>141</td><td><pre>        du.x.scatter_forward()</pre></td><td>解いた結果を各ランクの所有領域へ反映しています．</td></tr>
+<tr><td class='ln'>142</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>143</td><td><pre>        # Update u &lt;- u + du</pre></td><td>ここで Newton 更新 \(u \leftarrow u+du\) を行うことを示すコメントです．</td></tr>
+<tr><td class='ln'>144</td><td><pre>        u.x.petsc_vec.axpy(1.0, du.x.petsc_vec)</pre></td><td>PETSc の axpy を使って u に du を足しています．</td></tr>
+<tr><td class='ln'>145</td><td><pre>        u.x.scatter_forward()</pre></td><td>更新後の u を各ランクへ反映しています．</td></tr>
+<tr><td class='ln'>146</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>147</td><td><pre>        step_h1 = h1_seminorm_expr(du, dxm)</pre></td><td>更新量 du の H1 半ノルムを計算して停止判定に使います．</td></tr>
+<tr><td class='ln'>148</td><td><pre>        if rank == 0:</pre></td><td>標準出力は rank 0 だけに出すための条件です．</td></tr>
+<tr><td class='ln'>149</td><td><pre>            print(f&quot;[Newton] iteration={it:2d}, |du|_H1={step_h1:.3e}&quot;)</pre></td><td>反復回数と |du|_H1 を表示しています．収束の様子が見えます．</td></tr>
+<tr><td class='ln'>150</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>151</td><td><pre>        if step_h1 &lt; NEWTON_TOL:</pre></td><td>更新量が十分小さければ Newton 反復を終了します．</td></tr>
+<tr><td class='ln'>152</td><td><pre>            break</pre></td><td>for ループを break で抜けます．</td></tr>
+<tr><td class='ln'>153</td><td><pre>    else:</pre></td><td>for-else の else であり，break しなかった場合に入ります．</td></tr>
+<tr><td class='ln'>154</td><td><pre>        if rank == 0:</pre></td><td>警告表示も rank 0 だけに限定しています．</td></tr>
+<tr><td class='ln'>155</td><td><pre>            print(&quot;[warning] Newton did not satisfy the stopping criterion.&quot;)</pre></td><td>停止条件を満たさなかったことを警告として表示しています．</td></tr>
+<tr><td class='ln'>156</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>157</td><td><pre>    A.destroy()</pre></td><td>PETSc 行列 A を明示的に破棄しています．</td></tr>
+<tr><td class='ln'>158</td><td><pre>    b.destroy()</pre></td><td>PETSc ベクトル b も破棄しています．</td></tr>
+<tr><td class='ln'>159</td><td><pre>    ksp.destroy()</pre></td><td>KSP ソルバオブジェクトも破棄しています．</td></tr>
+<tr><td class='ln'>160</td><td><pre>    return u</pre></td><td>最終的に得られた有限要素解 u を返しています．</td></tr>
+</tbody></table></div></details>
+<details class='code-detail'><summary>行 164–200：可視化用の三角形分割の準備</summary>
+<div class='table-wrap'><table class='line-table'><thead><tr><th>行</th><th>コード</th><th>解説</th></tr></thead><tbody>
+<tr><td class='ln'>164</td><td><pre>def _ensure_serial_plotting() -&gt; None:</pre></td><td>可視化を 1 MPI ランク前提に限定する確認関数を定義しています．</td></tr>
+<tr><td class='ln'>165</td><td><pre>    if size != 1:</pre></td><td>ランク数が 1 でない場合を検査しています．</td></tr>
+<tr><td class='ln'>166</td><td><pre>        raise RuntimeError(</pre></td><td>複数ランクなら RuntimeError を投げる準備です．</td></tr>
+<tr><td class='ln'>167</td><td><pre>            &quot;This plotting helper assumes a single MPI rank. &quot;</pre></td><td>エラーメッセージ前半で，この描画補助が単一ランク前提であることを明示しています．</td></tr>
+<tr><td class='ln'>168</td><td><pre>            &quot;For multi-rank runs, export XDMF or gather mesh/function data first.&quot;</pre></td><td>後半で，マルチランクなら XDMF 出力や gather が必要だと説明しています．</td></tr>
+<tr><td class='ln'>169</td><td><pre>        )</pre></td><td>例外メッセージを閉じています．</td></tr>
+<tr><td class='ln'>170</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>171</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>172</td><td><pre>def mesh_triangulation(msh) -&gt; tuple[np.ndarray, np.ndarray, np.ndarray]:</pre></td><td>メッシュの頂点座標と三角形接続を返す関数を定義しています．</td></tr>
+<tr><td class='ln'>173</td><td><pre>    &quot;&quot;&quot;Return vertex coordinates and triangle connectivity of the mesh geometry.&quot;&quot;&quot;</pre></td><td>関数の目的を docstring で説明しています．</td></tr>
+<tr><td class='ln'>174</td><td><pre>    _ensure_serial_plotting()</pre></td><td>まず 1 ランク実行かどうかを確認しています．</td></tr>
+<tr><td class='ln'>175</td><td><pre>    msh.topology.create_connectivity(msh.topology.dim, 0)</pre></td><td>セルと頂点の接続情報を作るようメッシュに要求しています．</td></tr>
+<tr><td class='ln'>176</td><td><pre>    cells = msh.topology.connectivity(msh.topology.dim, 0).array.reshape(-1, 3)</pre></td><td>セル→頂点の配列を取り出し，三角形ごとに 3 頂点へ reshape しています．</td></tr>
+<tr><td class='ln'>177</td><td><pre>    coords = msh.geometry.x[:, :2]</pre></td><td>メッシュの幾何座標から x,y 成分だけを取り出しています．</td></tr>
+<tr><td class='ln'>178</td><td><pre>    return coords[:, 0], coords[:, 1], cells</pre></td><td>x 座標，y 座標，セル接続を返しています．</td></tr>
+<tr><td class='ln'>179</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>180</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>181</td><td><pre>def solution_triangulation(V, uh) -&gt; tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:</pre></td><td>有限要素解描画用の三角形分割を返す関数を定義しています．</td></tr>
+<tr><td class='ln'>182</td><td><pre>    &quot;&quot;&quot;</pre></td><td>ここから関数 docstring が始まります．</td></tr>
+<tr><td class='ln'>183</td><td><pre>    Return coordinates, triangle connectivity, and nodal values for a scalar</pre></td><td>返り値が座標，三角形接続，節点値であることを説明しています．</td></tr>
+<tr><td class='ln'>184</td><td><pre>    Lagrange function using dolfinx.plot.vtk_mesh.</pre></td><td>dolfinx.plot.vtk_mesh を使うことを明示しています．</td></tr>
+<tr><td class='ln'>185</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>186</td><td><pre>    This is more robust across FEniCSx versions than touching V.dofmap internals</pre></td><td>FEniCSx の内部 dofmap へ直接触るより頑健であることを説明しています．</td></tr>
+<tr><td class='ln'>187</td><td><pre>    directly. The official helper returns topology based on degree-of-freedom</pre></td><td>公式補助が Lagrange 要素の自由度座標ベースのトポロジーを返すことを補足しています．</td></tr>
+<tr><td class='ln'>188</td><td><pre>    coordinates for Lagrange elements.</pre></td><td>前行の説明の続きです．</td></tr>
+<tr><td class='ln'>189</td><td><pre>    &quot;&quot;&quot;</pre></td><td>関数 docstring を閉じています．</td></tr>
+<tr><td class='ln'>190</td><td><pre>    _ensure_serial_plotting()</pre></td><td>ここでも単一ランク実行かどうかを確認しています．</td></tr>
+<tr><td class='ln'>191</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>192</td><td><pre>    topology, _, geometry = dxplot.vtk_mesh(V)</pre></td><td>FunctionSpace V に対して vtk_mesh を呼び，可視化用トポロジーと幾何情報を得ています．</td></tr>
+<tr><td class='ln'>193</td><td><pre>    topology = np.asarray(topology, dtype=np.int64)</pre></td><td>topology を整数型 NumPy 配列へ変換しています．</td></tr>
+<tr><td class='ln'>194</td><td><pre>    geometry = np.asarray(geometry)</pre></td><td>geometry も NumPy 配列として扱いやすくしています．</td></tr>
+<tr><td class='ln'>195</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>196</td><td><pre>    num_nodes_per_cell = int(topology[0])</pre></td><td>VTK 形式の先頭要素から 1 セル当たり節点数を読み取っています．</td></tr>
+<tr><td class='ln'>197</td><td><pre>    cells = topology.reshape(-1, num_nodes_per_cell + 1)[:, 1:]</pre></td><td>topology をセルごとの節点番号配列へ reshape し，先頭の個数情報を落としています．</td></tr>
+<tr><td class='ln'>198</td><td><pre>    coords = geometry[:, :2]</pre></td><td>幾何座標から x,y 成分だけを抜き出しています．</td></tr>
+<tr><td class='ln'>199</td><td><pre>    values = uh.x.array.real.copy()</pre></td><td>有限要素解 uh の実数値配列をコピーしています．</td></tr>
+<tr><td class='ln'>200</td><td><pre>    return coords[:, 0], coords[:, 1], cells, values</pre></td><td>x 座標，y 座標，セル接続，節点値を返しています．</td></tr>
+</tbody></table></div></details>
+<details class='code-detail'><summary>行 203–245：メッシュ図と 2D 解プロット</summary>
+<div class='table-wrap'><table class='line-table'><thead><tr><th>行</th><th>コード</th><th>解説</th></tr></thead><tbody>
+<tr><td class='ln'>203</td><td><pre>def plot_mesh(msh, filename: str | None = None, show: bool = True) -&gt; None:</pre></td><td>メッシュ分割図を描く関数を定義しています．</td></tr>
+<tr><td class='ln'>204</td><td><pre>    &quot;&quot;&quot;Plot the triangulation of the mesh.&quot;&quot;&quot;</pre></td><td>この関数がメッシュ三角形分割を描くことを説明しています．</td></tr>
+<tr><td class='ln'>205</td><td><pre>    x, y, cells = mesh_triangulation(msh)</pre></td><td>先ほどの補助関数から x,y とセル接続を取り出しています．</td></tr>
+<tr><td class='ln'>206</td><td><pre>    triang = mtri.Triangulation(x, y, cells)</pre></td><td>Matplotlib の Triangulation オブジェクトを作っています．</td></tr>
+<tr><td class='ln'>207</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>208</td><td><pre>    fig, ax = plt.subplots(figsize=(6, 6))</pre></td><td>図と軸を 6×6 インチで作成しています．</td></tr>
+<tr><td class='ln'>209</td><td><pre>    ax.triplot(triang, linewidth=0.7)</pre></td><td>三角形分割線だけを描いています．</td></tr>
+<tr><td class='ln'>210</td><td><pre>    ax.set_aspect(&quot;equal&quot;)</pre></td><td>縦横比を equal にして正方形を歪めないようにしています．</td></tr>
+<tr><td class='ln'>211</td><td><pre>    ax.set_title(&quot;Mesh triangulation&quot;)</pre></td><td>図タイトルを設定しています．</td></tr>
+<tr><td class='ln'>212</td><td><pre>    ax.set_xlabel(&quot;x&quot;)</pre></td><td>x 軸ラベルを付けています．</td></tr>
+<tr><td class='ln'>213</td><td><pre>    ax.set_ylabel(&quot;y&quot;)</pre></td><td>y 軸ラベルを付けています．</td></tr>
+<tr><td class='ln'>214</td><td><pre>    fig.tight_layout()</pre></td><td>余白を自動調整しています．</td></tr>
+<tr><td class='ln'>215</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>216</td><td><pre>    if filename is not None:</pre></td><td>ファイル名が与えられている場合だけ保存する条件です．</td></tr>
+<tr><td class='ln'>217</td><td><pre>        fig.savefig(filename, dpi=200, bbox_inches=&quot;tight&quot;)</pre></td><td>PNG などとして図を保存しています．</td></tr>
+<tr><td class='ln'>218</td><td><pre>    if show:</pre></td><td>画面表示が必要かどうかを判定しています．</td></tr>
+<tr><td class='ln'>219</td><td><pre>        plt.show()</pre></td><td>表示する設定なら plt.show() を呼びます．</td></tr>
+<tr><td class='ln'>220</td><td><pre>    else:</pre></td><td>表示しない場合の分岐です．</td></tr>
+<tr><td class='ln'>221</td><td><pre>        plt.close(fig)</pre></td><td>不要な図を閉じてメモリを解放しています．</td></tr>
+<tr><td class='ln'>222</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>223</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>224</td><td><pre>def plot_solution(V, uh, filename: str | None = None, show: bool = True) -&gt; None:</pre></td><td>2D の有限要素解プロット関数を定義しています．</td></tr>
+<tr><td class='ln'>225</td><td><pre>    &quot;&quot;&quot;Plot the computed P1 finite element solution.&quot;&quot;&quot;</pre></td><td>この関数が計算された P1 解を描くことを説明しています．</td></tr>
+<tr><td class='ln'>226</td><td><pre>    x, y, cells, values = solution_triangulation(V, uh)</pre></td><td>描画に必要な節点座標，三角形接続，値を取得しています．</td></tr>
+<tr><td class='ln'>227</td><td><pre>    triang = mtri.Triangulation(x, y, cells)</pre></td><td>その情報から Triangulation を構成しています．</td></tr>
+<tr><td class='ln'>228</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>229</td><td><pre>    fig, ax = plt.subplots(figsize=(7, 6))</pre></td><td>少し横長の図枠を作っています．</td></tr>
+<tr><td class='ln'>230</td><td><pre>    tpc = ax.tripcolor(triang, values, shading=&quot;gouraud&quot;)</pre></td><td>節点値を滑らかな塗りつぶしで表示しています．</td></tr>
+<tr><td class='ln'>231</td><td><pre>    ax.triplot(triang, color=&quot;k&quot;, linewidth=0.15, alpha=0.35)</pre></td><td>メッシュ線も薄く重ねて，解の位置関係が分かるようにしています．</td></tr>
+<tr><td class='ln'>232</td><td><pre>    ax.set_aspect(&quot;equal&quot;)</pre></td><td>ここでも縦横比を equal にしています．</td></tr>
+<tr><td class='ln'>233</td><td><pre>    ax.set_title(&quot;Computed FEM solution $u_h$&quot;)</pre></td><td>図タイトルを設定しています．</td></tr>
+<tr><td class='ln'>234</td><td><pre>    ax.set_xlabel(&quot;x&quot;)</pre></td><td>x 軸ラベルを付けています．</td></tr>
+<tr><td class='ln'>235</td><td><pre>    ax.set_ylabel(&quot;y&quot;)</pre></td><td>y 軸ラベルを付けています．</td></tr>
+<tr><td class='ln'>236</td><td><pre>    fig.colorbar(tpc, ax=ax, label=&quot;$u_h$&quot;)</pre></td><td>カラーバーを付け，量が \(u_h\) であることを示しています．</td></tr>
+<tr><td class='ln'>237</td><td><pre>    fig.tight_layout()</pre></td><td>余白を調整しています．</td></tr>
+<tr><td class='ln'>238</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>239</td><td><pre>    if filename is not None:</pre></td><td>保存先が指定された場合のみ保存します．</td></tr>
+<tr><td class='ln'>240</td><td><pre>        fig.savefig(filename, dpi=200, bbox_inches=&quot;tight&quot;)</pre></td><td>図をファイル保存しています．</td></tr>
+<tr><td class='ln'>241</td><td><pre>    if show:</pre></td><td>表示するかどうかを判定しています．</td></tr>
+<tr><td class='ln'>242</td><td><pre>        plt.show()</pre></td><td>表示する設定なら図を見せます．</td></tr>
+<tr><td class='ln'>243</td><td><pre>    else:</pre></td><td>表示しない場合の分岐です．</td></tr>
+<tr><td class='ln'>244</td><td><pre>        plt.close(fig)</pre></td><td>図を閉じて後始末しています．</td></tr>
+<tr><td class='ln'>245</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+</tbody></table></div></details>
+<details class='code-detail'><summary>行 247–276：3D surface plot</summary>
+<div class='table-wrap'><table class='line-table'><thead><tr><th>行</th><th>コード</th><th>解説</th></tr></thead><tbody>
+<tr><td class='ln'>247</td><td><pre>def plot_solution_3d(V, uh, filename: str | None = None, show: bool = True) -&gt; None:</pre></td><td>3D surface plot 関数を定義しています．</td></tr>
+<tr><td class='ln'>248</td><td><pre>    &quot;&quot;&quot;</pre></td><td>ここから docstring です．</td></tr>
+<tr><td class='ln'>249</td><td><pre>    Plot the computed P1 finite element solution as a 3D surface z = u_h(x, y).</pre></td><td>\(z=u_h(x,y)\) という 3D 曲面を描くことを説明しています．</td></tr>
+<tr><td class='ln'>250</td><td><pre>    &quot;&quot;&quot;</pre></td><td>docstring を閉じています．</td></tr>
+<tr><td class='ln'>251</td><td><pre>    x, y, cells, values = solution_triangulation(V, uh)</pre></td><td>2D と同じ補助関数から節点座標・三角形接続・値を取得しています．</td></tr>
+<tr><td class='ln'>252</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>253</td><td><pre>    fig = plt.figure(figsize=(8, 6))</pre></td><td>3D 用の図枠を作っています．</td></tr>
+<tr><td class='ln'>254</td><td><pre>    ax = fig.add_subplot(111, projection=&quot;3d&quot;)</pre></td><td>3D projection を持つ軸を生成しています．</td></tr>
+<tr><td class='ln'>255</td><td><pre>    surf = ax.plot_trisurf(</pre></td><td>三角形分割された曲面を plot_trisurf で描き始めています．</td></tr>
+<tr><td class='ln'>256</td><td><pre>        x,</pre></td><td>x 座標を渡しています．</td></tr>
+<tr><td class='ln'>257</td><td><pre>        y,</pre></td><td>y 座標を渡しています．</td></tr>
+<tr><td class='ln'>258</td><td><pre>        values,</pre></td><td>高さ方向の値として有限要素解 values を渡しています．</td></tr>
+<tr><td class='ln'>259</td><td><pre>        triangles=cells,</pre></td><td>どの三角形で面を張るかを指定しています．</td></tr>
+<tr><td class='ln'>260</td><td><pre>        cmap=&quot;viridis&quot;,</pre></td><td>カラーマップを viridis に設定しています．</td></tr>
+<tr><td class='ln'>261</td><td><pre>        linewidth=0.15,</pre></td><td>曲面の線幅を細く設定しています．</td></tr>
+<tr><td class='ln'>262</td><td><pre>        antialiased=True,</pre></td><td>見た目を滑らかにする antialias を有効にしています．</td></tr>
+<tr><td class='ln'>263</td><td><pre>    )</pre></td><td>plot_trisurf の引数を閉じています．</td></tr>
+<tr><td class='ln'>264</td><td><pre>    ax.set_title(&quot;Computed FEM solution $u_h$ (3D surface)&quot;)</pre></td><td>3D 図のタイトルを設定しています．</td></tr>
+<tr><td class='ln'>265</td><td><pre>    ax.set_xlabel(&quot;x&quot;)</pre></td><td>x 軸ラベルを付けています．</td></tr>
+<tr><td class='ln'>266</td><td><pre>    ax.set_ylabel(&quot;y&quot;)</pre></td><td>y 軸ラベルを付けています．</td></tr>
+<tr><td class='ln'>267</td><td><pre>    ax.set_zlabel(&quot;$u_h$&quot;)</pre></td><td>z 軸ラベルとして \(u_h\) を付けています．</td></tr>
+<tr><td class='ln'>268</td><td><pre>    fig.colorbar(surf, ax=ax, shrink=0.75, pad=0.08, label=&quot;$u_h$&quot;)</pre></td><td>3D 図にもカラーバーを付けています．</td></tr>
+<tr><td class='ln'>269</td><td><pre>    fig.tight_layout()</pre></td><td>余白を調整しています．</td></tr>
+<tr><td class='ln'>270</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>271</td><td><pre>    if filename is not None:</pre></td><td>保存先が与えられた場合に保存する条件です．</td></tr>
+<tr><td class='ln'>272</td><td><pre>        fig.savefig(filename, dpi=200, bbox_inches=&quot;tight&quot;)</pre></td><td>3D 図を保存しています．</td></tr>
+<tr><td class='ln'>273</td><td><pre>    if show:</pre></td><td>表示するかどうかを判定しています．</td></tr>
+<tr><td class='ln'>274</td><td><pre>        plt.show()</pre></td><td>表示する設定なら 3D 図を表示します．</td></tr>
+<tr><td class='ln'>275</td><td><pre>    else:</pre></td><td>表示しない場合の分岐です．</td></tr>
+<tr><td class='ln'>276</td><td><pre>        plt.close(fig)</pre></td><td>図を閉じています．</td></tr>
+</tbody></table></div></details>
+<details class='code-detail'><summary>行 280–337：誤差表用データ構造と 1 レベル計算</summary>
+<div class='table-wrap'><table class='line-table'><thead><tr><th>行</th><th>コード</th><th>解説</th></tr></thead><tbody>
+<tr><td class='ln'>280</td><td><pre>@dataclass</pre></td><td>ここから誤差表を整理する dataclass を定義します．</td></tr>
+<tr><td class='ln'>281</td><td><pre>class ErrorRow:</pre></td><td>ErrorRow というデータクラスを宣言しています．1 行分の誤差情報をまとめます．</td></tr>
+<tr><td class='ln'>282</td><td><pre>    N: int</pre></td><td>分割数 N を保持します．</td></tr>
+<tr><td class='ln'>283</td><td><pre>    hmax: float</pre></td><td>メッシュ幅 hmax を保持します．</td></tr>
+<tr><td class='ln'>284</td><td><pre>    exact_h1: float</pre></td><td>厳密解の H1 半ノルムを保持します．相対誤差の分母です．</td></tr>
+<tr><td class='ln'>285</td><td><pre>    exact_l2: float</pre></td><td>厳密解の L2 ノルムを保持します．これも相対誤差の分母です．</td></tr>
+<tr><td class='ln'>286</td><td><pre>    rel_err_h1: float</pre></td><td>相対 H1 半ノルム誤差を保持します．</td></tr>
+<tr><td class='ln'>287</td><td><pre>    rate_h1: float | None</pre></td><td>その実験収束率を保持します．最初の行では未定なので None を許します．</td></tr>
+<tr><td class='ln'>288</td><td><pre>    rel_err_l2: float</pre></td><td>相対 L2 誤差を保持します．</td></tr>
+<tr><td class='ln'>289</td><td><pre>    rate_l2: float | None</pre></td><td>その実験収束率を保持します．こちらも None を許します．</td></tr>
+<tr><td class='ln'>290</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>291</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>292</td><td><pre>@dataclass</pre></td><td>各レベルで必要なオブジェクト全体を持つ dataclass を定義します．</td></tr>
+<tr><td class='ln'>293</td><td><pre>class LevelResult:</pre></td><td>LevelResult を宣言しています．</td></tr>
+<tr><td class='ln'>294</td><td><pre>    row: ErrorRow</pre></td><td>表として表示する ErrorRow を保持します．</td></tr>
+<tr><td class='ln'>295</td><td><pre>    msh: mesh.Mesh</pre></td><td>可視化に使うメッシュ自体も保持します．</td></tr>
+<tr><td class='ln'>296</td><td><pre>    V: fem.FunctionSpace</pre></td><td>FunctionSpace も保持します．</td></tr>
+<tr><td class='ln'>297</td><td><pre>    uh: fem.Function</pre></td><td>そのレベルで得られた有限要素解 uh も保持します．</td></tr>
+<tr><td class='ln'>298</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>299</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>300</td><td><pre>def run_one_level(N: int) -&gt; LevelResult:</pre></td><td>1 つのメッシュレベルで計算を走らせる関数を定義しています．</td></tr>
+<tr><td class='ln'>301</td><td><pre>    msh = mesh.create_unit_square(comm, N, N, cell_type=mesh.CellType.triangle)</pre></td><td>単位正方形を N×N 分割した三角形メッシュを作っています．</td></tr>
+<tr><td class='ln'>302</td><td><pre>    dxm = ufl.Measure(&quot;dx&quot;, domain=msh, metadata={&quot;quadrature_degree&quot;: QUAD_DEGREE})</pre></td><td>そのメッシュ上の積分記号 dx を求積次数付きで作っています．</td></tr>
+<tr><td class='ln'>303</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>304</td><td><pre>    V = fem.functionspace(msh, (&quot;Lagrange&quot;, 1))</pre></td><td>P1 Lagrange 有限要素空間 V を作っています．</td></tr>
+<tr><td class='ln'>305</td><td><pre>    bc_V = fem.dirichletbc(PETSc.ScalarType(0.0), boundary_dofs(V, msh), V)</pre></td><td>境界自由度に 0 を課す Dirichlet 条件を作っています．</td></tr>
+<tr><td class='ln'>306</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>307</td><td><pre>    x = ufl.SpatialCoordinate(msh)</pre></td><td>空間座標 x=(x0,x1) を UFL で取得しています．</td></tr>
+<tr><td class='ln'>308</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>309</td><td><pre>    # Manufactured exact solution and matching source term.</pre></td><td>ここから製造解と右辺の定義であることを示すコメントです．</td></tr>
+<tr><td class='ln'>310</td><td><pre>    u_exact = ufl.sin(ufl.pi * x[0]) * ufl.sin(ufl.pi * x[1])</pre></td><td>厳密解 \(u=\sin(\pi x)\sin(\pi y)\) を UFL で書いています．</td></tr>
+<tr><td class='ln'>311</td><td><pre>    f_expr = 2.0 * (ufl.pi**2) * u_exact + u_exact**3</pre></td><td>その厳密解を満たす右辺 \(f=2\pi^2u+u^3\) を作っています．</td></tr>
+<tr><td class='ln'>312</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>313</td><td><pre>    uh = newton_solve_primal(msh, V, bc_V, f_expr, dxm)</pre></td><td>Newton 法ソルバを呼び，有限要素近似 uh を得ています．</td></tr>
+<tr><td class='ln'>314</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>315</td><td><pre>    e = u_exact - uh</pre></td><td>誤差関数 \(e=u_{exact}-u_h\) を定義しています．</td></tr>
+<tr><td class='ln'>316</td><td><pre>    exact_h1 = h1_seminorm_expr(u_exact, dxm)</pre></td><td>厳密解の H1 半ノルムを計算しています．</td></tr>
+<tr><td class='ln'>317</td><td><pre>    exact_l2 = l2_norm_expr(u_exact, dxm)</pre></td><td>厳密解の L2 ノルムを計算しています．</td></tr>
+<tr><td class='ln'>318</td><td><pre>    abs_err_h1 = h1_seminorm_expr(e, dxm)</pre></td><td>誤差の H1 半ノルムを計算しています．</td></tr>
+<tr><td class='ln'>319</td><td><pre>    abs_err_l2 = l2_norm_expr(e, dxm)</pre></td><td>誤差の L2 ノルムを計算しています．</td></tr>
+<tr><td class='ln'>320</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>321</td><td><pre>    rel_err_h1 = abs_err_h1 / exact_h1</pre></td><td>絶対 H1 誤差を厳密解の H1 半ノルムで割って相対誤差にしています．</td></tr>
+<tr><td class='ln'>322</td><td><pre>    rel_err_l2 = abs_err_l2 / exact_l2</pre></td><td>絶対 L2 誤差を厳密解の L2 ノルムで割って相対誤差にしています．</td></tr>
+<tr><td class='ln'>323</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>324</td><td><pre>    # For the uniform right-triangle mesh from create_unit_square.</pre></td><td>このメッシュでは hmax が √2/N になるという注記です．</td></tr>
+<tr><td class='ln'>325</td><td><pre>    hmax = math.sqrt(2.0) / float(N)</pre></td><td>実際に hmax をその式で計算しています．</td></tr>
+<tr><td class='ln'>326</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>327</td><td><pre>    row = ErrorRow(</pre></td><td>ここから ErrorRow を作っています．</td></tr>
+<tr><td class='ln'>328</td><td><pre>        N=N,</pre></td><td>分割数 N を格納しています．</td></tr>
+<tr><td class='ln'>329</td><td><pre>        hmax=hmax,</pre></td><td>hmax を格納しています．</td></tr>
+<tr><td class='ln'>330</td><td><pre>        exact_h1=exact_h1,</pre></td><td>厳密解の H1 半ノルムを格納しています．</td></tr>
+<tr><td class='ln'>331</td><td><pre>        exact_l2=exact_l2,</pre></td><td>厳密解の L2 ノルムを格納しています．</td></tr>
+<tr><td class='ln'>332</td><td><pre>        rel_err_h1=rel_err_h1,</pre></td><td>相対 H1 誤差を格納しています．</td></tr>
+<tr><td class='ln'>333</td><td><pre>        rate_h1=None,</pre></td><td>最初は収束率が未計算なので None を入れています．</td></tr>
+<tr><td class='ln'>334</td><td><pre>        rel_err_l2=rel_err_l2,</pre></td><td>相対 L2 誤差を格納しています．</td></tr>
+<tr><td class='ln'>335</td><td><pre>        rate_l2=None,</pre></td><td>L2 側の収束率も最初は None です．</td></tr>
+<tr><td class='ln'>336</td><td><pre>    )</pre></td><td>ErrorRow の生成を閉じています．</td></tr>
+<tr><td class='ln'>337</td><td><pre>    return LevelResult(row=row, msh=msh, V=V, uh=uh)</pre></td><td>ErrorRow，メッシュ，空間，解をまとめた LevelResult を返しています．</td></tr>
+</tbody></table></div></details>
+<details class='code-detail'><summary>行 340–345：実験収束率の計算</summary>
+<div class='table-wrap'><table class='line-table'><thead><tr><th>行</th><th>コード</th><th>解説</th></tr></thead><tbody>
+<tr><td class='ln'>340</td><td><pre>def add_rates(rows: List[ErrorRow]) -&gt; None:</pre></td><td>隣り合うメッシュレベルから実験収束率を付ける関数を定義しています．</td></tr>
+<tr><td class='ln'>341</td><td><pre>    for j in range(1, len(rows)):</pre></td><td>2 行目以降について率を計算するループです．</td></tr>
+<tr><td class='ln'>342</td><td><pre>        prev = rows[j - 1]</pre></td><td>1 つ前の行を prev としています．</td></tr>
+<tr><td class='ln'>343</td><td><pre>        cur = rows[j]</pre></td><td>現在の行を cur としています．</td></tr>
+<tr><td class='ln'>344</td><td><pre>        cur.rate_h1 = math.log(prev.rel_err_h1 / cur.rel_err_h1) / math.log(prev.hmax / cur.hmax)</pre></td><td>\( \log(E_{old}/E_{new}) / \log(h_{old}/h_{new}) \) で H1 の収束率を計算しています．</td></tr>
+<tr><td class='ln'>345</td><td><pre>        cur.rate_l2 = math.log(prev.rel_err_l2 / cur.rel_err_l2) / math.log(prev.hmax / cur.hmax)</pre></td><td>同じ式で L2 の収束率を計算しています．</td></tr>
+</tbody></table></div></details>
+<details class='code-detail'><summary>行 349–442：main 関数：全体実行とファイル出力</summary>
+<div class='table-wrap'><table class='line-table'><thead><tr><th>行</th><th>コード</th><th>解説</th></tr></thead><tbody>
+<tr><td class='ln'>349</td><td><pre>def main() -&gt; None:</pre></td><td>main 関数を定義しています．</td></tr>
+<tr><td class='ln'>350</td><td><pre>    import os</pre></td><td>ここだけで os を使うので，関数内 import にしています．</td></tr>
+<tr><td class='ln'>351</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>352</td><td><pre>    os.makedirs(PLOT_DIR, exist_ok=True)</pre></td><td>出力先ディレクトリ PLOT_DIR を，なければ作成しています．</td></tr>
+<tr><td class='ln'>353</td><td><pre>    rows: List[ErrorRow] = []</pre></td><td>誤差表の行をためる空リストを作っています．</td></tr>
+<tr><td class='ln'>354</td><td><pre>    level_results: List[LevelResult] = []</pre></td><td>各レベルのメッシュや解を保存する空リストを作っています．</td></tr>
+<tr><td class='ln'>355</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>356</td><td><pre>    for lev in range(N_LEVELS):</pre></td><td>メッシュレベルごとの計算ループです．</td></tr>
+<tr><td class='ln'>357</td><td><pre>        N = N0 * (2**lev)</pre></td><td>レベル lev に対する分割数 N=N0·2^lev を計算しています．</td></tr>
+<tr><td class='ln'>358</td><td><pre>        result = run_one_level(N)</pre></td><td>その N で 1 レベル分の計算を実行しています．</td></tr>
+<tr><td class='ln'>359</td><td><pre>        rows.append(result.row)</pre></td><td>得られた誤差表 1 行を rows に追加しています．</td></tr>
+<tr><td class='ln'>360</td><td><pre>        level_results.append(result)</pre></td><td>メッシュや解を含む全結果も level_results に追加しています．</td></tr>
+<tr><td class='ln'>361</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>362</td><td><pre>    add_rates(rows)</pre></td><td>全レベルの結果に対して実験収束率を付けています．</td></tr>
+<tr><td class='ln'>363</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>364</td><td><pre>    if rank == 0:</pre></td><td>表示やファイル出力は rank 0 だけで行う条件です．</td></tr>
+<tr><td class='ln'>365</td><td><pre>        print(&quot;\nEmpirical convergence table (relative errors)&quot;)</pre></td><td>まず相対誤差表の見出しを表示しています．</td></tr>
+<tr><td class='ln'>366</td><td><pre>        print(&quot;-&quot; * 106)</pre></td><td>区切り線を出しています．</td></tr>
+<tr><td class='ln'>367</td><td><pre>        print(</pre></td><td>表ヘッダの表示を始めています．</td></tr>
+<tr><td class='ln'>368</td><td><pre>            f&quot;{&#x27;N&#x27;:&gt;6} {&#x27;hmax&#x27;:&gt;12} {&#x27;|u-u_h|_H1/|u|_H1&#x27;:&gt;24} {&#x27;rate&#x27;:&gt;8} &quot;</pre></td><td>列名として N, hmax, 相対 H1 誤差, rate を整形して出しています．</td></tr>
+<tr><td class='ln'>369</td><td><pre>            f&quot;{&#x27;||u-u_h||_L2/||u||_L2&#x27;:&gt;28} {&#x27;rate&#x27;:&gt;8}&quot;</pre></td><td>続いて相対 L2 誤差とその rate を出しています．</td></tr>
+<tr><td class='ln'>370</td><td><pre>        )</pre></td><td>f 文字列を閉じています．</td></tr>
+<tr><td class='ln'>371</td><td><pre>        print(&quot;-&quot; * 106)</pre></td><td>もう一度区切り線を出しています．</td></tr>
+<tr><td class='ln'>372</td><td><pre>        for row in rows:</pre></td><td>各 ErrorRow を順に表示するループです．</td></tr>
+<tr><td class='ln'>373</td><td><pre>            rate_h1 = &quot;-&quot; if row.rate_h1 is None else f&quot;{row.rate_h1:.4f}&quot;</pre></td><td>最初の行では収束率がないので &#x27;-&#x27; を表示するようにしています．</td></tr>
+<tr><td class='ln'>374</td><td><pre>            rate_l2 = &quot;-&quot; if row.rate_l2 is None else f&quot;{row.rate_l2:.4f}&quot;</pre></td><td>L2 側も同様に &#x27;-&#x27; か数値文字列にしています．</td></tr>
+<tr><td class='ln'>375</td><td><pre>            print(</pre></td><td>1 行分の整形表示を始めています．</td></tr>
+<tr><td class='ln'>376</td><td><pre>                f&quot;{row.N:6d} {row.hmax:12.4e} {row.rel_err_h1:24.10e} {rate_h1:&gt;8} &quot;</pre></td><td>N, hmax, 相対 H1 誤差, rate を出力しています．</td></tr>
+<tr><td class='ln'>377</td><td><pre>                f&quot;{row.rel_err_l2:28.10e} {rate_l2:&gt;8}&quot;</pre></td><td>相対 L2 誤差とその rate を出力しています．</td></tr>
+<tr><td class='ln'>378</td><td><pre>            )</pre></td><td>1 行分の print 文を閉じています．</td></tr>
+<tr><td class='ln'>379</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>380</td><td><pre>        print(&quot;\nRelative errors are defined by&quot;)</pre></td><td>ここから相対誤差の定義を標準出力へ説明しています．</td></tr>
+<tr><td class='ln'>381</td><td><pre>        print(&quot;  |u-u_h|_H1 / |u|_H1&quot;)</pre></td><td>H1 半ノルムの相対誤差の定義を表示しています．</td></tr>
+<tr><td class='ln'>382</td><td><pre>        print(&quot;  ||u-u_h||_L2 / ||u||_L2&quot;)</pre></td><td>L2 相対誤差の定義を表示しています．</td></tr>
+<tr><td class='ln'>383</td><td><pre>        print(&quot;For smooth solutions with P1 FEM, the observed rates should still be&quot;)</pre></td><td>滑らかな解と P1 要素で期待される収束率の説明を始めています．</td></tr>
+<tr><td class='ln'>384</td><td><pre>        print(&quot;  relative H1 seminorm error  ~ O(h)&quot;)</pre></td><td>相対 H1 半ノルム誤差は \(O(h)\) と表示しています．</td></tr>
+<tr><td class='ln'>385</td><td><pre>        print(&quot;  relative L2 norm error      ~ O(h^2)&quot;)</pre></td><td>相対 L2 誤差は \(O(h^2)\) と表示しています．</td></tr>
+<tr><td class='ln'>386</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>387</td><td><pre>        # Write a small LaTeX-ready table.</pre></td><td>ここから LaTeX 用の小さな表を書き出す処理です．</td></tr>
+<tr><td class='ln'>388</td><td><pre>        out = f&quot;{PLOT_DIR}/fem_relative_error_rows.tex&quot;</pre></td><td>出力ファイル名を PLOT_DIR/fem_relative_error_rows.tex に設定しています．</td></tr>
+<tr><td class='ln'>389</td><td><pre>        with open(out, &quot;w&quot;, encoding=&quot;utf-8&quot;) as f:</pre></td><td>そのファイルを UTF-8 で書き込みモードで開いています．</td></tr>
+<tr><td class='ln'>390</td><td><pre>            f.write(</pre></td><td>まず LaTeX 表のヘッダ行を書き始めています．</td></tr>
+<tr><td class='ln'>391</td><td><pre>                &quot;% N &amp; hmax &amp; |u-u_h|_{H^1}/|u|_{H^1} &amp; rate_{H^1} &amp; &quot;</pre></td><td>ヘッダの前半として N, hmax, 相対 H1 誤差などの列名を書いています．</td></tr>
+<tr><td class='ln'>392</td><td><pre>                &quot;||u-u_h||_{L^2}/||u||_{L^2} &amp; rate_{L^2} \\\n&quot;</pre></td><td>ヘッダの後半として相対 L2 誤差とその rate を書き，改行しています．</td></tr>
+<tr><td class='ln'>393</td><td><pre>            )</pre></td><td>f.write のヘッダ書き込みを閉じています．</td></tr>
+<tr><td class='ln'>394</td><td><pre>            for row in rows:</pre></td><td>各行を書き込むループです．</td></tr>
+<tr><td class='ln'>395</td><td><pre>                rate_h1 = &quot;-&quot; if row.rate_h1 is None else f&quot;{row.rate_h1:.6f}&quot;</pre></td><td>H1 側の収束率文字列を準備しています．</td></tr>
+<tr><td class='ln'>396</td><td><pre>                rate_l2 = &quot;-&quot; if row.rate_l2 is None else f&quot;{row.rate_l2:.6f}&quot;</pre></td><td>L2 側の収束率文字列を準備しています．</td></tr>
+<tr><td class='ln'>397</td><td><pre>                f.write(</pre></td><td>各行を書き込む f 文字列を始めています．</td></tr>
+<tr><td class='ln'>398</td><td><pre>                    f&quot;{row.N} &amp; {row.hmax:.6e} &amp; {row.rel_err_h1:.16e} &amp; {rate_h1} &amp; &quot;</pre></td><td>N, hmax, 相対 H1 誤差, rate を LaTeX 形式で書き込んでいます．</td></tr>
+<tr><td class='ln'>399</td><td><pre>                    f&quot;{row.rel_err_l2:.16e} &amp; {rate_l2} \\\n&quot;</pre></td><td>相対 L2 誤差とその rate，さらに改行を続けて書き込んでいます．</td></tr>
+<tr><td class='ln'>400</td><td><pre>                )</pre></td><td>1 行分の書き込みを閉じています．</td></tr>
+<tr><td class='ln'>401</td><td><pre>        print(f&quot;\nWrote LaTeX rows to: {out}&quot;)</pre></td><td>LaTeX 表をどこへ書いたかを表示しています．</td></tr>
+<tr><td class='ln'>402</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>403</td><td><pre>        mesh_level = max(0, min(MESH_PLOT_LEVEL, N_LEVELS - 1))</pre></td><td>メッシュ図に使うレベル番号を有効範囲へ切り詰めています．</td></tr>
+<tr><td class='ln'>404</td><td><pre>        sol_level = max(0, min(SOLUTION_PLOT_LEVEL, N_LEVELS - 1))</pre></td><td>解の図に使うレベル番号も有効範囲へ切り詰めています．</td></tr>
+<tr><td class='ln'>405</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>406</td><td><pre>        if SAVE_PLOTS or SHOW_PLOTS:</pre></td><td>保存または表示のどちらかを行う場合だけ描画処理へ進みます．</td></tr>
+<tr><td class='ln'>407</td><td><pre>            mesh_png = f&quot;{PLOT_DIR}/mesh_level_{mesh_level}.png&quot;</pre></td><td>メッシュ図のファイル名を作っています．</td></tr>
+<tr><td class='ln'>408</td><td><pre>            sol_png = f&quot;{PLOT_DIR}/uh_level_{sol_level}.png&quot;</pre></td><td>2D 解図のファイル名を作っています．</td></tr>
+<tr><td class='ln'>409</td><td><pre>            sol3d_png = f&quot;{PLOT_DIR}/uh_level_{sol_level}_3d.png&quot;</pre></td><td>3D 解図のファイル名を作っています．</td></tr>
+<tr><td class='ln'>410</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>411</td><td><pre>            plot_mesh(</pre></td><td>メッシュ図描画関数を呼び出し始めています．</td></tr>
+<tr><td class='ln'>412</td><td><pre>                level_results[mesh_level].msh,</pre></td><td>指定レベルのメッシュを渡しています．</td></tr>
+<tr><td class='ln'>413</td><td><pre>                filename=mesh_png if SAVE_PLOTS else None,</pre></td><td>保存する設定ならファイル名を渡し，保存しないなら None を渡します．</td></tr>
+<tr><td class='ln'>414</td><td><pre>                show=SHOW_PLOTS,</pre></td><td>表示するかどうかの設定を渡しています．</td></tr>
+<tr><td class='ln'>415</td><td><pre>            )</pre></td><td>plot_mesh 呼び出しを閉じています．</td></tr>
+<tr><td class='ln'>416</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>417</td><td><pre>            if PLOT_SOLUTION_2D:</pre></td><td>2D 解プロットが有効な場合だけ入る条件です．</td></tr>
+<tr><td class='ln'>418</td><td><pre>                plot_solution(</pre></td><td>2D 解図関数 plot_solution を呼び始めています．</td></tr>
+<tr><td class='ln'>419</td><td><pre>                    level_results[sol_level].V,</pre></td><td>指定レベルの FunctionSpace を渡しています．</td></tr>
+<tr><td class='ln'>420</td><td><pre>                    level_results[sol_level].uh,</pre></td><td>指定レベルの有限要素解 uh を渡しています．</td></tr>
+<tr><td class='ln'>421</td><td><pre>                    filename=sol_png if SAVE_PLOTS else None,</pre></td><td>保存設定に応じたファイル名を渡しています．</td></tr>
+<tr><td class='ln'>422</td><td><pre>                    show=SHOW_PLOTS,</pre></td><td>表示設定を渡しています．</td></tr>
+<tr><td class='ln'>423</td><td><pre>                )</pre></td><td>plot_solution 呼び出しを閉じています．</td></tr>
+<tr><td class='ln'>424</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>425</td><td><pre>            if PLOT_SOLUTION_3D:</pre></td><td>3D プロットが有効な場合だけ入る条件です．</td></tr>
+<tr><td class='ln'>426</td><td><pre>                plot_solution_3d(</pre></td><td>3D 解図関数 plot_solution_3d を呼び始めています．</td></tr>
+<tr><td class='ln'>427</td><td><pre>                    level_results[sol_level].V,</pre></td><td>指定レベルの FunctionSpace を渡しています．</td></tr>
+<tr><td class='ln'>428</td><td><pre>                    level_results[sol_level].uh,</pre></td><td>指定レベルの有限要素解 uh を渡しています．</td></tr>
+<tr><td class='ln'>429</td><td><pre>                    filename=sol3d_png if SAVE_PLOTS else None,</pre></td><td>保存設定に応じた 3D 図ファイル名を渡しています．</td></tr>
+<tr><td class='ln'>430</td><td><pre>                    show=SHOW_PLOTS,</pre></td><td>表示設定を渡しています．</td></tr>
+<tr><td class='ln'>431</td><td><pre>                )</pre></td><td>plot_solution_3d 呼び出しを閉じています．</td></tr>
+<tr><td class='ln'>432</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>433</td><td><pre>            if SAVE_PLOTS:</pre></td><td>保存が有効な場合だけ，保存先ファイル名を表示します．</td></tr>
+<tr><td class='ln'>434</td><td><pre>                print(f&quot;Wrote mesh figure to: {mesh_png}&quot;)</pre></td><td>メッシュ図の保存先を表示しています．</td></tr>
+<tr><td class='ln'>435</td><td><pre>                if PLOT_SOLUTION_2D:</pre></td><td>2D 解図が有効な場合の条件です．</td></tr>
+<tr><td class='ln'>436</td><td><pre>                    print(f&quot;Wrote 2D solution figure to: {sol_png}&quot;)</pre></td><td>2D 解図の保存先を表示しています．</td></tr>
+<tr><td class='ln'>437</td><td><pre>                if PLOT_SOLUTION_3D:</pre></td><td>3D 解図が有効な場合の条件です．</td></tr>
+<tr><td class='ln'>438</td><td><pre>                    print(f&quot;Wrote 3D solution figure to: {sol3d_png}&quot;)</pre></td><td>3D 解図の保存先を表示しています．</td></tr>
+<tr><td class='ln'>439</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>440</td><td><pre></pre></td><td>空行です．ここで処理のまとまりを見やすく区切っています．</td></tr>
+<tr><td class='ln'>441</td><td><pre>if __name__ == &quot;__main__&quot;:</pre></td><td>このファイルが直接実行されたときだけ main() を呼ぶ定型文です．</td></tr>
+<tr><td class='ln'>442</td><td><pre>    main()</pre></td><td>プログラム本体 main() を起動しています．</td></tr>
+</tbody></table></div></details>
 
-<p>
-最終版を実行すると，例えば次のようなファイルが得られます．
-</p>
+<h2>6．このコードで出力されるもの</h2>
 
 <ul>
 <li><code>fem_relative_error_rows.tex</code>：相対誤差と実験収束率の表</li>
 <li><code>mesh_level_0.png</code>：粗いメッシュ分割図</li>
-<li><code>uh_level_4.png</code>：近似解の 2D 可視化</li>
-<li><code>uh_level_4_3d.png</code>：近似解の 3D surface plot</li>
+<li><code>uh_level_4.png</code>：2D の有限要素解プロット</li>
+<li><code>uh_level_4_3d.png</code>：3D surface plot</li>
 </ul>
 
 <p>
-これらはそのままノートやスライド，あるいは研究メモに流用しやすい形です．
+理想的には，相対 \(H^1\) 半ノルム誤差の収束率が 1 に近づき，
+相対 \(L^2\) 誤差の収束率が 2 に近づきます．
+そのとき，P1 要素として期待される標準的な収束が見えていると判断しやすくなります．
 </p>
-
-<h2>8．今回の流れのまとめ</h2>
-
-<ol>
-<li>研究用の FEniCSx コードを確認し，主問題の有限要素部分を取り出した．</li>
-<li>絶対誤差ではなく，相対 \(H^1\) 半ノルム誤差と相対 \(L^2\) 誤差を出す形にした．</li>
-<li>メッシュ図と近似解の 2D 可視化を加えた．</li>
-<li>さらに 3D surface plot を加えた．</li>
-<li>Google Colab で動かすために，導入手順と実行手順を整理した．</li>
-<li>Colab 固有のファイル出力や可視化まわりのエラーを修正した．</li>
-</ol>
 
 <div class="note-box">
 <p>
-今回の作業は，「複雑な研究コード全体をいきなり動かす」のではなく，まず主問題・誤差確認・可視化という最小限で堅い部分を切り出して整える，という意味でも有益でした．
-研究用コードを整理するときは，このように小さな確認可能単位へ分解するのが実用的です．
+今回のポイントは，複雑な研究コード全体をいきなり公開するのではなく，
+まず
+「主問題を解く最小版」
+「誤差確認」
+「可視化」
+の 3 つを分離して，確認できる単位に整えたことです．
+研究用コードの整理では，このやり方がとても実用的です．
 </p>
 </div>
 
-<h2>9．公開時の配置</h2>
+<h2>7．公開時の配置</h2>
 
 <p>
-このページを公開するときは，この HTML ファイルを
+このページは
 <code>blog/posts/article1.html</code>
-に置き，ブログ一覧ページからリンクを張る構成が自然です．
-相対パスもその想定で整えてあります．
+に置く想定で作ってあります．
+ブログ一覧ページからは
+<code>./posts/article1.html</code>
+へリンクすればよい構成です．
 </p>
 
 </div>
