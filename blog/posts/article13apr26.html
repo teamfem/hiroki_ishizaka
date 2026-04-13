@@ -111,15 +111,14 @@
 <div class="section-in">
 
 
-<h1 class="section-title">Blog post from 13 April 2026</h1>
+<h1 class="section-title">FEniCSxをGoogle Colab上で動かし，半線形楕円問題のP1有限要素近似，相対誤差，2D/3D可視化を確認するまでの流れと，最終コードの1行ごとの解説をまとめました．</h1>
 <!---->
-<h2>FEniCSxをGoogle Colab上で動かし，半線形楕円問題のP1有限要素近似，相対誤差，2D/3D可視化を確認するまでの流れと，最終コードの1行ごとの解説をまとめました．</h2>
+<h2>Introduction</h2>
 
 <div class="news">
 <article class="news-item">
-<h3 class="news-title">Introduction</h3>
 <p>
-このページでは，FEniCSxで書かれた主問題のP1有限要素近似をGoogle Colab 上で実行できるように整理した流れをまとめます．さらに，最終的に使ったPythonスクリプトを全文掲載し，<strong>1行ごとに丁寧な解説</strong>も付けます．なお，コード作成には，ChatGPTを補助として使っています．ChatGPTによるコードの正確性も見ていきます．今回のコード作成も最初のプロンプト段階では，不十分でした．良いコードを得るには，複数回の良いプロンプトを書く必要があります．
+このページでは，FEniCSxで書かれた主問題のP1有限要素近似をGoogle Colab 上で実行できるように整理した流れをまとめます．さらに，最終的に使ったPythonスクリプトを全文掲載し，<strong>1行ごとに丁寧な解説</strong>も付けます．なお，コード作成には，ChatGPTを補助として使っています．ChatGPTによるコードの正確性も見ていきます．今回のコード作成も最初のプロンプト段階では不十分でした．良いコードを得るには，複数回の良いプロンプトを書く必要があります．
 </p>
 
 <p>
@@ -138,8 +137,8 @@ f=2\pi^2u+u^3
 \]
 を右辺として与えます．この設定により，相対誤差
 \[
-rac{|u-u_h|_{H^1}}{|u|_{H^1}},\quad
-rac{\|u-u_h\|_{L^2}}{\|u\|_{L^2}}
+\frac{|u-u_h|_{H^1}}{|u|_{H^1}},\quad
+\frac{\|u-u_h\|_{L^2}}{\|u\|_{L^2}}
 \]
 を確かめます．
 </p>
