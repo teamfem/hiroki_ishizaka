@@ -114,11 +114,10 @@
 <h1 class="section-title">FEniCSxをGoogle Colab上で動かし，半線形楕円問題のP1有限要素近似，相対誤差，2D/3D可視化を確認するまでの流れと，最終コードの1行ごとの解説をまとめました．</h1>
 <!---->
 <h2>Introduction</h2>
-
 <div class="news">
 <article class="news-item">
 <p>
-このページでは，FEniCSxで書かれた主問題のP1有限要素近似をGoogle Colab 上で実行できるように整理した流れをまとめます．さらに，最終的に使ったPythonスクリプトを全文掲載し，<strong>1行ごとに丁寧な解説</strong>も付けます．なお，コード作成には，ChatGPTを補助として使っています．ChatGPTによるコードの正確性も見ていきます．今回のコード作成も最初のプロンプト段階では不十分でした．良いコードを得るには，複数回の良いプロンプトを書く必要があります．
+このページでは，FEniCSxで書かれた主問題のP1有限要素近似をGoogle Colab上で実行できるように整理した流れをまとめます．さらに，最終的に使ったPythonスクリプトを全文掲載し，<strong>1行ごとに丁寧な解説</strong>も付けます(ChatGPTにお願いしています)．なお，コード作成には，ChatGPTを補助として使っています．ChatGPTによるコードの正確性も見ていきます．今回のコード作成も最初のプロンプト段階では不十分でした．良いコードを得るには，複数回の良いプロンプトを書く必要があります．今回は初回ブログなので，とにかく"書く"を意識しています．よって，正確性は犠牲にしています．次回から，簡単な問題から詳細に見ていきます．
 </p>
 
 <p>
@@ -141,13 +140,37 @@ f=2\pi^2u+u^3
 \]
 を確かめます．
 </p>
+</article>
+</div>
 
+<h2>1. Google Colabでの実行手順</h2>
+<div class="news">
+<article class="news-item">
+<p>
+ここでは，最終版スクリプト
+<code>extract_fem_primal_with_relative_error_checks_and_plots_colab_fix4_3d.py</code>
+をColabで動かすときの流れを，セルごとに書いておきます．
+</p>
+<h3>1.1 FEniCSxの導入</h3>
+<p>
+最初のセルでは，Colab上にFEniCSxを入れます．すでに入っていればそのままimportし，入っていなければインストールスクリプトを走らせます．
+</p>
+<div class="step-box">
+<pre><code>try:
+    import dolfinx
+except ImportError:
+    !wget "https://fem-on-colab.github.io/releases/fenicsx-install-release-real.sh" -O "/tmp/fenicsx-install.sh"
+    !bash "/tmp/fenicsx-install.sh"
+    import dolfinx
+
+print("FEniCSx ready")</code></pre>
+</div>
+
+<h3>1.2 導入確認</h3>
 
 
 </article>
 </div>
-
-
 
 
 <!--section-in-->
