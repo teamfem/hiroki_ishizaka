@@ -215,7 +215,7 @@ from dolfinx import mesh, fem
 # 線形問題をまとめて解くためのクラスを読み込みます
 from dolfinx.fem.petsc import LinearProblem
 
-# 今回は 1 プロセス授業用として，communicator を 1 つだけ名前で持ちます
+# 今回は 1 プロセスとして，communicator を 1 つだけ名前で持ちます
 COMM = MPI.COMM_WORLD
 
 
@@ -454,7 +454,7 @@ plt.show()</code></pre>
 <li><code>problem = LinearProblem(...)</code><br>線形変分問題を組み立てる準備です．</li>
 <li><code>petsc_options_prefix=f&quot;poisson_&#123;N&#125;_&quot;</code><br>現行 DOLFINx では prefix を必須で与えます．格子ごとに一意になるように \(N\) を入れています．</li>
 <li><code>&quot;ksp_type&quot;: &quot;preonly&quot;</code><br>Krylov 反復を行わず，前処理側の解法をそのまま使います．</li>
-<li><code>&quot;pc_type&quot;: &quot;lu&quot;</code><br>授業用なので見通しを優先し，LU による直接法を使います．</li>
+<li><code>&quot;pc_type&quot;: &quot;lu&quot;</code><br>見通しを優先し，LU による直接法を使います．</li>
 <li><code>&quot;ksp_error_if_not_converged&quot;: True</code><br>ソルバが収束しなかったときにその場で気づけるようにします．</li>
 <li><code>u_h = problem.solve()</code><br>離散方程式を解いて数値解 \(u_h\) を得ます．</li>
 <li><code>abs_L2 = ... (u_h - u_exact_expr) ...</code><br>ここも前版からの重要な修正です．補間関数ではなく，厳密解そのものとの \(L^2\) 差を測っています．</li>
