@@ -448,8 +448,8 @@ plt.show()</code></pre>
 <li><code>u = ufl.TrialFunction(V)</code><br>未知関数 \(u_h\) に対応する記号です．</li>
 <li><code>v = ufl.TestFunction(V)</code><br>試験関数 \(v\) を定義します．</li>
 <li><code>a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx</code><br>双線形形式 \(a(u,v)=\int_\Omega 
-abla u\cdot
-abla v\,dx\) を定義します．</li>
+\nabla u\cdot
+\nabla v\,dx\) を定義します．</li>
 <li><code>L = f * v * ufl.dx</code><br>線形形式 \(L(v)=\int_\Omega fv\,dx\) を定義します．</li>
 <li><code>problem = LinearProblem(...)</code><br>線形変分問題を組み立てる準備です．</li>
 <li><code>petsc_options_prefix=f&quot;poisson_&#123;N&#125;_&quot;</code><br>現行 DOLFINx では prefix を必須で与えます．格子ごとに一意になるように \(N\) を入れています．</li>
@@ -495,7 +495,7 @@ abla v\,dx\) を定義します．</li>
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
 # 可視化専用の分割数です
-# 授業では 12〜24 程度にすると見やすいです
+# 12〜24 程度にすると見やすいです
 N_vis = 16
 
 # -------------------------
@@ -638,10 +638,102 @@ u_h(x,y)\approx \sin(\pi x)\sin(\pi y)
 </div>
 
 <h2>絶対誤差と相対誤差</h2>
+<div class="news">
+<article class="news-item">
+<p>
+今回のコードでは，まず絶対誤差
+\[
+\|u-u_h\|_{L^2}, \quad |u-u_h|_{H^1}
+\]
+を計算しています．これは，数値解が厳密解からどれだけ離れているかをそのまま測る量です．
+</p>
+<p>
+そのうえで，相対誤差
+\[
+\displaystyle \frac{\|u-u_h\|_{L^2}}{\|u\|_{L^2}}, \quad \frac{|u-u_h|_{H^1}}{|u|_{H^1}}
+\]
+も計算しています．こちらは，解そのものの大きさに対してどれだけずれているかを見る量です．
+</p>
+<p>
+これは「絶対誤差はズレそのもの，相対誤差は元の大きさに対するズレ」を意味します．今回のように厳密解を固定してメッシュだけ細かくする実験では，相対誤差は絶対誤差を定数で割っただけなので，収束次数そのものは同じになります．
+</p>
+<p>
+それでも相対誤差を出す理由ははっきりあります．第一に，問題ごとに解の大きさが違っていても比較しやすくなることです．たとえば，ある問題では解のノルムが100で，別の問題では0.01かもしれません．このとき絶対誤差だけを並べると読みづらくなりますが，相対誤差なら「解の大きさに対して何パーセントずれているか」という見方ができます．第二に，「誤差の大きさ」と「解そのものの大きさ」を区別して考える練習になることです．有限要素法では，誤差評価はしばしばノルムの比として整理されるので，相対誤差に慣れておくことには意味があります．第三に，グラフや表で結果を示したとき，異なる設定の計算を並べやすくなることです．
+</p>
+<p>
+要するに，今回の例では絶対誤差でも相対誤差でも収束次数は同じですが，相対誤差を載せておくと「どれくらい良く近似できているか」を直感的に読みやすくなります．
+</p>
+</article>
+</div>
 
+<h3>\(H^1\) が \(h^2\) に見えるときがあるのか</h3>
+<div class="news">
+<article class="news-item">
+<p>
+厳密解を同じP1空間に補間した関数との \(H^1\) 差を測る場合です．しかしそれは，真の誤差 \(|u-u_h|_{H^1}\) ではなく，
+\(|u_h-I_hu|_{H^1}\)
+を見ていることになります．
+</p>
+<p>
+構造化されたきれいな格子では，数値解 \(u_h\) と補間解 \(I_hu\) が真の誤差よりも1次高く近づくことがあり，これを supercloseness と呼びます．したがって，見かけ上 \(H^1\) 半ノルムで \(h^2\) が出ても，それを「P1 要素が真の \(H^1\) 誤差で 2 次収束した」と読んではいけません．
+</p>
+<p>
+この点を避けるために，本稿では誤差評価に<code>u_exact_expr = ufl.sin(...)</code>を使い，厳密解そのものに対する差を積分する形としました．
+</p>
+</article>
+</div>
 
+<h2>log-logプロットは何を見せているのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+log-logプロットを使う理由は，誤差の減り方を「目で見てすぐ分かる形」に直したいからです．有限要素法では，誤差はしばしば
+\[
+E(h) \approx C h^r
+\]
+のようなべき乗則で減ります．しかし，通常の線形目盛では，この関係から収束次数 \(r\) を読み取るのはあまり容易ではありません．とくに，メッシュを細かくするにつれて誤差が急激に小さくなると，点が下側に詰まって見えやすく，どの程度きれいに \(h\) の何乗で減っているかが判断しにくくなります．
+</p>
+<p>
+そこで両軸を対数目盛にすると，このべき乗則が直線に変わります．実際，両辺の対数を取ると
+\[
+\log E(h) = \log C + r\log h
+\]
+となります．つまり，横軸を \(h\)，縦軸を \(E(h)\) にして両方を対数目盛にすると，点はほぼ直線に並びます．そして，その傾きが収束次数 \(r\) です．このため，log-log プロットは「有限要素法が期待どおりの次数で収束しているか」を一目で確かめるための道具としてとても便利です．
+</p>
+<p>
+1次Lagrange要素で滑らかな Poisson問題を解く場合には，理論上，
+\[
+|u-u_h|_{H^1} = O(h), \quad \|u-u_h\|_{L^2} = O(h^2)
+\]
+が期待されます．したがって，出力される収束率がH1では1に近く，L2では2に近ければ，標準的理論と整合的に動いていると読めます．
+</p>
+</article>
+</div>
 
+<h2>このページの使い方</h2>
+<div class="news">
+<article class="news-item">
+<p>
+この例題のよいところは，偏微分方程式，弱形式，有限要素空間，境界条件，誤差評価，収束率という有限要素法の基本要素が1本のノートブックでつながることです．加えて，今回は，
+「メッシュの作り方が近似空間に影響する」ことと「何を誤差と呼ぶかで観測される次数が変わる」ことも自然に話題にできます．
+</p>
+<p>
+したがって，単なる導入実習としてだけでなく，講義の中で「正しい数値実験の読み方」を教える素材としても使いやすいと思います．
+</p>
+</article>
+</div>
 
+<h2>References</h2>
+<div class="news">
+<article class="news-item">
+<ul class="ref-list">
+<li><a href="https://docs.fenicsproject.org/dolfinx/main/python/demos/demo_poisson.html">DOLFINx official demo: Poisson equation</a></li>
+<li><a href="https://fem-on-colab.github.io/packages.html">FEM on Colab: Packages</a></li>
+<li><a href="https://jsdokken.com/dolfinx-tutorial/chapter4/convergence.html">FEniCSx tutorial: Computing convergence rates</a></li>
+<li><a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.loglog.html">Matplotlib documentation: pyplot.loglog</a></li>
+</ul>
+</article>
+</div>
 
 <!--section-in-->
 </div>
