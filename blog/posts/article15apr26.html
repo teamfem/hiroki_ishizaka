@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 13 April 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">Google Colabで始めるFEniCSx入門：Poisson方程式，誤差評価，log-logプロット</h1>
+<!---->
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+<p>
+有限要素法の数値計算を学ぶとき，最初の題材としてPoisson方程式はとても扱いやすいです．関数空間を作り，線形偏微分方程式を解くという基本の流れを身に付けることが出来ます．また，Google Colab では <a href="https://fem-on-colab.github.io/" target="_blank">FEM on Colab</a> が FEniCSxの導入方法を案内しており，Colab上で比較的素直に実験を始めることができます．このページでは，Google Colabで実際にノートブックを作成し，FEniCSxを導入し，Poisson方程式を解き，絶対誤差・相対誤差・log-logプロットまで確認する過程をまとめます．
+</p>
+<p>
+今回の目標は 5 つです．
+</p>
+<p>
+1．Google ColabでFEniCSxを動かす手順を，実際の操作の流れとして確認すること．<br>
+2．Poisson方程式をP1有限要素で解くコードを理解すること．<br>
+3．絶対誤差，相対誤差，log-logプロットの意味を，実験結果と結びつけて読むこと．<br>
+4．メッシュの切り方と誤差の測り方が，結果の読み方にどのように効くかを確認すること．<br>
+5．2次元のメッシュ図と3次元の近似解を可視化して，計算結果を形として確認すること．
+</p>
+
+<p>
+対象とするPoisson問題は
+\[
+-\Delta u = f \quad \text{in } \Omega := (0,1)^2,\quad
+u=0 \quad	\text{on } \partial\Omega
+\]
+です．厳密解として
+\[
+u(x,y)=\sin(\pi x)\sin(\pi y)
+\]
+を用い，
+\[
+f=2\pi^2 u
+\]
+を右辺として与えます．この設定により，相対誤差
+\[
+\displaystyle \frac{|u-u_h|_{H^1}}{|u|_{H^1}},\quad \frac{\|u-u_h\|_{L^2}}{\|u\|_{L^2}}
+\]
+を確かめます．
+</p>
+</article>
+</div>
+
+<h2>Google Colabでの実行手順</h2>
+<div class="news">
+<article class="news-item">
+<p>
+まずは Google Colab をブラウザで開きます．新しいノートブックを作成し，タイトルをたとえば <code>fenicsx_poisson_error_demo.ipynb</code> のように付けます．
+</p>
+<p>
+Google Colabでは，特別な設定をしなくても標準のCPUランタイムで実行できます．このページの例ではGPUは不要です．セルを上から順に実行していけば動くようにしてあります．初回だけ導入セルの実行に少し時間がかかることがありますが，その後は普段のPythonノートブックと同じ感覚で進められます．
+</p>
+</article>
+</div>
+
+<h3>セル1: FEniCSxの導入</h3>
+<div class="news">
+<article class="news-item">
+<p>
+最初のセルは，ColabにFEniCSx が入っているかを確認し，入っていなければ導入するためのものです．</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code># すでに dolfinx が入っているかを試します
+try:
+    import dolfinx
+
+# 入っていなければ，Colab 用のインストールスクリプトを実行します
+except ImportError:
+    !wget &quot;https://fem-on-colab.github.io/releases/fenicsx-install-release-real.sh&quot; -O &quot;/tmp/fenicsx-install.sh&quot; \
+        &amp;&amp; bash &quot;/tmp/fenicsx-install.sh&quot;
+
+# 最後に，ちゃんと import できることを確認します
+import dolfinx
+print(&quot;dolfinx is ready.&quot;)</code></pre>
+</div>
+<p>
+このセルを実行して最後に <code>dolfinx is ready.</code> と出れば，準備完了です．ここは数学的な本体ではなく，あくまで環境構築の部分です．
+</p>
+</article>
+</div>
+
+<h3>セル 2：Poisson方程式を解いて誤差を測る</h3>
+<div class="news">
+<article class="news-item">
+<p>
+次が本体セルです．MPIはFEniCSxの設計上必要ですが，今回は <code>COMM</code> に押し込めて，有限要素法の本体が見える形にしています．また，現行のDOLFINxでは <code>LinearProblem</code> に <code>petsc_options_prefix</code> を与える必要があるので，その点も反映しています．また，次の2点を取り入れています．第一に，対角線を交互に入れて，左上と右下の角に生じる「死んだ要素」を避けています．第二に，誤差評価では補間関数ではなく厳密解そのもののUFL表現を使い，真の\(H^1\)誤差を測っています．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code># NumPy を使います
+import numpy as np
+
+# グラフ描画に Matplotlib を使います
+import matplotlib.pyplot as plt
+
+# 弱形式を書くために UFL を使います
+import ufl
+
+# FEniCSx は MPI ベースなので communicator を読み込みます
+from mpi4py import MPI
+
+# メッシュと有限要素空間のための機能を読み込みます
+from dolfinx import mesh, fem
+
+# 線形問題をまとめて解くためのクラスを読み込みます
+from dolfinx.fem.petsc import LinearProblem
+
+# 今回は 1 プロセス授業用として，communicator を 1 つだけ名前で持ちます
+COMM = MPI.COMM_WORLD
+
+
+# 厳密解 u(x,y)=sin(pi x)sin(pi y) を Python 関数として定義します
+# これは境界値の補間に使います
+def exact_solution(x):
+    return np.sin(np.pi * x[0]) * np.sin(np.pi * x[1])
+
+
+# N を受け取って，N×N 分割メッシュ上で計算し，誤差を返す関数を作ります
+def solve_and_measure(N):
+
+    # 対角線を交互に入れて，角の「死んだ要素」を避けます
+    domain = mesh.create_unit_square(
+        COMM,
+        N,
+        N,
+        diagonal=mesh.DiagonalType.left_right,
+    )
+
+    # 1 次 Lagrange 要素による有限要素空間 V_h を作ります
+    V = fem.functionspace(domain, (&quot;Lagrange&quot;, 1))
+
+    # 空間座標 x=(x_0,x_1) を UFL の記号として定義します
+    x = ufl.SpatialCoordinate(domain)
+
+    # 厳密解を UFL の式として定義します
+    # 誤差評価ではこちらを使って「真の誤差」を測ります
+    u_exact_expr = ufl.sin(np.pi * x[0]) * ufl.sin(np.pi * x[1])
+
+    # 右辺 f = -Δu を UFL で定義します
+    f = 2 * np.pi**2 * ufl.sin(np.pi * x[0]) * ufl.sin(np.pi * x[1])
+
+    # 境界条件で使うために，有限要素空間上の関数 u_D を作ります
+    u_D = fem.Function(V)
+
+    # 厳密解を節点に補間して，Dirichlet 境界値として使える形にします
+    u_D.interpolate(exact_solution)
+
+    # 空間次元は 2 なので，境界は 1 次元の面です
+    fdim = domain.topology.dim - 1
+
+    # 境界上の全ての facet を見つけます
+    boundary_facets = mesh.locate_entities_boundary(
+        domain, fdim, lambda x: np.full(x.shape[1], True, dtype=bool)
+    )
+
+    # 境界上の自由度を取り出します
+    boundary_dofs = fem.locate_dofs_topological(V, fdim, boundary_facets)
+
+    # Dirichlet 境界条件 u=u_D を作ります
+    bc = fem.dirichletbc(u_D, boundary_dofs)
+
+    # TrialFunction は未知関数 u_h を表す記号です
+    u = ufl.TrialFunction(V)
+
+    # TestFunction は試験関数 v を表す記号です
+    v = ufl.TestFunction(V)
+
+    # 双線形形式 a(u,v)=∫ grad(u)・grad(v) dx を定義します
+    a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx
+
+    # 線形形式 L(v)=∫ f v dx を定義します
+    L = f * v * ufl.dx
+
+    # 線形問題 a(u_h,v)=L(v) を解く準備をします
+    problem = LinearProblem(
+        a,
+        L,
+        bcs=[bc],
+        petsc_options_prefix=f&quot;poisson_{N}_&quot;,
+        petsc_options={
+            &quot;ksp_type&quot;: &quot;preonly&quot;,
+            &quot;pc_type&quot;: &quot;lu&quot;,
+            &quot;ksp_error_if_not_converged&quot;: True,
+        },
+    )
+
+    # 実際に線形方程式を解いて数値解 u_h を得ます
+    u_h = problem.solve()
+
+    # L2 絶対誤差 ||u-u_h||_{L2} を計算します
+    abs_L2 = np.sqrt(
+        fem.assemble_scalar(
+            fem.form((u_h - u_exact_expr) ** 2 * ufl.dx)
+        )
+    )
+
+    # H1 半ノルム絶対誤差 |u-u_h|_{H1} を計算します
+    # ここでは補間関数ではなく，厳密解そのものの勾配と比較しています
+    abs_H1 = np.sqrt(
+        fem.assemble_scalar(
+            fem.form(
+                ufl.inner(
+                    ufl.grad(u_h - u_exact_expr),
+                    ufl.grad(u_h - u_exact_expr),
+                ) * ufl.dx
+            )
+        )
+    )
+
+    # 厳密解の L2 ノルム ||u||_{L2} を計算します
+    norm_L2 = np.sqrt(
+        fem.assemble_scalar(
+            fem.form(u_exact_expr ** 2 * ufl.dx)
+        )
+    )
+
+    # 厳密解の H1 半ノルム |u|_{H1} を計算します
+    seminorm_H1 = np.sqrt(
+        fem.assemble_scalar(
+            fem.form(
+                ufl.inner(ufl.grad(u_exact_expr), ufl.grad(u_exact_expr)) * ufl.dx
+            )
+        )
+    )
+
+    # 相対 L2 誤差を計算します
+    rel_L2 = abs_L2 / norm_L2
+
+    # 相対 H1 半ノルム誤差を計算します
+    rel_H1 = abs_H1 / seminorm_H1
+
+    # 一様メッシュでは代表的なメッシュ幅として h=1/N とみなせます
+    h = 1.0 / N
+
+    # 後で表やグラフに使うため，必要な値をまとめて返します
+    return h, abs_L2, rel_L2, abs_H1, rel_H1
+
+
+# 誤差を見るために，粗いメッシュから細かいメッシュまで並べます
+Ns = [8, 16, 32, 64, 128]
+
+# h を入れる空リストを用意します
+hs = []
+
+# L2 の絶対誤差を入れる空リストを用意します
+abs_L2s = []
+
+# L2 の相対誤差を入れる空リストを用意します
+rel_L2s = []
+
+# H1 半ノルムの絶対誤差を入れる空リストを用意します
+abs_H1s = []
+
+# H1 半ノルムの相対誤差を入れる空リストを用意します
+rel_H1s = []
+
+# 各メッシュサイズで solve_and_measure を実行します
+for N in Ns:
+    h, abs_L2, rel_L2, abs_H1, rel_H1 = solve_and_measure(N)
+    hs.append(h)
+    abs_L2s.append(abs_L2)
+    rel_L2s.append(rel_L2)
+    abs_H1s.append(abs_H1)
+    rel_H1s.append(rel_H1)
+
+# あとで計算しやすいように NumPy 配列に変えます
+hs = np.array(hs)
+abs_L2s = np.array(abs_L2s)
+rel_L2s = np.array(rel_L2s)
+abs_H1s = np.array(abs_H1s)
+rel_H1s = np.array(rel_H1s)
+
+
+# 連続する 2 点の log の差から実験的収束率を計算する関数を作ります
+def rates(errors, hs):
+    return np.log(errors[1:] / errors[:-1]) / np.log(hs[1:] / hs[:-1])
+
+
+# 絶対誤差と相対誤差の収束率を表示します
+print(&quot;L2 absolute rates  =&quot;, rates(abs_L2s, hs))
+print(&quot;L2 relative rates  =&quot;, rates(rel_L2s, hs))
+print(&quot;H1 absolute rates  =&quot;, rates(abs_H1s, hs))
+print(&quot;H1 relative rates  =&quot;, rates(rel_H1s, hs))
+
+# L2 誤差の log-log プロットを描きます
+plt.figure(figsize=(6, 5))
+plt.loglog(hs, abs_L2s, &quot;o-&quot;, label=&quot;absolute L2 error&quot;)
+plt.loglog(hs, rel_L2s, &quot;s--&quot;, label=&quot;relative L2 error&quot;)
+plt.xlabel(&quot;h&quot;)
+plt.ylabel(&quot;error&quot;)
+plt.title(&quot;L2 errors on a log-log plot&quot;)
+plt.grid(True, which=&quot;both&quot;)
+plt.legend()
+plt.show()
+
+# H1 半ノルム誤差の log-log プロットを描きます
+plt.figure(figsize=(6, 5))
+plt.loglog(hs, abs_H1s, &quot;o-&quot;, label=&quot;absolute H1 seminorm error&quot;)
+plt.loglog(hs, rel_H1s, &quot;s--&quot;, label=&quot;relative H1 seminorm error&quot;)
+plt.xlabel(&quot;h&quot;)
+plt.ylabel(&quot;error&quot;)
+plt.title(&quot;H1 seminorm errors on a log-log plot&quot;)
+plt.grid(True, which=&quot;both&quot;)
+plt.legend()
+plt.show()</code></pre>
+</div>
+</article>
+</div>
+
+<h3>セル2の1行ごとの解説</h3>
+<div class="news">
+<article class="news-item">
+<p>
+以下では，本体セルを上から順に解説します．かなり長いです．
+</p>
+<ol class="line-explain">
+<li><code>import numpy as np</code><br>数値計算用ライブラリ NumPy を読み込みます．</li>
+<li><code>import matplotlib.pyplot as plt</code><br>グラフ描画用の Matplotlib を読み込みます．</li>
+<li><code>import ufl</code><br>弱形式や厳密解の式を記述するために UFL を読み込みます．</li>
+<li><code>from mpi4py import MPI</code><br>FEniCSx が communicator を必要とするので MPI を読み込みます．今回は 1 プロセス用です．</li>
+<li><code>from dolfinx import mesh, fem</code><br>メッシュ生成，有限要素空間，有限要素関数のための機能を読み込みます．</li>
+<li><code>from dolfinx.fem.petsc import LinearProblem</code><br>線形変分問題をまとめて解くクラスを読み込みます．</li>
+<li><code>COMM = MPI.COMM_WORLD</code><br>MPI の詳細を前面に出しすぎないため，communicator を <code>COMM</code> にまとめています．</li>
+<li><code>def exact_solution(x):</code><br>境界値の補間に使う Python 関数を定義します．</li>
+<li><code>return np.sin(np.pi * x[0]) * np.sin(np.pi * x[1])</code><br>厳密解 \(u(x,y)=\sin(\pi x)\sin(\pi y)\) を返します．</li>
+<li><code>def solve_and_measure(N):</code><br>格子分割数 \(N\) を受け取り，その格子で解いて誤差を返す関数です．</li>
+<li><code>domain = mesh.create_unit_square(..., diagonal=mesh.DiagonalType.left_right)</code><br>ここが前版からの重要な修正です．対角線を交互に入れることで，角の 3 頂点すべてが Dirichlet 境界上にある三角形を避けます．</li>
+<li><code>V = fem.functionspace(domain, (&quot;Lagrange&quot;, 1))</code><br>1 次 Lagrange 要素空間 \(V_h\) を定義します．</li>
+<li><code>x = ufl.SpatialCoordinate(domain)</code><br>空間座標を UFL の記号として用意します．</li>
+<li><code>u_exact_expr = ...</code><br>厳密解を UFL の式として定義します．誤差評価ではこちらを使うのが重要です．</li>
+<li><code>f = 2 * np.pi**2 * ...</code><br>右辺 \(f=-\Delta u\) を厳密解から作っています．</li>
+<li><code>u_D = fem.Function(V)</code><br>Dirichlet 境界条件を入れるための有限要素関数を作ります．</li>
+<li><code>u_D.interpolate(exact_solution)</code><br>厳密解を節点に補間し，境界値として使います．</li>
+<li><code>fdim = domain.topology.dim - 1</code><br>2 次元領域なので，境界 facet は 1 次元です．</li>
+<li><code>boundary_facets = mesh.locate_entities_boundary(...)</code><br>全境界を取り出します．</li>
+<li><code>boundary_dofs = fem.locate_dofs_topological(...)</code><br>境界に載っている自由度番号を取り出します．</li>
+<li><code>bc = fem.dirichletbc(u_D, boundary_dofs)</code><br>Dirichlet 条件 \(u=u_D\) を作ります．</li>
+<li><code>u = ufl.TrialFunction(V)</code><br>未知関数 \(u_h\) に対応する記号です．</li>
+<li><code>v = ufl.TestFunction(V)</code><br>試験関数 \(v\) を定義します．</li>
+<li><code>a = ufl.inner(ufl.grad(u), ufl.grad(v)) * ufl.dx</code><br>双線形形式 \(a(u,v)=\int_\Omega 
+abla u\cdot
+abla v\,dx\) を定義します．</li>
+<li><code>L = f * v * ufl.dx</code><br>線形形式 \(L(v)=\int_\Omega fv\,dx\) を定義します．</li>
+<li><code>problem = LinearProblem(...)</code><br>線形変分問題を組み立てる準備です．</li>
+<li><code>petsc_options_prefix=f&quot;poisson_&#123;N&#125;_&quot;</code><br>現行 DOLFINx では prefix を必須で与えます．格子ごとに一意になるように \(N\) を入れています．</li>
+<li><code>&quot;ksp_type&quot;: &quot;preonly&quot;</code><br>Krylov 反復を行わず，前処理側の解法をそのまま使います．</li>
+<li><code>&quot;pc_type&quot;: &quot;lu&quot;</code><br>授業用なので見通しを優先し，LU による直接法を使います．</li>
+<li><code>&quot;ksp_error_if_not_converged&quot;: True</code><br>ソルバが収束しなかったときにその場で気づけるようにします．</li>
+<li><code>u_h = problem.solve()</code><br>離散方程式を解いて数値解 \(u_h\) を得ます．</li>
+<li><code>abs_L2 = ... (u_h - u_exact_expr) ...</code><br>ここも前版からの重要な修正です．補間関数ではなく，厳密解そのものとの \(L^2\) 差を測っています．</li>
+<li><code>abs_H1 = ... grad(u_h - u_exact_expr) ...</code><br>こちらが本稿の中心です．以前のように補間関数との差を取ると supercloseness を見てしまうので，真の \(H^1\) 誤差を測る形に直しています．</li>
+<li><code>norm_L2 = ... u_exact_expr ** 2 ...</code><br>相対 \(L^2\) 誤差の分母となる厳密解の \(L^2\) ノルムです．</li>
+<li><code>seminorm_H1 = ... grad(u_exact_expr) ...</code><br>相対 \(H^1\) 半ノルム誤差の分母を計算しています．</li>
+<li><code>rel_L2 = abs_L2 / norm_L2</code><br>絶対 \(L^2\) 誤差を厳密解の大きさで割って，相対誤差を作ります．</li>
+<li><code>rel_H1 = abs_H1 / seminorm_H1</code><br>同様に，相対 \(H^1\) 半ノルム誤差を作ります．</li>
+<li><code>h = 1.0 / N</code><br>一様格子なので，代表的メッシュ幅を \(h=1/N\) とみなします．</li>
+<li><code>return h, abs_L2, rel_L2, abs_H1, rel_H1</code><br>後で表やグラフに使う値をまとめて返します．</li>
+<li><code>Ns = [8, 16, 32, 64, 128]</code><br>粗い格子から細かい格子までの分割数を並べます．</li>
+<li><code>hs = [], abs_L2s = [], ...</code><br>メッシュ幅と誤差列を保存する空リストを用意します．</li>
+<li><code>for N in Ns:</code><br>各格子で解いて誤差を集めます．</li>
+<li><code>hs.append(h)</code> など<br>各格子で得られた値を順番に保存します．</li>
+<li><code>hs = np.array(hs)</code> など<br>後で計算しやすいように NumPy 配列へ変換します．</li>
+<li><code>def rates(errors, hs):</code><br>実験的収束率を計算する関数を定義します．</li>
+<li><code>return np.log(errors[1:] / errors[:-1]) / np.log(hs[1:] / hs[:-1])</code><br>連続する 2 点の log の差から収束率を求めます．</li>
+<li><code>print(&quot;L2 absolute rates  =&quot;, ...)</code><br>\(L^2\) の収束率を表示します．</li>
+<li><code>print(&quot;H1 absolute rates  =&quot;, ...)</code><br>\(H^1\) の収束率を表示します．ここが 1 に近ければ標準的理論と整合的です．</li>
+<li><code>plt.loglog(...)</code><br>両軸を対数目盛にしたグラフを描きます．</li>
+<li><code>plt.grid(True, which=&quot;both&quot;)</code><br>対数目盛でも読みやすいように補助線を付けます．</li>
+<li><code>plt.show()</code><br>最後に図を表示します．</li>
+</ol>
+</article>
+</div>
+
+<h3>セル 3：2次元メッシュ図と3次元近似解の可視化</h3>
+<div class="news">
+<article class="news-item">
+<p>
+誤差や収束率だけでなく，実際にどのような三角形分割で計算しているか，また数値解がどのような形をしているかも見せると理解が深まります．そこで，最後に可視化専用のセルを追加します．このセルはセル2のあとに実行してください．
+</p>
+<p>
+以下のコードでは，まず表示用の分割数 <code>N_vis</code> を選び，そのメッシュ上でPoisson問題を解き直します．そのうえで，2次元のメッシュ図，2次元の等高線図，3次元の近似解曲面図を順に表示します．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code># 3D 描画を使うために読み込みます
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+
+# 可視化専用の分割数です
+# 授業では 12〜24 程度にすると見やすいです
+N_vis = 16
+
+# -------------------------
+# 1. 可視化用の問題をもう一度解きます
+# -------------------------
+domain_vis = mesh.create_unit_square(
+    COMM,
+    N_vis,
+    N_vis,
+    diagonal=mesh.DiagonalType.left_right,
+)
+
+V_vis = fem.functionspace(domain_vis, (&quot;Lagrange&quot;, 1))
+
+x_vis = ufl.SpatialCoordinate(domain_vis)
+f_vis = 2 * np.pi**2 * ufl.sin(np.pi * x_vis[0]) * ufl.sin(np.pi * x_vis[1])
+
+u_D_vis = fem.Function(V_vis)
+u_D_vis.interpolate(exact_solution_numpy)
+
+fdim_vis = domain_vis.topology.dim - 1
+boundary_facets_vis = mesh.locate_entities_boundary(
+    domain_vis,
+    fdim_vis,
+    lambda x: np.full(x.shape[1], True, dtype=bool),
+)
+boundary_dofs_vis = fem.locate_dofs_topological(V_vis, fdim_vis, boundary_facets_vis)
+bc_vis = fem.dirichletbc(u_D_vis, boundary_dofs_vis)
+
+u_vis = ufl.TrialFunction(V_vis)
+v_vis = ufl.TestFunction(V_vis)
+
+a_vis = ufl.inner(ufl.grad(u_vis), ufl.grad(v_vis)) * ufl.dx
+L_vis = f_vis * v_vis * ufl.dx
+
+problem_vis = LinearProblem(
+    a_vis,
+    L_vis,
+    bcs=[bc_vis],
+    petsc_options_prefix=f&quot;visual_{N_vis}_&quot;,
+    petsc_options={
+        &quot;ksp_type&quot;: &quot;preonly&quot;,
+        &quot;pc_type&quot;: &quot;lu&quot;,
+        &quot;ksp_error_if_not_converged&quot;: True,
+    },
+)
+
+u_h_vis = problem_vis.solve()
+
+# -------------------------
+# 2. 2 次元のメッシュ図を描きます
+# -------------------------
+domain_vis.topology.create_connectivity(domain_vis.topology.dim, 0)
+cells_vis = domain_vis.topology.connectivity(domain_vis.topology.dim, 0).array.reshape(-1, 3)
+points_vis = domain_vis.geometry.x[:, :2]
+
+plt.figure(figsize=(6, 6))
+plt.triplot(points_vis[:, 0], points_vis[:, 1], cells_vis, linewidth=0.8)
+plt.xlabel(&quot;x&quot;)
+plt.ylabel(&quot;y&quot;)
+plt.title(f&quot;2D mesh (N = {N_vis})&quot;)
+plt.gca().set_aspect(&quot;equal&quot;)
+plt.show()
+
+# -------------------------
+# 3. 2 次元の等高線図を描きます
+# -------------------------
+num_cells_vis = domain_vis.topology.index_map(domain_vis.topology.dim).size_local
+triangles_vis = np.vstack([V_vis.dofmap.cell_dofs(c) for c in range(num_cells_vis)])
+
+# ここでは reshape せず，自由度座標をそのまま受け取ります
+dof_coords_vis = V_vis.tabulate_dof_coordinates()
+
+# 2 次元表示なので x, y の 2 成分だけを使います
+xy_vis = dof_coords_vis[:, :2]
+
+# 自由度に対応する数値解の値を取り出します
+values_vis = u_h_vis.x.array.real
+
+plt.figure(figsize=(6, 5))
+plt.tricontourf(
+    xy_vis[:, 0],
+    xy_vis[:, 1],
+    triangles_vis,
+    values_vis,
+    levels=20,
+)
+plt.colorbar(label=&quot;u_h&quot;)
+plt.xlabel(&quot;x&quot;)
+plt.ylabel(&quot;y&quot;)
+plt.title(f&quot;2D contour of FEM solution (N = {N_vis})&quot;)
+plt.gca().set_aspect(&quot;equal&quot;)
+plt.show()
+
+# -------------------------
+# 4. 近似解の 3 次元曲面図を描きます
+# -------------------------
+fig = plt.figure(figsize=(8, 6))
+ax = fig.add_subplot(111, projection=&quot;3d&quot;)
+
+ax.plot_trisurf(
+    xy_vis[:, 0],
+    xy_vis[:, 1],
+    values_vis,
+    triangles=triangles_vis,
+    linewidth=0.2,
+    antialiased=True,
+)
+
+ax.set_xlabel(&quot;x&quot;)
+ax.set_ylabel(&quot;y&quot;)
+ax.set_zlabel(&quot;u_h&quot;)
+ax.set_title(f&quot;3D surface of FEM solution (N = {N_vis})&quot;)
+plt.show()</code></pre>
+</div>
+<p>
+このセルを実行すると，まず三角形分割そのものが見えます．次に，近似解の等高線図から，中心付近で値が大きく，境界で0になっている様子が確認できます．最後の3次元図では，
+\[
+u_h(x,y)\approx \sin(\pi x)\sin(\pi y)
+\]
+の山型の形が視覚的に分かります．
+</p>
+<div class="note-box">
+メッシュ図では「どの三角形で計算しているか」を確認し，等高線図では「平面上での分布」を確認し，3次元図では「解の全体形状」を確認すると自然です．とくに，境界条件が0なので，3次元図でも周囲が下がっていることが分かります．
+</div>
+</article>
+</div>
+<h3>メッシュの切り方について</h3>
+<div class="news">
+<article class="news-item">
+<p>
+一方向にそろえた対角線で単位正方形を三角形分割すると，左上と右下の角に，3頂点すべてが境界上にある三角形が生じます．P1要素かつ同次Dirichlet条件のもとでは，そのような三角形上で有限要素関数は恒等的に0になります．したがって，その要素はメッシュとしては存在していても，近似空間の観点では実質的に「死んだ要素」です．
+</p>
+<p>
+最初の例としては，この人工的な偏りを避けた方が自然です．そこで本稿では，
+<code>diagonal=mesh.DiagonalType.left_right</code>
+を使って，対角線を交互に入れるメッシュにしています．
+</p>
+</article>
+</div>
+
+<h2>絶対誤差と相対誤差</h2>
+
+
+
+
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
