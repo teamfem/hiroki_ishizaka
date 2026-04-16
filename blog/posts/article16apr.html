@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 16 April 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 16 April 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">FEniCSxで学ぶメッシュ分割入門：節点座標・要素接続・境界辺から異方性メッシュへ</h1>
+<!---->
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+<p>
+メッシュ分割というと，三角形や四面体を図として並べたものを思い浮かべることが多いです．しかし，有限要素法の実装において本質的なのは，図そのものではなく，節点座標，要素接点，境界接点といった離散データです．言い換えると，メッシュとは「図」ではなく「表として読める構造」です．
+</p>
+<p>
+本記事では，FEniCSxを用いて，まず単純な2次元三角形メッシュを作り，節点座標対応表，要素接点対応表，境界辺接点対応表を実際に確認します．そのうえで，異方性メッシュとは何か，なぜ単なる一様分割では不十分なのかを説明し，必要に応じてGmshでメッシュを生成してFEniCSxへ読み込む流れへ進みます．最後に，高次要素へ移ると「節点」と「自由度」を同一視できなくなることにも触れます．
+</p>
+<p>
+入門者にとっては，メッシュを表として読むことが最初の目標です．一方で，より専門的には，異方性メッシュ，局所細分，曲線境界，境界ラベル，高次要素，さらにはCR要素やRT要素へと視点が広がっていきます．本記事は，その入口からかなり専門的な話題までを一つの流れの中で見通すことを目指しています．（複数回の記事に分ける可能性もあります）
+</p>
+<div class="note-box">
+<p>
+この記事では，まず <strong>P1の直線三角形メッシュ</strong> を出発点にします．この段階では，節点座標表，要素接点表，境界辺接点表の三つを自分で出せるようになることが第一目標です．
+</p>
+</div>
+</article>
+</div>
+
+<h2>1．メッシュ分割とは何か</h2>
+<div class="news"><article class="news-item">
+<p>
+有限要素法では，領域を有限個の単純な要素に分割して近似を行います．2次元では三角形や四角形，3次元では四面体や六面体などが代表的です．しかし，計算機の内部で保持されるのは「三角形そのもの」ではありません．実際には，たとえば次のような情報が格納されています．
+</p>
+<ul>
+<li>各節点の座標</li>
+<li>各要素がどの節点から構成されているかという接続情報</li>
+<li>どの辺や面が境界に属しているかという境界情報</li>
+</ul>
+<p>
+この観点から見ると，メッシュ分割とは，図形を描くことではなく，座標配列と接続配列を構成することだと言えます．この理解は，後で異方性メッシュや外部メッシャを扱うときに特に重要になります．
+</p>
+</article></div>
+
+<h2>2．2次元三角形メッシュを作る</h2>
+<div class="news"><article class="news-item">
+<p>
+まずは単位正方形
+\[
+\Omega := (0,1)^2
+\]
+を三角形に分割するところから始めます．今回は，対角線を交互に入れる `left_right` を使います．こうしておくと，一方向対角線で生じやすい偏りを避けやすく，学習用として見通しの良いメッシュになります．
+</p>
+<p>
+以下のセルで，Colab上に最小の三角形メッシュを作ります．FEniCSxの導入が終わっているとします．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code-block"><code># Colab / ローカル共通の基本セル
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from mpi4py import MPI
+from IPython.display import display
+from dolfinx import mesh
+
+COMM = MPI.COMM_WORLD
+
+# まずは単位正方形を作ります
+# 対角線は交互に入れて，見通しの良い三角形分割にします
+nx, ny = 4, 3
+domain = mesh.create_unit_square(
+    COMM,
+    nx,
+    ny,
+    diagonal=mesh.DiagonalType.left_right
+)
+
+# 以後，幾何学節点を「節点」と呼びます
+# 幾何学節点の座標配列は domain.geometry.x に入っています
+# 2次元表示では x, y の2列だけ使えば十分です
+node_xy = domain.geometry.x[:, :2]</code></pre>
+</div>
+<p>
+ここで重要なのは，<code>domain.geometry.x</code> が幾何学節点の座標配列であり，この配列こそがメッシュの最も基本的なデータだということです．
+</p>
+</article></div>
+
+<h2>3．節点座標対応表</h2>
+<div class="news"><article class="news-item">
+<p>
+節点座標対応表は，最も基本的な表です．各節点番号に対して \((x,y)\) 座標を並べれば，メッシュを構成する頂点がどこに置かれているかが分かります．
+</p>
+<p>
+次のセルでは，節点番号と座標の表をDataFrameとして出力します．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code-block"><code># 節点番号と座標の対応表を作ります
+node_ids = np.arange(node_xy.shape[0], dtype=int)
+
+node_table = pd.DataFrame({
+    &quot;node&quot;: node_ids,
+    &quot;x&quot;: node_xy[:, 0],
+    &quot;y&quot;: node_xy[:, 1],
+})
+
+display(node_table)</code></pre>
+</div>
+<p>
+たとえば，かなり小さなメッシュなら，出力は概念的には次のようになります．
+</p>
+<table class="simple-sample">
+<tr><th>node</th><th>x</th><th>y</th></tr>
+<tr><td>0</td><td>0.0</td><td>0.0</td></tr>
+<tr><td>1</td><td>0.25</td><td>0.0</td></tr>
+<tr><td>2</td><td>0.50</td><td>0.0</td></tr>
+</table>
+<p>
+この表が読めるようになると，メッシュを「図」としてではなく「座標配列」として理解しやすくなります．
+</p>
+</article></div>
+
+<h2>4．要素接点対応表</h2>
+<div class="news"><article class="news-item">
+<p>
+次に重要なのが，要素接点対応表です．三角形要素なら，各要素は3つの節点番号で表せます．この表を見ると，どの三角形がどの頂点からできているかが一目で分かります．
+</p>
+<p>
+FEniCSx では，幾何学側の要素接続は <code>domain.geometry.dofmap</code> に入っています．P1の直線三角形なら，各行が1つの三角形に対応し，3個の節点番号を持ちます．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code-block"><code># 各要素がどの節点からできているかを表にします
+# geometry.dofmap は「要素 → 幾何学節点」の対応表です
+elem_to_nodes = domain.geometry.dofmap
+
+elem_columns = [f&quot;node{k}&quot; for k in range(elem_to_nodes.shape[1])]
+elem_table = pd.DataFrame(elem_to_nodes, columns=elem_columns)
+elem_table.insert(0, &quot;element&quot;, np.arange(elem_to_nodes.shape[0], dtype=int))
+
+display(elem_table)</code></pre>
+</div>
+<p>
+有限要素法では，要素ごとに局所行列や局所ベクトルを作り，それを大域行列へ組み込みます．したがって，要素接点対応表は単なる説明用の表ではなく，実際の計算の入り口そのものです．
+</p>
+</article></div>
+
+<h2>5．境界辺接点対応表</h2>
+<div class="news"><article class="news-item">
+<p>
+境界条件を扱うには，境界辺の情報が必要です．2次元三角形メッシュでは，境界は辺の集まりとして表されます．したがって，どの辺が境界に属し，その辺がどの節点から構成されているかを表として持つことが重要です．
+</p>
+<p>
+以下のセルでは，まず外部境界facetの番号を取り出し，つづいて各境界辺に対応する幾何学節点番号を表として出します．中点座標から <code>left</code>, <code>right</code>, <code>bottom</code>, <code>top</code> というラベルも付けています．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code-block"><code># 境界辺の表を作ります
+tdim = domain.topology.dim
+fdim = tdim - 1
+
+# exterior_facet_indices を使うには facet と cell の接続を作っておくと安全です
+domain.topology.create_connectivity(fdim, tdim)
+
+# 外部境界 facet の番号を取り出します
+boundary_facets = mesh.exterior_facet_indices(domain.topology)
+
+# 各境界辺に対応する幾何学節点番号を取り出します
+# P1の直線メッシュでは，各境界辺は通常2つの節点を持ちます
+boundary_edge_nodes = mesh.entities_to_geometry(domain, fdim, boundary_facets, False)
+
+# 学習用に，境界辺の中点から left / right / bottom / top を付けます
+midpoints = mesh.compute_midpoints(domain, fdim, boundary_facets)[:, :2]
+
+labels = []
+for xm, ym in midpoints:
+    if np.isclose(xm, 0.0):
+        labels.append(&quot;left&quot;)
+    elif np.isclose(xm, 1.0):
+        labels.append(&quot;right&quot;)
+    elif np.isclose(ym, 0.0):
+        labels.append(&quot;bottom&quot;)
+    elif np.isclose(ym, 1.0):
+        labels.append(&quot;top&quot;)
+    else:
+        labels.append(&quot;other&quot;)
+
+edge_columns = [f&quot;node{k}&quot; for k in range(boundary_edge_nodes.shape[1])]
+boundary_table = pd.DataFrame(boundary_edge_nodes, columns=edge_columns)
+boundary_table.insert(0, &quot;boundary_edge&quot;, boundary_facets)
+boundary_table[&quot;label&quot;] = labels
+
+display(boundary_table)</code></pre>
+</div>
+<p>
+この表があると，Dirichlet条件をどの辺に課すか，Neumann積分をどこで評価するかをかなり明確に追えるようになります．
+</p>
+</article></div>
+
+<h2>6．図と表を対応させる</h2>
+<div class="news"><article class="news-item">
+<p>
+ここで初めて，2次元メッシュ図を見ます．ただし，本記事の立場では，図はあくまで表を視覚的に確認する手段です．節点番号を図に重ねれば節点座標表との対応が分かり，要素番号を重ねれば要素接点対応表との対応が分かります．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code-block"><code># 図と表の対応を確認します
+# geometry.dofmap を使って，メッシュ図に節点番号と要素番号を重ねます
+
+triangles = domain.geometry.dofmap
+points = domain.geometry.x[:, :2]
+
+plt.figure(figsize=(7, 6))
+plt.triplot(points[:, 0], points[:, 1], triangles, linewidth=0.8)
+plt.gca().set_aspect(&quot;equal&quot;)
+plt.xlabel(&quot;x&quot;)
+plt.ylabel(&quot;y&quot;)
+plt.title(&quot;mesh with node numbers and element numbers&quot;)
+
+# 節点番号を描きます
+for i, (x, y) in enumerate(points):
+    plt.text(x, y, f&quot;N{i}&quot;, color=&quot;tab:red&quot;, fontsize=9)
+
+# 要素番号を重心に描きます
+for k, tri in enumerate(triangles):
+    cx = points[tri, 0].mean()
+    cy = points[tri, 1].mean()
+    plt.text(cx, cy, f&quot;E{k}&quot;, color=&quot;tab:blue&quot;, fontsize=9)
+
+plt.show()</code></pre>
+</div>
+<p>
+このように，「図を見て終わり」ではなく，「図と表を往復する」ことが，メッシュ分割を本当に理解するための第一歩です．
+</p>
+</article></div>
+
+<h2>7．異方性メッシュとは何か</h2>
+<div class="news"><article class="news-item">
+<p>
+ここから少し専門的な話に進みます．異方性メッシュとは，方向によって要素の長さスケールが大きく異なるメッシュのことです．典型的には，細長い三角形や四面体が現れます．しかし，本ページでは単に「細長い要素がある」という見た目だけで異方性を語るのではなく，メッシュ退化の仕方そのものを二つの類型に区別して考えます．
+</p>
+<p>
+本ページではメッシュ退化を次の二類型に区別します．A型は，形状パラメータが一様有界のまま相似的に縮小していく場合です．これに対して B型は，精密化と同時に形状パラメータが発散していくgraded退化です．この二つは見た目が似ていても，解析の焦点が本質的に異なります．<a href="https://teamfem.github.io/hiroki_ishizaka/geo/">History of Geometric Conditions in FEM</a>
+</p>
+<p>
+A型では，収束次数そのものは古典理論の範囲で既知であることが多く，本質は誤差係数が退化に対してどのように依存するかにあります．一方で B型では，精密化と退化が同時に進むため，単なるshape-regularityの議論では不十分であり，graded mesh使用における異方性補間誤差評価の枠組みが前面に出てきます．
+</p>
+<p>
+この二類型を区別しておくことには大きな意味があります．異方性メッシュは，単に「形が悪いメッシュ」という意味ではありません．境界層，急峻な遷移層，強い方向性を持つ解，薄い幾何構造などを効率よく捉えるためには，むしろ方向依存の細分が本質的になることがあります．そのとき重要なのは，退化を一括して嫌うことではなく，どの種類の退化を許し，どの量が誤差に効くのかを見分けることです．
+</p>
+<p>
+この段階でも，節点座標表と要素接点表，さらに必要なら境界辺接点表を出しておくことは非常に有効です．異方性とは図の見た目だけではなく，節点配置と接続構造の偏りとして現れるからです．A型とB型の違いも，最終的には座標表と接続表のレベルで読み取れるようになると理解が深まります．
+</p>
+</article></div>
+
+<h2>8．FEniCSx だけで作れる異方性メッシュ</h2>
+<div class="news"><article class="news-item">
+<p>
+単純な領域であれば，異方性メッシュは必ずしも外部メッシャを必要としません．たとえば長方形領域に対して \(x\) 方向と \(y\) 方向で分割数を変えたり，節点を一様ではなくgradedに配置したりすれば，方向依存の細分をかなり柔軟に作れます．
+</p>
+</article></div>
+
+<h2>9．Gmshを使う場面</h2>
+<div class="news"><article class="news-item">
+<p>
+複雑形状，曲線境界，局所細分，境界層型の細分，物理領域ごとのラベル付けなどが必要になると，Gmshのような外部メッシャが非常に有力になります．
+</p>
+<p>
+この場合でも，本当に大切なのは，最終的にFEniCSxに渡されたメッシュが，節点座標表，要素接点表，境界辺接点表としてどう読めるかという点です．外部メッシャを使ったからといって，内部構造が見えなくなってよいわけではありません．
+</p>
+</article></div>
+
+<h2>10．高次要素への展開</h2>
+<div class="news"><article class="news-item">
+<p>
+P1要素では，節点と自由度をほぼ同一視してよいので，節点座標表と要素接点表の理解だけでもかなり先へ進めます．しかし，高次要素になると，辺上点や内部点が現れ，もはや「節点」と「自由度」は単純には一致しません．
+</p>
+<p>
+FEniCSxでP1 Lagrange要素を使うと，自由度座標は次のように確認できます．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code-block"><code># P1 Lagrange 要素では，有限要素自由度の座標は節点座標と一致します
+# ただし，これは point-evaluation dof を持つ要素に限った話です
+from dolfinx import fem
+
+V = fem.functionspace(domain, (&quot;Lagrange&quot;, 1))
+dof_xy = V.tabulate_dof_coordinates()[:, :2]
+
+p1_dof_table = pd.DataFrame({
+    &quot;dof&quot;: np.arange(dof_xy.shape[0], dtype=int),
+    &quot;x&quot;: dof_xy[:, 0],
+    &quot;y&quot;: dof_xy[:, 1],
+})
+
+display(p1_dof_table.head())</code></pre>
+</div>
+<p>
+ただし，この方法は点評価型の自由度を持つ要素に対してのみそのまま使えます．高次要素や非適合要素へ進む段階では，視点を少し変えて，
+</p>
+<ul>
+<li>幾何学節点表</li>
+<li>自由度座標表</li>
+<li>要素-自由度対応表</li>
+</ul>
+<p>
+という区別を意識する必要があります．
+</p>
+</article></div>
+
+<h2>11．まとめと見通し</h2>
+<div class="news"><article class="news-item">
+<p>
+本記事では，メッシュ分割を「図」ではなく「離散データ」として読む立場から，節点座標対応表，要素接点対応表，境界辺接点対応表の三つを中心に整理しました．今回は，それらを実際にColab/FEniCSxで出力する最小コードも入れました．
+</p>
+<p>
+この視点は，異方性メッシュ，外部メッシャによる生成，高次要素，非適合要素へ進むときにもそのまま生きます．次の段階では，異方性メッシュとGmsh連携に対しても同じ三つの表を出し，比較しながら理解を深めるのが自然です．
+</p>
+</article></div>
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
