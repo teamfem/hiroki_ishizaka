@@ -113,29 +113,7 @@
 
 <h1 class="section-title">Blog</h1>
 <!---->
-<h2>Google ColabでFEniCSxの導入</h2>
-<div class="news">
-<article class="news-item">
-<p>
-最初のセルは，ColabにFEniCSx が入っているかを確認し，入っていなければ導入するためのものです．</p>
-<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
-<pre><code># すでにdolfinxが入っているかを試します
-try:
-    import dolfinx
-
-# 入っていなければ，Colab用のインストールスクリプトを実行します
-except ImportError:
-    !wget &quot;https://fem-on-colab.github.io/releases/fenicsx-install-release-real.sh&quot; -O &quot;/tmp/fenicsx-install.sh&quot; \
-        &amp;&amp; bash &quot;/tmp/fenicsx-install.sh&quot;
-
-# 最後に，ちゃんとimportできることを確認します
-import dolfinx
-print(&quot;dolfinx is ready.&quot;)</code></pre>
-</div>
-</article>
-</div>
-
-<h2>有限要素法における幾何学</h2>
+<h2>有限要素法における幾何</h2>
 <div class="news">
 <article class="news-item">
 <h3 class="news-title">メッシュ分割</h3>
@@ -161,6 +139,29 @@ print(&quot;dolfinx is ready.&quot;)</code></pre>
 </p>
 </article>
 </div>
+
+<h2>Google ColabでFEniCSxの導入</h2>
+<div class="news">
+<article class="news-item">
+<p>
+最初のセルは，ColabにFEniCSx が入っているかを確認し，入っていなければ導入するためのものです．</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code># すでにdolfinxが入っているかを試します
+try:
+    import dolfinx
+
+# 入っていなければ，Colab用のインストールスクリプトを実行します
+except ImportError:
+    !wget &quot;https://fem-on-colab.github.io/releases/fenicsx-install-release-real.sh&quot; -O &quot;/tmp/fenicsx-install.sh&quot; \
+        &amp;&amp; bash &quot;/tmp/fenicsx-install.sh&quot;
+
+# 最後に，ちゃんとimportできることを確認します
+import dolfinx
+print(&quot;dolfinx is ready.&quot;)</code></pre>
+</div>
+</article>
+</div>
+
 
 <h2></h2>
 
