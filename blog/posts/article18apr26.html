@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 18 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 18 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">異方性メッシュ族をPythonで再構成する：6つのmesh familyの節点座標・要素接点・境界辺接点表からgood/badを読む</h1>
+<!---->
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+<p>
+このページでは，<a href="https://arxiv.org/abs/2504.16012">Interpolation error analysis using a new geometric parameter</a> Section 9 で与えられている異方性メッシュ族をコードに沿って解説します．
+</p>
+<p>
+方針は単純です．まず 1 本の完成版コード (Appendix)で，節点座標対応表，要素接点対応表，境界辺接点対応表，メッシュ図，そして <code>MinAngle</code> / <code>MaxAngle</code> 型の比較表までまとめて出せるようにします．そのうえで，Section 9.1 の good family，Section 9.2 の指標，Section 9.3 の bad family を順に読み解きます．
+</p>
+</article>
+</div>
+
+<h2>1．このページで何を解説するのか</h2>
+<div class="news"><article class="news-item">
+<p>
+ここでは，<strong>記事本文は「Section 9 の意味を説明すること」に集中</strong>し，詳細な実装は完成版コード (Appendix)にまとめました．これにより，読者はまず「何を再現したいのか」を理解し，そのあとで「どの関数が何を担当しているのか」を追えるようになります．
+</p>
+<p>
+特に Section 9 では，9.1 に (I) Standard，(II) Shishkin，(III) anisotropic mesh from [25]，(IV) graded mesh が与えられ，9.2 では <code>MinAngle</code> と <code>MaxAngle</code> 型の量が導入され，9.3 では bad family として (V) Shishkin mesh，(VI) Graded mesh が挙げられています．この記事では，この流れそのものを崩さないことを優先します．
+</p>
+</article>
+</div>
+
+<h2>2．完成版コード (Appendix)の役割</h2>
+<div class="news"><article class="news-item">
+<p>
+完成版コードの役割は次の6点です．
+</p>
+<ol>
+<li>Section 9.1 の (I)–(IV) の節点列を生成すること．</li>
+<li>Section 9.3 の (V)，(VI) を，x 方向は staggered row，y 方向は Shishkin/graded で構成すること．</li>
+<li>節点座標対応表を出すこと．</li>
+<li>要素接点対応表と境界辺接点対応表を出すこと．</li>
+<li>メッシュ図を描き，必要なら節点番号・要素番号・境界辺番号を重ねること．</li>
+<li><code>MinAngle</code> と <code>MaxAngle</code> 型の量を計算し，6つの family を一つの表で比較すること．</li>
+</ol>
+<p>
+つまり，このファイル 1 本を見れば，Section 9 の mesh family を「図」と「表」と「指標」の三つの視点からまとめて確認できます．
+</p>
+</article>
+</div>
+
+<h2>3．Section 9.1：good family (I)–(IV)</h2>
+<div class="news"><article class="news-item">
+<p>
+Section 9.1 の (I)–(IV) は，まず節点列 \((x_1^i, x_2^i)\) を与え，その tensor-product grid を三角形に分割することで得られます．完成版コードでは，この部分を <code>section9_lines(kind, N, ...)</code> が担当しています．
+</p>
+<ul>
+<li><strong>(I)</strong> Standard mesh：x 方向・y 方向ともに一様分割です．</li>
+<li><strong>(II)</strong> Shishkin mesh：x 方向は一様，y 方向のみ Shishkin 型に分割します．</li>
+<li><strong>(III)</strong> Anisotropic mesh from [25]：x 方向・y 方向とも cosine clustering を使います．</li>
+<li><strong>(IV)</strong> Graded mesh：x 方向は一様，y 方向は \((i/N)^2\) とします．</li>
+</ul>
+<p>
+この4つは good family 側の導入例として使いやすく，節点座標対応表と要素接点対応表を出すだけでも，異方性の入り方の違いがかなりよく見えます．
+</p>
+</article></div>
+
+<h2>4．Section 9.2：<code>MinAngle</code> と <code>MaxAngle</code> をどう読むか</h2>
+<div class="news"><article class="news-item">
+<p>
+Section 9.2 では，各三角形の 3 辺長を \(|L_1| \le |L_2| \le |L_3|\) の順に並べたうえで，
+</p>
+<p>
+\[
+\mathrm{MinAngle}:=\max_{T\in\mathcal T_h}\frac{|L_3|^2}{|T|_2},
+\qquad
+\mathrm{MaxAngle}:=\max_{T\in\mathcal T_h}\frac{|L_1||L_2|}{|T|_2}
+\]
+</p>
+<p>
+を計算しています．完成版コードでは，<code>tri_edge_lengths</code>，<code>tri_area</code>，<code>section9_indicators</code> がこの部分を担当します．
+</p>
+<p>
+ここで大事なのは，<strong>辺長は厳密に <code>L1 &lt; L2 &lt; L3</code> ではなく，<code>L1 &lt;= L2 &lt;= L3</code></strong> と並べることです．等辺や二等辺の要素では辺長が一致することがあるからです．完成版コードでも，<code>np.sort(...)</code> によりこの順序を保証しています．
+</p>
+</article></div>
+
+<h2>5．Section 9.3：bad family (V), (VI)</h2>
+<div class="news"><article class="news-item">
+<p>
+Section 9.3 では (V) Shishkin mesh と (VI) Graded mesh が bad family として現れます．ここで注意すべきなのは，(V)，(VI) を「別の y 方向節点列」として考えるだけでは不十分で，<strong>x 方向の切り方そのものが 9.1 と異なる</strong>ことです．
+</p>
+<p>
+このコードでは，odd row は通常格子，even row は半ステップずれた格子になっており，さらに odd strip/even strip ごとに三角形の貼り方を変えています．完成版コードでは，この考え方を <code>mesh1_style_rows</code> と <code>build_mesh1_style_mesh</code> に移しました．
+</p>
+<p>
+したがって，(V)，(VI) の構成は次のように読むのが自然です．
+</p>
+<ul>
+<li><strong>(V)</strong>：y 方向は Shishkin，x 方向は staggered row．</li>
+<li><strong>(VI)</strong>：y 方向は graded，x 方向は staggered row．</li>
+</ul>
+<p>
+これにより，図だけでは分かりにくかった「どこが 9.1 の family と違うのか」が，節点列と要素接続の両方から読めるようになります．
+</p>
+</article></div>
+
+<h2>6．A型/B型と good/bad の見方</h2>
+<div class="news"><article class="news-item">
+<p>
+本ページでは，メッシュ退化を二つに分けて読みます．
+</p>
+<ul>
+<li><strong>A型</strong>：形状パラメータが一様有界な相似縮小型．</li>
+<li><strong>B型</strong>：精密化と同時に形状パラメータが発散する graded 退化型．</li>
+</ul>
+<p>
+A型では古典理論によって収束次数自体は既知であり，本質は誤差係数の退化依存性にあります．一方，B型では shape-regularity が壊れていても new geometric condition 側では still good になり得るかどうかが中心問題になります．Section 9 を family ごとに表と図で並べる意義は，まさにここにあります．
+</p>
+<p>
+Section 9.3 では Mesh <strong>(V)</strong> を Bad にしています．(V) は　shape-regularity　を満たしますが，誤差係数が退化依存します．これにより，Bad に分類しています．しかしながら，収束次数自体は古典理論によって保証されます．
+</p>
+<p>
+完成版コードは，この good/bad の違いを <code>indicator_table_all</code> という比較表にまとめます．したがって，読者は6つの family を一つの表で見たあとに，その背後にある mesh data を節点表・要素表・境界辺表へ戻って確認できます．
+</p>
+</article></div>
+
+<h2>7．完成版コードの読み方</h2>
+<div class="news"><article class="news-item">
+<p>
+完成版コードは，次の順番で読むと分かりやすいです．
+</p>
+<ol>
+<li><code>section9_lines</code>：9.1 の (I)–(IV) を作る．</li>
+<li><code>build_tri_mesh_from_tensor_grid</code>：tensor-product grid を三角形化する．</li>
+<li><code>tables_from_mesh</code> と <code>show_tables</code>：三つの表を出す．</li>
+<li><code>section9_indicators</code>：Section 9.2 の指標を計算する．</li>
+<li><code>section93_lines</code>，<code>mesh1_style_rows</code>，<code>build_mesh1_style_mesh</code>：9.3 の (V)，(VI) を作る．</li>
+<li>最後の demo 部分：family ごとの図や比較表を出す．</li>
+</ol>
+<p>
+この構成にしておくと，記事本文では個々の関数を必要なときだけ参照すればよく，HTML の中に長大なコードを何度も埋め込まずに済みます．
+</p>
+</article></div>
+
+<h2>8．実行のしかた</h2>
+<div class="news"><article class="news-item">
+<p>
+この整理版では，まず完成版コードを Colab または Jupyter へ貼り付けて実行し，その出力を見ながら本文を読むことを想定しています．最初の example では <code>N=4</code> の小さい例で節点表・要素表・境界辺表を確認し，その後で6つの family の比較表へ進みます．
+</p>
+<p>
+記事を読む順番としては，
+</p>
+<ol>
+<li>まず節点座標対応表・要素接点対応表・境界辺接点対応表を見る．</li>
+<li>次にメッシュ図で節点番号・要素番号・境界辺番号の対応を確認する．</li>
+<li>最後に <code>MinAngle</code> / <code>MaxAngle</code> 型の量で family 全体を比較する．</li>
+</ol>
+<p>
+と進むのが一番分かりやすいです．
+</p>
+</article></div>
+
+<h2>9．まとめ</h2>
+<div class="news"><article class="news-item">
+<p>
+完成版コードを1本に固定し，本文は Section 9 の意味を説明することに集中させました．その結果，
+</p>
+<ul>
+<li>Section 9.1 の good family，</li>
+<li>Section 9.2 の指標，</li>
+<li>Section 9.3 の bad family，</li>
+<li>A型 / B型と good / bad の見方，</li>
+<li>staggered rowの役割，</li>
+</ul>
+<p>
+がそれぞれ整理しやすくなりました．今後は，この整理版を土台にして，FEniCSx や Gmsh 側の mesh data とどう対応づけるかを次段階として書いていく方針です．
+</p>
+</article></div>
+
+<h2>Appendix．完成版コード全文（HTML 版）</h2>
+<div class="news"><article class="news-item">
+<p>
+以下に，コードの全文を掲載します．この版では，(I) から (VI) までの 6 つの family を 2×3 の図としてまとめて表示する <code>plot_all_six_families</code> も含めています．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code># Colab / Jupyter 用の全コード（I)-(VI) 比較つき）
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from IPython.display import display
+
+pd.set_option(&quot;display.max_rows&quot;, None)
+
+
+def x_standard(N):
+    return np.linspace(0.0, 1.0, N + 1)
+
+
+def x_shishkin_y(N, delta=1/128):
+    tau = 2 * delta * abs(np.log(N))
+    tau = min(max(tau, 0.0), 1.0)
+    y = np.zeros(N + 1)
+    half = N // 2
+    for i in range(N + 1):
+        if i &lt;= half:
+            y[i] = tau * i / half if half &gt; 0 else 0.0
+        else:
+            y[i] = tau + (1 - tau) * (i - half) / (N - half)
+    return y
+
+
+def x_cosine_cluster(N):
+    i = np.arange(N + 1, dtype=float)
+    return 0.5 * (1.0 - np.cos(i * np.pi / N))
+
+
+def x_graded_square(N):
+    i = np.arange(N + 1, dtype=float)
+    return (i / N) ** 2
+
+
+def section9_lines(kind, N, delta=1/128):
+    if kind == &quot;I&quot;:
+        x1 = x_standard(N)
+        x2 = x_standard(N)
+    elif kind == &quot;II&quot;:
+        x1 = x_standard(N)
+        x2 = x_shishkin_y(N, delta=delta)
+    elif kind == &quot;III&quot;:
+        x1 = x_cosine_cluster(N)
+        x2 = x_cosine_cluster(N)
+    elif kind == &quot;IV&quot;:
+        x1 = x_standard(N)
+        x2 = x_graded_square(N)
+    else:
+        raise ValueError(&quot;kind must be one of &#x27;I&#x27;, &#x27;II&#x27;, &#x27;III&#x27;, &#x27;IV&#x27;.&quot;)
+    return x1, x2
+
+
+def build_tri_mesh_from_tensor_grid(x1, x2, diagonal=&quot;right&quot;, flip_corner_cells=False):
+    x1 = np.asarray(x1, dtype=float)
+    x2 = np.asarray(x2, dtype=float)
+    nx = len(x1) - 1
+    ny = len(x2) - 1
+
+    nodes = []
+    for j in range(ny + 1):
+        for i in range(nx + 1):
+            nodes.append([x1[i], x2[j]])
+    nodes = np.array(nodes, dtype=float)
+
+    def nid(i, j):
+        return j * (nx + 1) + i
+
+    elements = []
+    for j in range(ny):
+        for i in range(nx):
+            n00 = nid(i, j)
+            n10 = nid(i + 1, j)
+            n01 = nid(i, j + 1)
+            n11 = nid(i + 1, j + 1)
+            use_diagonal = diagonal
+            if flip_corner_cells:
+                is_top_left = (i == 0 and j == ny - 1)
+                is_bottom_right = (i == nx - 1 and j == 0)
+                if is_top_left or is_bottom_right:
+                    use_diagonal = &quot;left&quot; if diagonal == &quot;right&quot; else &quot;right&quot;
+            if use_diagonal == &quot;right&quot;:
+                elements.append([n00, n10, n11])
+                elements.append([n00, n11, n01])
+            elif use_diagonal == &quot;left&quot;:
+                elements.append([n00, n10, n01])
+                elements.append([n10, n11, n01])
+            else:
+                raise ValueError(&quot;diagonal must be &#x27;right&#x27; or &#x27;left&#x27;.&quot;)
+    return nodes, np.array(elements, dtype=int)
+
+
+def boundary_edges_from_elements(elements):
+    edge_count = {}
+    for tri in elements:
+        a, b, c = map(int, tri)
+        edges = [tuple(sorted((a, b))), tuple(sorted((b, c))), tuple(sorted((c, a)))]
+        for e in edges:
+            edge_count[e] = edge_count.get(e, 0) + 1
+    boundary_edges = np.array([e for e, c in edge_count.items() if c == 1], dtype=int)
+    idx = np.lexsort((boundary_edges[:, 1], boundary_edges[:, 0]))
+    return boundary_edges[idx]
+
+
+def tables_from_mesh(nodes, elements, boundary_edges):
+    node_table = pd.DataFrame({
+        &quot;node&quot;: np.arange(len(nodes), dtype=int),
+        &quot;x&quot;: nodes[:, 0],
+        &quot;y&quot;: nodes[:, 1],
+    })
+    element_table = pd.DataFrame({
+        &quot;element&quot;: np.arange(len(elements), dtype=int),
+        &quot;node0&quot;: elements[:, 0],
+        &quot;node1&quot;: elements[:, 1],
+        &quot;node2&quot;: elements[:, 2],
+    })
+    boundary_table = pd.DataFrame({
+        &quot;boundary_edge&quot;: np.arange(len(boundary_edges), dtype=int),
+        &quot;node0&quot;: boundary_edges[:, 0],
+        &quot;node1&quot;: boundary_edges[:, 1],
+    })
+    return node_table, element_table, boundary_table
+
+
+def show_tables(node_table, element_table, boundary_table):
+    print(&quot;=== node table ===&quot;)
+    display(node_table.style.format({&quot;x&quot;: &quot;{:16.12e}&quot;, &quot;y&quot;: &quot;{:16.12e}&quot;}))
+    print(&quot;=== element table ===&quot;)
+    display(element_table)
+    print(&quot;=== boundary-edge table ===&quot;)
+    display(boundary_table)
+
+
+def plot_mesh_with_labels(nodes, elements, boundary_edges=None,
+                          show_node_ids=True, show_elem_ids=False,
+                          show_boundary_ids=False,
+                          title=&quot;mesh&quot;):
+    plt.figure(figsize=(6, 6))
+    for tri in elements:
+        tri = list(map(int, tri))
+        poly = np.vstack([nodes[tri], nodes[tri[0]]])
+        plt.plot(poly[:, 0], poly[:, 1], color=&quot;0.45&quot;, lw=0.9)
+    if boundary_edges is not None:
+        for k, (a, b) in enumerate(boundary_edges):
+            seg = nodes[[a, b]]
+            plt.plot(seg[:, 0], seg[:, 1], color=&quot;black&quot;, lw=1.5)
+            if show_boundary_ids:
+                m = seg.mean(axis=0)
+                plt.text(m[0], m[1], str(k), fontsize=8, color=&quot;tab:purple&quot;)
+    if show_node_ids:
+        for k, (x, y) in enumerate(nodes):
+            plt.text(x, y, str(k), fontsize=8, color=&quot;tab:blue&quot;)
+    if show_elem_ids:
+        for k, tri in enumerate(elements):
+            pts = nodes[np.array(tri, dtype=int)]
+            c = pts.mean(axis=0)
+            plt.text(c[0], c[1], str(k), fontsize=8, color=&quot;tab:red&quot;)
+    plt.gca().set_aspect(&quot;equal&quot;)
+    plt.xlabel(&quot;x&quot;)
+    plt.ylabel(&quot;y&quot;)
+    plt.title(title)
+    plt.show()
+
+
+def tri_edge_lengths(pts):
+    L = [
+        np.linalg.norm(pts[1] - pts[0]),
+        np.linalg.norm(pts[2] - pts[1]),
+        np.linalg.norm(pts[0] - pts[2]),
+    ]
+    return np.sort(np.array(L, dtype=float))  # L1 &lt;= L2 &lt;= L3
+
+
+def tri_area(pts):
+    a = pts[1] - pts[0]
+    b = pts[2] - pts[0]
+    return 0.5 * abs(a[0] * b[1] - a[1] * b[0])
+
+
+def section9_indicators(nodes, elements):
+    min_like = 0.0
+    max_like = 0.0
+    for tri in elements:
+        pts = nodes[tri]
+        L1, L2, L3 = tri_edge_lengths(pts)
+        area = tri_area(pts)
+        min_like = max(min_like, (L3 ** 2) / area)
+        max_like = max(max_like, (L1 * L2) / area)
+    return float(min_like), float(max_like)
+
+
+# --- bad family based on mesh1.h ---
+def section93_lines(kind, N, delta=1/128):
+    &quot;&quot;&quot;
+    Section 9.3 の (V), (VI) 用の y 方向節点列．
+    (V)  : Shishkin mesh なので 9.1 の (II) と同じ縦方向節点列
+    (VI) : Graded mesh   なので 9.1 の (IV) と同じ縦方向節点列
+    &quot;&quot;&quot;
+    if kind == &quot;V&quot;:
+        return x_shishkin_y(N, delta=delta)
+    elif kind == &quot;VI&quot;:
+        return x_graded_square(N)
+    else:
+        raise ValueError(&quot;kind must be &#x27;V&#x27; or &#x27;VI&#x27;.&quot;)
+
+
+def mesh1_style_rows(N):
+    &quot;&quot;&quot;
+    mesh1.h 型の x 方向節点列を行ごとに作る．
+    偶数番目の行(0-based)は通常格子，奇数番目の行は半ステップずれた格子にする．
+    &quot;&quot;&quot;
+    x_base = np.linspace(0.0, 1.0, N + 1)
+    mids = 0.5 * (x_base[:-1] + x_base[1:])
+    rows = []
+    for j in range(N + 1):
+        if j % 2 == 0:
+            rows.append(x_base.copy())
+        else:
+            rows.append(np.concatenate(([x_base[0]], mids, [x_base[-1]])))
+    return rows
+
+
+def build_mesh1_style_mesh(N, y_lines):
+    &quot;&quot;&quot;
+    mesh1.h の odd/even row と要素接続を Python に移した 2D 三角形メッシュ生成．
+    x 方向は staggered row，y 方向は外から与える．
+    &quot;&quot;&quot;
+    y_lines = np.asarray(y_lines, dtype=float)
+    if len(y_lines) != N + 1:
+        raise ValueError(&quot;y_lines must have length N+1&quot;)
+
+    rows_x = mesh1_style_rows(N)
+
+    nodes = []
+    row_starts = []
+    count = 0
+    for j in range(N + 1):
+        row_starts.append(count)
+        for x in rows_x[j]:
+            nodes.append([x, y_lines[j]])
+            count += 1
+    nodes = np.array(nodes, dtype=float)
+
+    def nid(row, k):
+        return row_starts[row] + k
+
+    elements = []
+    for j in range(N):
+        if j % 2 == 0:
+            # mesh1.h の odd strip に対応（0-based では j 偶数）
+            for i in range(N):
+                p1 = nid(j, i)
+                p2 = nid(j, i + 1)
+                p3 = nid(j + 1, i + 1)
+                elements.append([p1, p2, p3])
+                p1 = nid(j, i)
+                p2 = nid(j + 1, i + 1)
+                p3 = p2 - 1
+                elements.append([p1, p2, p3])
+            p1 = nid(j, N)
+            p2 = nid(j + 1, N + 1)
+            p3 = p2 - 1
+            elements.append([p1, p2, p3])
+        else:
+            # mesh1.h の even strip に対応（0-based では j 奇数）
+            p1 = nid(j, 0)
+            p2 = p1 + 1
+            p3 = nid(j + 1, 0)
+            elements.append([p1, p2, p3])
+            for i in range(N):
+                p1 = nid(j, i + 1)
+                p2 = p1 + 1
+                p3 = nid(j + 1, i + 1)
+                elements.append([p1, p2, p3])
+                p1 = nid(j, i + 1)
+                p2 = nid(j + 1, i + 1)
+                p3 = p2 - 1
+                elements.append([p1, p2, p3])
+    return nodes, np.array(elements, dtype=int)
+
+
+def section93_reconstruction(kind, N, delta=1/128):
+    &quot;&quot;&quot;
+    Section 9.3 の (V), (VI) を作る．
+    x 方向は mesh1.h 型，y 方向は (V) で Shishkin, (VI) で graded を使う．
+    &quot;&quot;&quot;
+    y_lines = section93_lines(kind, N, delta=delta)
+    return build_mesh1_style_mesh(N, y_lines)
+
+
+def build_family_mesh(kind, N, delta=1/128):
+    &quot;&quot;&quot;
+    kind = &quot;I&quot;, ..., &quot;VI&quot; に対して nodes, elements, boundary_edges を返す．
+    &quot;&quot;&quot;
+    if kind in [&quot;I&quot;, &quot;II&quot;, &quot;III&quot;, &quot;IV&quot;]:
+        x1, x2 = section9_lines(kind, N, delta=delta)
+        nodes, elements = build_tri_mesh_from_tensor_grid(
+            x1, x2, diagonal=&quot;right&quot;, flip_corner_cells=True
+        )
+    elif kind in [&quot;V&quot;, &quot;VI&quot;]:
+        nodes, elements = section93_reconstruction(kind, N, delta=delta)
+    else:
+        raise ValueError(&quot;kind must be one of &#x27;I&#x27;, &#x27;II&#x27;, &#x27;III&#x27;, &#x27;IV&#x27;, &#x27;V&#x27;, &#x27;VI&#x27;.&quot;)
+
+    boundary_edges = boundary_edges_from_elements(elements)
+    return nodes, elements, boundary_edges
+
+
+def plot_family_on_ax(ax, kind, N=16, delta=1/128,
+                      show_node_ids=False,
+                      show_elem_ids=False,
+                      show_boundary_ids=False):
+    &quot;&quot;&quot;
+    1 つの family を与えられた Axes に描く．
+    &quot;&quot;&quot;
+    nodes, elements, boundary_edges = build_family_mesh(kind, N, delta=delta)
+
+    for tri in elements:
+        tri = list(map(int, tri))
+        poly = np.vstack([nodes[tri], nodes[tri[0]]])
+        ax.plot(poly[:, 0], poly[:, 1], color=&quot;0.45&quot;, lw=0.9)
+
+    for k, (a, b) in enumerate(boundary_edges):
+        seg = nodes[[a, b]]
+        ax.plot(seg[:, 0], seg[:, 1], color=&quot;black&quot;, lw=1.4)
+        if show_boundary_ids:
+            m = seg.mean(axis=0)
+            ax.text(m[0], m[1], str(k), fontsize=7, color=&quot;tab:purple&quot;)
+
+    if show_node_ids:
+        for k, (x, y) in enumerate(nodes):
+            ax.text(x, y, str(k), fontsize=7, color=&quot;tab:blue&quot;)
+
+    if show_elem_ids:
+        for k, tri in enumerate(elements):
+            pts = nodes[np.array(tri, dtype=int)]
+            c = pts.mean(axis=0)
+            ax.text(c[0], c[1], str(k), fontsize=7, color=&quot;tab:red&quot;)
+
+    name_map = {
+        &quot;I&quot;: &quot;I : Standard&quot;,
+        &quot;II&quot;: &quot;II : Shishkin&quot;,
+        &quot;III&quot;: &quot;III : Anisotropic&quot;,
+        &quot;IV&quot;: &quot;IV : Graded&quot;,
+        &quot;V&quot;: &quot;V : Shishkin (bad family)&quot;,
+        &quot;VI&quot;: &quot;VI : Graded (bad family)&quot;,
+    }
+
+    ax.set_aspect(&quot;equal&quot;)
+    ax.set_xlabel(&quot;x&quot;)
+    ax.set_ylabel(&quot;y&quot;)
+    ax.set_title(f&quot;{name_map[kind]}  (N={N})&quot;)
+
+
+def plot_all_six_families(N=16, delta=1/128,
+                          show_node_ids=False,
+                          show_elem_ids=False,
+                          show_boundary_ids=False):
+    &quot;&quot;&quot;
+    I から VI までの 6 つの family を 2x3 に並べて描く．
+    &quot;&quot;&quot;
+    fig, axes = plt.subplots(2, 3, figsize=(15, 9))
+    for ax, kind in zip(axes.ravel(), [&quot;I&quot;, &quot;II&quot;, &quot;III&quot;, &quot;IV&quot;, &quot;V&quot;, &quot;VI&quot;]):
+        plot_family_on_ax(
+            ax, kind, N=N, delta=delta,
+            show_node_ids=show_node_ids,
+            show_elem_ids=show_elem_ids,
+            show_boundary_ids=show_boundary_ids,
+        )
+    plt.tight_layout()
+    plt.show()
+
+
+# --- examples ---
+kind = &quot;IV&quot;
+N = 4
+x1, x2 = section9_lines(kind, N)
+nodes, elements = build_tri_mesh_from_tensor_grid(x1, x2, diagonal=&quot;right&quot;, flip_corner_cells=True)
+boundary_edges = boundary_edges_from_elements(elements)
+node_table, element_table, boundary_table = tables_from_mesh(nodes, elements, boundary_edges)
+show_tables(node_table, element_table, boundary_table)
+plot_mesh_with_labels(nodes, elements, boundary_edges, show_node_ids=True, show_elem_ids=True,
+                      show_boundary_ids=False, title=f&quot;family {kind}: nodes + elements&quot;)
+plot_mesh_with_labels(nodes, elements, boundary_edges, show_node_ids=False, show_elem_ids=False,
+                      show_boundary_ids=True, title=f&quot;family {kind}: boundary-edge ids&quot;)
+
+# full comparison (I)-(VI)
+rows_all = []
+for kind in [&quot;I&quot;, &quot;II&quot;, &quot;III&quot;, &quot;IV&quot;]:
+    for N in [16, 32, 64, 128]:
+        x1, x2 = section9_lines(kind, N)
+        nodes_g, elements_g = build_tri_mesh_from_tensor_grid(x1, x2, diagonal=&quot;right&quot;, flip_corner_cells=True)
+        min_like, max_like = section9_indicators(nodes_g, elements_g)
+        rows_all.append({&quot;Mesh&quot;: kind, &quot;Type&quot;: &quot;good family&quot;, &quot;N&quot;: N,
+                         &quot;MinAngle&quot;: min_like, &quot;MaxAngle&quot;: max_like})
+for kind in [&quot;V&quot;, &quot;VI&quot;]:
+    for N in [16, 32, 64, 128]:
+        nodes_b, elements_b = section93_reconstruction(kind, N)
+        min_like, max_like = section9_indicators(nodes_b, elements_b)
+        rows_all.append({&quot;Mesh&quot;: kind, &quot;Type&quot;: &quot;bad-family reconstruction&quot;, &quot;N&quot;: N,
+                         &quot;MinAngle&quot;: min_like, &quot;MaxAngle&quot;: max_like})
+
+indicator_table_all = pd.DataFrame(rows_all)
+display(indicator_table_all.style.format({&quot;MinAngle&quot;: &quot;{:16.12e}&quot;, &quot;MaxAngle&quot;: &quot;{:16.12e}&quot;}))
+
+
+
+# -------------------------
+# Demo: plot bad family reconstruction (V), (VI)
+# -------------------------
+fig, axes = plt.subplots(1, 2, figsize=(10, 4.5))
+for ax, kind in zip(axes, [&quot;V&quot;, &quot;VI&quot;]):
+    nodes_b, elements_b = section93_reconstruction(kind, 16)
+    boundary_b = boundary_edges_from_elements(elements_b)
+    for tri in elements_b:
+        tri = list(map(int, tri))
+        poly = np.vstack([nodes_b[tri], nodes_b[tri[0]]])
+        ax.plot(poly[:, 0], poly[:, 1], color=&quot;0.4&quot;, lw=0.8)
+    for e in boundary_b:
+        pts = nodes_b[list(e)]
+        ax.plot(pts[:, 0], pts[:, 1], color=&quot;tab:red&quot;, lw=1.2)
+    ax.set_aspect(&quot;equal&quot;)
+    ax.set_title(f&quot;family {kind}&quot;)
+    ax.set_xlabel(&quot;x&quot;)
+    ax.set_ylabel(&quot;y&quot;)
+plt.tight_layout()
+plt.show()
+
+
+# -------------------------
+# Demo: plot all six families
+# -------------------------
+plot_all_six_families(N=16)
+</code></pre>
+</div>
+</article>
+</div>
+
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
