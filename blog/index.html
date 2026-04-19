@@ -205,22 +205,24 @@ fi
 wget -q "$URL" -O /tmp/freefem.deb
 dpkg -i /tmp/freefem.deb || apt-get -f install -y
 
-echo "Installed FreeFEM version:"
-FreeFem++-nw /tmp/hello.edp</code></pre>
+echo "Installed binaries:"
+which FreeFem++ || true
+which FreeFem++-nw || true
+ls -l /usr/local/bin/FreeFem* || true</code></pre>
 </div>
 <p>
 セル2：最小の動作確認
 </p>
 <div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
 <pre><code>%%bash
-cat &gt; hello.edp &lt;&lt;'EOF'
+cat &gt; /tmp/hello.edp &lt;&lt;'EOF'
 cout &lt;&lt; "Hello from FreeFEM" &lt;&lt; endl;
 mesh Th = square(4,4);
 cout &lt;&lt; "number of vertices = " &lt;&lt; Th.nv &lt;&lt; endl;
 cout &lt;&lt; "number of triangles = " &lt;&lt; Th.nt &lt;&lt; endl;
 EOF
 
-FreeFem++-nw hello.edp</code></pre>
+FreeFem++-nw /tmp/hello.edp</code></pre>
 </div>
 </article>
 </div>
