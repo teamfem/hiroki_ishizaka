@@ -113,7 +113,7 @@
 
 <h1 class="section-title">FEniCSx用メッシュファイルを取り出す</h1>
 <!---->
-<h2>ここで紹介するコードがやること</h2>
+<h2>0. ここで紹介するコードがやること</h2>
 <div class="news">
 <article class="news-item">
 <p>
@@ -133,6 +133,220 @@
     Poisson solve は intentionally 入れていません．
     そこは他の記事で扱います．
   </div>
+</article>
+</div>
+
+<h2>1．冒頭の global configuration</h2>
+<div class="news">
+<article class="news-item">
+<p>
+まず最初に，このコードは設定値をまとめて上に置いています．一つの case は <code>(N, DELTA, EPSILON)</code> の組です．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code"><code>EXPORT_ALL = True
+KIND_DEFAULT = "IV"
+
+N_DEFAULT = 16
+DELTA = 1 / 128
+EPSILON = 2.0
+
+OUTDIR = "fenicsx_mesh_data"
+WRITE_INDICATOR_CSV = True
+WRITE_MANIFEST_CSV = True
+BOUNDARY_TAG_VALUE = 1
+BOUNDARY_TAG_NAME = "boundary_facets"</code></pre>
+</div>
+<p>
+ここでの意味は次のとおりです．
+</p>
+  <ul>
+    <li><code>N_DEFAULT</code>：分割数です．</li>
+    <li><code>DELTA</code>：Shishkin 型 family に使うパラメータです．</li>
+    <li><code>EPSILON</code>：graded mesh の指数です．</li>
+    <li><code>EXPORT_ALL</code>：<code>True</code> なら I から VI まで全部出します．</li>
+    <li><code>KIND_DEFAULT</code>：<code>EXPORT_ALL = False</code> のときに出す family です．</li>
+    <li><code>OUTDIR</code>：出力先のディレクトリです．</li>
+  </ul>
+</article>
+</div>
+
+<h2>2．6つの family をどう作っているか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+good family 側の I–IV については，<code>section9_lines(...)</code> と <code>build_tri_mesh_from_tensor_grid(...)</code> を使って，座標列からそのまま三角形分割を作っています．
+</p>
+<p>
+一方で bad family 側の V，VI では，x 方向に <code>mesh1.h</code> 型の staggered row を使い，y 方向にはそれぞれ Shishkin，graded の節点列を使っています．これをまとめて呼ぶ関数が <code>build_family_mesh(...)</code> です．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code"><code>def build_family_mesh(kind, N=None, delta=None, epsilon=None):
+    N, delta, epsilon = resolve_parameters(N=N, delta=delta, epsilon=epsilon)
+
+    if kind in ["I", "II", "III", "IV"]:
+        x1, x2 = section9_lines(kind, N=N, delta=delta, epsilon=epsilon)
+        nodes, elements = build_tri_mesh_from_tensor_grid(
+            x1, x2, diagonal="right", flip_corner_cells=True
+        )
+    elif kind in ["V", "VI"]:
+        nodes, elements = section93_reconstruction(kind, N=N, delta=delta, epsilon=epsilon)
+    else:
+        raise ValueError("kind must be one of 'I', 'II', 'III', 'IV', 'V', 'VI'.")
+
+    return nodes, elements</code></pre>
+</div>
+<p>
+この段階では，まだ FEniCSx の object は作っていません．返ってくるのは，純粋な NumPy 配列としての <code>nodes</code> と <code>elements</code> です．
+</p>
+</article>
+</div>
+
+
+<h2>3．FEniCSx の mesh object に変換する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+次に，その節点座標と要素接続を FEniCSx が読める mesh object に変換します．その役割を担うのが <code>build_fenicsx_mesh_object(...)</code> です．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code"><code>def build_fenicsx_mesh_object(nodes, elements):
+    MPI, basix, ufl, dmesh, io = _require_fenicsx()
+
+    x = np.asarray(nodes, dtype=np.float64)
+    cells = np.asarray(elements, dtype=np.int64)
+    domain = ufl.Mesh(
+        basix.ufl.element("Lagrange", "triangle", 1, shape=(2,), dtype=np.float64)
+    )
+    msh = dmesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
+    msh.name = "mesh"
+    return msh</code></pre>
+</div>
+<p>
+ここでは，2次元三角形の1次幾何として mesh を作っています．今回の対象はすべて三角形分割なので，この形で十分です．
+</p>
+</article>
+</div>
+
+<h2>4．外部境界 facet に一つの tag を付ける</h2>
+<div class="news">
+<article class="news-item">
+<p>
+あとで Dirichlet 境界条件を与えることを考えると，境界 facet の情報も一緒に保存しておく方が便利です．そこで，このスクリプトでは外部境界全体に同じ marker を付けています．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code"><code>def build_all_boundary_facets_meshtags(msh, value=BOUNDARY_TAG_VALUE, name=BOUNDARY_TAG_NAME):
+    MPI, basix, ufl, dmesh, io = _require_fenicsx()
+
+    tdim = msh.topology.dim
+    fdim = tdim - 1
+    msh.topology.create_connectivity(fdim, tdim)
+    facets = dmesh.exterior_facet_indices(msh.topology)
+    values = np.full(len(facets), value, dtype=np.int32)
+    order = np.argsort(facets)
+    tags = dmesh.meshtags(msh, fdim, facets[order], values[order])
+    tags.name = name
+    return tags</code></pre>
+</div>
+<p>
+この <code>create_connectivity(fdim, tdim)</code> を先に呼んでおくのが大事です．これを省くと，外部 facet を取るところでエラーになります．
+</p>
+</article>
+</div>
+
+<h2>5．XDMF に書き出す</h2>
+<div class="news">
+<article class="news-item">
+<p>
+family ごとの出力は <code>export_family_xdmf(...)</code> が担当します．この関数は，mesh と boundary tags を1つの XDMF へ書き出します．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code"><code>def export_family_xdmf(kind, case=None, outdir=None):
+    MPI, basix, ufl, dmesh, io = _require_fenicsx()
+
+    if case is None:
+        case = make_case()
+    if outdir is None:
+        outdir = OUTDIR
+
+    outdir = Path(outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    msh, facet_tags, nodes, elements = build_fenicsx_family_mesh(kind, case=case)
+    xdmf_path = outdir / f"family_{kind}_{case_to_stem(case)}.xdmf"
+
+    with io.XDMFFile(msh.comm, str(xdmf_path), "w") as xdmf:
+        xdmf.write_mesh(msh)
+        xdmf.write_meshtags(facet_tags, msh.geometry)
+
+    return xdmf_path</code></pre>
+</div>
+<p>
+これにより，次の記事ではこの XDMF を読み込むだけで Poisson 問題へ進めます．
+</p>
+</article>
+</div>
+
+<h2>6．CSV は何のために出すのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+XDMF が主役ですが，CSV も補助的に出しています．役割は二つです．
+</p>
+  <ul>
+    <li><code>indicator_table_*.csv</code>：その case に対する 6 family の <code>MinAngle</code> と <code>MaxAngle</code> を保存する．</li>
+    <li><code>manifest_*.csv</code>：どの family がどの XDMF ファイルに対応するかを一覧にする．</li>
+  </ul>
+<p>
+つまり，XDMF は FEniCSx 用，CSV は人間が確認するための補助資料です．
+</p>
+</article>
+</div>
+
+<h2>7．実行のしかた</h2>
+<div class="news">
+<article class="news-item">
+<p>
+もっとも単純には，このファイルをそのまま実行すればよいです．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code"><code>python ファイル名.py</code></pre>
+</div>
+<p>
+既定では <code>EXPORT_ALL = True</code> なので，I–VI の6つ全部が出ます．1つだけ出したいときは，たとえば
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code"><code>EXPORT_ALL = False
+KIND_DEFAULT = "IV"</code></pre>
+</div>
+<p>
+のように変えれば，IV だけ出力できます．
+</p>
+</article>
+</div>
+
+<h2>8．出力されるファイル</h2>
+<div class="news">
+<article class="news-item">
+<p>
+たとえば既定値で動かした場合，出力先には概ね次のようなファイルが並びます．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code"><code>fenicsx_mesh_data/
+  family_I_N16_delta0.0078125_eps2.xdmf
+  family_II_N16_delta0.0078125_eps2.xdmf
+  family_III_N16_delta0.0078125_eps2.xdmf
+  family_IV_N16_delta0.0078125_eps2.xdmf
+  family_V_N16_delta0.0078125_eps2.xdmf
+  family_VI_N16_delta0.0078125_eps2.xdmf
+  indicator_table_N16_delta0.0078125_eps2.csv
+  manifest_N16_delta0.0078125_eps2.csv</code></pre>
+</div>
+<p>
+この命名にしておくと，あとでどの case の結果かを見失いにくくなります．
+</p>
+<p>
+他の記事では，ここで出力した XDMF を読み込んで，P1 Lagrange 要素で Poisson 方程式を解きます．つまり，今回の記事は「メッシュ出力編」，次回は「Poisson solve 編」という位置づけです．
+</p>
 </article>
 </div>
 
