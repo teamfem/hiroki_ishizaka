@@ -113,11 +113,34 @@
 
 <h1 class="section-title">FEniCSx用メッシュファイルを取り出す</h1>
 <!---->
+<h2>ここで紹介するコードがやること</h2>
+<div class="news">
+<article class="news-item">
+<p>
+    スクリプトの主な流れは，次の5つです．
+  </p>
+  <ol>
+    <li>Section 9 の6つの mesh family のいずれかを生成する．</li>
+    <li>節点座標と要素接続から FEniCSx の mesh object を作る．</li>
+    <li>外部境界 facet 全体に一つの boundary marker を付ける．</li>
+    <li>mesh と boundary tags を XDMF に書き出す．</li>
+    <li>必要なら <code>indicator_table_*.csv</code> と <code>manifest_*.csv</code> も書き出す．</li>
+  </ol>
+
+  <div class="note">
+    <strong>重要：</strong>
+    このスクリプトは export-only です．
+    Poisson solve は intentionally 入れていません．
+    そこは他の記事で扱います．
+  </div>
+</article>
+</div>
+
 <h2>Appendix．完成版コード全文（HTML 版）</h2>
 <div class="news">
 <article class="news-item">
 <p>
-これまでに作成した6つの mesh family <a href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/article18apr26.html">Appendix 2</a> を，今度は FEniCSx で読める形へ落とし込みます．本記事で扱うコードは，Poisson 方程式をまだ解きません．その一歩手前として，<strong>XDMF のメッシュファイルと補助的な CSV を出力することだけ</strong>に役割を絞ったスクリプトです．(個人メモ: mesh_section9_families_export_xdmf_v2.py)
+これまでに作成した6つの mesh family <a href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/article18apr26.html">異方性メッシュ族をPythonで再構成する：6つのmesh familyの節点座標・要素接点・境界辺接点表からgood/badを読む: Appendix 2</a> を，今度は FEniCSx で読める形へ落とし込みます．本記事で扱うコードは，Poisson 方程式をまだ解きません．その一歩手前として，<strong>XDMF のメッシュファイルと補助的な CSV を出力することだけ</strong>に役割を絞ったスクリプトです．(個人メモ: mesh_section9_families_export_xdmf_v2.py)
 </p>
 <p>
 メッシュ生成とPDE計算を最初から一つのプログラムに混ぜると，どこで何をしているのかが分かりにくくなります．そこで今回は，処理を二段階に分けます．
