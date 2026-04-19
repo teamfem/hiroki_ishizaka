@@ -206,7 +206,7 @@ wget -q "$URL" -O /tmp/freefem.deb
 dpkg -i /tmp/freefem.deb || apt-get -f install -y
 
 echo "Installed FreeFEM version:"
-FreeFem++ -v</code></pre>
+FreeFem++-nw /tmp/hello.edp</code></pre>
 </div>
 <p>
 セル2：最小の動作確認
@@ -220,7 +220,7 @@ cout &lt;&lt; "number of vertices = " &lt;&lt; Th.nv &lt;&lt; endl;
 cout &lt;&lt; "number of triangles = " &lt;&lt; Th.nt &lt;&lt; endl;
 EOF
 
-FreeFem++ hello.edp</code></pre>
+FreeFem++-nw hello.edp</code></pre>
 </div>
 </article>
 </div>
