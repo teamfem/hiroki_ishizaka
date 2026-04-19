@@ -142,6 +142,18 @@
 </article>
 </div>
 
+<h2>FreeFEMで始める有限要素計算</h2>
+<div class="news">
+<article class="news-item">
+<h3 class="news-title">Google Colabで始めるFreeFEM</h3>
+<p class="news-cont">
+<ul>
+    <li><a href="./posts/article20apr26_3.html">Google ColabでFreeFEMを使う：インストールからPoisson方程式の可視化まで</a> <div class="news-date"><time datetime="2026-4-20">20th April 2026</time></div></li>
+</ul>
+</p>
+</article>
+</div>
+
 <h2>Google ColabでFEniCSxの導入</h2>
 <div class="news">
 <article class="news-item">
@@ -160,6 +172,55 @@ except ImportError:
 # 最後に，ちゃんとimportできることを確認します
 import dolfinx
 print(&quot;dolfinx is ready.&quot;)</code></pre>
+</div>
+</article>
+</div>
+
+<h2>Google ColabでFreeFEMを使う</h2>
+<div class="news">
+<article class="news-item">
+<p>
+セル1：FreeFEM をインストール
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>%%bash
+set -e
+
+apt-get update -y
+apt-get install -y wget ca-certificates \
+  libgsl-dev libhdf5-dev liblapack-dev libopenmpi-dev freeglut3-dev
+
+source /etc/os-release
+echo "Ubuntu version: $VERSION_ID"
+
+if [ "$VERSION_ID" = "24.04" ]; then
+  URL="https://github.com/FreeFem/FreeFem-sources/releases/download/v4.15/FreeFEM-4.15-amd64-ubuntu24.04.deb"
+elif [ "$VERSION_ID" = "22.04" ]; then
+  URL="https://github.com/FreeFem/FreeFem-sources/releases/download/v4.15/FreeFEM-4.15-amd64-ubuntu22.04.deb"
+else
+  echo "Unsupported Ubuntu version in this Colab runtime: $VERSION_ID"
+  exit 1
+fi
+
+wget -q "$URL" -O /tmp/freefem.deb
+dpkg -i /tmp/freefem.deb || apt-get -f install -y
+
+echo "Installed FreeFEM version:"
+FreeFem++ -v</code></pre>
+</div>
+<p>
+セル2：最小の動作確認
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>%%bash
+cat &gt; hello.edp &lt;&lt;'EOF'
+cout &lt;&lt; "Hello from FreeFEM" &lt;&lt; endl;
+mesh Th = square(4,4);
+cout &lt;&lt; "number of vertices = " &lt;&lt; Th.nv &lt;&lt; endl;
+cout &lt;&lt; "number of triangles = " &lt;&lt; Th.nt &lt;&lt; endl;
+EOF
+
+FreeFem++ hello.edp</code></pre>
 </div>
 </article>
 </div>
