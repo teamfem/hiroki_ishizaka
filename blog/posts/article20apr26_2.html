@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 20 April 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 20 April 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">FreeFEM用メッシュファイルを取り出す</h1>
+
+<h2>0. ここで紹介するコードがやること</h2>
+<div class="news">
+<article class="news-item">
+<p>
+このスクリプトの役割は，6つの mesh family を FreeFEM 用の <code>.msh</code> と CSV に整理して出力することです．流れは次の4つです．
+</p>
+<ol>
+  <li>Section 9 の6つの mesh family のいずれかを生成する．</li>
+  <li>節点座標・要素接続・境界辺を取り出す．</li>
+  <li>正方形の4辺に応じて，底辺=1，右辺=2，上辺=3，左辺=4 の境界ラベルを付ける．</li>
+  <li>FreeFEM の <code>.msh</code> と，必要なら <code>indicator_table_*.csv</code>，<code>manifest_*.csv</code> を出力する．</li>
+</ol>
+
+<div class="note">
+<strong>重要：</strong>
+このスクリプトは export-only です．
+Poisson solve は入れていません．
+そこは別記事で扱います．
+</div>
+</article>
+</div>
+
+<h2>1．冒頭の global configuration</h2>
+<div class="news">
+<article class="news-item">
+<p>
+このコードでは，設定値を冒頭にまとめています．一つの case は <code>(N, DELTA, EPSILON)</code> の組です．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code"><code>EXPORT_ALL = True
+KIND_DEFAULT = "IV"
+
+N_DEFAULT = 16
+DELTA = 1 / 128
+EPSILON = 2.0
+
+OUTDIR = "freefem_msh_data"
+WRITE_INDICATOR_CSV = True
+WRITE_MANIFEST_CSV = True
+
+VERTEX_LABEL = 0
+TRIANGLE_REGION_LABEL = 0
+
+BOTTOM_LABEL = 1
+RIGHT_LABEL = 2
+TOP_LABEL = 3
+LEFT_LABEL = 4</code></pre>
+</div>
+<p>
+ここでの意味は次のとおりです．
+</p>
+<ul>
+  <li><code>N_DEFAULT</code>：分割数です．</li>
+  <li><code>DELTA</code>：Shishkin 型 family に使うパラメータです．</li>
+  <li><code>EPSILON</code>：graded mesh の指数です．</li>
+  <li><code>EXPORT_ALL</code>：<code>True</code> なら I から VI まで全部出します．</li>
+  <li><code>KIND_DEFAULT</code>：<code>EXPORT_ALL = False</code> のときに出す family です．</li>
+  <li><code>OUTDIR</code>：出力先のディレクトリです．</li>
+  <li><code>VERTEX_LABEL</code> と <code>TRIANGLE_REGION_LABEL</code>：頂点ラベルと三角形の領域ラベルです．</li>
+  <li><code>BOTTOM_LABEL</code>，<code>RIGHT_LABEL</code>，<code>TOP_LABEL</code>，<code>LEFT_LABEL</code>：底辺・右辺・上辺・左辺に対応する境界ラベルです．</li>
+</ul>
+</article>
+</div>
+
+<h2>2．6つの family をどう作っているか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+good family 側の I–IV では，<code>section9_lines(...)</code> と <code>build_tri_mesh_from_tensor_grid(...)</code> により座標列から三角形分割を作ります．
+bad family 側の V，VI では，x 方向に <code>mesh1.h</code> 型の staggered row を用い，y 方向には Shishkin または graded の節点列を使います．
+これをまとめるのが <code>build_family_mesh(...)</code> です．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code"><code>def build_family_mesh(kind, N=None, delta=None, epsilon=None):
+    N, delta, epsilon = resolve_parameters(N=N, delta=delta, epsilon=epsilon)
+
+    if kind in ["I", "II", "III", "IV"]:
+        x1, x2 = section9_lines(kind, N=N, delta=delta, epsilon=epsilon)
+        nodes, elements = build_tri_mesh_from_tensor_grid(
+            x1, x2, diagonal="right", flip_corner_cells=True
+        )
+    elif kind in ["V", "VI"]:
+        nodes, elements = section93_reconstruction(kind, N=N, delta=delta, epsilon=epsilon)
+    else:
+        raise ValueError("kind must be one of 'I', 'II', 'III', 'IV', 'V', 'VI'.")
+
+    return nodes, elements</code></pre>
+</div>
+<p>
+この段階では，まだ FreeFEM 用ファイルは作っていません．返ってくるのは，NumPy 配列としての <code>nodes</code> と <code>elements</code> です．
+</p>
+</article>
+</div>
+
+<h2>3．境界辺を取り出して4辺に分ける</h2>
+<div class="news">
+<article class="news-item">
+<p>
+FreeFEM 側で境界条件を辺ごとに分けられるようにするためには，境界辺の情報が必要です．
+このコードではまず <code>boundary_edges_from_elements(...)</code> により外周の辺だけを抜き出し，次に
+<code>label_boundary_edges_square(...)</code> で中点を見て，
+底辺=1，右辺=2，上辺=3，左辺=4
+のラベルを付けます．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code"><code>def label_boundary_edges_square(nodes, boundary_edges, tol=1.0e-12):
+    nodes = np.asarray(nodes, dtype=float)
+    boundary_edges = np.asarray(boundary_edges, dtype=np.int64)
+
+    labels = np.zeros(len(boundary_edges), dtype=np.int64)
+
+    for k, edge in enumerate(boundary_edges):
+        i, j = map(int, edge)
+        mid = 0.5 * (nodes[i] + nodes[j])
+        x, y = float(mid[0]), float(mid[1])
+
+        if abs(y - 0.0) <= tol:
+            labels[k] = BOTTOM_LABEL
+        elif abs(x - 1.0) <= tol:
+            labels[k] = RIGHT_LABEL
+        elif abs(y - 1.0) <= tol:
+            labels[k] = TOP_LABEL
+        elif abs(x - 0.0) <= tol:
+            labels[k] = LEFT_LABEL
+        else:
+            raise ValueError(
+                f"Boundary edge midpoint {(x, y)} does not lie on the expected unit-square boundary."
+            )
+
+    return labels</code></pre>
+</div>
+<p>
+つまり，この段階で FreeFEM に渡したい境界ラベル情報がそろいます．
+</p>
+</article>
+</div>
+
+<h2>4．FreeFEM の <code>.msh</code> に書き出す</h2>
+<div class="news">
+<article class="news-item">
+<p>
+FreeFEM 用ファイルの出力は <code>write_freefem_msh(...)</code> が担当します．
+この関数は，
+</p>
+<ul>
+  <li>先頭行に <code>nv nt ne</code></li>
+  <li>続いて頂点行 <code>x y label</code></li>
+  <li>続いて三角形行 <code>i j k region</code></li>
+  <li>最後に境界辺行 <code>i j boundary_label</code></li>
+</ul>
+<p>
+という形で <code>.msh</code> を書き出します．頂点番号・要素番号は FreeFEM 用に 1 始まりへ直しています．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code"><code>def write_freefem_msh(path, nodes, elements, boundary_edges, boundary_edge_labels,
+                      vertex_label=VERTEX_LABEL,
+                      triangle_region_label=TRIANGLE_REGION_LABEL):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    nodes = np.asarray(nodes, dtype=float)
+    elements = np.asarray(elements, dtype=np.int64)
+    boundary_edges = np.asarray(boundary_edges, dtype=np.int64)
+
+    with open(path, "w", encoding="utf-8") as f:
+        print(len(nodes), len(elements), len(boundary_edges), file=f)
+
+        for x, y in nodes:
+            print(f"{x:.16e} {y:.16e} {int(vertex_label)}", file=f)
+
+        for tri in elements:
+            i, j, k = (np.asarray(tri, dtype=np.int64) + 1).tolist()
+            print(f"{i} {j} {k} {int(triangle_region_label)}", file=f)
+
+        for edge, label in zip(boundary_edges, boundary_edge_labels):
+            i, j = (np.asarray(edge, dtype=np.int64) + 1).tolist()
+            print(f"{i} {j} {int(label)}", file=f)
+
+    return path</code></pre>
+</div>
+<p>
+この形にしておけば，次の記事では <code>readmesh(...)</code> でそのまま読み込めます．
+</p>
+</article>
+</div>
+
+<h2>5．CSV は何のために出すのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+主役は <code>.msh</code> ですが，確認用として CSV も出しています．役割は二つです．
+</p>
+<ul>
+  <li><code>indicator_table_*.csv</code>：その case に対する 6 family の <code>MinAngle</code> と <code>MaxAngle</code> を保存する．</li>
+  <li><code>manifest_*.csv</code>：どの family がどの <code>.msh</code> に対応するかを一覧にする．</li>
+</ul>
+<p>
+つまり，<code>.msh</code> は FreeFEM 用，CSV は人間が確認するための補助資料です．
+</p>
+</article>
+</div>
+
+<h2>6．実行のしかた</h2>
+<div class="news">
+<article class="news-item">
+<p>
+最も簡単には，このファイルをそのまま実行します．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code"><code>python ファイル名.py</code></pre>
+</div>
+<p>
+既定では <code>EXPORT_ALL = True</code> なので，I–VI の6つ全部が出ます．1つだけ出したいときは，たとえば
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code"><code>EXPORT_ALL = False
+KIND_DEFAULT = "IV"</code></pre>
+</div>
+<p>
+のように変えれば，IV だけ出力できます．
+</p>
+</article>
+</div>
+
+<h2>7．出力されるファイル</h2>
+<div class="news">
+<article class="news-item">
+<p>
+たとえば既定値で動かした場合，出力先には概ね次のようなファイルが並びます．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre class="code"><code>freefem_msh_data/
+  family_I_N16_delta0.0078125_eps2.msh
+  family_II_N16_delta0.0078125_eps2.msh
+  family_III_N16_delta0.0078125_eps2.msh
+  family_IV_N16_delta0.0078125_eps2.msh
+  family_V_N16_delta0.0078125_eps2.msh
+  family_VI_N16_delta0.0078125_eps2.msh
+  indicator_table_N16_delta0.0078125_eps2.csv
+  manifest_N16_delta0.0078125_eps2.csv</code></pre>
+</div>
+<p>
+この命名にしておくと，あとでどの case の結果かを見失いにくくなります．なお，境界ラベルは，底辺=1，右辺=2，上辺=3，左辺=4 です．
+</p>
+<p>
+次の記事では，ここで出力した <code>.msh</code> を FreeFEM で読み込み，Poisson 方程式を解きます．
+</p>
+</article>
+</div>
+
+<h2>Appendix．完成版コード全文（HTML 版）</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Appendix には，実際に使った完成版コード全文を載せます．
+このコードは，6つの mesh family を FreeFEM 用の <code>.msh</code> と補助的な CSV に変換して出力するためのもので，Poisson solve は含みません．
+(個人メモ: mesh_section9_families_export_freefem_msh_clean_v2.py)
+</p>
+<p>
+役割をメッシュ出力に限定することで，次の記事では <code>readmesh(...)</code> から Poisson 問題に集中できます．
+</p>
+
+<details open>
+<summary><strong>コード全文を開く/閉じる</strong></summary>
+<div style="margin-top:12px;">
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>&quot;&quot;&quot;
+Export-only program for the six mesh families from Section 9
+to FreeFEM .msh files.
+
+This script
+  1. generates one of the six mesh families (I)-(VI),
+  2. writes a 2D FreeFEM .msh file with the structure
+       nv nt ne
+       x y vertex_label
+       i j k region_label
+       i j boundary_label
+  3. optionally writes one indicator CSV for the chosen (N, DELTA, EPSILON),
+  4. optionally writes one manifest CSV.
+
+Poisson solves are intentionally NOT included here.
+They are meant for a separate FreeFEM script / blog post.
+&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from pathlib import Path
+import numpy as np
+import pandas as pd
+
+
+# -------------------------
+# Global configuration
+# -------------------------
+EXPORT_ALL = True
+KIND_DEFAULT = &quot;IV&quot;  # used when EXPORT_ALL = False
+
+# One case = one choice of (N, DELTA, EPSILON)
+N_DEFAULT = 16
+DELTA = 1 / 128
+EPSILON = 2.0
+
+# Output settings
+OUTDIR = &quot;freefem_msh_data&quot;
+WRITE_INDICATOR_CSV = True
+WRITE_MANIFEST_CSV = True
+
+# FreeFEM labels
+VERTEX_LABEL = 0
+TRIANGLE_REGION_LABEL = 0
+
+# Boundary labels on the unit square:
+#   bottom = 1, right = 2, top = 3, left = 4
+BOTTOM_LABEL = 1
+RIGHT_LABEL = 2
+TOP_LABEL = 3
+LEFT_LABEL = 4
+
+
+# -------------------------
+# Utility: parameter handling
+# -------------------------
+def resolve_parameters(N=None, delta=None, epsilon=None):
+    if N is None:
+        N = N_DEFAULT
+    if delta is None:
+        delta = DELTA
+    if epsilon is None:
+        epsilon = EPSILON
+    return int(N), float(delta), float(epsilon)
+
+
+def make_case(N=None, delta=None, epsilon=None):
+    N, delta, epsilon = resolve_parameters(N=N, delta=delta, epsilon=epsilon)
+    return {&quot;N&quot;: N, &quot;DELTA&quot;: delta, &quot;EPSILON&quot;: epsilon}
+
+
+def case_to_stem(case):
+    return (
+        f&quot;N{case[&#x27;N&#x27;]}_&quot;
+        f&quot;delta{case[&#x27;DELTA&#x27;]:.6g}_&quot;
+        f&quot;eps{case[&#x27;EPSILON&#x27;]:.6g}&quot;
+    ).replace(&quot;/&quot;, &quot;_&quot;)
+
+
+# -------------------------
+# Section 9.1: good families (I)-(IV)
+# -------------------------
+def x_standard(N=None):
+    N, _, _ = resolve_parameters(N=N)
+    return np.linspace(0.0, 1.0, N + 1)
+
+
+def x_shishkin_y(N=None, delta=None):
+    N, delta, _ = resolve_parameters(N=N, delta=delta)
+    tau = 2 * delta * abs(np.log(N))
+    tau = min(max(tau, 0.0), 1.0)
+
+    y = np.zeros(N + 1)
+    half = N // 2
+    for i in range(N + 1):
+        if i &lt;= half:
+            y[i] = tau * i / half if half &gt; 0 else 0.0
+        else:
+            y[i] = tau + (1 - tau) * (i - half) / (N - half)
+    return y
+
+
+def x_cosine_cluster(N=None):
+    N, _, _ = resolve_parameters(N=N)
+    i = np.arange(N + 1, dtype=float)
+    return 0.5 * (1.0 - np.cos(i * np.pi / N))
+
+
+def x_graded_power(N=None, epsilon=None):
+    N, _, epsilon = resolve_parameters(N=N, epsilon=epsilon)
+    i = np.arange(N + 1, dtype=float)
+    return (i / N) ** epsilon
+
+
+def section9_lines(kind, N=None, delta=None, epsilon=None):
+    N, delta, epsilon = resolve_parameters(N=N, delta=delta, epsilon=epsilon)
+
+    if kind == &quot;I&quot;:
+        x1 = x_standard(N)
+        x2 = x_standard(N)
+    elif kind == &quot;II&quot;:
+        x1 = x_standard(N)
+        x2 = x_shishkin_y(N, delta=delta)
+    elif kind == &quot;III&quot;:
+        x1 = x_cosine_cluster(N)
+        x2 = x_cosine_cluster(N)
+    elif kind == &quot;IV&quot;:
+        x1 = x_standard(N)
+        x2 = x_graded_power(N, epsilon=epsilon)
+    else:
+        raise ValueError(&quot;kind must be one of &#x27;I&#x27;, &#x27;II&#x27;, &#x27;III&#x27;, &#x27;IV&#x27;.&quot;)
+    return x1, x2
+
+
+def build_tri_mesh_from_tensor_grid(x1, x2, diagonal=&quot;right&quot;, flip_corner_cells=False):
+    x1 = np.asarray(x1, dtype=float)
+    x2 = np.asarray(x2, dtype=float)
+    nx = len(x1) - 1
+    ny = len(x2) - 1
+
+    nodes = []
+    for j in range(ny + 1):
+        for i in range(nx + 1):
+            nodes.append([x1[i], x2[j]])
+    nodes = np.array(nodes, dtype=float)
+
+    def nid(i, j):
+        return j * (nx + 1) + i
+
+    elements = []
+    for j in range(ny):
+        for i in range(nx):
+            n00 = nid(i, j)
+            n10 = nid(i + 1, j)
+            n01 = nid(i, j + 1)
+            n11 = nid(i + 1, j + 1)
+
+            use_diagonal = diagonal
+            if flip_corner_cells:
+                is_top_left = (i == 0 and j == ny - 1)
+                is_bottom_right = (i == nx - 1 and j == 0)
+                if is_top_left or is_bottom_right:
+                    use_diagonal = &quot;left&quot; if diagonal == &quot;right&quot; else &quot;right&quot;
+
+            if use_diagonal == &quot;right&quot;:
+                elements.append([n00, n10, n11])
+                elements.append([n00, n11, n01])
+            elif use_diagonal == &quot;left&quot;:
+                elements.append([n00, n10, n01])
+                elements.append([n10, n11, n01])
+            else:
+                raise ValueError(&quot;diagonal must be &#x27;right&#x27; or &#x27;left&#x27;.&quot;)
+
+    return nodes, np.array(elements, dtype=np.int64)
+
+
+# -------------------------
+# Indicators
+# -------------------------
+def tri_edge_lengths(pts):
+    lengths = [
+        np.linalg.norm(pts[1] - pts[0]),
+        np.linalg.norm(pts[2] - pts[1]),
+        np.linalg.norm(pts[0] - pts[2]),
+    ]
+    return np.sort(np.array(lengths, dtype=float))
+
+
+def tri_area(pts):
+    a = pts[1] - pts[0]
+    b = pts[2] - pts[0]
+    return 0.5 * abs(a[0] * b[1] - a[1] * b[0])
+
+
+def section9_indicators(nodes, elements):
+    min_like = 0.0
+    max_like = 0.0
+    for tri in elements:
+        pts = nodes[np.asarray(tri, dtype=int)]
+        L1, L2, L3 = tri_edge_lengths(pts)
+        area = tri_area(pts)
+        min_like = max(min_like, (L3 ** 2) / area)
+        max_like = max(max_like, (L1 * L2) / area)
+    return float(min_like), float(max_like)
+
+
+# -------------------------
+# Section 9.3: bad families (V)-(VI)
+# -------------------------
+def section93_lines(kind, N=None, delta=None, epsilon=None):
+    N, delta, epsilon = resolve_parameters(N=N, delta=delta, epsilon=epsilon)
+    if kind == &quot;V&quot;:
+        return x_shishkin_y(N, delta=delta)
+    elif kind == &quot;VI&quot;:
+        return x_graded_power(N, epsilon=epsilon)
+    else:
+        raise ValueError(&quot;kind must be &#x27;V&#x27; or &#x27;VI&#x27;.&quot;)
+
+
+def mesh1_style_rows(N=None):
+    N, _, _ = resolve_parameters(N=N)
+    x_base = np.linspace(0.0, 1.0, N + 1)
+    mids = 0.5 * (x_base[:-1] + x_base[1:])
+    rows = []
+    for j in range(N + 1):
+        if j % 2 == 0:
+            rows.append(x_base.copy())
+        else:
+            rows.append(np.concatenate(([x_base[0]], mids, [x_base[-1]])))
+    return rows
+
+
+def build_mesh1_style_mesh(N=None, y_lines=None):
+    N, _, _ = resolve_parameters(N=N)
+    y_lines = np.asarray(y_lines, dtype=float)
+    if len(y_lines) != N + 1:
+        raise ValueError(&quot;y_lines must have length N+1&quot;)
+
+    rows_x = mesh1_style_rows(N)
+
+    nodes = []
+    row_starts = []
+    count = 0
+    for j in range(N + 1):
+        row_starts.append(count)
+        for x in rows_x[j]:
+            nodes.append([x, y_lines[j]])
+            count += 1
+    nodes = np.array(nodes, dtype=float)
+
+    def nid(row, k):
+        return row_starts[row] + k
+
+    elements = []
+    for j in range(N):
+        if j % 2 == 0:
+            for i in range(N):
+                p1 = nid(j, i)
+                p2 = nid(j, i + 1)
+                p3 = nid(j + 1, i + 1)
+                elements.append([p1, p2, p3])
+
+                p1 = nid(j, i)
+                p2 = nid(j + 1, i + 1)
+                p3 = p2 - 1
+                elements.append([p1, p2, p3])
+
+            p1 = nid(j, N)
+            p2 = nid(j + 1, N + 1)
+            p3 = p2 - 1
+            elements.append([p1, p2, p3])
+        else:
+            p1 = nid(j, 0)
+            p2 = p1 + 1
+            p3 = nid(j + 1, 0)
+            elements.append([p1, p2, p3])
+
+            for i in range(N):
+                p1 = nid(j, i + 1)
+                p2 = p1 + 1
+                p3 = nid(j + 1, i + 1)
+                elements.append([p1, p2, p3])
+
+                p1 = nid(j, i + 1)
+                p2 = nid(j + 1, i + 1)
+                p3 = p2 - 1
+                elements.append([p1, p2, p3])
+
+    return nodes, np.array(elements, dtype=np.int64)
+
+
+def section93_reconstruction(kind, N=None, delta=None, epsilon=None):
+    N, delta, epsilon = resolve_parameters(N=N, delta=delta, epsilon=epsilon)
+    y_lines = section93_lines(kind, N=N, delta=delta, epsilon=epsilon)
+    return build_mesh1_style_mesh(N=N, y_lines=y_lines)
+
+
+# -------------------------
+# Unified family interface
+# -------------------------
+def build_family_mesh(kind, N=None, delta=None, epsilon=None):
+    N, delta, epsilon = resolve_parameters(N=N, delta=delta, epsilon=epsilon)
+
+    if kind in [&quot;I&quot;, &quot;II&quot;, &quot;III&quot;, &quot;IV&quot;]:
+        x1, x2 = section9_lines(kind, N=N, delta=delta, epsilon=epsilon)
+        nodes, elements = build_tri_mesh_from_tensor_grid(
+            x1, x2, diagonal=&quot;right&quot;, flip_corner_cells=True
+        )
+    elif kind in [&quot;V&quot;, &quot;VI&quot;]:
+        nodes, elements = section93_reconstruction(kind, N=N, delta=delta, epsilon=epsilon)
+    else:
+        raise ValueError(&quot;kind must be one of &#x27;I&#x27;, &#x27;II&#x27;, &#x27;III&#x27;, &#x27;IV&#x27;, &#x27;V&#x27;, &#x27;VI&#x27;.&quot;)
+
+    return nodes, elements
+
+
+# -------------------------
+# Boundary edges
+# -------------------------
+def boundary_edges_from_elements(elements):
+    edge_count = {}
+    for tri in elements:
+        a, b, c = map(int, tri)
+        edges = [
+            tuple(sorted((a, b))),
+            tuple(sorted((b, c))),
+            tuple(sorted((c, a))),
+        ]
+        for e in edges:
+            edge_count[e] = edge_count.get(e, 0) + 1
+
+    boundary_edges = np.array([e for e, c in edge_count.items() if c == 1], dtype=np.int64)
+    if len(boundary_edges) == 0:
+        return boundary_edges
+
+    idx = np.lexsort((boundary_edges[:, 1], boundary_edges[:, 0]))
+    return boundary_edges[idx]
+
+
+def label_boundary_edges_square(nodes, boundary_edges, tol=1.0e-12):
+    &quot;&quot;&quot;
+    Label boundary edges of the unit square by their midpoint.
+
+    bottom: 1
+    right : 2
+    top   : 3
+    left  : 4
+    &quot;&quot;&quot;
+    nodes = np.asarray(nodes, dtype=float)
+    boundary_edges = np.asarray(boundary_edges, dtype=np.int64)
+
+    labels = np.zeros(len(boundary_edges), dtype=np.int64)
+
+    for k, edge in enumerate(boundary_edges):
+        i, j = map(int, edge)
+        mid = 0.5 * (nodes[i] + nodes[j])
+        x, y = float(mid[0]), float(mid[1])
+
+        if abs(y - 0.0) &lt;= tol:
+            labels[k] = BOTTOM_LABEL
+        elif abs(x - 1.0) &lt;= tol:
+            labels[k] = RIGHT_LABEL
+        elif abs(y - 1.0) &lt;= tol:
+            labels[k] = TOP_LABEL
+        elif abs(x - 0.0) &lt;= tol:
+            labels[k] = LEFT_LABEL
+        else:
+            raise ValueError(
+                f&quot;Boundary edge midpoint {(x, y)} does not lie on the expected unit-square boundary.&quot;
+            )
+
+    return labels
+
+
+# -------------------------
+# FreeFEM .msh export
+# -------------------------
+def write_freefem_msh(path, nodes, elements, boundary_edges, boundary_edge_labels,
+                      vertex_label=VERTEX_LABEL,
+                      triangle_region_label=TRIANGLE_REGION_LABEL):
+    &quot;&quot;&quot;
+    Write a 2D FreeFEM .msh file.
+
+    Structure:
+      nv nt ne
+      x y vertex_label
+      i j k region_label
+      i j boundary_label
+
+    FreeFEM uses 1-based indexing in the file.
+    &quot;&quot;&quot;
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    nodes = np.asarray(nodes, dtype=float)
+    elements = np.asarray(elements, dtype=np.int64)
+    boundary_edges = np.asarray(boundary_edges, dtype=np.int64)
+
+    with open(path, &quot;w&quot;, encoding=&quot;utf-8&quot;) as f:
+        print(len(nodes), len(elements), len(boundary_edges), file=f)
+
+        for x, y in nodes:
+            print(f&quot;{x:.16e} {y:.16e} {int(vertex_label)}&quot;, file=f)
+
+        for tri in elements:
+            i, j, k = (np.asarray(tri, dtype=np.int64) + 1).tolist()
+            print(f&quot;{i} {j} {k} {int(triangle_region_label)}&quot;, file=f)
+
+        boundary_edge_labels = np.asarray(boundary_edge_labels, dtype=np.int64)
+        if len(boundary_edge_labels) != len(boundary_edges):
+            raise ValueError(&quot;boundary_edge_labels must have the same length as boundary_edges.&quot;)
+
+        for edge, label in zip(boundary_edges, boundary_edge_labels):
+            i, j = (np.asarray(edge, dtype=np.int64) + 1).tolist()
+            print(f&quot;{i} {j} {int(label)}&quot;, file=f)
+
+    return path
+
+
+def preview_file_head(path, nlines=12):
+    path = Path(path)
+    with open(path, &quot;r&quot;, encoding=&quot;utf-8&quot;) as f:
+        lines = []
+        for _ in range(nlines):
+            line = f.readline()
+            if not line:
+                break
+            lines.append(line.rstrip(&quot;\n&quot;))
+    return lines
+
+
+# -------------------------
+# Export routines
+# -------------------------
+def export_family_msh(kind, case=None, outdir=None):
+    if case is None:
+        case = make_case()
+    if outdir is None:
+        outdir = OUTDIR
+
+    outdir = Path(outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    nodes, elements = build_family_mesh(
+        kind,
+        N=case[&quot;N&quot;],
+        delta=case[&quot;DELTA&quot;],
+        epsilon=case[&quot;EPSILON&quot;],
+    )
+    boundary_edges = boundary_edges_from_elements(elements)
+    boundary_edge_labels = label_boundary_edges_square(nodes, boundary_edges)
+
+    msh_path = outdir / f&quot;family_{kind}_{case_to_stem(case)}.msh&quot;
+    write_freefem_msh(msh_path, nodes, elements, boundary_edges, boundary_edge_labels)
+    return msh_path
+
+
+def export_selected_or_all(case=None, outdir=None):
+    if case is None:
+        case = make_case()
+    if outdir is None:
+        outdir = OUTDIR
+
+    if EXPORT_ALL:
+        kinds = [&quot;I&quot;, &quot;II&quot;, &quot;III&quot;, &quot;IV&quot;, &quot;V&quot;, &quot;VI&quot;]
+    else:
+        kinds = [KIND_DEFAULT]
+
+    paths = {}
+    for kind in kinds:
+        paths[kind] = export_family_msh(kind, case=case, outdir=outdir)
+    return paths
+
+
+# -------------------------
+# Optional metadata CSVs
+# -------------------------
+def build_indicator_table(case=None):
+    if case is None:
+        case = make_case()
+
+    rows = []
+    for kind in [&quot;I&quot;, &quot;II&quot;, &quot;III&quot;, &quot;IV&quot;, &quot;V&quot;, &quot;VI&quot;]:
+        nodes, elements = build_family_mesh(
+            kind,
+            N=case[&quot;N&quot;],
+            delta=case[&quot;DELTA&quot;],
+            epsilon=case[&quot;EPSILON&quot;],
+        )
+        min_like, max_like = section9_indicators(nodes, elements)
+        rows.append(
+            {
+                &quot;Mesh&quot;: kind,
+                &quot;N&quot;: case[&quot;N&quot;],
+                &quot;DELTA&quot;: case[&quot;DELTA&quot;],
+                &quot;EPSILON&quot;: case[&quot;EPSILON&quot;],
+                &quot;MinAngle&quot;: min_like,
+                &quot;MaxAngle&quot;: max_like,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def write_indicator_csv(case=None, outdir=None):
+    if case is None:
+        case = make_case()
+    if outdir is None:
+        outdir = OUTDIR
+
+    outdir = Path(outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
+    df = build_indicator_table(case)
+    csv_path = outdir / f&quot;indicator_table_{case_to_stem(case)}.csv&quot;
+    df.to_csv(csv_path, index=False)
+    return csv_path
+
+
+def write_manifest_csv(exported_paths, case=None, outdir=None):
+    if case is None:
+        case = make_case()
+    if outdir is None:
+        outdir = OUTDIR
+
+    outdir = Path(outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    rows = []
+    for kind, path in exported_paths.items():
+        rows.append(
+            {
+                &quot;Mesh&quot;: kind,
+                &quot;N&quot;: case[&quot;N&quot;],
+                &quot;DELTA&quot;: case[&quot;DELTA&quot;],
+                &quot;EPSILON&quot;: case[&quot;EPSILON&quot;],
+                &quot;MSH&quot;: str(path),
+            }
+        )
+    manifest = pd.DataFrame(rows)
+    csv_path = outdir / f&quot;manifest_{case_to_stem(case)}.csv&quot;
+    manifest.to_csv(csv_path, index=False)
+    return csv_path
+
+
+# -------------------------
+# Main
+# -------------------------
+def main():
+    case = make_case(N=N_DEFAULT, delta=DELTA, epsilon=EPSILON)
+    print(&quot;Using case:&quot;, case)
+    print(&quot;EXPORT_ALL =&quot;, EXPORT_ALL)
+    print(&quot;OUTDIR     =&quot;, OUTDIR)
+
+    exported = export_selected_or_all(case=case, outdir=OUTDIR)
+
+    print()
+    print(&quot;Exported FreeFEM .msh files:&quot;)
+    for kind, path in exported.items():
+        print(f&quot;  {kind}: {path}&quot;)
+
+    if WRITE_INDICATOR_CSV:
+        indicator_csv = write_indicator_csv(case=case, outdir=OUTDIR)
+        print()
+        print(f&quot;Indicator CSV: {indicator_csv}&quot;)
+
+    if WRITE_MANIFEST_CSV:
+        manifest_csv = write_manifest_csv(exported, case=case, outdir=OUTDIR)
+        print(f&quot;Manifest CSV : {manifest_csv}&quot;)
+
+    print()
+    print(&quot;Done. This script only exports FreeFEM .msh files and metadata.&quot;)
+    print(&quot;Use readmesh(...) in a separate FreeFEM script to load the .msh file.&quot;)
+    print(&quot;Boundary labels are: bottom=1, right=2, top=3, left=4.&quot;)
+
+    first_kind = next(iter(exported))
+    print()
+    print(f&quot;Head of {exported[first_kind]}:&quot;)
+    for line in preview_file_head(exported[first_kind], nlines=10):
+        print(line)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre>
+</div>
+</div>
+</details>
+</article>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
