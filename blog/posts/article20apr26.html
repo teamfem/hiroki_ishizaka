@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 20 April 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 20 April 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">FEniCSx用メッシュファイルを取り出す: </h1>
+<!---->
+<h2>Appendix．完成版コード全文（HTML 版）</h2>
+<div class="news">
+<article class="news-item">
+<p>
+これまでに作成した6つの mesh family <a href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/article18apr26.html">Appendix 2</a> を，今度は FEniCSx で読める形へ落とし込みます．本記事で扱うコードは，Poisson 方程式をまだ解きません．その一歩手前として，<strong>XDMF のメッシュファイルと補助的な CSV を出力することだけ</strong>に役割を絞ったスクリプトです．(個人メモ: mesh_section9_families_export_xdmf_v2.py)
+</p>
+<p>
+メッシュ生成とPDE計算を最初から一つのプログラムに混ぜると，どこで何をしているのかが分かりにくくなります．そこで今回は，処理を二段階に分けます．
+</p>
+  <ul>
+    <li>第1段階：6つの family からメッシュを作り，FEniCSx 用のファイルへ排出する．</li>
+    <li>第2段階：そのファイルを読み込んで，Poisson 問題などを解く．</li>
+  </ul>
+<p>
+本記事は，第1段階に対応しています．次の記事では，ここで出力した XDMF を読み込んで，P1 Lagrange 要素により Poisson 方程式を解く予定です．
+</p>
+
+<details open>
+<summary><strong>コード全文を開く/閉じる</strong></summary>
+<div style="margin-top:12px;">
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>&quot;&quot;&quot;
+Export-only program for the six mesh families from Section 9.
+
+This script
+  1. generates one of the six mesh families (I)-(VI),
+  2. builds a FEniCSx mesh object,
+  3. tags all exterior facets with one boundary marker,
+  4. writes the mesh and boundary tags to XDMF,
+  5. optionally writes one indicator CSV for the chosen (N, DELTA, EPSILON).
+
+Poisson solves are intentionally NOT included here.
+They are meant for a separate blog / script.
+&quot;&quot;&quot;
+
+from __future__ import annotations
+
+from pathlib import Path
+import numpy as np
+import pandas as pd
+
+
+# -------------------------
+# Global configuration
+# -------------------------
+# Export either one family or all six.
+EXPORT_ALL = True
+KIND_DEFAULT = &quot;IV&quot;  # used when EXPORT_ALL = False
+
+# One case = one choice of (N, DELTA, EPSILON)
+N_DEFAULT = 16
+DELTA = 1 / 128
+EPSILON = 2.0
+
+# Output settings
+OUTDIR = &quot;fenicsx_mesh_data&quot;
+WRITE_INDICATOR_CSV = True
+WRITE_MANIFEST_CSV = True
+BOUNDARY_TAG_VALUE = 1
+BOUNDARY_TAG_NAME = &quot;boundary_facets&quot;
+
+
+# -------------------------
+# Utility: parameter handling
+# -------------------------
+def resolve_parameters(N=None, delta=None, epsilon=None):
+    if N is None:
+        N = N_DEFAULT
+    if delta is None:
+        delta = DELTA
+    if epsilon is None:
+        epsilon = EPSILON
+    return int(N), float(delta), float(epsilon)
+
+
+
+def make_case(N=None, delta=None, epsilon=None):
+    N, delta, epsilon = resolve_parameters(N=N, delta=delta, epsilon=epsilon)
+    return {&quot;N&quot;: N, &quot;DELTA&quot;: delta, &quot;EPSILON&quot;: epsilon}
+
+
+
+def case_to_stem(case):
+    return (
+        f&quot;N{case[&#x27;N&#x27;]}_&quot;
+        f&quot;delta{case[&#x27;DELTA&#x27;]:.6g}_&quot;
+        f&quot;eps{case[&#x27;EPSILON&#x27;]:.6g}&quot;
+    ).replace(&quot;/&quot;, &quot;_&quot;)
+
+
+# -------------------------
+# Section 9.1: good families (I)-(IV)
+# -------------------------
+def x_standard(N=None):
+    N, _, _ = resolve_parameters(N=N)
+    return np.linspace(0.0, 1.0, N + 1)
+
+
+
+def x_shishkin_y(N=None, delta=None):
+    N, delta, _ = resolve_parameters(N=N, delta=delta)
+    tau = 2 * delta * abs(np.log(N))
+    tau = min(max(tau, 0.0), 1.0)
+
+    y = np.zeros(N + 1)
+    half = N // 2
+    for i in range(N + 1):
+        if i &lt;= half:
+            y[i] = tau * i / half if half &gt; 0 else 0.0
+        else:
+            y[i] = tau + (1 - tau) * (i - half) / (N - half)
+    return y
+
+
+
+def x_cosine_cluster(N=None):
+    N, _, _ = resolve_parameters(N=N)
+    i = np.arange(N + 1, dtype=float)
+    return 0.5 * (1.0 - np.cos(i * np.pi / N))
+
+
+
+def x_graded_power(N=None, epsilon=None):
+    N, _, epsilon = resolve_parameters(N=N, epsilon=epsilon)
+    i = np.arange(N + 1, dtype=float)
+    return (i / N) ** epsilon
+
+
+
+def section9_lines(kind, N=None, delta=None, epsilon=None):
+    N, delta, epsilon = resolve_parameters(N=N, delta=delta, epsilon=epsilon)
+
+    if kind == &quot;I&quot;:
+        x1 = x_standard(N)
+        x2 = x_standard(N)
+    elif kind == &quot;II&quot;:
+        x1 = x_standard(N)
+        x2 = x_shishkin_y(N, delta=delta)
+    elif kind == &quot;III&quot;:
+        x1 = x_cosine_cluster(N)
+        x2 = x_cosine_cluster(N)
+    elif kind == &quot;IV&quot;:
+        x1 = x_standard(N)
+        x2 = x_graded_power(N, epsilon=epsilon)
+    else:
+        raise ValueError(&quot;kind must be one of &#x27;I&#x27;, &#x27;II&#x27;, &#x27;III&#x27;, &#x27;IV&#x27;.&quot;)
+    return x1, x2
+
+
+
+def build_tri_mesh_from_tensor_grid(x1, x2, diagonal=&quot;right&quot;, flip_corner_cells=False):
+    x1 = np.asarray(x1, dtype=float)
+    x2 = np.asarray(x2, dtype=float)
+    nx = len(x1) - 1
+    ny = len(x2) - 1
+
+    nodes = []
+    for j in range(ny + 1):
+        for i in range(nx + 1):
+            nodes.append([x1[i], x2[j]])
+    nodes = np.array(nodes, dtype=float)
+
+    def nid(i, j):
+        return j * (nx + 1) + i
+
+    elements = []
+    for j in range(ny):
+        for i in range(nx):
+            n00 = nid(i, j)
+            n10 = nid(i + 1, j)
+            n01 = nid(i, j + 1)
+            n11 = nid(i + 1, j + 1)
+
+            use_diagonal = diagonal
+            if flip_corner_cells:
+                is_top_left = (i == 0 and j == ny - 1)
+                is_bottom_right = (i == nx - 1 and j == 0)
+                if is_top_left or is_bottom_right:
+                    use_diagonal = &quot;left&quot; if diagonal == &quot;right&quot; else &quot;right&quot;
+
+            if use_diagonal == &quot;right&quot;:
+                elements.append([n00, n10, n11])
+                elements.append([n00, n11, n01])
+            elif use_diagonal == &quot;left&quot;:
+                elements.append([n00, n10, n01])
+                elements.append([n10, n11, n01])
+            else:
+                raise ValueError(&quot;diagonal must be &#x27;right&#x27; or &#x27;left&#x27;.&quot;)
+
+    return nodes, np.array(elements, dtype=np.int64)
+
+
+# -------------------------
+# Indicators (optional metadata)
+# -------------------------
+def tri_edge_lengths(pts):
+    L = [
+        np.linalg.norm(pts[1] - pts[0]),
+        np.linalg.norm(pts[2] - pts[1]),
+        np.linalg.norm(pts[0] - pts[2]),
+    ]
+    return np.sort(np.array(L, dtype=float))  # L1 &lt;= L2 &lt;= L3
+
+
+
+def tri_area(pts):
+    a = pts[1] - pts[0]
+    b = pts[2] - pts[0]
+    return 0.5 * abs(a[0] * b[1] - a[1] * b[0])
+
+
+
+def section9_indicators(nodes, elements):
+    min_like = 0.0
+    max_like = 0.0
+    for tri in elements:
+        pts = nodes[np.asarray(tri, dtype=int)]
+        L1, L2, L3 = tri_edge_lengths(pts)
+        area = tri_area(pts)
+        min_like = max(min_like, (L3 ** 2) / area)
+        max_like = max(max_like, (L1 * L2) / area)
+    return float(min_like), float(max_like)
+
+
+# -------------------------
+# Section 9.3: bad families (V)-(VI), x-direction from mesh1.h style
+# -------------------------
+def section93_lines(kind, N=None, delta=None, epsilon=None):
+    N, delta, epsilon = resolve_parameters(N=N, delta=delta, epsilon=epsilon)
+    if kind == &quot;V&quot;:
+        return x_shishkin_y(N, delta=delta)
+    elif kind == &quot;VI&quot;:
+        return x_graded_power(N, epsilon=epsilon)
+    else:
+        raise ValueError(&quot;kind must be &#x27;V&#x27; or &#x27;VI&#x27;.&quot;)
+
+
+
+def mesh1_style_rows(N=None):
+    N, _, _ = resolve_parameters(N=N)
+    x_base = np.linspace(0.0, 1.0, N + 1)
+    mids = 0.5 * (x_base[:-1] + x_base[1:])
+    rows = []
+    for j in range(N + 1):
+        if j % 2 == 0:
+            rows.append(x_base.copy())
+        else:
+            rows.append(np.concatenate(([x_base[0]], mids, [x_base[-1]])))
+    return rows
+
+
+
+def build_mesh1_style_mesh(N=None, y_lines=None):
+    N, _, _ = resolve_parameters(N=N)
+    y_lines = np.asarray(y_lines, dtype=float)
+    if len(y_lines) != N + 1:
+        raise ValueError(&quot;y_lines must have length N+1&quot;)
+
+    rows_x = mesh1_style_rows(N)
+
+    nodes = []
+    row_starts = []
+    count = 0
+    for j in range(N + 1):
+        row_starts.append(count)
+        for x in rows_x[j]:
+            nodes.append([x, y_lines[j]])
+            count += 1
+    nodes = np.array(nodes, dtype=float)
+
+    def nid(row, k):
+        return row_starts[row] + k
+
+    elements = []
+    for j in range(N):
+        if j % 2 == 0:
+            # odd strip in original mesh1.h (0-based =&gt; j even)
+            for i in range(N):
+                p1 = nid(j, i)
+                p2 = nid(j, i + 1)
+                p3 = nid(j + 1, i + 1)
+                elements.append([p1, p2, p3])
+                p1 = nid(j, i)
+                p2 = nid(j + 1, i + 1)
+                p3 = p2 - 1
+                elements.append([p1, p2, p3])
+            p1 = nid(j, N)
+            p2 = nid(j + 1, N + 1)
+            p3 = p2 - 1
+            elements.append([p1, p2, p3])
+        else:
+            # even strip in original mesh1.h (0-based =&gt; j odd)
+            p1 = nid(j, 0)
+            p2 = p1 + 1
+            p3 = nid(j + 1, 0)
+            elements.append([p1, p2, p3])
+            for i in range(N):
+                p1 = nid(j, i + 1)
+                p2 = p1 + 1
+                p3 = nid(j + 1, i + 1)
+                elements.append([p1, p2, p3])
+                p1 = nid(j, i + 1)
+                p2 = nid(j + 1, i + 1)
+                p3 = p2 - 1
+                elements.append([p1, p2, p3])
+
+    return nodes, np.array(elements, dtype=np.int64)
+
+
+
+def section93_reconstruction(kind, N=None, delta=None, epsilon=None):
+    N, delta, epsilon = resolve_parameters(N=N, delta=delta, epsilon=epsilon)
+    y_lines = section93_lines(kind, N=N, delta=delta, epsilon=epsilon)
+    return build_mesh1_style_mesh(N=N, y_lines=y_lines)
+
+
+# -------------------------
+# Unified family interface
+# -------------------------
+def build_family_mesh(kind, N=None, delta=None, epsilon=None):
+    N, delta, epsilon = resolve_parameters(N=N, delta=delta, epsilon=epsilon)
+
+    if kind in [&quot;I&quot;, &quot;II&quot;, &quot;III&quot;, &quot;IV&quot;]:
+        x1, x2 = section9_lines(kind, N=N, delta=delta, epsilon=epsilon)
+        nodes, elements = build_tri_mesh_from_tensor_grid(
+            x1, x2, diagonal=&quot;right&quot;, flip_corner_cells=True
+        )
+    elif kind in [&quot;V&quot;, &quot;VI&quot;]:
+        nodes, elements = section93_reconstruction(kind, N=N, delta=delta, epsilon=epsilon)
+    else:
+        raise ValueError(&quot;kind must be one of &#x27;I&#x27;, &#x27;II&#x27;, &#x27;III&#x27;, &#x27;IV&#x27;, &#x27;V&#x27;, &#x27;VI&#x27;.&quot;)
+
+    return nodes, elements
+
+
+# -------------------------
+# FEniCSx helpers for export
+# -------------------------
+def _require_fenicsx():
+    try:
+        from mpi4py import MPI
+        import basix.ufl
+        import ufl
+        from dolfinx import mesh as dmesh, io
+    except Exception as e:
+        raise ImportError(
+            &quot;This export script requires FEniCSx, basix, UFL and mpi4py. &quot;
+            &quot;Run it in your FEniCSx / Colab environment.&quot;
+        ) from e
+    return MPI, basix, ufl, dmesh, io
+
+
+
+def build_fenicsx_mesh_object(nodes, elements):
+    MPI, basix, ufl, dmesh, io = _require_fenicsx()
+
+    x = np.asarray(nodes, dtype=np.float64)
+    cells = np.asarray(elements, dtype=np.int64)
+    domain = ufl.Mesh(
+        basix.ufl.element(&quot;Lagrange&quot;, &quot;triangle&quot;, 1, shape=(2,), dtype=np.float64)
+    )
+    msh = dmesh.create_mesh(MPI.COMM_WORLD, cells, domain, x)
+    msh.name = &quot;mesh&quot;
+    return msh
+
+
+
+def build_all_boundary_facets_meshtags(msh, value=BOUNDARY_TAG_VALUE, name=BOUNDARY_TAG_NAME):
+    MPI, basix, ufl, dmesh, io = _require_fenicsx()
+
+    tdim = msh.topology.dim
+    fdim = tdim - 1
+    # exterior_facet_indices requires facet-to-cell connectivity to exist
+    msh.topology.create_connectivity(fdim, tdim)
+    facets = dmesh.exterior_facet_indices(msh.topology)
+    values = np.full(len(facets), value, dtype=np.int32)
+    order = np.argsort(facets)
+    tags = dmesh.meshtags(msh, fdim, facets[order], values[order])
+    tags.name = name
+    return tags
+
+
+
+def build_fenicsx_family_mesh(kind, case=None):
+    if case is None:
+        case = make_case()
+
+    nodes, elements = build_family_mesh(
+        kind,
+        N=case[&quot;N&quot;],
+        delta=case[&quot;DELTA&quot;],
+        epsilon=case[&quot;EPSILON&quot;],
+    )
+    msh = build_fenicsx_mesh_object(nodes, elements)
+    facet_tags = build_all_boundary_facets_meshtags(msh)
+    return msh, facet_tags, nodes, elements
+
+
+# -------------------------
+# Export routines
+# -------------------------
+def export_family_xdmf(kind, case=None, outdir=None):
+    MPI, basix, ufl, dmesh, io = _require_fenicsx()
+
+    if case is None:
+        case = make_case()
+    if outdir is None:
+        outdir = OUTDIR
+
+    outdir = Path(outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    msh, facet_tags, nodes, elements = build_fenicsx_family_mesh(kind, case=case)
+    xdmf_path = outdir / f&quot;family_{kind}_{case_to_stem(case)}.xdmf&quot;
+
+    with io.XDMFFile(msh.comm, str(xdmf_path), &quot;w&quot;) as xdmf:
+        xdmf.write_mesh(msh)
+        xdmf.write_meshtags(facet_tags, msh.geometry)
+
+    return xdmf_path
+
+
+
+def export_selected_or_all(case=None, outdir=None):
+    if case is None:
+        case = make_case()
+    if outdir is None:
+        outdir = OUTDIR
+
+    if EXPORT_ALL:
+        kinds = [&quot;I&quot;, &quot;II&quot;, &quot;III&quot;, &quot;IV&quot;, &quot;V&quot;, &quot;VI&quot;]
+    else:
+        kinds = [KIND_DEFAULT]
+
+    paths = {}
+    for kind in kinds:
+        paths[kind] = export_family_xdmf(kind, case=case, outdir=outdir)
+    return paths
+
+
+# -------------------------
+# Optional metadata CSVs
+# -------------------------
+def build_indicator_table(case=None):
+    if case is None:
+        case = make_case()
+
+    rows = []
+    for kind in [&quot;I&quot;, &quot;II&quot;, &quot;III&quot;, &quot;IV&quot;, &quot;V&quot;, &quot;VI&quot;]:
+        nodes, elements = build_family_mesh(
+            kind,
+            N=case[&quot;N&quot;],
+            delta=case[&quot;DELTA&quot;],
+            epsilon=case[&quot;EPSILON&quot;],
+        )
+        min_like, max_like = section9_indicators(nodes, elements)
+        rows.append(
+            {
+                &quot;Mesh&quot;: kind,
+                &quot;N&quot;: case[&quot;N&quot;],
+                &quot;DELTA&quot;: case[&quot;DELTA&quot;],
+                &quot;EPSILON&quot;: case[&quot;EPSILON&quot;],
+                &quot;MinAngle&quot;: min_like,
+                &quot;MaxAngle&quot;: max_like,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+
+def write_indicator_csv(case=None, outdir=None):
+    if case is None:
+        case = make_case()
+    if outdir is None:
+        outdir = OUTDIR
+
+    outdir = Path(outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
+    df = build_indicator_table(case)
+    csv_path = outdir / f&quot;indicator_table_{case_to_stem(case)}.csv&quot;
+    df.to_csv(csv_path, index=False)
+    return csv_path
+
+
+
+def write_manifest_csv(exported_paths, case=None, outdir=None):
+    if case is None:
+        case = make_case()
+    if outdir is None:
+        outdir = OUTDIR
+
+    outdir = Path(outdir)
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    rows = []
+    for kind, path in exported_paths.items():
+        rows.append(
+            {
+                &quot;Mesh&quot;: kind,
+                &quot;N&quot;: case[&quot;N&quot;],
+                &quot;DELTA&quot;: case[&quot;DELTA&quot;],
+                &quot;EPSILON&quot;: case[&quot;EPSILON&quot;],
+                &quot;XDMF&quot;: str(path),
+            }
+        )
+    manifest = pd.DataFrame(rows)
+    csv_path = outdir / f&quot;manifest_{case_to_stem(case)}.csv&quot;
+    manifest.to_csv(csv_path, index=False)
+    return csv_path
+
+
+# -------------------------
+# Main
+# -------------------------
+def main():
+    case = make_case(N=N_DEFAULT, delta=DELTA, epsilon=EPSILON)
+    print(&quot;Using case:&quot;, case)
+    print(&quot;EXPORT_ALL =&quot;, EXPORT_ALL)
+    print(&quot;OUTDIR     =&quot;, OUTDIR)
+
+    exported = export_selected_or_all(case=case, outdir=OUTDIR)
+    print(&quot;\nExported XDMF files:&quot;)
+    for kind, path in exported.items():
+        print(f&quot;  {kind}: {path}&quot;)
+
+    if WRITE_INDICATOR_CSV:
+        indicator_csv = write_indicator_csv(case=case, outdir=OUTDIR)
+        print(f&quot;\nIndicator CSV: {indicator_csv}&quot;)
+
+    if WRITE_MANIFEST_CSV:
+        manifest_csv = write_manifest_csv(exported, case=case, outdir=OUTDIR)
+        print(f&quot;Manifest CSV : {manifest_csv}&quot;)
+
+    print(&quot;\nDone. This script only exports mesh files and metadata.&quot;)
+    print(&quot;Poisson solves are intentionally left for a separate script / blog post.&quot;)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre>
+</div>
+</div>
+</details>
+</article>
+</div>
+
+
+
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
