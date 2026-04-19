@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 20 April 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,FreeFEM,Google Colab">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 20 April 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">Google ColabでFreeFEMを使う：インストールからPoisson方程式の可視化まで</h1>
+
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Google Colab は，ブラウザから気軽に計算実験を始められる便利な環境です．一方で，有限要素法の実験では，どのソフトウェアをどう入れるかで最初に少し迷いやすいです．このページでは，Google Colab 上で FreeFEM を使い，最小の動作確認から Poisson 方程式の計算，さらに Python による可視化まで行う手順をまとめます．
+</p>
+<p>
+今回の目標は 4 つです．
+</p>
+<p>
+1．Google Colab 上で FreeFEM を動かすための基本手順を確認すること．<br>
+2．<code>FreeFem++</code> コマンドで <code>.edp</code> ファイルを実行する流れに慣れること．<br>
+3．Poisson 方程式の最小例を通じて，FreeFEM で有限要素法を解く基本の形を見ること．<br>
+4．Colab では GUI 表示よりも，数値を書き出して Python 側で図示する流れが実用的であることを確認すること．
+</p>
+<p>
+ここで扱う問題は単位正方形
+\[
+\Omega=(0,1)^2
+\]
+上の Poisson 方程式
+\[
+-\Delta u = 1 \quad \text{in } \Omega,
+\qquad
+u=0 \quad \text{on } \partial\Omega
+\]
+です．厳密解を使って誤差評価まで進む段階の手前として，まずは「Colab で FreeFEM が動き，有限要素解が計算でき，図として確認できる」ことを目標にします．
+</p>
+</article>
+</div>
+
+<h2>Google Colabでの実行手順</h2>
+<div class="news">
+<article class="news-item">
+<p>
+まず Google Colab を開き，新しいノートブックを作成します．この例では GPU は不要なので，通常の CPU ランタイムで十分です．有限要素法の計算自体は FreeFEM に任せ，図の作成は Python に任せるので，Colab の標準的な構成のままで進められます．
+</p>
+<p>
+Colab はセッションごとに環境が初期化されることがあるため，FreeFEM を毎回インストールする前提でセルを用意しておくのが分かりやすいです．その意味で，以下の 4 セル構成にしておくと再利用しやすいと思います．
+</p>
+</article>
+</div>
+
+<h3>セル1：FreeFEM のインストール</h3>
+<div class="news">
+<article class="news-item">
+<p>
+最初のセルでは，Ubuntu ランタイムのバージョンを確認し，対応する FreeFEM の <code>.deb</code> パッケージを入れます．依存ライブラリも先に入れておき，最後に <code>FreeFem++ -v</code> で実行できることを確認します．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>%%bash
+set -e
+
+apt-get update -y
+apt-get install -y wget ca-certificates \
+  libgsl-dev libhdf5-dev liblapack-dev libopenmpi-dev freeglut3-dev
+
+source /etc/os-release
+echo "Ubuntu version: $VERSION_ID"
+
+if [ "$VERSION_ID" = "24.04" ]; then
+  URL="https://github.com/FreeFem/FreeFem-sources/releases/download/v4.15/FreeFEM-4.15-amd64-ubuntu24.04.deb"
+elif [ "$VERSION_ID" = "22.04" ]; then
+  URL="https://github.com/FreeFem/FreeFem-sources/releases/download/v4.15/FreeFEM-4.15-amd64-ubuntu22.04.deb"
+else
+  echo "Unsupported Ubuntu version in this Colab runtime: $VERSION_ID"
+  exit 1
+fi
+
+wget -q "$URL" -O /tmp/freefem.deb
+dpkg -i /tmp/freefem.deb || apt-get -f install -y
+
+echo "Installed FreeFEM version:"
+FreeFem++ -v</code></pre>
+</div>
+<p>
+このセルが通れば，Colab 上で <code>FreeFem++</code> コマンドが使える状態になります．ここは数学本体ではなく，あくまで環境構築です．ただし，最初の壁はここなので，最初に確実に通るセルを作っておく価値は大きいです．
+</p>
+</article>
+</div>
+
+<h3>セル2：最小の動作確認</h3>
+<div class="news">
+<article class="news-item">
+<p>
+次に，ごく小さい <code>.edp</code> ファイルを書いて，FreeFEM が本当に動くかを確かめます．ここでは正方形メッシュを作り，頂点数と三角形数を表示するだけです．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>%%bash
+cat &gt; hello.edp &lt;&lt;'EOF'
+cout &lt;&lt; "Hello from FreeFEM" &lt;&lt; endl;
+mesh Th = square(4,4);
+cout &lt;&lt; "number of vertices = " &lt;&lt; Th.nv &lt;&lt; endl;
+cout &lt;&lt; "number of triangles = " &lt;&lt; Th.nt &lt;&lt; endl;
+EOF
+
+FreeFem++ hello.edp</code></pre>
+</div>
+<p>
+このセルの役割は単純です．FreeFEM の実行系が壊れていないことと，<code>.edp</code> をセル内から生成して実行できることを確かめています．大きなコードを書く前に，まずこの段階を踏んでおくと安心です．
+</p>
+</article>
+</div>
+
+<h3>セル3：Poisson 方程式を解いて格子点データを書き出す</h3>
+<div class="news">
+<article class="news-item">
+<p>
+ここで，Poisson 方程式
+\[
+-\Delta u = 1, \qquad u|_{\partial\Omega}=0
+\]
+を単位正方形上で解きます．FreeFEM の <code>solve</code> 構文を使い，その後，格子点上の値をテキストファイルに書き出します．Colab では FreeFEM の対話的 GUI 描画をそのまま使うよりも，こうして数値を外へ出し，Python で描き直す方が安定です．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>%%bash
+cat &gt; poisson.edp &lt;&lt;'EOF'
+verbosity = 2;
+
+mesh Th = square(40, 40);
+
+fespace Vh(Th, P1);
+Vh u, v;
+
+func f = 1.0;
+
+solve Poisson(u, v)
+    = int2d(Th)( dx(u)*dx(v) + dy(u)*dy(v) )
+    - int2d(Th)( f*v )
+    + on(1, 2, 3, 4, u=0);
+
+ofstream out("u_samples.txt");
+int N = 101;
+
+for (int j = 0; j &lt; N; j++) {
+    real y = j * 1.0 / (N - 1);
+    for (int i = 0; i &lt; N; i++) {
+        real x = i * 1.0 / (N - 1);
+        out &lt;&lt; x &lt;&lt; " " &lt;&lt; y &lt;&lt; " " &lt;&lt; u(x,y) &lt;&lt; endl;
+    }
+}
+
+cout &lt;&lt; "u(0.5,0.5) = " &lt;&lt; u(0.5,0.5) &lt;&lt; endl;
+cout &lt;&lt; "Done." &lt;&lt; endl;
+EOF
+
+FreeFem++ poisson.edp</code></pre>
+</div>
+<p>
+このコードでは，<code>mesh Th = square(40,40);</code> で単位正方形の三角形分割を作り，<code>fespace Vh(Th, P1);</code> で 1 次有限要素空間を定義しています．その上で，弱形式
+\[
+\int_\Omega \nabla u\cdot\nabla v\,dx = \int_\Omega fv\,dx
+\]
+を <code>solve</code> でそのまま書いています．
+</p>
+<p>
+最後に <code>u_samples.txt</code> を出力しているのは，Colab 上で図示しやすくするためです．要するに，有限要素法で解くところまでは FreeFEM，見やすい図を作るところは Python，と役割分担しています．
+</p>
+</article>
+</div>
+
+<h3>セル4：Python で可視化</h3>
+<div class="news">
+<article class="news-item">
+<p>
+セル 3 で書き出した <code>u_samples.txt</code> を NumPy で読み込み，Matplotlib で等高線図を描きます．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>import numpy as np
+import matplotlib.pyplot as plt
+
+data = np.loadtxt("u_samples.txt")
+x = data[:, 0]
+y = data[:, 1]
+u = data[:, 2]
+
+N = int(np.sqrt(len(u)))
+X = x.reshape(N, N)
+Y = y.reshape(N, N)
+U = u.reshape(N, N)
+
+plt.figure(figsize=(6, 5))
+cp = plt.contourf(X, Y, U, levels=30)
+plt.colorbar(cp)
+plt.xlabel("x")
+plt.ylabel("y")
+plt.title("FreeFEM solution of -Δu = 1 on the unit square")
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+<p>
+これで，境界で 0 になり，内部で山型になる Poisson 解の典型的な形が確認できます．最初は「解けたかどうか」だけでも十分ですが，図が出ると計算対象の感覚が一気につかみやすくなります．
+</p>
+</article>
+</div>
+
+<h2>各セルの役割をどう理解するか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+この 4 セルは，それぞれ別の役割を持っています．
+</p>
+<p>
+セル 1 は環境構築です．Colab 上で FreeFEM を使える状態にします．<br>
+セル 2 は疎通確認です．最小の <code>.edp</code> を通して「FreeFEM が生きている」ことを見ます．<br>
+セル 3 は有限要素法の本体です．弱形式を書いて解き，さらにデータを書き出します．<br>
+セル 4 は可視化です．Colab で見やすい図にするために Python を使います．
+</p>
+<p>
+この分け方にしておくと，あとからコードを拡張しやすいです．たとえば，右辺を変える，境界条件を変える，メッシュ数を変える，誤差評価を加える，などの変更は主にセル 3 に集中します．一方で，セル 1 とセル 2 はほぼそのまま流用できます．
+</p>
+</article>
+</div>
+
+<h2>FreeFEM の記法の最小限の読み方</h2>
+<div class="news">
+<article class="news-item">
+<p>
+FreeFEM のコードは，一度慣れると非常に直接的です．今回の例で大事なのは次の点です．
+</p>
+<p>
+<code>mesh Th = square(40,40);</code> は，単位正方形を分割したメッシュを作ります．<br>
+<code>fespace Vh(Th, P1);</code> は，そのメッシュ上の P1 有限要素空間を作ります．<br>
+<code>Vh u, v;</code> で，数値解と試験関数に相当する有限要素関数を用意します．<br>
+<code>solve Poisson(u, v) = ...</code> の部分で，弱形式をほぼ数式どおりに書きます．<br>
+<code>on(1,2,3,4,u=0)</code> は，境界ラベル 1,2,3,4 上で同次 Dirichlet 条件を課しています．
+</p>
+<p>
+ここで「数式に近い形で書ける」というのが FreeFEM の大きな利点です．とくに，有限要素法の講義や実験ノートでは，理論とコードの対応が見やすいです．
+</p>
+</article>
+</div>
+
+<h2>なぜ Colab では Python 可視化が便利なのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+FreeFEM には描画機能がありますが，Colab のようなブラウザ実行環境では，ローカルデスクトップのような感覚でそのまま使えるとは限りません．そのため，数値解を一度テキストやメッシュファイルへ書き出し，Python 側で読み込んで図示する方が扱いやすいです．
+</p>
+<p>
+この方法の利点は 3 つあります．
+</p>
+<p>
+1．Colab 上で安定して図を表示しやすいこと．<br>
+2．NumPy や Matplotlib にそのままつなげられること．<br>
+3．あとで誤差表や log-log プロットなども同じ Python ノートブックの中で扱えること．
+</p>
+<p>
+将来的に，厳密解を入れて相対誤差を測る，複数のメッシュで収束率を出す，3 次元曲面図を描く，という拡張をする場合にも，この流れはそのまま使えます．
+</p>
+</article>
+</div>
+
+<h2>次に拡張するなら何をやるか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+今回の記事は，まずは Colab で FreeFEM を動かすことに集中した最小構成です．この次の段階としては，次のような拡張が自然です．
+</p>
+<p>
+1．右辺を厳密解に対応する形へ変えて，真の誤差を測ること．<br>
+2．メッシュを細かくしながら，\(L^2\) 誤差や \(H^1\) 型誤差の収束率を確かめること．<br>
+3．解の可視化を等高線図だけでなく 3 次元曲面図へ広げること．<br>
+4．境界条件や領域形状を変えて，より FreeFEM らしい記述に慣れること．
+</p>
+<p>
+つまり，今回のノートブックは終点ではなく入口です．しかし，入口としてはかなり良いです．環境構築，有限要素法の計算，ファイル出力，可視化という一連の流れが短いコードで見えるからです．
+</p>
+</article>
+</div>
+
+<h2>このページの使い方</h2>
+<div class="news">
+<article class="news-item">
+<p>
+このページは，FreeFEM を Colab で試してみたい人のための最初のメモとして使えます．最初はそのままコピペで動かし，次にメッシュ数や右辺関数を書き換え，そのあと誤差評価を足していく，という使い方が自然です．
+</p>
+<p>
+FEniCSx のときと同じく，「環境構築」「有限要素法の本体」「可視化」を分けておくと，どこで何をしているかが見えやすくなります．FreeFEM は数式とコードの距離が近いので，理論と実装を往復しながら学びたいときにとても相性がよいと思います．
+</p>
+</article>
+</div>
+
+<h2>References</h2>
+<div class="news">
+<article class="news-item">
+<ul class="ref-list">
+<li><a href="https://doc.freefem.org/introduction/download.html" target="_blank">FreeFEM official download page</a></li>
+<li><a href="https://doc.freefem.org/introduction/installation.html" target="_blank">FreeFEM official installation guide</a></li>
+<li><a href="https://doc.freefem.org/pdf/FreeFEM-documentation.pdf" target="_blank">FreeFEM documentation PDF</a></li>
+<li><a href="https://research.google.com/colaboratory/faq.html" target="_blank">Google Colab FAQ</a></li>
+</ul>
+</article>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
