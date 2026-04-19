@@ -191,21 +191,21 @@ apt-get install -y wget ca-certificates \
   libgsl-dev libhdf5-dev liblapack-dev libopenmpi-dev freeglut3-dev
 
 source /etc/os-release
-echo "Ubuntu version: $VERSION_ID"
+echo &quot;Ubuntu version: $VERSION_ID&quot;
 
-if [ "$VERSION_ID" = "24.04" ]; then
-  URL="https://github.com/FreeFem/FreeFem-sources/releases/download/v4.15/FreeFEM-4.15-amd64-ubuntu24.04.deb"
-elif [ "$VERSION_ID" = "22.04" ]; then
-  URL="https://github.com/FreeFem/FreeFem-sources/releases/download/v4.15/FreeFEM-4.15-amd64-ubuntu22.04.deb"
+if [ &quot;$VERSION_ID&quot; = &quot;24.04&quot; ]; then
+  URL=&quot;https://github.com/FreeFem/FreeFem-sources/releases/download/v4.15/FreeFEM-4.15-amd64-ubuntu24.04.deb&quot;
+elif [ &quot;$VERSION_ID&quot; = &quot;22.04&quot; ]; then
+  URL=&quot;https://github.com/FreeFem/FreeFem-sources/releases/download/v4.15/FreeFEM-4.15-amd64-ubuntu22.04.deb&quot;
 else
-  echo "Unsupported Ubuntu version in this Colab runtime: $VERSION_ID"
+  echo &quot;Unsupported Ubuntu version in this Colab runtime: $VERSION_ID&quot;
   exit 1
 fi
 
-wget -q "$URL" -O /tmp/freefem.deb
+wget -q &quot;$URL&quot; -O /tmp/freefem.deb
 dpkg -i /tmp/freefem.deb || apt-get -f install -y
 
-echo "Installed binaries:"
+echo &quot;Installed binaries:&quot;
 which FreeFem++ || true
 which FreeFem++-nw || true
 ls -l /usr/local/bin/FreeFem* || true</code></pre>
@@ -215,14 +215,16 @@ ls -l /usr/local/bin/FreeFem* || true</code></pre>
 </p>
 <div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
 <pre><code>%%bash
-cat &gt; /tmp/hello.edp &lt;&lt;'EOF'
-cout &lt;&lt; "Hello from FreeFEM" &lt;&lt; endl;
+mkdir -p freefem_demo
+
+cat &gt; freefem_demo/hello.edp &lt;&lt;&#x27;EOF&#x27;
+cout &lt;&lt; &quot;Hello from FreeFEM&quot; &lt;&lt; endl;
 mesh Th = square(4,4);
-cout &lt;&lt; "number of vertices = " &lt;&lt; Th.nv &lt;&lt; endl;
-cout &lt;&lt; "number of triangles = " &lt;&lt; Th.nt &lt;&lt; endl;
+cout &lt;&lt; &quot;number of vertices = &quot; &lt;&lt; Th.nv &lt;&lt; endl;
+cout &lt;&lt; &quot;number of triangles = &quot; &lt;&lt; Th.nt &lt;&lt; endl;
 EOF
 
-FreeFem++-nw /tmp/hello.edp</code></pre>
+FreeFem++-nw freefem_demo/hello.edp</code></pre>
 </div>
 </article>
 </div>
