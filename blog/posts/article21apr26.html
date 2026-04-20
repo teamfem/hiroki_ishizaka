@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 21 April 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 21 April 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">Google Colabで始めるFreeFEM入門：Poisson方程式，誤差評価，log-logプロット</h1>
+<!---->
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+<p>
+有限要素法の数値計算を学ぶとき，最初の題材として Poisson 方程式はとても扱いやすいです．関数空間を作り，線形偏微分方程式を解くという基本の流れを身に付けることが出来ます．このページでは，Google Colab で実際にノートブックを作成し，FreeFEM を導入し，Poisson 方程式を解き，絶対誤差・相対誤差・log-log プロットまで確認する過程をまとめます．
+</p>
+<p>対象とする Poisson 問題は</p>
+<div class="math-block">\[
+-\Delta u = f \quad \text{in } \Omega := (0,1)^2,
+\qquad
+u=0 \quad \text{on } \partial\Omega
+\]</div>
+<p>です．厳密解として</p>
+<div class="math-block">\[
+u(x,y)=\sin(\pi x)\sin(\pi y)
+\]</div>
+<p>を用い，</p>
+<div class="math-block">\[
+f=2\pi^2u
+\]</div>
+<p>を右辺として与えます．この設定により，相対誤差</p>
+<div class="math-block">\[
+\frac{|u-u_h|_{H^1}}{|u|_{H^1}},
+\quad
+\frac{\|u-u_h\|_{L^2}}{\|u\|_{L^2}}
+\]</div>
+<p>を確かめます．</p>
+</article>
+</div>
+
+<h2>Google Colab での実行手順</h2>
+<div class="news">
+<article class="news-item">
+<p>まずは Google Colab をブラウザで開きます．新しいノートブックを作成し，タイトルをたとえば <code>freefem_poisson_error_demo.ipynb</code> のように付けます．</p>
+<p>今回の例では GPU は不要です．標準の CPU ランタイムで十分です．セルを上から順に実行していけば動くようにしてあります．</p>
+</article>
+</div>
+
+<h3>セル 1：FreeFEM の導入</h3>
+<div class="news">
+<article class="news-item">
+<p>最初のセルは，Colab 上に FreeFEM を導入し，最後に <code>FreeFem++ -v</code> で動作確認をするものです．</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code class="language-bash">%%bash
+set -e
+
+apt-get update -y
+apt-get install -y wget ca-certificates \
+  libgsl-dev libhdf5-dev liblapack-dev libopenmpi-dev freeglut3-dev
+
+source /etc/os-release
+echo &quot;Ubuntu version: $VERSION_ID&quot;
+
+if [ &quot;$VERSION_ID&quot; = &quot;24.04&quot; ]; then
+  URL=&quot;https://github.com/FreeFem/FreeFem-sources/releases/download/v4.15/FreeFEM-4.15-amd64-ubuntu24.04.deb&quot;
+elif [ &quot;$VERSION_ID&quot; = &quot;22.04&quot; ]; then
+  URL=&quot;https://github.com/FreeFem/FreeFem-sources/releases/download/v4.15/FreeFEM-4.15-amd64-ubuntu22.04.deb&quot;
+else
+  echo &quot;Unsupported Ubuntu version: $VERSION_ID&quot; &gt;&amp;2
+  exit 1
+fi
+
+wget -O /tmp/FreeFEM.deb &quot;$URL&quot;
+dpkg -i /tmp/FreeFEM.deb || apt-get install -f -y
+
+python3 -m pip install -q meshio
+
+FreeFem++ -v
+</code></pre>
+</div>
+<p>このセルの意味は次の通りです．</p>
+<ul>
+<li>まず <code>apt-get</code> で依存ライブラリを入れます．</li>
+<li>次に Colab の Ubuntu のバージョンを読み取り，それに対応する <code>.deb</code> パッケージを選びます．</li>
+<li><code>dpkg -i</code> で FreeFEM を導入します．</li>
+<li>あわせて，可視化用に Python 側で <code>meshio</code> も入れておきます．</li>
+<li>最後に <code>FreeFem++ -v</code> が通れば準備完了です．</li>
+</ul>
+<p>ここは数学的な本体ではなく，あくまで環境構築の部分です．</p>
+</article>
+</div>
+
+<h3>Google Colab で FreeFEM を使うときの注意</h3>
+<div class="news">
+<article class="news-item">
+<p>Google Colab は手軽に計算実験を始められる反面，通常のローカル環境とは少し違う注意が必要です．特に FreeFEM を使う場合は，最初から「一時的な実行環境である」ことを前提にノートブックを組んでおくと，途中で動かなくなったときの原因を切り分けやすくなります．</p>
+<p>第一に，Colab ではセッションごとに環境が初期化されることがあります．そのため，FreeFEM のインストールセルは毎回上から実行する前提で用意しておく方が安全です．また，環境構築と動作確認を別セルに分けておくと，どこで問題が起きたのかを追いやすくなります．</p>
+<p>第二に，Colab は headless 環境なので，FreeFEM の実行には <code>FreeFem++-nw</code> を使うのが基本です．通常の GUI 前提の実行ではなく，no-window 版で計算を回す形にしておくと安定しやすくなります．</p>
+<p>第三に，Colab の Ubuntu バージョンは固定とは限りません．そのため，インストール時には <code>/etc/os-release</code> を読んでランタイムの版を確認し，対応する <code>.deb</code> パッケージを選ぶ形にしておくのが安全です．実際に 22.04 と 24.04 で URL を切り替える形にしておくと，環境変化に対応しやすくなります．</p>
+<p>第四に，各セルはできるだけ自立させておく方が扱いやすいです．たとえば <code>mkdir -p freefem_demo</code> のような作業用フォルダー作成を，必要なセルごとに入れておくと，あとからセル単体で再実行しても壊れにくくなります．Colab では，ノートブック全体を最初から順に流すとは限らないからです．</p>
+<p>第五に，可視化は FreeFEM だけで完結させようとするより，FreeFEM 側で数値データを書き出し，Python 側で図を描く方が見通しがよいです．たとえば FreeFEM で <code>.txt</code> にサンプル値を書き出し，Colab の Python セルで NumPy と Matplotlib を用いて等高線図や曲面図を描く流れにすると，headless 環境でも扱いやすくなります．</p>
+<p>要するに，Google Colab 上で FreeFEM を使うときは，「毎回環境を作り直す前提で，<code>FreeFem++-nw</code> を使い，Ubuntu 版を確認し，セルを自立させ，出力はファイル保存して Python で図示する」という方針にしておくのが実用的です．関連する補足は，<a href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26_3.html">Google Colab で FreeFEM を使うときの別記事</a> にも整理しています．</p>
+</article>
+</div>
+
+<h3>セル 2：Poisson 方程式を解いて誤差を測る</h3>
+<div class="news">
+<article class="news-item">
+<p>次が本体セルです．FreeFEM では，変分問題を <code>problem</code> で書き，<code>int2d</code> によって積分を書き下ろせます．ここでは，鈴木厚「FreeFEM入門 - 非線形弾性体ソルバーを例に」の5ページにある誤差評価の方針に合わせて，厳密解とその偏微分を <code>func</code> で与え，<code>(u_h-sol)^2</code> と <code>(dx(u_h)-solx)^2+(dy(u_h)-soly)^2</code> を直接積分して誤差を測ります．このセルでは，粗い格子から細かい格子まで順番に解き，誤差を <code>errors.csv</code> に書き出します．さらに，可視化用の解を <code>uh_vis.vtu</code> として保存します．</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code class="language-bash">%%bash
+cat &gt; poisson_error_demo.edp &lt;&lt;'EOF'
+load &quot;iovtk&quot;
+
+real pi2 = pi*pi;
+int[int] Ns = [8, 16, 32, 64, 128];
+ofstream ferr(&quot;errors.csv&quot;);
+ferr &lt;&lt; &quot;N,h,absL2,relL2,absH1semi,relH1semi,absH1\n&quot;;
+
+func sol  = sin(pi*x)*sin(pi*y);
+func solx = pi*cos(pi*x)*sin(pi*y);
+func soly = pi*sin(pi*x)*cos(pi*y);
+func rhs  = 2*pi2*sin(pi*x)*sin(pi*y);
+
+for (int k = 0; k &lt; Ns.n; ++k) {
+  int N = Ns[k];
+  mesh Th = square(N, N);
+
+  fespace Vh(Th, P1);
+  Vh uh, v;
+
+  problem Poisson(uh, v, solver=LU)
+      = int2d(Th)( dx(uh)*dx(v) + dy(uh)*dy(v) )
+      - int2d(Th)( rhs*v )
+      + on(1, 2, 3, 4, uh=0);
+
+  Poisson;
+
+  real absL2 = sqrt(int2d(Th, qforder=10)((uh - sol)^2));
+  real absH1semi = sqrt(int2d(Th, qforder=10)(
+        (dx(uh) - solx)^2
+      + (dy(uh) - soly)^2
+  ));
+  real absH1 = sqrt(int2d(Th, qforder=10)(
+        (uh - sol)^2
+      + (dx(uh) - solx)^2
+      + (dy(uh) - soly)^2
+  ));
+
+  real normL2 = sqrt(int2d(Th, qforder=10)(sol^2));
+  real seminormH1 = sqrt(int2d(Th, qforder=10)(solx^2 + soly^2));
+  real relL2 = absL2 / normL2;
+  real relH1semi = absH1semi / seminormH1;
+  real h = sqrt(2.0) / N;
+
+  cout &lt;&lt; &quot;N = &quot; &lt;&lt; N
+       &lt;&lt; &quot;, h = &quot; &lt;&lt; h
+       &lt;&lt; &quot;, absL2 = &quot; &lt;&lt; absL2
+       &lt;&lt; &quot;, relL2 = &quot; &lt;&lt; relL2
+       &lt;&lt; &quot;, absH1semi = &quot; &lt;&lt; absH1semi
+       &lt;&lt; &quot;, relH1semi = &quot; &lt;&lt; relH1semi &lt;&lt; endl;
+
+  ferr &lt;&lt; N &lt;&lt; &quot;,&quot;
+       &lt;&lt; h &lt;&lt; &quot;,&quot;
+       &lt;&lt; absL2 &lt;&lt; &quot;,&quot;
+       &lt;&lt; relL2 &lt;&lt; &quot;,&quot;
+       &lt;&lt; absH1semi &lt;&lt; &quot;,&quot;
+       &lt;&lt; relH1semi &lt;&lt; &quot;,&quot;
+       &lt;&lt; absH1 &lt;&lt; &quot;\n&quot;;
+}
+
+int Nvis = 16;
+mesh ThVis = square(Nvis, Nvis);
+
+fespace VhVis(ThVis, P1);
+VhVis uhVis, vVis;
+
+problem PoissonVis(uhVis, vVis, solver=LU)
+    = int2d(ThVis)( dx(uhVis)*dx(vVis) + dy(uhVis)*dy(vVis) )
+    - int2d(ThVis)( rhs*vVis )
+    + on(1, 2, 3, 4, uhVis=0);
+
+PoissonVis;
+
+int[int] order = [1];
+string dataName = &quot;uh&quot;;
+savevtk(&quot;uh_vis.vtu&quot;, ThVis, uhVis, dataname=dataName, order=order);
+EOF
+
+FreeFem++-nw poisson_error_demo.edp
+</code></pre>
+</div>
+<p>このセルの要点は次の通りです．</p>
+<ol>
+<li><code>func sol</code>, <code>func solx</code>, <code>func soly</code> により，厳密解とその偏微分を有限要素空間に補間せずに与えます．</li>
+<li><code>square(N,N)</code> により単位正方形の三角形分割を作ります．</li>
+<li><code>fespace Vh(Th,P1)</code> により 1 次 Lagrange 有限要素空間を定義します．</li>
+<li><code>problem Poisson(uh,v,...)</code> により，</li>
+</ol>
+<div class="math-block">\[
+\int_\Omega \nabla u_h\cdot\nabla v\,dx = \int_\Omega f v\,dx
+\]</div>
+<p>をそのまま書きます．<br>
+4 辺すべてには <code>on(1,2,3,4,uh=0)</code> により同次 Dirichlet 条件を入れます．<br>
+誤差評価では，<code>int2d(Th, qforder=10)</code> を用いて <span class="math-inline">\(L^2\)</span> 誤差，<span class="math-inline">\(H^1\)</span> 半ノルム誤差，さらに参考として <span class="math-inline">\(H^1\)</span> ノルム誤差も計算します．ここで <code>h = \sqrt{2}/N</code> としているのは，正方形を対角線で切った各三角形の代表長さを念頭に置いているためです．</p>
+<p>ここでは <span class="math-inline">\(H^1\)</span> 誤差を測るときに，有限要素空間への補間との比較ではなく，厳密解の勾配</p>
+<div class="math-block">\[
+\partial_x u = \pi\cos(\pi x)\sin(\pi y),
+\quad
+\partial_y u = \pi\sin(\pi x)\cos(\pi y)
+\]</div>
+<p>を直接使っています．したがって，測っているのは真の <span class="math-inline">\(|u-u_h|_{H^1}\)</span> 半ノルム誤差です．この書き方は，鈴木厚の講義資料 5 ページの流れに沿っています．</p>
+</article>
+</div>
+
+<h3>セル 3：収束率と log-log プロット</h3>
+<div class="news">
+<article class="news-item">
+<p>次に，FreeFEM が書き出した <code>errors.csv</code> を Python で読み込み，実験的収束率と log-log プロットを作ります．元の記事と同じく，絶対誤差と相対誤差を並べて見ます．</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code class="language-python">import numpy as np
+import matplotlib.pyplot as plt
+
+# CSV を読み込みます
+raw = np.genfromtxt(&quot;errors.csv&quot;, delimiter=&quot;,&quot;, names=True)
+
+Ns = raw[&quot;N&quot;]
+hs = raw[&quot;h&quot;]
+abs_L2s = raw[&quot;absL2&quot;]
+rel_L2s = raw[&quot;relL2&quot;]
+abs_H1s = raw[&quot;absH1semi&quot;]
+rel_H1s = raw[&quot;relH1semi&quot;]
+
+def rates(errors, hs):
+    return np.log(errors[1:] / errors[:-1]) / np.log(hs[1:] / hs[:-1])
+
+print(&quot;L2 absolute rates  =&quot;, rates(abs_L2s, hs))
+print(&quot;L2 relative rates  =&quot;, rates(rel_L2s, hs))
+print(&quot;H1 absolute rates  =&quot;, rates(abs_H1s, hs))
+print(&quot;H1 relative rates  =&quot;, rates(rel_H1s, hs))
+
+plt.figure(figsize=(6, 5))
+plt.loglog(hs, abs_L2s, &quot;o-&quot;, label=&quot;absolute L2 error&quot;)
+plt.loglog(hs, rel_L2s, &quot;s--&quot;, label=&quot;relative L2 error&quot;)
+plt.xlabel(&quot;h&quot;)
+plt.ylabel(&quot;error&quot;)
+plt.title(&quot;L2 errors on a log-log plot&quot;)
+plt.grid(True, which=&quot;both&quot;)
+plt.legend()
+plt.show()
+
+plt.figure(figsize=(6, 5))
+plt.loglog(hs, abs_H1s, &quot;o-&quot;, label=&quot;absolute H1 seminorm error&quot;)
+plt.loglog(hs, rel_H1s, &quot;s--&quot;, label=&quot;relative H1 seminorm error&quot;)
+plt.xlabel(&quot;h&quot;)
+plt.ylabel(&quot;error&quot;)
+plt.title(&quot;H1 seminorm errors on a log-log plot&quot;)
+plt.grid(True, which=&quot;both&quot;)
+plt.legend()
+plt.show()</code></pre>
+</div>
+<p>このセルを実行すると，<span class="math-inline">\(L^2\)</span> 誤差の収束率と <span class="math-inline">\(H^1\)</span> 半ノルム誤差の収束率が表示されます．ここでは <code>errors.csv</code> の列名を <code>absH1semi</code>, <code>relH1semi</code> として，半ノルム誤差を明示しています．滑らかな厳密解に対する P1 要素なので，理論的には</p>
+<div class="math-block">\[
+|u-u_h|_{H^1}=O(h),
+\quad
+\|u-u_h\|_{L^2}=O(h^2)
+\]</div>
+<p>が期待されます．したがって，出力が H1 で 1 に近く，L2 で 2 に近ければ，標準的理論と整合的に動いていると読めます．</p>
+</article>
+</div>
+
+<h3>セル 4：2次元メッシュ図と3次元近似解の可視化</h3>
+<div class="news">
+<article class="news-item">
+<p>FreeFEM には <code>plot</code> による可視化がありますが，Colab では GUI を直接扱いにくいので，ここでは <code>savevtk</code> で出力した <code>uh_vis.vtu</code> を Python 側で読み込んで表示します．</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code class="language-python">import meshio
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+
+m = meshio.read(&quot;uh_vis.vtu&quot;)
+points = m.points[:, :2]
+
+triangles = None
+for cell_block in m.cells:
+    if cell_block.type == &quot;triangle&quot;:
+        triangles = cell_block.data
+        break
+
+if triangles is None:
+    raise RuntimeError(&quot;triangle cells were not found in uh_vis.vtu&quot;)
+
+if &quot;uh&quot; in m.point_data:
+    values = np.asarray(m.point_data[&quot;uh&quot;]).reshape(-1)
+else:
+    raise RuntimeError(&quot;point data 'uh' was not found in uh_vis.vtu&quot;)
+
+plt.figure(figsize=(6, 6))
+plt.triplot(points[:, 0], points[:, 1], triangles, linewidth=0.8)
+plt.xlabel(&quot;x&quot;)
+plt.ylabel(&quot;y&quot;)
+plt.title(&quot;2D mesh&quot;)
+plt.gca().set_aspect(&quot;equal&quot;)
+plt.show()
+
+plt.figure(figsize=(6, 5))
+plt.tricontourf(points[:, 0], points[:, 1], triangles, values, levels=20)
+plt.colorbar(label=&quot;u_h&quot;)
+plt.xlabel(&quot;x&quot;)
+plt.ylabel(&quot;y&quot;)
+plt.title(&quot;2D contour of FEM solution&quot;)
+plt.gca().set_aspect(&quot;equal&quot;)
+plt.show()
+
+fig = plt.figure(figsize=(8, 6))
+ax = fig.add_subplot(111, projection=&quot;3d&quot;)
+ax.plot_trisurf(points[:, 0], points[:, 1], values, triangles=triangles,
+                linewidth=0.2, antialiased=True)
+ax.set_xlabel(&quot;x&quot;)
+ax.set_ylabel(&quot;y&quot;)
+ax.set_zlabel(&quot;u_h&quot;)
+ax.set_title(&quot;3D surface of FEM solution&quot;)
+plt.show()
+</code></pre>
+</div>
+<p>このセルを実行すると，まず三角形分割そのものが見えます．次に，近似解の等高線図から，中心付近で値が大きく，境界で0になっている様子が確認できます．最後の3次元図では，</p>
+<div class="math-block">\[
+u_h(x,y)\approx \sin(\pi x)\sin(\pi y)
+\]</div>
+<p>の山型の形が視覚的に分かります．</p>
+</article>
+</div>
+
+<h2>メッシュの切り方について</h2>
+<div class="news">
+<article class="news-item">
+<p>FreeFEM の <code>square</code> コマンドでは，標準の三角形分割を簡単に作れます．また，ドキュメントには <code>flags=i</code> を変えることで複数の三角形分割パターンを試す例もあります．したがって，導入段階ではまず標準の <code>square(N,N)</code> を使い，その後に対角線の入れ方の違いを比較する，という流れが自然です．</p>
+<p>今回のページでは，まず Poisson 方程式，誤差評価，収束率という有限要素法の本体に集中するため，もっとも素直な <code>square(N,N)</code> を採用しました．</p>
+</article>
+</div>
+
+<h2>絶対誤差と相対誤差</h2>
+<div class="news">
+<article class="news-item">
+<p>今回のコードでは，まず絶対誤差</p>
+<div class="math-block">\[
+\|u-u_h\|_{L^2},
+\quad
+|u-u_h|_{H^1}
+\]</div>
+<p>を計算しています．これは，数値解が厳密解からどれだけ離れているかをそのまま測る量です．</p>
+<p>そのうえで，相対誤差</p>
+<div class="math-block">\[
+\frac{\|u-u_h\|_{L^2}}{\|u\|_{L^2}},
+\quad
+\frac{|u-u_h|_{H^1}}{|u|_{H^1}}
+\]</div>
+<p>も計算しています．こちらは，解そのものの大きさに対してどれだけずれているかを見る量です．</p>
+<p>今回のように厳密解を固定してメッシュだけ細かくする実験では，相対誤差は絶対誤差を定数で割っただけなので，収束次数そのものは同じになります．それでも相対誤差を出す理由ははっきりあります．問題ごとに解の大きさが違っていても比較しやすくなりますし，「誤差の大きさ」と「解そのものの大きさ」を区別して考える練習にもなるからです．</p>
+</article>
+</div>
+
+<h2>log-log プロットは何を見せているのか</h2>
+<div class="news">
+<article class="news-item">
+<p>log-log プロットを使う理由は，誤差の減り方を「目で見てすぐ分かる形」に直したいからです．有限要素法では，誤差はしばしば</p>
+<div class="math-block">\[
+E(h) \approx C h^r
+\]</div>
+<p>のようなべき乗則で減ります．両辺の対数を取ると</p>
+<div class="math-block">\[
+\log E(h)=\log C + r\log h
+\]</div>
+<p>となるので，両軸を対数目盛にすると，点は直線に並びます．そして，その傾きが収束次数 <span class="math-inline">\(r\)</span> です．このため，log-log プロットは「有限要素法が期待どおりの次数で収束しているか」を一目で確かめるための道具としてとても便利です．</p>
+</article>
+</div>
+
+<h2>References</h2>
+<div class="news">
+<article class="news-item">
+<ul>
+<li>鈴木厚，<em>RIKEN HPC サマースクール 2023 - Society 5.0 に向けて - FreeFEM 入門 - 非線形弾性体ソルバーを例に</em>，2023年9月7日．特に 5 ページ「誤差評価を確認する FreeFEM スクリプト」，8 ページ「func と有限要素データの違い」を参考にしました．</li>
+<li>FreeFEM documentation: Installation guide</li>
+<li>FreeFEM documentation: Download</li>
+<li>FreeFEM documentation: Getting started / Poisson</li>
+<li>FreeFEM documentation: Visualization</li>
+<li>FreeFEM documentation: savevtk</li>
+<li>Matplotlib documentation: <code>pyplot.loglog</code></li>
+<li>Hiroki Ishizaka, <em>Google Colab で FreeFEM を使うときの注意に関する記事</em>, 2026年4月20日．Colab 上でのセッション初期化，<code>FreeFem++-nw</code> の使用，Ubuntu 版確認，セルの自立性，Python 側での可視化という実務上の注意点を参照しました．</li>
+</ul>
+</article>
+</div>
+
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
