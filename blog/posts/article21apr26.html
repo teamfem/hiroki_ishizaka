@@ -183,15 +183,9 @@ which FreeFem++ || true
 which FreeFem++-nw || true
 ls -l /usr/local/bin/FreeFem* || true</code></pre>
 </div>
-<p>このセルの意味は次の通りです．</p>
-<ul>
-<li>まず <code>apt-get</code> で依存ライブラリを入れます．</li>
-<li>次に Colab の Ubuntu のバージョンを読み取り，それに対応する <code>.deb</code> パッケージを選びます．</li>
-<li><code>dpkg -i</code> で FreeFEM を導入します．</li>
-<li>あわせて，可視化用に Python 側で <code>meshio</code> も入れておきます．</li>
-<li>最後に <code>FreeFem++ -v</code> が通れば準備完了です．</li>
-</ul>
-<p>ここは数学的な本体ではなく，あくまで環境構築の部分です．</p>
+<p>
+このセルの役割は環境構築だけです．もしこの段階で止まるなら，依存ライブラリや Ubuntu の版の問題です．逆に，ここが通れば，次は FreeFEM 本体が実際に動くかどうかを小さな例で確かめればよいことになります．
+</p>
 </article>
 </div>
 
