@@ -156,7 +156,7 @@ f=2\pi^2u
 <article class="news-item">
 <p>最初のセルは，Colab 上に FreeFEM を導入し，最後に <code>FreeFem++ -v</code> で動作確認をするものです．</p>
 <div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
-<pre><code class="language-bash">%%bash
+<pre><code>%%bash
 set -e
 
 apt-get update -y
@@ -171,17 +171,17 @@ if [ &quot;$VERSION_ID&quot; = &quot;24.04&quot; ]; then
 elif [ &quot;$VERSION_ID&quot; = &quot;22.04&quot; ]; then
   URL=&quot;https://github.com/FreeFem/FreeFem-sources/releases/download/v4.15/FreeFEM-4.15-amd64-ubuntu22.04.deb&quot;
 else
-  echo &quot;Unsupported Ubuntu version: $VERSION_ID&quot; &gt;&amp;2
+  echo &quot;Unsupported Ubuntu version in this Colab runtime: $VERSION_ID&quot;
   exit 1
 fi
 
-wget -O /tmp/FreeFEM.deb &quot;$URL&quot;
-dpkg -i /tmp/FreeFEM.deb || apt-get install -f -y
+wget -q &quot;$URL&quot; -O /tmp/freefem.deb
+dpkg -i /tmp/freefem.deb || apt-get -f install -y
 
-python3 -m pip install -q meshio
-
-FreeFem++ -v
-</code></pre>
+echo &quot;Installed binaries:&quot;
+which FreeFem++ || true
+which FreeFem++-nw || true
+ls -l /usr/local/bin/FreeFem* || true</code></pre>
 </div>
 <p>このセルの意味は次の通りです．</p>
 <ul>
