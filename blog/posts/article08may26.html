@@ -321,9 +321,129 @@ s_{2n}
 </article>
 </div>
 
-
+<h2>7．Pythonで実行する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+以下のコードでは，正六角形から始めて，辺数を倍々に増やします．計算本体では \(\pi\) を使いません．最後の誤差表示だけ，確認用に <code>math.pi</code> を使っています．
+</p>
 <div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>import math
+
+
+def inscribed_polygon_pi_sequence(levels=8):
+    """内接正多角形による円周率近似を返す．"""
+    n = 6
+    s = 1.0  # 正六角形の一辺の長さ
+    values = []
+
+    for k in range(levels):
+        pi_n = n * s / 2.0
+        values.append((k, n, pi_n))
+
+        # 半角公式による安定な更新式．
+        # s_n = 2 sin(theta) とすると，
+        # s_{2n} = 2 sin(theta/2)
+        #        = s_n / sqrt(2 + 2 cos(theta))．
+        cos_theta = math.sqrt(1.0 - (s / 2.0) ** 2)
+        s = s / math.sqrt(2.0 + 2.0 * cos_theta)
+        n *= 2
+
+    return values
+
+
+def richardson_table(values):
+    """偶数冪の誤差展開を仮定した Richardson 外挿表を作る．"""
+    table = []
+
+    for k, (_, _, value) in enumerate(values):
+        row = [value]
+
+        for j in range(1, k + 1):
+            improved = (4 ** j * row[j - 1] - table[k - 1][j - 1]) / (4 ** j - 1)
+            row.append(improved)
+
+        table.append(row)
+
+    return table
+
+
+def main():
+    levels = 8
+    values = inscribed_polygon_pi_sequence(levels)
+    table = richardson_table(values)
+
+    print(f"{'k':>2} {'n':>7} {'polygon_pi':>20} {'raw_error':>12} "
+          f"{'extrapolated_pi':>20} {'extrap_error':>12}")
+    print("-" * 78)
+
+    for k, n, pi_n in values:
+        extrapolated = table[k][-1]
+        raw_error = abs(math.pi - pi_n)
+        extrap_error = abs(math.pi - extrapolated)
+
+        print(f"{k:2d} {n:7d} {pi_n:20.15f} {raw_error:12.3e} "
+              f"{extrapolated:20.15f} {extrap_error:12.3e}")
+
+
+if __name__ == "__main__":
+    main()
+</code></pre>
 </div>
+</article>
+</div>
+
+<h2>8．実行結果</h2>
+<div class="news">
+<article class="news-item">
+<pre><code> k       n           polygon_pi    raw_error      extrapolated_pi extrap_error
+------------------------------------------------------------------------------
+ 0       6    3.000000000000000    1.416e-01    3.000000000000000    1.416e-01
+ 1      12    3.105828541230249    3.576e-02    3.141104721640332    4.879e-04
+ 2      24    3.132628613281238    8.964e-03    3.141592453897650    1.997e-07
+ 3      48    3.139350203046867    2.242e-03    3.141592653577892    1.190e-11
+ 4      96    3.141031950890509    5.607e-04    3.141592653589793    0.000e+00
+ 5     192    3.141452472285462    1.402e-04    3.141592653589793    4.441e-16
+ 6     384    3.141557607911857    3.505e-05    3.141592653589793    0.000e+00
+ 7     768    3.141583892148318    8.761e-06    3.141592653589792    8.882e-16</code></pre>
+ 
+<p>
+正 \(96\) 角形による素朴な近似では，誤差はまだ約 \(5.6\times 10^{-4}\) です．しかし，外挿表の対角成分を使うと，同じ程度のデータから倍精度計算の限界に近い値まで到達します．
+ここで誤差が <code>0.000e+00</code> と表示される部分がありますが，数学的に誤差がゼロという意味ではありません．倍精度浮動小数点数で見える範囲では，<code>math.pi</code> との差が表示されなくなっているという意味です．
+</p>
+</article>
+</div>
+
+<h2>9．この小さな例から見えること</h2>
+<div class="news">
+<article class="news-item">
+<p>
+この例で重要なのは，円周率そのものではありません．重要なのは，近似値の誤差が
+\[
+  c_2h^2+c_4h^4+c_6h^6+\cdots
+\]
+という形を持つと分かれば，その構造を利用して精度を上げられるという点です．
+</p>
+<p>
+これは有限要素法でも同じです．たとえば，ある点 \(P\) における Ritz 射影の誤差が
+\[
+  R_hu(P)=u(P)+h^2 e(P)+O(h^4)
+\]
+のような展開を持てば，\(h\) と \(h/2\) の近似解を組み合わせることで，\(h^2 e(P)\) の主誤差を消すことができます．ただし PDE の場合には，解の正則性，領域の角，境界近傍のメッシュ構造，安定性評価などが絡みます．そこが円周率の例との大きな違いです．
+</p>
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<ul>
+  <li>R. Rannacher, <em>Special Topics in Numerics III: Extrapolation and Defect Correction</em>, Lecture Notes, Heidelberg University, SS 2017, Section 6.1.1 and 6.2.</li>
+  <li>L. F. Richardson and J. A. Gaunt, <em>The deferred approach to the limit</em>, Philosophical Transactions of the Royal Society of London. Series A, 1927.</li>
+</ul>
+</article>
+</div>
+
 
 <!--section-in-->
 </div>
