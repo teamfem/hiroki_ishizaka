@@ -259,7 +259,7 @@ s_{2n}
   - \frac{\pi^7}{7!}h^6
   + \cdots
 \]
-となります．つまり，$T(h)$ は
+となります．つまり，\(T(h)\) は
 \[
   T(h)=\pi+c_2h^2+c_4h^4+c_6h^6+\cdots
 \]
@@ -286,7 +286,7 @@ s_{2n}
 \[
   S_n := \frac{4T_{2n}-T_n}{3}
 \]
-とおくと，$c_2h^2$ の項が消えます．実際，
+とおくと，\(c_2h^2\) の項が消えます．実際，
 \[
   S_n = \pi + O(h^4)
 \]
@@ -296,15 +296,34 @@ s_{2n}
 <strong>外挿法の要点</strong><br>
 \(h\) を小さくするだけでなく，\(h\) と \(h/2\) の計算結果を組み合わせて，誤差の主要項を消します．これが Richardson extrapolation の最も基本的な形です．
 </p>
+</article>
+</div>
 
+<h2>6．繰り返し外挿</h2>
+<div class="news">
+<article class="news-item">
+<p>
+さらに高次の誤差項も順に消したい場合は，外挿表を作ります．まず，
+\[
+  R_{k,0}=T_{6\cdot 2^k}
+\]
+とおきます．そして \(j\geq 1\) に対して，
+\[
+  R_{k,j}
+  =\frac{4^jR_{k,j-1}-R_{k-1,j-1}}{4^j-1}
+\]
+と定めます．ここで \(4^j\) が出てくるのは，誤差展開が
+\[
+  h^2,\ h^4,\ h^6,\ldots
+\]
+という偶数冪で進むからです．
+</p>
 </article>
 </div>
 
 
 <div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
 </div>
-
-
 
 <!--section-in-->
 </div>
