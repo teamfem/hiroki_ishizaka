@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 8th May 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 8th May 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">Romberg積分入門</h1>
+<!---->
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第1回では円周率の多角形近似，第2回では数値微分を扱いました．どちらでも重要だったのは，近似値そのものではなく，その背後にある誤差展開でした．第3回では，定積分を題材にします．台形公式の誤差展開を利用して，低次の誤差項を順に消す方法が Romberg 積分です．
+</p>
+</article>
+</div>
+
+<h2>1．今回の目的</h2>
+<div class="news">
+<article class="news-item">
+<p>
+今回の目的は，次の定積分
+\[
+  I=\int_a^b f(x)\,dx
+\]
+を高精度に近似することです．もっとも基本的な数値積分公式の一つに，台形公式があります．台形公式は単純で実装しやすい一方で，そのままでは2次精度です．しかし，台形公式の誤差には
+\[
+  h^2,\ h^4,\ h^6,\ldots
+\]
+という偶数冪の展開が現れます．そのため，Richardson extrapolation と非常に相性がよいです．重要なのは，台形公式を単に細かくするだけでなく，Euler--Maclaurin 展開に基づいて \(h=0\) へ外挿する点です．
+</p>
+</article>
+</div>
+
+<h2>2．合成台形公式</h2>
+<div class="news">
+<article class="news-item">
+<p>
+区間 \([a,b]\) を \(N\) 等分します．
+\[
+  h=\frac{b-a}{N},\quad x_j=a+jh \quad (j=0,1,\ldots,N)
+\]
+とおきます．このとき，合成台形公式は
+\[
+  T(h)
+  =
+  h\left\{
+    \frac12 f(a)
+    +\sum_{j=1}^{N-1} f(x_j)
+    +\frac12 f(b)
+  \right\}
+\]
+で定義されます．これは，各小区間 \([x_j,x_{j+1}]\) 上でグラフを直線で近似し，その下の台形の面積を足し合わせる方法です．したがって，考え方そのものは非常に素朴です．しかし，この素朴な公式が外挿法と組み合わさることで，高精度な方法になります．
+</p>
+<div class="box">
+  <p>
+  台形公式の第一の役割は，計算可能な近似値
+  \[
+    T(h)
+  \]
+  を作ることです．ここで \(h\) はメッシュ幅です．\(h\to 0\) とすれば
+  \[
+    T(h)\to I
+  \]
+  となります．外挿法では，この \(T(h)\) を \(h=0\) へ外挿します．
+  </p>
+</div>
+</article>
+</div>
+
+<h2>3．台形公式の誤差展開</h2>
+<div class="news">
+<article class="news-item">
+<p>
+外挿法を使うには，近似値 \(T(h)\) がどのような誤差展開をもつかを知る必要があります．ここで現れるのが Euler--Maclaurin 公式です．\(f\) が十分滑らかならば，台形公式には次の形の展開があります．
+\[
+  T(h)
+  =
+  \int_a^b f(x)\,dx
+  +
+  \sum_{k=1}^m
+  h^{2k}
+  \frac{B_{2k}}{(2k)!}
+  \left\{
+    f^{(2k-1)}(b)-f^{(2k-1)}(a)
+  \right\}
+  +
+  O(h^{2m+2}).
+\]
+ここで \(B_{2k}\) は Bernoulli 数です．特に最初の項だけを見ると，
+\[
+  T(h)
+  =
+  I
+  +
+  \frac{h^2}{12}
+  \left\{
+    f'(b)-f'(a)
+  \right\}
+  +O(h^4)
+\]
+です．
+したがって，台形公式の誤差は基本的に \(O(h^2)\) です．
+</p>
+<div class="note">
+  <p>
+  ここで大切なのは，誤差が
+  \[
+    h,\ h^3,\ h^5,\ldots
+  \]
+  ではなく，
+  \[
+    h^2,\ h^4,\ h^6,\ldots
+  \]
+  の偶数冪で現れることです．したがって，台形公式に外挿法を使うときは，\(h\) の多項式ではなく \(h^2\) の多項式として扱います．
+  </p>
+</div>
+</article>
+</div>
+
+<h2>4．1段の外挿</h2>
+<div class="news">
+<article class="news-item">
+<p>
+誤差展開の最初の部分だけを取り出して，
+\[
+  T(h)=I+c_2h^2+c_4h^4+O(h^6)
+\]
+と書きます．同じ公式を \(h/2\) で計算すると，
+\[
+  T(h/2)
+  =
+  I+c_2\frac{h^2}4+c_4\frac{h^4}{16}+O(h^6)
+\]
+です．この二つを
+\[
+  R_1(h):=\frac{4T(h/2)-T(h)}3
+\]
+と組み合わせると，\(c_2h^2\) の項が消えます．実際，
+\[
+  R_1(h)=I+O(h^4)
+\]
+です．つまり，台形公式を二つのメッシュ幅で計算するだけで，2次精度の近似から4次精度の近似を作れます．これは第1回の円周率近似や，第2回の中心差分で見た外挿と同じ考え方です．
+</p>
+</article>
+</div>
+
+<h2>5．Romberg 表</h2>
+<div class="news">
+<article class="news-item">
+<p>
+1段の外挿で \(O(h^2)\) の誤差を消せるなら，さらに次の \(O(h^4)\) の誤差も消したくなります．そのために，台形公式を
+\[
+  h,\quad \frac h2,\quad \frac h4,\quad \frac h8,\ldots
+\]
+で順に計算し，外挿を表の形に整理します．これが Romberg 表です．
+</p>
+<p>
+\(R_{i,0}\) を台形公式の値とします．たとえば \(h_i=(b-a)/2^i\) として，
+\[
+  R_{i,0}=T(h_i)
+\]
+です．第1列目は，単なる台形公式の値です．次に，外挿した値を
+\[
+  R_{i,k}
+\]
+と書きます．更新式は
+\[
+  R_{i,k}
+  =
+  R_{i,k-1}
+  +
+  \frac{R_{i,k-1}-R_{i-1,k-1}}{4^k-1},
+  \quad k=1,\ldots,i.
+\]
+です．分母に \(4^k-1\) が出る理由は，台形公式の誤差展開が \(h^2\) の冪で進むからです．\(k\) 段目の外挿では，主に \(h^{2k}\) の項を消しています．\(h\) を半分にすると
+\[
+    h^{2k}
+    \quad\text{は}\quad
+    \left(\frac h2\right)^{2k}
+    =
+    \frac{h^{2k}}{4^k}
+\]
+になります．そのため，補正係数に \(4^k-1\) が現れます．Romberg 表は，次のような三角形の表になります．
+</p>
+<table>
+  <thead>
+    <tr>
+      <th>level</th>
+      <th>台形公式</th>
+      <th>1段外挿</th>
+      <th>2段外挿</th>
+      <th>3段外挿</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>\(R_{0,0}\)</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>\(R_{1,0}\)</td>
+      <td>\(R_{1,1}\)</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td>\(R_{2,0}\)</td>
+      <td>\(R_{2,1}\)</td>
+      <td>\(R_{2,2}\)</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td>\(R_{3,0}\)</td>
+      <td>\(R_{3,1}\)</td>
+      <td>\(R_{3,2}\)</td>
+      <td>\(R_{3,3}\)</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+一般には，右下の対角成分
+\[
+  R_{0,0},\ R_{1,1},\ R_{2,2},\ldots
+\]
+が高精度な近似値になります．
+</p>
+</article>
+</div>
+
+<h2>6．Pythonで確認する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+ここでは
+\[
+  I=\int_0^1 e^x\,dx
+\]
+を Romberg 積分で計算します．この積分は厳密に
+\[
+  I=e-1
+\]
+と分かるので，誤差を確認しやすい例です．次のコードは，合成台形公式を計算し，その値から Romberg 表を作ります．HTMLの中にコードをそのまま掲載しているので，この部分だけをコピーしてPython ファイルとして実行することもできます．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code class="language-python">#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+&quot;&quot;&quot;
+Romberg integration.
+
+This code accompanies the article:
+外挿法と誤差展開（第3回）：台形公式から Romberg 積分へ
+
+The goal is to show how the composite trapezoidal rule can be improved
+by Richardson extrapolation.
+
+We use the example
+
+    I = ∫_0^1 exp(x) dx = e - 1.
+
+The composite trapezoidal rule has an even-power error expansion:
+
+    T(h) = I + c_2 h^2 + c_4 h^4 + c_6 h^6 + ...
+
+Romberg integration removes these error terms successively.
+&quot;&quot;&quot;
+
+import math
+
+
+def composite_trapezoidal(f, a, b, n):
+    &quot;&quot;&quot;
+    Composite trapezoidal rule.
+
+    Let h=(b-a)/n and x_j=a+jh. Then
+
+        T_n = h { 1/2 f(a) + sum_{j=1}^{n-1} f(x_j) + 1/2 f(b) }.
+    &quot;&quot;&quot;
+    h = (b - a) / n
+
+    total = 0.5 * f(a) + 0.5 * f(b)
+
+    for j in range(1, n):
+        x_j = a + j * h
+        total += f(x_j)
+
+    return h * total
+
+
+def romberg_table(f, a, b, max_level):
+    &quot;&quot;&quot;
+    Build a Romberg table.
+
+    We use n=1,2,4,8,... subintervals.
+    Thus h is halved at each new row.
+
+    The first column is the composite trapezoidal rule:
+        R[i][0] = T(h_i).
+
+    The remaining columns are computed by Richardson extrapolation:
+        R[i][k] = R[i][k-1]
+                  + (R[i][k-1] - R[i-1][k-1]) / (4^k - 1).
+
+    The factor 4^k appears because the trapezoidal rule has an expansion
+    in powers of h^2.
+    &quot;&quot;&quot;
+    table = []
+
+    for i in range(max_level + 1):
+        n = 2 ** i
+
+        row = [composite_trapezoidal(f, a, b, n)]
+
+        for k in range(1, i + 1):
+            correction = (row[k - 1] - table[i - 1][k - 1]) / (4 ** k - 1)
+            row.append(row[k - 1] + correction)
+
+        table.append(row)
+
+    return table
+
+
+def print_romberg_table(table, exact):
+    &quot;&quot;&quot;
+    Print the Romberg table and the errors of the diagonal entries.
+    &quot;&quot;&quot;
+    print(&quot;=&quot; * 88)
+    print(&quot;Romberg integration for I = integral_0^1 exp(x) dx&quot;)
+    print(&quot;Exact value: e - 1&quot;)
+    print(&quot;=&quot; * 88)
+
+    max_level = len(table) - 1
+
+    header = &quot; i   N       T(h)=R[i,0]&quot;
+    for k in range(1, max_level + 1):
+        header += f&quot;        R[i,{k}]&quot;
+    print(header)
+    print(&quot;-&quot; * 88)
+
+    for i, row in enumerate(table):
+        n = 2 ** i
+        line = f&quot;{i:2d} {n:4d} &quot;
+        for value in row:
+            line += f&quot; {value:15.12f}&quot;
+        print(line)
+
+    print()
+    print(&quot;Errors of the diagonal entries R[i,i]&quot;)
+    print(&quot;-&quot; * 88)
+    print(f&quot;{&#x27;i&#x27;:&gt;2} {&#x27;N&#x27;:&gt;4} {&#x27;R[i,i]&#x27;:&gt;18} {&#x27;error&#x27;:&gt;14} {&#x27;rate&#x27;:&gt;8}&quot;)
+
+    previous_error = None
+    previous_h = None
+
+    for i, row in enumerate(table):
+        n = 2 ** i
+        h = 1.0 / n
+        diagonal = row[-1]
+        error = abs(diagonal - exact)
+
+        if previous_error is None:
+            rate_text = &quot;   ---&quot;
+        else:
+            rate = math.log(previous_error / error) / math.log(previous_h / h)
+            rate_text = f&quot;{rate:8.3f}&quot;
+
+        print(f&quot;{i:2d} {n:4d} {diagonal:18.14f} {error:14.6e} {rate_text}&quot;)
+
+        previous_error = error
+        previous_h = h
+
+
+def main():
+    f = math.exp
+    a = 0.0
+    b = 1.0
+    exact = math.e - 1.0
+
+    table = romberg_table(f, a, b, max_level=5)
+
+    print_romberg_table(table, exact)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre>
+</div>
+<h3>実行結果の例</h3>
+
+<pre><code>========================================================================================
+Romberg integration for I = integral_0^1 exp(x) dx
+Exact value: e - 1
+========================================================================================
+ i   N       T(h)=R[i,0]        R[i,1]        R[i,2]        R[i,3]        R[i,4]        R[i,5]
+----------------------------------------------------------------------------------------
+ 0    1   1.859140914230
+ 1    2   1.753931092465  1.718861151877
+ 2    4   1.727221904558  1.718318841922  1.718282687925
+ 3    8   1.720518592164  1.718284154700  1.718281842218  1.718281828795
+ 4   16   1.718841128580  1.718281974052  1.718281828675  1.718281828460  1.718281828459
+ 5   32   1.718421660316  1.718281837562  1.718281828462  1.718281828459  1.718281828459  1.718281828459
+
+Errors of the diagonal entries R[i,i]
+----------------------------------------------------------------------------------------
+ i    N             R[i,i]          error     rate
+ 0    1   1.85914091422952   1.408591e-01    ---
+ 1    2   1.71886115187659   5.793234e-04    7.926
+ 2    4   1.71828268792476   8.594657e-07    9.397
+ 3    8   1.71828182879453   3.354852e-10   11.323
+ 4   16   1.71828182845908   3.375078e-14   13.279
+ 5   32   1.71828182845904   6.661338e-16    5.663
+</code></pre>
+<p>
+最初の列 \(R[i,0]\) は，単なる台形公式です．行が下がるにつれて分割数 \(N\) が増え，\(h\) が半分になっています．一方，右側の列は外挿によって作られた値です．右下の対角成分 \(R[i,i]\) を見ると，急速に厳密値 \(e-1\) に近づくことが分かります．
+</p>
+</article>
+</div>
+
+<h2>7．何が起きているのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Romberg 積分で起きていることは，次の一言で説明できます．
+</p>
+<div class="note">
+  <p>
+  台形公式の誤差展開
+  \[
+    T(h)=I+c_2h^2+c_4h^4+c_6h^6+\cdots
+  \]
+  を利用して，\(c_2h^2,c_4h^4,c_6h^6,\ldots\) を順に消している．
+  </p>
+</div>
+<p>
+したがって，Romberg 積分は単なる「台形公式の改良版」ではありません．
+むしろ，
+</p>
+
+<ul>
+  <li>低次の近似公式を使う，</li>
+  <li>誤差展開を調べる，</li>
+  <li>主要誤差を線形結合で消す，</li>
+  <li>高次精度の近似を作る，</li>
+</ul>
+
+<p>
+という外挿法の典型例です．
+</p>
+</article>
+</div>
+
+<h2>8．注意：滑らかさが重要</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Romberg 積分がうまく働くためには，\(f\) が十分滑らかで，Euler--Maclaurin 型の誤差展開が有効であることが重要です．不連続な関数，端点で特異性をもつ関数，急激に振動する関数では，表の右下に進めば必ず高精度になるとは限りません．これは有限要素法でも同じです．外挿法は魔法ではなく，誤差展開があって初めて強力になります．
+</p>
+</article>
+</div>
+
+<h2>9．今回のまとめ</h2>
+<div class="news">
+<article class="news-item">
+<ul>
+  <li>合成台形公式は，定積分を計算する基本的な公式です．</li>
+  <li>台形公式の誤差は，Euler--Maclaurin 展開により偶数冪で表されます．</li>
+  <li>そのため，台形公式には \(h^2\) に関する Richardson extrapolation が自然に使えます．</li>
+  <li>Romberg 積分は，台形公式と外挿法を組み合わせた高精度積分法です．</li>
+  <li>ただし，十分な滑らかさと誤差展開の存在が重要です．</li>
+</ul>
+<p>
+第4回では，この考え方を常微分方程式に移します．非stiffな問題に対する Gragg 型の外挿法が扱われています．数値積分より少し難しくなりますが，「低次の方法を基礎にして，誤差展開を利用して精度を上げる」という主役は同じです．
+</p>
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<ul>
+  <li>
+    Rolf Rannacher,
+    <em>Special Topics in Numerics III: Extrapolation and Defect Correction</em>,
+    Lecture Notes, Heidelberg University, 2017.
+  </li>
+</ul>
+</article>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
