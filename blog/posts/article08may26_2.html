@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 8th May 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 8th May 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">数値微分と外挿法</h1>
+<!---->
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第1回では，円周率を正多角形で近似し，誤差展開の主項を消すことで精度を上げました．第2回では，数値微分を題材にします．微分係数は極限で定義される量なので，外挿法と非常に相性がよい例です．特に，中心差分では誤差展開が \(h^2,h^4,h^6,\ldots\) の偶数冪だけで現れます．
+</p>
+</article>
+</div>
+
+<h2>1．微分係数を数値的に求める</h2>
+<div class="news">
+<article class="news-item">
+<p>
+微分係数は
+\[
+  f'(x)=\lim_{h\to 0}\frac{f(x+h)-f(x)}{h}
+\]
+で定義されます．したがって，十分小さい \(h>0\) に対して
+\[
+  D_h^+f(x):=\frac{f(x+h)-f(x)}{h}
+\]
+を計算すれば，\(f'(x)\) の近似値が得られます．これを前進差分と呼びます．しかし，数値計算では \(h\) を小さくすればよい，というだけではありません．小さすぎる \(h\) は丸め誤差を増幅します．
+そのため，単に \(h\to 0\) とするのではなく，「誤差がどのような形で減っているか」を見ることが重要です．
+</p>
+</article>
+</div>
+
+<h2>2．前進差分の誤差展開</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(f\) が十分滑らかならば，Taylor 展開より
+\[
+  f(x+h)
+  =
+  f(x)+hf'(x)+\frac{h^2}{2}f''(x)
+  +\frac{h^3}{6}f'''(x)+O(h^4)
+\]
+です．したがって，
+\[
+  D_h^+f(x)
+  =
+  f'(x)+\frac{h}{2}f''(x)
+  +\frac{h^2}{6}f'''(x)+O(h^3)
+\]
+となります．つまり，前進差分の主誤差は \(O(h)\) です．誤差展開は
+\[
+    D_h^+f(x)=f'(x)+c_1h+c_2h^2+c_3h^3+\cdots
+\]
+という形をしています．この場合，外挿を行うなら \(h\) の多項式として扱います．
+</p>
+<p>
+例えば
+\[
+  A(h):=D_h^+f(x)
+\]
+とおき，
+\[
+  A(h)=f'(x)+c_1h+O(h^2)
+\]
+と見ます．同じ量を \(h/2\) でも計算すると，
+\[
+  A(h/2)=f'(x)+\frac{c_1}{2}h+O(h^2)
+\]
+です．したがって
+\[
+  2A(h/2)-A(h)=f'(x)+O(h^2)
+\]
+となり，\(O(h)\) の主誤差が消えます．
+</p>
+</article>
+</div>
+
+<h2>3．中心差分では何が変わるか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+前進差分よりも自然な近似として，左右対称に点を取る中心差分があります．
+\[
+  D_h^0f(x):=\frac{f(x+h)-f(x-h)}{2h}.
+\]
+Taylor 展開を用いると，
+\[
+\begin{aligned}
+  f(x+h)
+  &=
+  f(x)+hf'(x)+\frac{h^2}{2}f''(x)
+  +\frac{h^3}{6}f'''(x)
+  +\frac{h^4}{24}f^{(4)}(x)
+  +\frac{h^5}{120}f^{(5)}(x)+\cdots,\\
+  f(x-h)
+  &=
+  f(x)-hf'(x)+\frac{h^2}{2}f''(x)
+  -\frac{h^3}{6}f'''(x)
+  +\frac{h^4}{24}f^{(4)}(x)
+  -\frac{h^5}{120}f^{(5)}(x)+\cdots.
+\end{aligned}
+\]
+これらを引き算すると，偶数階の項が消えます．そのため，
+\[
+  D_h^0f(x)
+  =
+  f'(x)
+  +\frac{h^2}{6}f'''(x)
+  +\frac{h^4}{120}f^{(5)}(x)
+  +O(h^6)
+\]
+となります．ここが第2回の一番大切な点です．中心差分では誤差展開が
+\[
+    D_h^0f(x)=f'(x)+c_2h^2+c_4h^4+c_6h^6+\cdots
+\]
+という偶数冪の形になります．したがって，外挿は \(h\) ではなく \(h^2\) の多項式として行うのが自然です．
+</p>
+</article>
+</div>
+
+<h2>4．中心差分に対する Richardson extrapolation</h2>
+<div class="news">
+<article class="news-item">
+<p>
+いま
+\[
+  A(h):=D_h^0f(x)
+\]
+とおきます．中心差分の誤差展開は
+\[
+  A(h)=f'(x)+c_2h^2+c_4h^4+O(h^6)
+\]
+です．
+一方，
+\[
+  A(h/2)=f'(x)+c_2\frac{h^2}{4}
+  +c_4\frac{h^4}{16}+O(h^6)
+\]
+です．この二つから \(c_2h^2\) の項を消すと，
+\[
+  A_1(h):=\frac{4A(h/2)-A(h)}{3}
+\]
+が得られます．すると
+\[
+  A_1(h)=f'(x)+O(h^4)
+\]
+です．
+</p>
+<p>
+さらに同じことをもう一度行うと，
+\[
+  A_2(h):=\frac{16A_1(h/2)-A_1(h)}{15}
+\]
+となり，
+\[
+  A_2(h)=f'(x)+O(h^6)
+\]
+が期待されます．このように，誤差展開の形が分かっていると，低次の誤差項を順に消すことができます．
+</p>
+</article>
+</div>
+
+<h2>5．例：\(\sin h/h\) から \(1\) を求める</h2>
+<div class="news">
+<article class="news-item">
+<p>
+ここで，数値微分の例を見ます．考える関数は
+\[
+  f(x)=\sin x
+\]
+です．この関数の導関数は
+\[
+  f'(x)=\cos x
+\]
+なので，特に \(x=0\) では
+\[
+  f'(0)=\cos 0=1
+\]
+です．つまり，ここで求めたい正しい値は \(1\) です．
+</p>
+
+<p>
+この導関数を中心差分で近似します．中心差分は
+\[
+  D_h^0 f(x)
+  :=
+  \frac{f(x+h)-f(x-h)}{2h}
+\]
+で定義されます．\(x=0\) とすると，
+\[
+  D_h^0 f(0)
+  =
+  \frac{f(h)-f(-h)}{2h}
+  =
+  \frac{\sin h-\sin(-h)}{2h}
+\]
+です．ここで \(\sin(-h)=-\sin h\) だから，
+\[
+  D_h^0 f(0)
+  =
+  \frac{\sin h+\sin h}{2h}
+  =
+  \frac{\sin h}{h}
+\]
+となります．
+</p>
+
+<p>
+したがって，
+\[
+  a(h):=\frac{\sin h}{h}
+\]
+とおけば，これは \(f'(0)=1\) の近似値です．実際，
+\[
+  \lim_{h\to 0}\frac{\sin h}{h}=1
+\]
+なので，
+\[
+  a(h)\to 1 \quad (h\to 0)
+\]
+です．つまり，この例では，直接知りたい値 \(1\) を，計算可能な値 \(a(h)=\sin h/h\) の極限として求めています．
+</p>
+
+<div class="note">
+  <p>
+  外挿法の立場では，ここが重要です．
+  \(a(h)\) は \(h>0\) なら計算できますが，本当に欲しいのは \(h=0\) での極限値
+  \[
+    a(0):=\lim_{h\to 0}a(h)=1
+  \]
+  です．そこで，いくつかの \(h\) で \(a(h)\) を計算し，それらから \(h=0\) の値を推定します．これが「extrapolation to the limit」です．
+  </p>
+</div>
+
+<p>
+次に，なぜこの例で外挿がうまくいくのかを見ます．
+\(\sin h\) の Taylor 展開は
+\[
+  \sin h
+  =
+  h-\frac{h^3}{3!}+\frac{h^5}{5!}
+  -\frac{h^7}{7!}+\cdots
+\]
+です．両辺を \(h\) で割ると，
+\[
+  \frac{\sin h}{h}
+  =
+  1-\frac{h^2}{3!}+\frac{h^4}{5!}
+  -\frac{h^6}{7!}+\cdots
+\]
+となります．したがって，
+\[
+  a(h)
+  =
+  1+c_2h^2+c_4h^4+c_6h^6+\cdots
+\]
+という形の誤差展開をもっています．
+</p>
+
+<p>
+ここで注目すべき点は，\(h,h^3,h^5,\ldots\) の項が出てこないことです．つまり，誤差は
+\[
+  h^2,\ h^4,\ h^6,\ldots
+\]
+という偶数冪だけで現れます．これは中心差分が左右対称な差分であることに対応しています．前進差分では一般に \(O(h)\) の誤差が出ますが，中心差分では対称性により \(O(h)\) の項が消え，主誤差は \(O(h^2)\) になります．
+</p>
+
+<p>
+この性質を使うために，
+\[
+  z:=h^2
+\]
+とおきます．すると
+\[
+  a(h)
+  =
+  1+c_2z+c_4z^2+c_6z^3+\cdots
+\]
+と見なせます．つまり，\(a(h)\) を \(h\) の関数としてではなく，\(z=h^2\) の関数として考えるわけです．このとき，外挿とは，いくつかの点
+\[
+  (h_i^2,a(h_i))
+\]
+を通る補間多項式を作り，その多項式を \(h=0\)，つまり \(z=0\) に代入する操作です．
+</p>
+
+<p>
+例えば，
+\[
+  h_0=\frac18,\quad
+  h_1=\frac1{16},\quad
+  h_2=\frac1{32}
+\]
+を用います．それぞれに対して
+\[
+  a(h_i)=\frac{\sin h_i}{h_i}
+\]
+を計算すると，おおよそ
+\[
+\begin{aligned}
+  a(1/8)  &\approx 0.9973979,\\
+  a(1/16) &\approx 0.9993491,\\
+  a(1/32) &\approx 0.9998372
+\end{aligned}
+\]
+となります．これらはすべて \(1\) より少し小さい値です．ただし，\(h\) を半分にするたびに，値は確実に \(1\) に近づいています．
+</p>
+
+<p>
+まず，\(h\) と \(h/2\) の二つの値だけを使って，\(h^2\) の主誤差を消してみます．いま
+\[
+  a(h)=1+c_2h^2+O(h^4)
+\]
+とします．すると
+\[
+  a(h/2)
+  =
+  1+c_2\frac{h^2}{4}+O(h^4)
+\]
+です．この二つを
+\[
+  \frac{4a(h/2)-a(h)}{3}
+\]
+と組み合わせると，
+\[
+\begin{aligned}
+  \frac{4a(h/2)-a(h)}{3}
+  &=
+  \frac{
+    4\left(1+c_2h^2/4+O(h^4)\right)
+    -
+    \left(1+c_2h^2+O(h^4)\right)
+  }{3} \\
+  &=
+  1+O(h^4)
+\end{aligned}
+\]
+となります．つまり，\(O(h^2)\) の主誤差が消え，誤差が \(O(h^4)\) に改善されます．
+</p>
+
+<p>
+これは，第1回の円周率の例で出てきた
+\[
+  \frac{4T_n-T_{n/2}}{3}
+\]
+と同じ構造です．どちらも，誤差展開の第1項を線形結合で消しています．違いは，今回の対象が多角形近似ではなく，中心差分による数値微分である点だけです．
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>\(h\)</th>
+      <th>\(a(h)=\sin h/h\)</th>
+      <th>1段外挿</th>
+      <th>2段外挿</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>\(1/8\)</td>
+      <td>0.9973978671</td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>\(1/16\)</td>
+      <td>0.9993490855</td>
+      <td>0.9999994916</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>\(1/32\)</td>
+      <td>0.9998372475</td>
+      <td>0.9999999682</td>
+      <td>0.999999999988</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+表を見ると，生の近似値 \(a(h)=\sin h/h\) は，\(h=1/32\) でもまだ \(1\) から少しずれています．しかし，1段外挿を行うと急激に \(1\) に近づき，さらに2段外挿を行うと，ほとんど \(1\) と区別できない値になります．
+</p>
+
+<p>
+この例から分かることは，外挿法が単に「小さい \(h\) を使う方法」ではないということです．外挿法は，近似値の背後にある誤差展開
+\[
+  a(h)=a(0)+c_2h^2+c_4h^4+\cdots
+\]
+を利用し，低次の誤差項を意図的に消す方法です．そのため，誤差展開が正しく成り立っているときには，非常に強力な精度改善が得られます．
+</p>
+</article>
+</div>
+
+<h2>6．Pythonで確認する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+ここでは，実際に Python で数値微分と Richardson extrapolation を確認します．
+実験は二つ行います．
+一つ目は
+\[
+  f(x)=e^x
+\]
+の \(x=1\) における微分を，前進差分，中心差分，中心差分の1段外挿で比較します．
+正しい値は
+\[
+  f'(1)=e
+\]
+です．
+</p>
+
+<p>
+二つ目は，
+\[
+  a(h)=\frac{\sin h}{h}\to 1
+\]
+の例です．
+この例では誤差展開が \(h^2,h^4,h^6,\ldots\) の偶数冪になるので，
+\(h^2\) に関する Richardson extrapolation を行います．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code class="language-python">#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Numerical differentiation and Richardson extrapolation.
+
+This code accompanies the article:
+外挿法と誤差展開（第2回）：数値微分と Richardson extrapolation
+
+The code has two parts.
+
+1. Comparison of
+   - forward difference,
+   - central difference,
+   - Richardson extrapolation applied to the central difference.
+
+2. Rannacher's example:
+       a(h) = sin(h) / h -> 1.
+"""
+
+import math
+
+
+def forward_difference(f, x, h):
+    """
+    Forward difference approximation of f'(x).
+
+    Formula:
+        f'(x) ≈ (f(x+h)-f(x))/h
+
+    The leading error is usually O(h).
+    """
+    return (f(x + h) - f(x)) / h
+
+
+def central_difference(f, x, h):
+    """
+    Central difference approximation of f'(x).
+
+    Formula:
+        f'(x) ≈ (f(x+h)-f(x-h))/(2h)
+
+    The leading error is usually O(h^2).
+    """
+    return (f(x + h) - f(x - h)) / (2.0 * h)
+
+
+def central_richardson_once(f, x, h):
+    """
+    One Richardson extrapolation step applied to the central difference.
+
+    If
+        A(h) = f'(x) + c_2 h^2 + c_4 h^4 + ...
+    then
+        (4 A(h/2) - A(h)) / 3
+    cancels the h^2 term.
+
+    Therefore, the error improves from O(h^2) to O(h^4).
+    """
+    A_h = central_difference(f, x, h)
+    A_h2 = central_difference(f, x, h / 2.0)
+
+    return (4.0 * A_h2 - A_h) / 3.0
+
+
+def convergence_rate(error_old, error_new, h_old, h_new):
+    """
+    Compute the observed convergence rate.
+
+    If error behaves like C h^p, then
+        p ≈ log(error_old/error_new) / log(h_old/h_new).
+    """
+    return math.log(error_old / error_new) / math.log(h_old / h_new)
+
+
+def experiment_exp_derivative():
+    """
+    Experiment 1.
+
+    Approximate the derivative of f(x)=exp(x) at x=1.
+
+    Since f'(x)=exp(x), the exact value is exp(1).
+    """
+    f = math.exp
+    x = 1.0
+    exact = math.exp(1.0)
+
+    print("=" * 86)
+    print("Experiment 1: derivative of f(x)=exp(x) at x=1")
+    print("Exact value: exp(1)")
+    print("=" * 86)
+
+    print(
+        f"{'h':>10} | "
+        f"{'err forward':>14} {'rate':>7} | "
+        f"{'err central':>14} {'rate':>7} | "
+        f"{'err extrap':>14} {'rate':>7}"
+    )
+    print("-" * 86)
+
+    previous = None
+
+    for k in range(2, 9):
+        h = 2.0 ** (-k)
+
+        approx_forward = forward_difference(f, x, h)
+        approx_central = central_difference(f, x, h)
+        approx_extrapolated = central_richardson_once(f, x, h)
+
+        err_forward = abs(approx_forward - exact)
+        err_central = abs(approx_central - exact)
+        err_extrapolated = abs(approx_extrapolated - exact)
+
+        if previous is None:
+            rate_forward = None
+            rate_central = None
+            rate_extrapolated = None
+        else:
+            h_old, ef_old, ec_old, er_old = previous
+
+            rate_forward = convergence_rate(ef_old, err_forward, h_old, h)
+            rate_central = convergence_rate(ec_old, err_central, h_old, h)
+            rate_extrapolated = convergence_rate(er_old, err_extrapolated, h_old, h)
+
+        def format_rate(value):
+            if value is None:
+                return "   ---"
+            return f"{value:7.3f}"
+
+        print(
+            f"{h:10.6f} | "
+            f"{err_forward:14.6e} {format_rate(rate_forward)} | "
+            f"{err_central:14.6e} {format_rate(rate_central)} | "
+            f"{err_extrapolated:14.6e} {format_rate(rate_extrapolated)}"
+        )
+
+        previous = (h, err_forward, err_central, err_extrapolated)
+
+    print()
+    print("Expected behaviour:")
+    print("  forward difference          : O(h)")
+    print("  central difference          : O(h^2)")
+    print("  Richardson-extrapolated one : O(h^4)")
+    print()
+
+
+def richardson_table(values, hs, q):
+    """
+    Build a Richardson extrapolation table.
+
+    We assume an expansion of the form
+
+        a(h) = a_0 + c_1 h^q + c_2 h^(2q) + c_3 h^(3q) + ...
+
+    For the central difference and sin(h)/h, we use q=2.
+    """
+    table = []
+
+    for i in range(len(values)):
+        row = [values[i]]
+
+        for k in range(1, i + 1):
+            h_left = hs[i - k]
+            h_now = hs[i]
+
+            numerator = row[k - 1] - table[i - 1][k - 1]
+            denominator = (h_left / h_now) ** q - 1.0
+
+            row.append(row[k - 1] + numerator / denominator)
+
+        table.append(row)
+
+    return table
+
+
+def experiment_sine_over_h():
+    """
+    Experiment 2.
+
+    Rannacher's example:
+        a(h) = sin(h)/h -> 1.
+
+    Since
+        sin(h)/h = 1 - h^2/3! + h^4/5! - ...
+    the expansion contains only even powers of h.
+
+    Therefore, Richardson extrapolation should be performed with q=2.
+    """
+    hs = [
+        1.0 / 8.0,
+        1.0 / 16.0,
+        1.0 / 32.0,
+    ]
+
+    values = [math.sin(h) / h for h in hs]
+
+    table = richardson_table(values, hs, q=2)
+
+    print("=" * 86)
+    print("Experiment 2: a(h)=sin(h)/h -> 1")
+    print("Richardson extrapolation in h^2")
+    print("=" * 86)
+
+    print(
+        f"{'h':>10} | "
+        f"{'a(h)':>16} | "
+        f"{'1st extrap':>16} | "
+        f"{'2nd extrap':>16}"
+    )
+    print("-" * 86)
+
+    for i, h in enumerate(hs):
+        a0 = table[i][0]
+        a1 = table[i][1] if i >= 1 else None
+        a2 = table[i][2] if i >= 2 else None
+
+        def format_value(value):
+            if value is None:
+                return " " * 16
+            return f"{value:16.12f}"
+
+        print(
+            f"{h:10.6f} | "
+            f"{a0:16.12f} | "
+            f"{format_value(a1)} | "
+            f"{format_value(a2)}"
+        )
+
+    print()
+    print("Exact limit: 1")
+    print(f"Final extrapolated value: {table[-1][-1]:.15f}")
+    print(f"Final error: {abs(table[-1][-1] - 1.0):.6e}")
+    print()
+
+
+def main():
+    experiment_exp_derivative()
+    experiment_sine_over_h()
+
+
+if __name__ == "__main__":
+    main()
+</code></pre>
+</div>
+<p>
+このコードを実行すると，まず \(f(x)=e^x\) の微分近似に対して，前進差分，中心差分，外挿後の中心差分の誤差が表示されます．期待される収束次数はそれぞれ
+\[
+  O(h),\qquad O(h^2),\qquad O(h^4)
+\]
+です．
+</p>
+
+<p>
+次に，\(\sin h/h\) の外挿表が表示されます．この例では
+\[
+  \frac{\sin h}{h}
+  =
+  1-\frac{h^2}{3!}+\frac{h^4}{5!}-\cdots
+\]
+という誤差展開があるため，\(q=2\) として Richardson extrapolation を行っています．
+</p>
+
+<h3>実行結果の例</h3>
+<pre><code>Experiment 1: derivative of f(x)=exp(x) at x=1
+Exact value: exp(1)
+
+         h |    err forward    rate |    err central    rate |      err extrap    rate
+--------------------------------------------------------------------------------------
+  0.250000 |   ...             ---  |   ...             ---  |   ...             ---
+  0.125000 |   ...            1.0   |   ...            2.0   |   ...            4.0
+  0.062500 |   ...            1.0   |   ...            2.0   |   ...            4.0
+
+Expected behaviour:
+  forward difference          : O(h)
+  central difference          : O(h^2)
+  Richardson-extrapolated one : O(h^4)
+
+
+Experiment 2: a(h)=sin(h)/h -> 1
+Richardson extrapolation in h^2
+
+         h |             a(h) |       1st extrap |       2nd extrap
+--------------------------------------------------------------------------------------
+  0.125000 |   0.997397867081 |                  |
+  0.062500 |   0.999349085478 |   0.999999491611 |
+  0.031250 |   0.999837247533 |   0.999999968211 |   0.999999999988
+
+Exact limit: 1
+Final extrapolated value: 0.999999999988...
+Final error: about 1.2e-11
+</code></pre>
+</article>
+</div>
+
+<h2>7．今回のまとめ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+今回の内容をまとめると，次のようになります．
+<ul>
+  <li>前進差分は，通常 \(O(h)\) の誤差をもちます．</li>
+  <li>中心差分は，対称性により \(O(h^2)\) の誤差をもちます．</li>
+  <li>中心差分の誤差展開は，\(h^2,h^4,h^6,\ldots\) の偶数冪で現れます．</li>
+  <li>したがって，中心差分では \(h^2\) の多項式として外挿するのが自然です．</li>
+  <li>1段の Richardson extrapolation により，中心差分の \(O(h^2)\) 誤差を消して \(O(h^4)\) にできます．</li>
+</ul>
+第1回の円周率の例では，正多角形近似の誤差展開から \(h^2\) の主項を消しました．今回の中心差分でも，同じく \(h^2\) の主項を消しています．題材は違いますが，見ている構造は同じです．
+</p>
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<ul>
+  <li>
+    Rolf Rannacher,
+    <em>Special Topics in Numerics III: Extrapolation and Defect Correction</em>,
+    Lecture Notes, Heidelberg University, 2017.
+  </li>
+</ul>
+</article>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
