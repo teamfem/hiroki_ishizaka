@@ -117,13 +117,564 @@
 <div class="news">
 <article class="news-item">
 <p>
+第5回では，有限要素法における外挿法の理想的な状況として，
+  Ritz射影の点値誤差展開を整理しました．
+  第6回では，その誤差展開に基づく defect correction の考え方を見ました．
+  第7回では，解に特異性がある場合に，その誤差展開がどのように変わるかを考えます．
+  特に，再入角をもつ多角形領域における corner singularity，
+  pollution effect，通常の Richardson 外挿の限界，
+  特異指数に合わせた外挿公式を整理します．
+  最後に，この話を Research Vision 8「Richardson外挿法と幾何条件」と
+  Research Vision 9「Defect Collection」へ接続します．
 </p>
-<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+</article>
+</div>
+
+<h2>1．なぜ特異性を扱うのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第5回では，有限要素法における外挿法の理想的な状況として，
+Ritz射影の点値誤差展開
+\[
+  R_hu(P)=u(P)+h^2 e(P)+O(h^4L(h))
+\]
+を見ました．
+ここで \(P\) はメッシュ節点，\(e\) は \(h\) に依存しない補正関数，
+\(L(h)\) は対数因子を表します．
+このような展開があれば，二つのメッシュ幅 \(h\) と \(h/2\) の近似値を用いて
+\[
+  u_h^{\mathrm{ext}}(P)
+  :=
+  \frac{4R_{h/2}u(P)-R_hu(P)}{3}
+\]
+とすれば，\(h^2 e(P)\) の主誤差を消すことができます．
+つまり，
+\[
+  u_h^{\mathrm{ext}}(P)=u(P)+O(h^4L(h))
+\]
+が期待されます．
+</p>
+
+<p>
+しかし，実際の偏微分方程式では，解が十分滑らかでないことが多いです．
+たとえば，多角形領域の再入角，境界条件の切り替わり，内部界面，点源項などは，
+解に特異性を生じさせます．
+このとき，滑らかな場合の誤差展開は，そのままでは成り立ちません．
+</p>
+
+<div class="box">
+  第7回の目的は，
+  \[
+    \text{誤差展開が壊れるとき，外挿法はどう変わるのか}
+  \]
+  を整理することです．
+  これは，外挿法の限界を見る話であると同時に，
+  特異性に合わせて外挿公式を作り替える話でもあります．
 </div>
 </article>
 </div>
 
+<h2>2．corner singularity とは何か</h2>
+<div class="news">
+<article class="news-item">
+<p>
+典型例として，再入角をもつ多角形領域上の Poisson 問題
+\[
+  -\Delta u=f \quad \text{in } \Omega,
+  \quad
+  u=0 \quad \text{on } \partial\Omega
+\]
+を考えます．
+領域 \(\Omega\) が内角
+\[
+  \omega>\pi
+\]
+をもつ角点 \(z\) を含むとき，その近くで解は一般に滑らかではありません．
+角点からの距離を
+\[
+  r=|x-z|
+\]
+とすると，主特異項は形式的に
+\[
+  u(x)\sim r^\alpha \Phi(\theta),
+  \quad
+  \alpha=\frac{\pi}{\omega}<1
+\]
+のように振る舞います．
+ここで \(	heta\) は角点まわりの角度変数であり，\(\Phi\) は角度方向の関数です．
+</p>
 
+<p>
+たとえば，slit domain のように
+\[
+  \omega=2\pi
+\]
+であれば，
+\[
+  \alpha=\frac12
+\]
+です．
+この場合，解は \(H^2\) 的には滑らかではなく，
+通常の一次有限要素法で期待される大域的な \(O(h)\) の \(H^1\) 誤差や，
+内部点での \(O(h^2)\) 点値精度がそのまま現れません．
+</p>
+
+<p>
+  角特異性は，局所的には角点の近くで生じる現象です．
+  しかし，有限要素誤差の観点では，その影響は角点近くに完全には閉じ込められません．
+  この「遠くへの影響」が次に述べる pollution effect です．
+</p>
+</article>
+</div>
+
+<h2>3．pollution effect：特異性は遠くにも影響する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+角特異性があると，誤差は角点近くだけで悪くなるわけではありません．
+再入角によって生じた特異性が，内部領域の点値誤差にも影響し，
+滑らかな場合に期待される局所精度が落ちることがあります．
+この現象はしばしば pollution effect と呼ばれます．
+</p>
+
+<p>
+解が角点近くで
+\[
+  u(x)\sim r^\alpha,
+  \quad
+  \alpha=\frac{\pi}{\omega}
+\]
+のように振る舞うとき，エネルギーノルムでの最良近似は典型的に
+\[
+  \|\nabla(u-R_hu)\|_{L^2(\Omega)}=O(h^\alpha)
+\]
+に制限されます．
+さらに，角点から離れた内部領域 \(\Omega'\Subset\Omega\) においても，
+点値誤差は理想的な \(O(h^2)\) ではなく，
+\[
+  \|u-R_hu\|_{L^\infty(\Omega')}
+  =
+  O(h^{2\alpha})
+\]
+程度まで落ちることがあります．
+</p>
+
+<div class="box">
+  内部点だからといって安心できるわけではありません．
+  角点で生じた特異性は，大域的な有限要素誤差を通じて内部にも影響します．
+  これが pollution effect です．
+</div>
+
+<p>
+この現象は，外挿法にとって非常に重要です．
+なぜなら，外挿法は主誤差の冪を正しく知らなければ機能しないからです．
+滑らかな場合の主誤差が \(h^2\) であるのに対し，
+特異性がある場合には \(h^{2\alpha}\) が主誤差になることがあります．
+</p>
+
+</article>
+</div>
+
+<h2>4．通常の Richardson 外挿はそのまま使えない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+滑らかな場合には，
+\[
+  R_hu(P)=u(P)+h^2e(P)+O(h^4L(h))
+\]
+という形を使いました．
+このときは \(h^2\) の主項を消すために，
+\[
+  \frac{4R_{h/2}u(P)-R_hu(P)}{3}
+\]
+を用いればよいです．
+</p>
+
+<p>
+しかし，角特異性がある場合には，内部点でも主誤差が
+\[
+  h^{2\alpha}
+\]
+の形で現れることがあります．
+この場合，誤差展開は
+\[
+  R_hu(P)
+  =
+  u(P)+A(P)h^{2\alpha}+O(h^2)
+\]
+のようになります．
+ここで
+\[
+  \alpha=\frac{\pi}{\omega}<1
+\]
+なので，\(2\alpha<2\) です．
+したがって，主誤差は \(h^2\) ではなく \(h^{2\alpha}\) です．
+</p>
+
+<p>
+この状況で通常の外挿公式
+\[
+  \frac{4R_{h/2}u(P)-R_hu(P)}{3}
+\]
+を使っても，\(h^{2\alpha}\) の項は消えません．
+つまり，滑らかな場合の Richardson 外挿をそのまま使うと，
+期待した高精度化が起こらない可能性があります．
+</p>
+
+<p>
+  外挿法は，「細かいメッシュの解を多めに取り，粗いメッシュの解を引けばよい」
+  という機械的な手続きではありません．
+  どの冪の誤差項を消しているのかを理解して使う必要があります．
+</p>
+
+</article>
+</div>
+
+<h2>5．特異性に合わせた外挿公式</h2>
+<div class="news">
+<article class="news-item">
+<p>
+いま，内部点 \(P\) において
+\[
+  R_hu(P)
+  =
+  u(P)+A(P)h^{2\alpha}+O(h^2)
+\]
+が成り立つとします．
+同じ点 \(P\) で細かいメッシュの値を考えると，
+\[
+  R_{h/2}u(P)
+  =
+  u(P)
+  +
+  A(P)\left(\frac h2\right)^{2\alpha}
+  +O(h^2)
+\]
+です．
+</p>
+
+<p>
+この二つを組み合わせて \(h^{2\alpha}\) の項を消すには，
+\[
+  u_h^*(P)
+  =
+  \frac{2^{2\alpha}R_{h/2}u(P)-R_hu(P)}
+       {2^{2\alpha}-1}
+\]
+とすればよいです．
+実際，
+\[
+\begin{aligned}
+  2^{2\alpha}R_{h/2}u(P)-R_hu(P)
+  &=
+  2^{2\alpha}
+  \left[
+    u(P)+A(P)\frac{h^{2\alpha}}{2^{2\alpha}}+O(h^2)
+  \right] \\
+  &\quad-
+  \left[
+    u(P)+A(P)h^{2\alpha}+O(h^2)
+  \right] \\
+  &=
+  (2^{2\alpha}-1)u(P)+O(h^2).
+\end{aligned}
+\]
+したがって，
+\[
+  u_h^*(P)=u(P)+O(h^2)
+\]
+が期待されます．
+</p>
+
+<div class="box">
+  ここで重要なのは，外挿係数が
+  \[
+    4
+  \]
+  ではなく，
+  \[
+    2^{2\alpha}
+  \]
+  になることです．
+  特異性がある場合，外挿法は「滑らかな場合の公式をそのまま使う」のではなく，
+  特異指数に合わせて作り直す必要があります．
+</div>
+
+</article>
+</div>
+
+<h2>6．滑らかな部分と特異部分を分けて考える</h2>
+<div class="news">
+<article class="news-item">
+<p>
+角特異性がある場合，解を形式的に
+\[
+  u = u_{\mathrm{reg}} + c\,s
+\]
+のように分解して考えることが多いです．
+ここで \(u_{\mathrm{reg}}\) は比較的滑らかな部分であり，
+\(s\) は角点由来の特異関数です．
+たとえば
+\[
+  s(r,\theta)\sim r^\alpha\Phi(\theta)
+\]
+のような形を持ちます．
+</p>
+
+<p>
+このとき，有限要素誤差も
+\[
+  R_hu-u
+  =
+  (R_hu_{\mathrm{reg}}-u_{\mathrm{reg}})
+  +
+  c(R_hs-s)
+\]
+のように分けて考えることができます．
+滑らかな部分からは通常の \(h^2\) 型点値誤差が現れる一方，
+特異部分からは \(h^{2\alpha}\) 型の pollution error が現れます．
+</p>
+
+<p>
+したがって，内部点 \(P\) における点値誤差は，
+形式的に
+\[
+  R_hu(P)-u(P)
+  =
+  A(P)h^{2\alpha}
+  +
+  B(P)h^2
+  +
+  \cdots
+\]
+のように書けます．
+もし \(lpha<1\) なら，\(h^{2\alpha}\) が \(h^2\) より支配的です．
+この場合，まず \(h^{2\alpha}\) の項を消すことが外挿の第一段階になります．
+</p>
+
+</article>
+</div>
+
+<h2>7．局所精度と大域精度</h2>
+<div class="news">
+<article class="news-item">
+<p>
+特異性がある問題で外挿を考えるときは，どの量の精度を改善したいのかを明確にする必要があります．
+たとえば，次の量は性質が異なります．
+</p>
+
+<ul>
+  <li>大域 \(H^1\) 誤差，</li>
+  <li>大域 \(L^2\) 誤差，</li>
+  <li>角点から離れた内部領域での \(L^\infty\) 誤差，</li>
+  <li>特定の点 \(P\) における点値誤差，</li>
+  <li>ある汎関数 \(J(u)\) の誤差．</li>
+</ul>
+
+<p>
+Rannacher 型の点値外挿では，特に節点 \(P\) における点値誤差が重要です．
+しかし，特異性がある場合には，点 \(P\) がどこにあるかが大きく影響します．
+角点に近い点と，角点から十分離れた内部点では，誤差の構造が異なります．
+</p>
+
+<p>
+また，goal-oriented error analysis の観点からは，
+点値評価そのものを一つの目的汎関数と見ることもできます．
+この場合，主問題の特異性だけでなく，双対問題の特異性も関係します．
+したがって，特異性を含む外挿法は，
+点値誤差解析，局所誤差評価，双対性の議論と深く関係します．
+</p>
+
+</article>
+</div>
+
+<h2>8．Vision 8 への接続：外挿法と幾何条件</h2>
+<div class="news">
+<article class="news-item">
+<p>
+この話は，Research Vision 8
+「Richardson外挿法と幾何条件」と直接つながります．
+Vision 8 では，Richardson 外挿法を単なる数値加速ではなく，
+FEM における幾何条件，異方性メッシュ，さらには深層学習数値解法と結びつける視点で位置づけています．
+</p>
+
+<p>
+角特異性の例では，外挿係数は
+\[
+  2^{2\alpha},
+  \quad
+  \alpha=\frac{\pi}{\omega}
+\]
+によって決まります．
+つまり，外挿法の係数そのものが領域の幾何，具体的には角度 \(\omega\) に依存します．
+このことは，外挿法が単なる後処理ではなく，
+幾何条件と深く結びついた方法であることを示しています．
+</p>
+
+<p>
+さらに，異方性メッシュを使う場合には，単一の \(h\) だけでは誤差を記述できないことがあります．
+どの方向に細かくするのか，特異性に向かってどのようにメッシュを伸ばすのかによって，
+誤差展開の形も変わる可能性があります．
+この意味で，特異性を含む外挿法は，
+異方性 FEM 理論と非常に相性のよい研究テーマです．
+</p>
+
+<div class="box">
+  Vision 8 への接続は，
+  \[
+    \text{外挿係数が幾何に依存する}
+  \]
+  という点にあります．
+  滑らかな一様メッシュ上の \(4\) という係数から，
+  特異指数 \(lpha=\pi/\omega\) に応じた \(2^{2\alpha}\) へ移ることで，
+  外挿法は幾何条件の問題になります．
+</div>
+
+</article>
+</div>
+
+<h2>9．Vision 9 への接続：defect はどこに集まるのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+この話は，Research Vision 9
+「Defect Collectionと数値解法の横断」にもつながります．
+Vision 9 では，FEM における整合性誤差や残差を defect として収集し，
+それをメッシュレス法や深層学習数値解法にまで拡張する構想を述べています．
+</p>
+
+<p>
+角特異性がある場合，誤差や残差は領域全体に一様に分布するわけではありません．
+角点近く，あるいは双対問題の特異性を通じて，特定の領域に強く集中します．
+したがって，
+\[
+  \text{どこに defect が集まるのか}
+\]
+を理解することが重要になります．
+</p>
+
+<p>
+これは FEM だけでなく，PINNs や Deep Ritz 法でも同じ構造を持ちます．
+サンプリング点が角特異性や境界層を十分に捉えていなければ，
+損失関数は小さく見えても，真の誤差は大きく残る可能性があります．
+この意味で，corner singularity は，
+古典 FEM，defect correction，そして深層学習数値解法を結ぶ重要な試験問題になります．
+</p>
+
+<div class="box">
+  Vision 9 への接続は，
+  \[
+    \text{defect の分布を読む}
+  \]
+  という点にあります．
+  特異性は誤差や残差を局所的に集中させます．
+  この集中をどのように検出し，補正し，学習型数値解法へ渡すかが，
+  Defect Collection の重要な入口になります．
+</div>
+</article>
+</div>
+
+<h2>10．第8回への準備：数値実験で何を見るか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第8回では，ここまでの理論を数値実験で確認します．
+滑らかな正方形領域上の Poisson 問題と，
+再入角をもつ L-shaped domain または slit domain 上の Poisson 問題を比較し，
+通常の有限要素解，通常の Richardson 外挿，
+そして特異指数を用いた外挿を比較します．
+</p>
+
+<p>
+特に見たいのは，次の点です．
+</p>
+
+<ul>
+  <li>滑らかな領域では，通常の \(h^2\) 型外挿が有効であること．</li>
+  <li>再入角があると，内部点でも点値誤差の収束が落ちること．</li>
+  <li>通常の \(h^2\) 外挿ではなく，\(h^{2\alpha}\) に合わせた外挿が必要になること．</li>
+  <li>誤差や residual がどこに集中するかを可視化すること．</li>
+  <li>この現象が Vision 8 の「幾何条件 × 外挿精度」と Vision 9 の「defect collection」に接続すること．</li>
+</ul>
+</article>
+</div>
+
+<h2>11．第7回のまとめ</h2>
+<div class="news">
+<article class="news-item">
+<ul>
+  <li>滑らかな場合，Ritz 射影の点値誤差は \(h^2\) 主項を持ち，通常の Richardson 外挿が有効です．</li>
+  <li>再入角をもつ領域では，解に corner singularity が生じます．</li>
+  <li>特異性は角点近くだけでなく，内部点の点値誤差にも pollution effect として影響します．</li>
+  <li>この場合，主誤差は \(h^2\) ではなく \(h^{2\alpha}\) になることがあります．</li>
+  <li>
+    したがって，外挿公式も
+    \[
+      \frac{4R_{h/2}u(P)-R_hu(P)}{3}
+    \]
+    ではなく，
+    \[
+      \frac{2^{2\alpha}R_{h/2}u(P)-R_hu(P)}
+           {2^{2\alpha}-1}
+    \]
+    のように，特異指数に合わせる必要があります．
+  </li>
+  <li>
+    この話は，Vision 8 の「幾何条件と外挿係数」，
+    Vision 9 の「defect の局所集中」と自然につながります．
+  </li>
+</ul>
+
+<div class="box">
+  第7回の一番大事なメッセージは，
+  \[
+    \text{特異性があると，誤差展開そのものが変わる}
+  \]
+  ということです．
+  したがって，外挿法もそれに合わせて変えなければなりません．
+  これは，幾何条件，異方性，defect collection，深層学習数値解法への展開を考える上で，
+  非常に重要な入口になります．
+</div>
+
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<ul>
+  <li>
+    Rolf Rannacher,
+    <em>Special Topics in Numerics III: Extrapolation and Defect Correction</em>,
+    Lecture Notes, Heidelberg University, 2017.
+  </li>
+  <li>
+    Pierre Grisvard,
+    <em>Elliptic Problems in Nonsmooth Domains</em>,
+    Pitman, 1985.
+  </li>
+  <li>
+    Monique Dauge,
+    <em>Elliptic Boundary Value Problems on Corner Domains</em>,
+    Lecture Notes in Mathematics, vol. 1341, Springer, 1988.
+  </li>
+  <li>
+    Q. Lin and N. Yan,
+    <em>Construction and Analysis of High Efficient Finite Element Methods</em>,
+    Hebei University Publishers, 1996.
+  </li>
+  <li>
+    M. Zlámal,
+    On the finite element method,
+    <em>Numerische Mathematik</em>, 12, 394--409, 1968.
+  </li>
+</ul>
+
+
+</article>
+</div>
 
 
 <!--section-in-->
