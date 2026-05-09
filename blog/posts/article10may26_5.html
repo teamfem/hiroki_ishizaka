@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 10th May 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 10th May 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">CIP法の二つの顔：Constrained Interpolation Profile と Continuous Interior Penalty</h1>
+<!---->
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+<p>
+CIP という略語には，少なくとも二つの重要な意味があります．一つは，移流問題において値と導関数を用いてプロファイルを復元する <strong>Constrained Interpolation Profile</strong> です．もう一つは，有限要素法において要素境界での導関数ジャンプを抑える <strong>Continuous Interior Penalty</strong> です．本連載では，この二つを「プロファイルをどのように作り，運び，正則化するか」という観点から整理します．論文投稿前の研究構想メモとして書いたものです．今後，定式化・安定性評価・数値実験の結果に応じて内容を更新します．
+</p>
+</article>
+</div>
+
+<h2>1．なぜ今 CIP を見直すのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+      移流方程式の数値計算では，解の形をなるべく壊さずに運ぶことが重要です．鋭い層，段差，波の山，あるいは局所的なピークを含む問題では，単純な低次補間を使うと数値拡散により解が丸くなります．一方で，高次補間を安易に使うと，非物理的な振動が生じることがあります．
+    </p>
+    <p>
+      この問題に対して，古典的な Constrained Interpolation Profile 型の CIP 法は，値だけでなく導関数も用いて，セル内のプロファイルを高精度に復元するという考え方を採ります．一方，有限要素法の世界で CIP と呼ばれる Continuous Interior Penalty 法は，連続有限要素空間を用いながら，要素間の導関数ジャンプにペナルティを課して安定化する方法です．
+    </p>
+    <p>
+      名前は同じ CIP ですが，出発点はかなり違います．前者は「プロファイルを復元して運ぶ」方法，後者は「有限要素解の不安定な成分を抑える」方法です．しかし，どちらも導関数，プロファイル，正則化という共通語を持っています．ここに，短いが面白い研究テーマがあります．
+    </p>
+</article>
+</div>
+
+<h2>2．二つの CIP</h2>
+<div class="news">
+<article class="news-item">
+<p>
+      次の二つは，通常は別々の文脈で語られます．しかし，1次元移流方程式を共通の舞台にすると，両者の距離は意外に近くなります．Constrained Interpolation Profile は，導関数情報を使ってプロファイルを作ります．Continuous Interior Penalty は，導関数ジャンプを抑えることで，プロファイルとして使える情報を整えます．この見方を採ると，後者は単なる安定化項ではなく，<strong>プロファイル生成・正則化のための機構</strong>として見えてきます．
+</p>
+
+<h3>Constrained Interpolation Profile</h3>
+<p>
+          値と導関数を同時に使い，セル内の補間プロファイルを作る方法です．典型的には，節点値と節点導関数から三次 Hermite 型の多項式を構成し，特性の足で関数値を評価します．移流問題に対して，低拡散で高解像度な計算を狙う方法です．
+</p>
+<h3>Continuous Interior Penalty</h3>
+<p>
+          連続有限要素空間を用いながら，要素境界での導関数ジャンプを安定化項として加える方法です．移流優勢問題や移流拡散問題において，Galerkin 法だけでは不足する安定性を補う役割を持ちます．
+</p>
+
+</article>
+</div>
+
+<h2>3．共通モデル：1次元移流方程式</h2>
+<div class="news">
+<article class="news-item">
+<p>
+      まずは，空間1次元の線形移流方程式から始めます．
+\[
+        \partial_t u + b\,\partial_x u = 0,
+        \quad x\in (0,1),\quad t>0,
+\]
+<p>
+      ここで，速度 \(b\) は簡単のため正の定数とします．この方程式の解は，特性曲線に沿って運ばれます．したがって，時間刻み \(\Delta t\) に対して，形式的には
+</p>
+\[
+        u(x,t^{n+1}) = u(x-b\Delta t,t^n)
+\]
+<p>
+      と書けます．問題は，特性の足 \(x-b\Delta t\) が一般にメッシュの節点とは一致しないことです．したがって，数値解を更新するためには，どこかで補間または再構成が必要になります．
+</p>
+<p>
+      この「特性の足でどう評価するか」という一点に，CIP 型の考え方が現れます．値だけで評価するのか．導関数も使うのか．導関数を点値として持つのか．弱形式で持つのか．あるいは，有限要素の安定化によって導関数プロファイルを整えてから使うのか．本連載の中心は，まさにこの分岐です．
+</p>
+
+</article>
+</div>
+
+<h2>4．古典的 CIP の見方：値と勾配を運ぶ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+      古典的な Constrained Interpolation Profile 型の方法では，各節点で
+    </p>
+    <div class="equation-box">
+      \[
+        u_i^n \simeq u(x_i,t^n),
+        \quad
+        g_i^n \simeq \partial_x u(x_i,t^n)
+      \]
+    </div>
+    <p>
+      のように，値 \(u_i^n\) と導関数 \(g_i^n\) を保持します．そして，区間 \([x_i,x_{i+1}]\) 上で，これらの値を満たす三次多項式を作ります．これは Hermite 型の再構成と見ることができます．
+    </p>
+    <p>
+      この方法の魅力は，セル内の形状をある程度保ったまま，特性の足で値を評価できる点にあります．値だけを線形補間するよりも多くの情報を使うため，低拡散な計算が期待できます．
+    </p>
+    <div class="warning">
+      <strong>注意．</strong> ただし，点値としての導関数自由度を使うことは，有限要素解析の立場からは少し扱いにくい面があります．弱解を対象にしたい場合や，低正則な解を扱いたい場合には，点値導関数を前提にすること自体が強すぎる可能性があります．
+    </div>
+</article>
+</div>
+
+<h2>5．有限要素法から見た問い</h2>
+<div class="news">
+<article class="news-item">
+<p>
+      有限要素法の立場から見ると，古典的 CIP には次の問いが自然に出てきます．
+    </p>
+    <ol>
+      <li>導関数プロファイルを，点値ではなく弱形式で保持できないか．</li>
+      <li>semi-Lagrangian 型の更新を，射影や質量行列を含む有限要素の言葉で書けないか．</li>
+      <li>保存形の移流方程式に対して，質量保存と高解像度性を両立できないか．</li>
+      <li>Continuous Interior Penalty を，導関数プロファイルの正則化として解釈できないか．</li>
+    </ol>
+    <p>
+      この問いのうち，前半は weak-moment CIP finite elements につながります．後半は CIP-regularised Hermite reconstruction in conservative Lagrange–Galerkin FEM につながります．つまり，この連載は，二つの短報候補のための前段階でもあります．
+    </p>
+
+</article>
+</div>
+
+<h2>6．弱モーメントという方向</h2>
+<div class="news">
+<article class="news-item">
+<p>
+      第2回以降で詳しく扱いますが，重要な方針は，導関数情報を点値として持つのではなく，弱い意味で持つことです．たとえば，セル \(I_j\) 上で補助変数 \(q_h\) を導入し，
+    </p>
+    <div class="equation-box">
+      \[
+        \int_{I_j} q_h \varphi_h\,dx
+        \simeq
+        \int_{I_j} \partial_x u_h\,\varphi_h\,dx
+      \]
+    </div>
+    <p>
+      のような関係で，導関数プロファイルを弱形式として管理する考え方です．これはまだ最終的な定式化ではありませんが，点値導関数に依存しない CIP 的再構成へ進むための自然な出発点です．
+    </p>
+    <p>
+      この方向では，CIP を単なる補間公式ではなく，有限要素空間，射影，弱モーメント，再構成からなる一つの構造として捉え直します．ここが，通常の「CIP 法の紹介」とは異なる点です．
+    </p>
+</article>
+</div>
+
+<h2>7．Continuous Interior Penalty をどう見るか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+      Continuous Interior Penalty 型の安定化では，要素境界における導関数ジャンプを罰します．1次元のイメージでは，内部節点 \(x_i\) に対して，
+    </p>
+    <div class="equation-box">
+      \[
+        \sum_i \gamma h_i^2
+        \,[\partial_x u_h]_{x_i}\,[\partial_x v_h]_{x_i}
+      \]
+    </div>
+    <p>
+      のような項が現れます．通常，これは移流優勢問題に対する安定化項として説明されます．しかし，本連載では，もう一つの見方を採ります．
+    </p>
+    <div class="note">
+      <strong>見方の転換．</strong> Continuous Interior Penalty は，要素間の高周波な導関数ジャンプを抑えることで，有限要素解からより滑らかな導関数プロファイルを取り出すための正則化と見ることができます．
+    </div>
+    <p>
+      もしこの見方が有効なら，Continuous Interior Penalty によって整えられた導関数情報を，Hermite 型再構成に使うことができます．すると，Constrained Interpolation Profile と Continuous Interior Penalty の間に，「プロファイル」という共通の橋が架かります．少し大げさに言えば，CIP と CIP がここで出会います．略語が同じなのは偶然かもしれませんが，研究テーマとしては都合がよい偶然です．
+    </p>
+</article>
+</div>
+
+<h2>8．本連載の予定</h2>
+<div class="news">
+<article class="news-item">
+<p>
+      本連載では，次の順番で話を進めます．
+    </p>
+    <ol>
+      <li><strong>第1回：</strong> CIP 法の二つの顔を整理する．</li>
+      <li><strong>第2回：</strong> 1次元移流方程式と semi-Lagrangian 更新を導入する．</li>
+      <li><strong>第3回：</strong> 古典的 CIP の Hermite 再構成を確認する．</li>
+      <li><strong>第4回：</strong> 点値導関数ではなく，弱モーメントでプロファイルを持つ方法を考える．</li>
+      <li><strong>第5回：</strong> Continuous Interior Penalty を導関数プロファイルの正則化として見る．</li>
+      <li><strong>第6回：</strong> 保存形 Lagrange–Galerkin 有限要素法との接続を整理する．</li>
+      <li><strong>第7回：</strong> 数値実験の最小コードを作り，古典的 CIP，弱モーメント型，CIP 正則化型を比較する．</li>
+    </ol>
+</article>
+</div>
+
+<h2>9．この段階での研究メモ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+      現時点では，この構想を大きな主力論文としてではなく，1次元から始める短報型の研究として育てるのが現実的です．まずは，導関数プロファイルをどのように定義し，どのように特性写像上で使うかを明確にする必要があります．その後で，安定性，保存性，誤差分解を順に確認します．
+    </p>
+    <p>
+      特に重要なのは，古典的 CIP の直感的な強さを尊重しつつ，有限要素法の弱形式に載せ直すことです．この変換がうまくいけば，CIP 法を「工学的に有効な補間テクニック」から，「解析可能な有限要素再構成手法」へ近づけられます．
+    </p>
+    <p>
+      次回は，1次元移流方程式を題材として，特性曲線，semi-Lagrangian 更新，および Lagrange–Galerkin 型の弱形式を整理します．ここからようやく，数式が少しだけ本気を出します．ただし，まだ暴れません．
+    </p>
+</article>
+</div>
+
+<h2>参考文献・関連資料</h2>
+<div class="news">
+<article class="news-item">
+<ol class="refs">
+      <li>
+        H. Takewaki, A. Nishiguchi and T. Yabe, “Cubic interpolated pseudo-particle method (CIP) for solving hyperbolic-type equations,” <em>Journal of Computational Physics</em>, 61, 261--268, 1985.
+        <a href="https://www.sciencedirect.com/science/article/pii/0021999185900853">ScienceDirect</a>
+      </li>
+      <li>
+        T. Yabe, F. Xiao and T. Utsumi, “The constrained interpolation profile method for multiphase analysis,” <em>Journal of Computational Physics</em>, 169, 556--593, 2001.
+        <a href="https://www.sciencedirect.com/science/article/pii/S0021999100966257">ScienceDirect</a>
+      </li>
+      <li>
+        E. Burman and A. Ern, “Continuous interior penalty hp-finite element methods for advection and advection-diffusion equations,” <em>Mathematics of Computation</em>, 76, 1119--1140, 2007.
+        <a href="https://discovery.ucl.ac.uk/id/eprint/1384754/">UCL Discovery</a>
+      </li>
+      <li>
+        H. Ishizaka, “Ongoing Papers, Next Topics,” Publications/Talks page.
+        <a href="https://teamfem.github.io/hiroki_ishizaka/publications/">ISHIZAKA Hiroki Website</a>
+      </li>
+    </ol>
+</article>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
