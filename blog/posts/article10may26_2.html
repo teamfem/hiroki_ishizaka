@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 10th May 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 10th May 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">Defect correctionとは何か</h1>
+<!---->
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第5回では，有限要素法における外挿法の土台として，Ritz 射影の点値誤差展開を整理しました．第6回では，defect correction を扱います．外挿法が「二つの近似値を組み合わせて主誤差を消す方法」だとすれば，defect correction は「低次スキームの解に，高次情報から作った補正を加える方法」です．
+</p>
+</article>
+</div>
+
+<h2>1．今回の目的</h2>
+<div class="news">
+<article class="news-item">
+<p>
+これまでの外挿法では，たとえば
+\[
+  u_{\mathrm{ext}}(P)
+  =
+  \frac{4u_{h/2}(P)-u_h(P)}{3}
+\]
+のように，異なるメッシュ幅で得られた二つの近似解を組み合わせました．
+この方法は考え方としては非常に明快です．
+しかし，有限要素法で使う場合には，いくつかの制約があります．
+</p>
+
+<ul>
+  <li>粗いメッシュと細かいメッシュの両方で解を計算する必要がある．</li>
+  <li>外挿値は，通常，粗いメッシュの節点上で得られる．</li>
+  <li>高精度化したい量が節点値なのか，関数全体なのかを区別する必要がある．</li>
+  <li>メッシュ構造が崩れると，期待される誤差展開が壊れる可能性がある．</li>
+</ul>
+
+<p>
+defect correction は，このような外挿法とは少し異なる発想です．
+基本にあるのは，低次で安定なスキームを使いながら，高次スキームの「欠陥」，
+すなわち residual を使って補正する，という考え方です．
+</p>
+
+<p>
+  第6回の結論を先に言えば，
+  \[
+    \text{defect correction}
+    =
+    \text{低次スキームの安定性を保ったまま，高次情報で補正する方法}
+  \]
+  です．
+  ただし，これが成功するためには，低次スキームに漸近誤差展開があり，
+  さらに defect を計算する高次情報が適切に整合している必要があります．
+</p>
+</article>
+</div>
+
+<h2>2．defect correction の原型：線形代数の残差補正</h2>
+<div class="news">
+<article class="news-item">
+<p>
+defect correction の考え方は，有限要素法に限ったものではありません．
+線形代数で考えると，非常に分かりやすくなります．
+線形方程式
+\[
+  Ax=b
+\]
+を解きたいとします．
+何らかの方法で近似解 \(x^{(0)}\) を得たとします．
+このとき，近似解がどれだけ方程式を満たしていないかを表す量
+\[
+  d^{(0)}:=Ax^{(0)}-b
+\]
+を defect，または residual と呼びます．
+</p>
+
+<p>
+もし補正量 \(k^{(1)}\) が
+\[
+  A k^{(1)}=-d^{(0)}
+\]
+を満たせば，
+\[
+  x^{(1)}:=x^{(0)}+k^{(1)}
+\]
+は
+\[
+  Ax^{(1)}
+  =
+  Ax^{(0)}+Ak^{(1)}
+  =
+  Ax^{(0)}-d^{(0)}
+  =
+  b
+\]
+を満たします．
+つまり，defect を正確に計算し，補正式を正確に解ければ，一回で正解に到達します．
+</p>
+
+<p>
+実際の数値計算では，defect も補正方程式も完全には計算できません．
+それでも，近似解の残差を計算し，その残差を使って補正するという考え方は非常に強力です．
+これが residual correction，または defect correction の原型です．
+</p>
+</article>
+</div>
+
+<h2>3．抽象的な defect correction</h2>
+<div class="news">
+<article class="news-item">
+<p>
+次に，微分方程式の離散化として抽象的に書いてみます．
+連続問題を
+\[
+  Lu=f
+\]
+とします．
+低次だが安定な基礎スキームを
+\[
+  L_h u_h=r_h f
+\]
+と書きます．
+ここで \(L_h\) は低次スキームの離散作用素，\(r_h\) は右辺の制限または射影です．
+</p>
+
+<p>
+一方，形式的にはより高次のスキーム
+\[
+  \widehat L_h \widehat u_h=\widehat r_h f
+\]
+を考えます．
+ただし，この高次スキームは，行列が重い，安定性が示しにくい，
+あるいは直接解くにはコストが高いかもしれません．
+defect correction では，この高次スキームを直接解く代わりに，
+低次解 \(u_h\) を高次スキームに代入して defect を作ります．
+</p>
+<p>
+defect を
+\[
+  d_h:=\widehat L_h u_h-\widehat r_h f
+\]
+と置きます．
+これは「低次解 \(u_h\) が，高次スキームから見てどれだけ方程式を満たしていないか」を表します．
+そして，補正量 \(\delta u_h\) を低次作用素で
+\[
+  L_h\delta u_h=-d_h
+\]
+から求め，
+\[
+  u_h^{(1)}:=u_h+\delta u_h
+\]
+とします．
+</p>
+
+<p>
+  ここで重要なのは，補正方程式を解くときには低次作用素 \(L_h\) を使うことです．
+  つまり，高次スキーム \(\widehat L_h\) は defect を計算するために使われるだけで，
+  その行列を直接反転する必要はありません．
+  これが defect correction の計算上の大きな利点です．
+</p>
+
+</article>
+</div>
+
+<h2>4．外挿法との違い</h2>
+<div class="news">
+<article class="news-item">
+<p>
+外挿法と defect correction は，どちらも低次近似の精度を上げる方法です．
+しかし，方法の構造は異なります．
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>方法</th>
+      <th>何を使うか</th>
+      <th>代表的な形</th>
+      <th>得意な点</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Richardson 外挿</td>
+      <td>異なるメッシュ幅の解</td>
+      <td>\(\displaystyle \frac{4u_{h/2}-u_h}{3}\)</td>
+      <td>誤差展開が明確なら簡単に主誤差を消せる</td>
+    </tr>
+    <tr>
+      <td>defect correction</td>
+      <td>高次スキームで測った residual</td>
+      <td>\(\displaystyle L_h\delta u_h=-d_h,\quad u_h^{(1)}=u_h+\delta u_h\)</td>
+      <td>低次作用素を使ったまま高次情報を取り込める</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+外挿法は，二つまたは複数の近似値を線形結合します．
+一方，defect correction は，一つの近似解が高次スキームに対して持つ defect を計算し，
+その defect を低次スキームで補正します．
+</p>
+
+<p>
+したがって，defect correction は，
+「高次スキームを直接解くほど重くしたくないが，高次スキームの情報は使いたい」
+という状況で自然に出てきます．
+</p>
+</article>
+</div>
+
+<h2>5．FEMでの設定：Poisson問題</h2>
+<div class="news">
+<article class="news-item">
+<p>
+ここから，楕円型問題の有限要素法に戻ります．
+モデル問題として
+\[
+  -\Delta u=f\quad \text{in }\Omega,\quad
+  u=0\quad \text{on }\partial\Omega
+\]
+を考えます．
+一次 Lagrange 有限要素空間を \(V_h\subset H_0^1(\Omega)\) とし，
+有限要素解，あるいは Ritz 射影を \(R_hu\in V_h\) と書きます．
+これは
+\[
+  (\nabla R_hu,\nabla\varphi_h)
+  =
+  (f,\varphi_h)
+  \quad \varphi_h\in V_h
+\]
+を満たします．
+</p>
+
+<p>
+離散 Laplacian \(\Delta_h:V_h\to V_h\) を
+\[
+  (-\Delta_h v_h,\varphi_h)
+  =
+  (\nabla v_h,\nabla\varphi_h)
+  \quad \varphi_h\in V_h
+\]
+で定義すれば，
+\[
+  -\Delta_h R_hu=P_hf
+\]
+と書けます．
+ここで \(P_h\) は \(L^2\) 射影です．
+</p>
+
+<p>
+第5回で見たように，構造化されたメッシュでは，Ritz 射影に
+\[
+  R_hu=I_hu+h^2I_he(u)+h^4\rho_h(u)
+\]
+のような漸近展開が成り立ちます．
+この展開が，外挿法だけでなく defect correction の理論的土台にもなります．
+</p>
+</article>
+</div>
+
+<h2>6．高次補間を使った defect correction</h2>
+<div class="news">
+<article class="news-item">
+<p>
+高次補間を使う defect correction を扱います．
+粗い三角形分割 \(\mathcal T_{2h}\) を考え，その各三角形を四つの合同な三角形に分割して
+細かい分割 \(\mathcal T_h\) を作るとします．
+</p>
+
+<p>
+外挿法なら，粗いメッシュ解 \(u_{2h}\) と細かいメッシュ解 \(u_h\) を使って
+\[
+  u_{2h}^{*}
+  =
+  \frac{1}{3}\{4I_{2h}u_h-u_{2h}\}
+\]
+を作ります．
+これは高精度化された近似ですが，基本的には粗いメッシュ側の近似になります．
+</p>
+
+<p>
+defect correction では，別の方向を取ります．
+粗いメッシュ \(\mathcal T_{2h}\) 上に，二次有限要素空間
+\[
+  V_{2h}^{(2)}
+  :=
+  \{v\in H_0^1(\Omega): v|_T\in P_2(T),\ T\in\mathcal T_{2h}\}
+\]
+を導入します．
+この二次要素の節点は，細かいメッシュ \(\mathcal T_h\) の節点と自然に対応します．
+</p>
+
+<p>
+次に，すでに計算した一次有限要素解 \(R_hu\in V_h\) を，
+二次補間作用素 \(I_{2h}^{(2)}\) によって
+\[
+  I_{2h}^{(2)}R_hu\in V_{2h}^{(2)}
+\]
+へ持ち上げます．
+この高次補間された関数を使って defect を作り，
+その defect に対する補正方程式を低次空間 \(V_h\) で解きます．
+</p>
+
+<p>
+Defect は概念的に
+\[
+  d_h
+  =
+  -\Delta_h R_hI_{2h}^{(2)}R_hu-P_hf
+\]
+のように定義されます．
+そして補正 \(k_h\in V_h\) を
+\[
+  -\Delta_h k_h=-d_h
+\]
+から求め，
+\[
+  u_h^{*}:=R_hu+k_h
+\]
+と置きます．
+</p>
+
+<p>
+この手順をまとめると，次のようになります．
+</p>
+
+<pre><code>1. 低次有限要素解 R_h u を計算する．
+2. R_h u を高次補間 I_{2h}^{(2)} R_h u に持ち上げる．
+3. 高次補間された関数を使って defect d_h を計算する．
+4. 低次作用素 -Δ_h で補正方程式を解く．
+5. u_h^* = R_h u + k_h を高精度近似として使う．</code></pre>
+
+<p>
+  この方法の肝は，高次有限要素問題を直接解かないことです．
+  高次補間は defect を作るために使い，補正方程式は低次スキームで解きます．
+  そのため，低次スキーム用に用意された効率的なソルバーをそのまま使える可能性があります．
+</p>
+</article>
+</div>
+
+<h2>7．なぜこれで精度が上がるのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+直感的には，低次解 \(R_hu\) は
+\[
+  R_hu=I_hu+h^2I_he(u)+h^4\rho_h(u)
+\]
+という誤差展開を持っています．
+したがって，主誤差は \(h^2I_he(u)\) です．
+</p>
+
+<p>
+高次補間を使って defect を計算すると，
+この主誤差が離散方程式の残差として現れます．
+補正方程式は，その残差を打ち消すように \(k_h\) を作ります．
+したがって，
+\[
+  u_h^{*}=R_hu+k_h
+\]
+では，もとの \(h^2\) の主誤差が除去され，より高次の誤差だけが残ることが期待されます．
+</p>
+
+<p>
+重要なのは，この説明もまた，単なる直感ではなく，
+Ritz 射影の誤差展開に基づいて正当化される点です．
+defect correction が成功するためには，低次スキームの誤差が安定した主項を持つ必要があります．
+</p>
+
+<p>
+  つまり，defect correction も外挿法と同じく，
+  「誤差展開があるから効く」方法です．
+  residual を計算すればいつでも精度が上がる，というわけではありません．
+</p>
+
+</article>
+</div>
+
+<h2>8．defect correction の利点</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Defect correction には高次要素を直接使う方法と比べて，
+いくつかの利点があります．
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>利点</th>
+      <th>意味</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>低次行列を使える</td>
+      <td>高次要素の行列よりも疎で扱いやすい．</td>
+    </tr>
+    <tr>
+      <td>既存ソルバーを使いやすい</td>
+      <td>低次スキームに対する multigrid などを利用できる．</td>
+    </tr>
+    <tr>
+      <td>高次作用素の安定性を直接要求しない</td>
+      <td>高次情報は defect 計算に使うだけなので，高次問題全体を安定に解く必要がない．</td>
+    </tr>
+    <tr>
+      <td>二つの近似から誤差推定ができる</td>
+      <td>補正前後の差 \(u_h^{*}-u_h\) が誤差推定の手がかりになる．</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+特に興味深いのは，高次補正作用素そのものが \(h\to0\) で安定である必要は必ずしもない，
+という点です．
+高次作用素を直接解くのではなく，低次スキームの安定性を基礎に補正を行うためです．
+この点は，混合型問題や非標準的な有限要素法に応用する際に重要になる可能性があります．
+</p>
+</article>
+</div>
+
+<h2>9．defect correction の弱点</h2>
+<div class="news">
+<article class="news-item">
+<p>
+一方で，defect correction には明確な弱点もあります．
+最大の弱点は，成功がメッシュ構造と誤差展開に強く依存することです．
+</p>
+
+<p>
+Rannacher の資料では，blockwise uniform mesh では内部 macro-vertex の近くで精度が落ちることが説明されています．
+この場合，局所的に追加の defect correction を数回行うことで改善できるとされています．
+しかし，これは逆に言えば，メッシュの構造が変わると defect correction の効果が一様には出ない，ということです．
+</p>
+
+<p>
+また，曲線境界や複雑領域では，メッシュを完全に一様な構造に保つことは難しくなります．
+このため，defect correction は非常に魅力的ですが，
+実際の複雑領域にそのまま適用するには注意が必要です．
+</p>
+
+<p>
+  defect correction は，高次精度を安く得るための魔法ではありません．
+  低次スキームの誤差展開，メッシュ構造，高次補間の整合性，解の正則性が揃って初めて機能します．
+</p>
+
+</article>
+</div>
+
+<h2>10．自分の研究との関係</h2>
+<div class="news">
+<article class="news-item">
+<p>
+この考え方は，私自身の研究テーマとも相性があります．
+特に，異方性メッシュ，exact-domain curved FEM，非適合要素，混合型有限要素法を考えるとき，
+単に高次要素を使うのではなく，低次でロバストなスキームを基礎にして，
+高次情報で補正するという方向は非常に自然です．
+</p>
+
+<p>
+ただし，異方性メッシュや曲線要素では，均一メッシュ上の誤差展開を，
+そのまま使うことはできません．
+必要になるのは，
+</p>
+
+<ul>
+  <li>異方性を含むメッシュ幾何のもとで，どのような誤差展開が成り立つか，</li>
+  <li>曲線要素の幾何写像が defect にどう影響するか，</li>
+  <li>低次スキームの安定性をどのノルムで確保するか，</li>
+  <li>高次補間や補正作用素をどの空間で構成するか，</li>
+  <li>混合型問題で圧力や制約条件をどう扱うか，</li>
+</ul>
+
+<p>
+という問題です．
+これは単なる実装上の工夫ではなく，有限要素法の誤差構造そのものを調べる研究課題になります．
+</p>
+
+<p>
+  defect correction を自分の研究に接続するなら，
+  \[
+    \text{低次でロバストなスキーム}
+    +
+    \text{誤差展開に基づく高次補正}
+  \]
+  という構図で考えるとよいです．
+  これは，異方性 FEM，exact-domain FEM，混合型 FEM，時間発展問題のいずれにも接続し得る視点です．
+</p>
+</article>
+</div>
+
+<h2>11．第6回のまとめ</h2>
+<div class="news">
+<article class="news-item">
+<ul>
+  <li>defect correction は，近似解の residual，すなわち defect を使って補正する方法である．</li>
+  <li>原型は線形代数における残差補正である．</li>
+  <li>有限要素法では，低次で安定な基礎スキームを使い，高次情報から defect を作る．</li>
+  <li>補正方程式は低次作用素で解くため，低次スキーム用の効率的なソルバーを使いやすい．</li>
+  <li>理論的な土台は，Ritz 射影の漸近誤差展開である．</li>
+  <li>成功には，メッシュ構造，解の正則性，高次補間の整合性が重要である．</li>
+  <li>複雑領域，曲線境界，異方性メッシュ，混合型問題へ拡張するには，追加の解析が必要である．</li>
+</ul>
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<ul>
+  <li>
+    Rolf Rannacher,
+    <em>Special Topics in Numerics III: Extrapolation and Defect Correction</em>,
+    Lecture Notes, Heidelberg University, 2017.
+  </li>
+  <li>
+    Q. Lin and N. Yan,
+    <em>Construction and Analysis of High Efficient Finite Element Methods</em>,
+    Hebei University Publishers, 1996.
+  </li>
+  <li>
+    M. Zlámal,
+    On the finite element method,
+    <em>Numerische Mathematik</em>, 12, 394--409, 1968.
+  </li>
+</ul>
+</article>
+</div>
+
+
+
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
