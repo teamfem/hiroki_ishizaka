@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 10th May 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 10th May 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">FFEMにおけるRitz射影と点値外挿</h1>
+<!---->
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第1回から第4回では，円周率，数値微分，数値積分，ODEを通して，外挿法の基本的な考え方を見てきました．共通していたのは，近似値そのものではなく，その背後にある誤差展開を利用するという点です．
+</p>
+<p>
+第5回では，いよいよ有限要素法における外挿法を考えます．楕円型偏微分方程式，特に Poisson 問題に対する有限要素近似の誤差展開が扱います．ここで重要になるのは，通常の \(L^2\) 誤差や \(H^1\) 誤差ではなく，節点における点値誤差です．
+</p>
+</article>
+</div>
+
+<h2>1．今回の目的</h2>
+<div class="news">
+<article class="news-item">
+<p>
+典型的な Poisson 問題
+\[
+  -\Delta u=f \quad \text{in } \Omega,\quad
+  u=0 \quad \text{on } \partial\Omega
+\]
+を考えます．弱形式は，
+\[
+  (\nabla u,\nabla v)=(f,v)
+  \quad v\in H_0^1(\Omega)
+\]
+です．
+これを一次 Lagrange 有限要素空間 \(V_h\subset H_0^1(\Omega)\) で離散化すると，
+有限要素解 \(u_h\in V_h\) は
+\[
+  (\nabla u_h,\nabla v_h)=(f,v_h)
+  \quad v_h\in V_h
+\]
+を満たします．
+</p>
+
+<p>
+通常の誤差評価では，
+\[
+  \|\nabla(u-u_h)\|_{L^2}=O(h),
+  \quad
+  \|u-u_h\|_{L^2}=O(h^2)
+\]
+のような評価を考えます．
+しかし，外挿法で重要になるのは，
+ある節点 \(P\) における
+\[
+  u_h(P)-u(P)
+\]
+の振る舞いです．
+</p>
+
+<p>
+適切なメッシュ構造と十分な正則性のもとで，節点 \(P\) において
+\[
+  u_h(P)
+  =
+  u(P)+h^2e(P)+O(h^4L(h))
+\]
+のような誤差展開が得られることが説明します．
+ここで \(e\) は \(h\) に依存しない補正関数であり，
+\(L(h)\) は対数因子です．
+</p>
+
+<p>
+  重要なのは，単に
+  \[
+    u_h(P)-u(P)=O(h^2)
+  \]
+  という評価があることではありません．
+  外挿法に必要なのは，
+  \[
+    u_h(P)=u(P)+h^2e(P)+\text{より高次の項}
+  \]
+  という漸近展開です．
+  \(h^2e(P)\) という主誤差項が安定して存在するからこそ，
+  Richardson 外挿によってその項を消すことができます．
+</p>
+</article>
+</div>
+
+<h2>2．Ritz 射影とは何か</h2>
+<div class="news">
+<article class="news-item">
+<p>
+有限要素法における誤差展開を考えるとき，Ritz 射影が中心的な役割を果たします．
+Ritz 射影 \(R_hu\in V_h\) は，
+\[
+  (\nabla R_hu,\nabla v_h)
+  =
+  (\nabla u,\nabla v_h)
+  \quad v_h\in V_h
+\]
+で定義されます．
+同値に，
+\[
+  (\nabla(u-R_hu),\nabla v_h)=0
+  \quad v_h\in V_h
+\]
+です．
+この直交性を Galerkin 直交性と呼びます．
+</p>
+
+<p>
+Poisson 問題で有限要素解 \(u_h\) を考えると，
+\[
+  (\nabla u_h,\nabla v_h)=(f,v_h)
+\]
+であり，連続解 \(u\) は
+\[
+  (\nabla u,\nabla v_h)=(f,v_h)
+\]
+を満たします．
+したがって，
+\[
+  (\nabla u_h,\nabla v_h)
+  =
+  (\nabla u,\nabla v_h)
+\]
+です．
+つまり，このモデル問題では
+\[
+  u_h=R_hu
+\]
+と見なせます．
+</p>
+
+<p>
+そのため，有限要素解の点値誤差
+\[
+  u_h(P)-u(P)
+\]
+を調べることは，Ritz 射影の点値誤差
+\[
+  R_hu(P)-u(P)
+\]
+を調べることに対応します．
+</p>
+</article>
+</div>
+
+<h2>3．なぜ補間 \(I_hu\) を引くのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+直接 \(R_hu-u\) を展開するのではなく，まず
+\[
+  R_hu-I_hu
+\]
+を調べることです．ここで \(I_hu\) は nodal interpolation です．
+</p>
+
+<p>
+なぜなら，節点 \(P\) では
+\[
+  I_hu(P)=u(P)
+\]
+が成り立つからです．したがって，節点では
+\[
+  R_hu(P)-u(P)
+  =
+  R_hu(P)-I_hu(P)
+\]
+です．つまり，節点値誤差は \(R_hu-I_hu\) の値として見ればよいことになります．
+</p>
+
+<p>
+この変形が非常に重要です．
+\(R_hu-I_hu\) は有限要素空間 \(V_h\) に属します．
+そのため，Galerkin 直交性や Ritz 射影の安定性を使って解析しやすくなります．
+</p>
+</article>
+</div>
+
+<h2>4．整合誤差の展開</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Galerkin 直交性から，
+任意の \(\varphi_h\in V_h\) に対して
+\[
+  (\nabla(R_hu-u),\nabla\varphi_h)=0
+\]
+です．したがって，
+\[
+  (\nabla(R_hu-I_hu),\nabla\varphi_h)
+  =
+  (\nabla(u-I_hu),\nabla\varphi_h)
+\]
+となります．
+右辺
+\[
+  (\nabla(u-I_hu),\nabla\varphi_h)
+\]
+は，補間誤差が作る整合誤差です．
+</p>
+
+<p>
+均一な三角形分割の構造を利用して，この整合誤差が
+\[
+  (\nabla(u-I_hu),\nabla\varphi_h)
+  =
+  h^2(\nabla e,\nabla\varphi_h)
+  +
+  h^4\rho_h(u;\varphi_h)
+\]
+のように展開されます．
+ここで \(e\) は \(h\) に依存しない補正関数です．
+また，\(\rho_h\) は剰余項です．
+</p>
+
+<p>
+この式は，有限要素法における外挿法の核心です．
+つまり，補間誤差が単に小さいだけでなく，
+弱形式の中で
+\[
+  h^2(\nabla e,\nabla\varphi_h)
+\]
+という主項を持つことを示しています．
+</p>
+
+<p>
+  この整合誤差展開を導くために，
+  三角形の辺，法線方向，接線方向の微分を丁寧に追跡します．
+  ここで均一メッシュ構造が重要になります．
+  隣接三角形どうしの寄与がうまく打ち消し合うため，
+  整合誤差の主項を安定して取り出すことができます．
+</p>
+
+</article>
+</div>
+
+<h2>5．Ritz 射影の点値誤差展開</h2>
+<div class="news">
+<article class="news-item">
+<p>
+整合誤差展開を用いると，
+\[
+  R_hu-I_hu
+\]
+は形式的に
+\[
+  R_hu-I_hu
+  =
+  h^2R_he+h^4R_hr_h(u)
+\]
+のように表されます．
+ここで \(R_he\) は補正関数 \(e\) の Ritz 射影であり，
+\(R_hr_h(u)\) は剰余項に対応する拡張 Ritz 射影です．
+</p>
+
+<p>
+節点 \(P\) では \(I_hu(P)=u(P)\) なので，
+\[
+  R_hu(P)-u(P)
+  =
+  h^2R_he(P)+h^4R_hr_h(u)(P)
+\]
+となります．
+さらに，Ritz 射影の点値安定性を使うと，
+\[
+  R_he(P)=e(P)+O(h^2L(h))
+\]
+のように考えられ，最終的に
+\[
+  R_hu(P)
+  =
+  u(P)+h^2e(P)+O(h^4L(h))
+\]
+という展開が得られます．
+</p>
+
+<p>
+この式が，FEMにおける Richardson 外挿の出発点です．
+</p>
+
+</article>
+</div>
+
+
+<h2>6．Richardson 外挿</h2>
+<div class="news">
+<article class="news-item">
+<p>
+いま，節点 \(P\) において
+\[
+  u_h(P)=u(P)+h^2e(P)+O(h^4L(h))
+\]
+が成り立つとします．
+同じ点 \(P\) が細かいメッシュにも含まれていると仮定すると，
+\[
+  u_{h/2}(P)
+  =
+  u(P)+\frac{h^2}{4}e(P)+O(h^4L(h))
+\]
+です．
+</p>
+
+<p>
+この二つを
+\[
+  u_{\mathrm{ext}}(P)
+  =
+  \frac{4u_{h/2}(P)-u_h(P)}{3}
+\]
+と組み合わせると，
+\[
+\begin{aligned}
+  u_{\mathrm{ext}}(P)
+  &=
+  \frac{
+    4\left(u(P)+\frac{h^2}{4}e(P)+O(h^4L(h))\right)
+    -
+    \left(u(P)+h^2e(P)+O(h^4L(h))\right)
+  }{3} \\
+  &=
+  u(P)+O(h^4L(h)).
+\end{aligned}
+\]
+</p>
+
+<p>
+つまり，節点値については，もとの有限要素解が
+\[
+  O(h^2)
+\]
+の点値誤差を持つとき，外挿により
+\[
+  O(h^4L(h))
+\]
+の精度が期待できます．
+</p>
+
+  <p>
+  ここで大切なのは，外挿が \(L^2\) ノルムや \(H^1\) ノルムを直接改善しているわけではないことです．
+  Rannacher の議論で主役になるのは，節点 \(P\) における点値誤差展開です．
+  したがって，外挿後に何が高精度になるのかを明確にしておく必要があります．
+  </p>
+</article>
+</div>
+
+<h2>7．なぜメッシュ構造が重要なのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+FEMにおける外挿法では，メッシュ構造が非常に重要です．
+基本になるのは，均一な三方向メッシュや，
+blockwise uniform mesh のように，局所的に規則的な構造を持つ三角形分割です．
+</p>
+
+<p>
+理由は，誤差展開の主項を安定して取り出すためです．
+一般の不規則メッシュでは，隣接要素からの寄与がきれいに打ち消し合わず，
+\[
+  h^2e(P)
+\]
+という \(h\) に依存しない主誤差係数を持つ展開が壊れる可能性があります．
+</p>
+
+<p>
+つまり，有限要素法で外挿が効くためには，
+単に \(u_h\to u\) が成り立つだけでは不十分です．
+次のような構造が必要になります．
+</p>
+
+<ul>
+  <li>メッシュが十分に規則的であること，</li>
+  <li>粗いメッシュと細かいメッシュが整合していること，</li>
+  <li>同じ節点 \(P\) で \(u_h(P)\) と \(u_{h/2}(P)\) を比較できること，</li>
+  <li>誤差の主項 \(e(P)\) が \(h\) に依存せず安定して現れること．</li>
+</ul>
+
+<p>
+この意味で，FEM外挿は「メッシュを細かくして二つの解を混ぜればよい」
+という単純な話ではありません．
+外挿が効くための幾何的条件が背後にあります．
+</p>
+</article>
+</div>
+
+<h2>8．境界と角の問題</h2>
+<div class="news">
+<article class="news-item">
+<p>
+境界や角の影響も重要な問題として扱われています．
+理想的な展開
+\[
+  R_hu(P)=u(P)+h^2e(P)+O(h^4L(h))
+\]
+を得るには，解 \(u\) に高い正則性が必要になります．
+資料中では，この結果には \(C^4\) 正則性が必要であり，
+一般の多角形領域ではこれは現実的でない，という注意があります．
+</p>
+
+<p>
+特に，多角形領域の角では特異性が生じやすく，
+解が十分滑らかでないことがあります．
+その場合，外挿の次数は理想通りには上がりません．
+ただし，角から離れた内部節点では，
+より弱い正則性のもとでも漸近展開が残ることがあります．
+内部節点に対する弱い形の展開が述べられています．
+</p>
+
+<p>
+したがって，FEM外挿を考えるときには，
+点 \(P\) が領域内部にあるのか，境界近くにあるのか，角に近いのかを区別する必要があります．
+</p>
+</article>
+</div>
+
+<h2>9．曲線境界の場合</h2>
+<div class="news">
+<article class="news-item">
+<p>
+さらに，曲線境界を持つ領域では，境界近くのメッシュ構造が問題になります．
+滑らかな境界を持つ領域に対して，
+境界付近の要素が理想的な三方向構造からずれるため，
+展開の剰余が悪くなることが説明されています．
+この場合，外挿公式は
+\[
+  \frac{4u_{h/2}(P)-u_h(P)}{3}
+  =
+  u(P)+O(h^3L(h))
+\]
+のように，理想的な \(O(h^4)\) から落ちる場合があります．
+</p>
+
+<p>
+これは非常に重要です．
+FEMにおける外挿法では，境界の扱いが精度に直接影響します．
+特に，曲線境界を直線要素で近似するのか，曲線要素で正確に表すのか，
+あるいは blockwise に構造化されたメッシュを使うのかによって，
+誤差展開の形が変わります．
+</p>
+
+<p>
+  この点は，私自身の exact-domain curved FEM の研究とも関係します．
+  領域近似誤差を別に持ち込むのではなく，
+  物理領域上で直接有限要素空間を構成できれば，
+  外挿法に必要な誤差展開を曲線領域上でどう回復するか，
+  という問題を考えることができます．
+</p>
+</article>
+</div>
+
+<h2>10．今回のまとめ</h2>
+<div class="news">
+<article class="news-item">
+<ul>
+  <li>FEMにおける外挿法では，Ritz 射影の点値誤差展開が中心になる．</li>
+  <li>Poisson 問題では，有限要素解 \(u_h\) は Ritz 射影 \(R_hu\) と見なせる．</li>
+  <li>節点では \(I_hu(P)=u(P)\) なので，点値誤差は \(R_hu-I_hu\) の解析に帰着される．</li>
+  <li>整ったメッシュでは，
+  \[
+    R_hu(P)=u(P)+h^2e(P)+O(h^4L(h))
+  \]
+  のような展開が得られる．</li>
+  <li>この展開により，
+  \[
+    \frac{4u_{h/2}(P)-u_h(P)}{3}
+  \]
+  は高精度な点値近似になる．</li>
+  <li>ただし，メッシュ構造，境界，角の特異性，解の正則性が非常に重要である．</li>
+</ul>
+
+<p>
+  第5回の結論は，
+  \[
+    \text{FEM外挿の本質は，Ritz 射影の点値誤差展開である}
+  \]
+  ということです．
+  外挿法は，有限要素解を二つ混ぜるだけの操作ではありません．
+  その背後には，メッシュ構造，Galerkin 直交性，整合誤差展開，Ritz 射影の安定性がある．
+</p>
+
+<p>
+次回は，
+defect correction を扱います．
+外挿法が「二つのメッシュ解を組み合わせる方法」だとすれば，
+defect correction は「低次スキームの解に，高次スキームの欠陥を使って補正を入れる方法」です．
+どちらも，背後には誤差展開があります．
+</p>
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<ul>
+  <li>
+    Rolf Rannacher,
+    <em>Special Topics in Numerics III: Extrapolation and Defect Correction</em>,
+    Lecture Notes, Heidelberg University, 2017.
+  </li>
+  <li>
+    Q. Lin and N. Yan,
+    <em>Construction and Analysis of High Efficient Finite Element Methods</em>,
+    Hebei University Publishers, 1996.
+  </li>
+  <li>
+    M. Zlámal,
+    On the finite element method,
+    <em>Numerische Mathematik</em>, 12, 394--409, 1968.
+  </li>
+</ul>
+</article>
+</div>
+
+
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
