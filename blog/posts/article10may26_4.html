@@ -117,14 +117,1055 @@
 <div class="news">
 <article class="news-item">
 <p>
+第5回では FEM 外挿の理論，第6回では defect correction，第7回では特異性がある場合の外挿を整理しました．第8回では，これらを数値実験として確認します．ただし，Rannacher 型の 2次元 FEM defect correction を完全に実装するには，高次補間，macro mesh，補正方程式の設計が必要です．そこで本記事では，第一段階として，1次元模型で defect correction の効果を確認し，2次元 P1 FEM では，滑らかな問題と角特異性を持つ問題に対する点値外挿と defect の集中を比較します．
 </p>
 
 </article>
 </div>
 
+<h2>1．今回の実験の狙い</h2>
+<div class="news">
+<article class="news-item">
+<p>
+これまでの理論から，外挿法や defect correction が効くためには，
+近似誤差が単に小さいだけではなく，安定した誤差展開を持つ必要があることが分かりました．
+滑らかな場合には，典型的に
+\[
+  u_h(P)=u(P)+C(P)h^2+O(h^4)
+\]
+のような形が期待されます．
+このとき，通常の Richardson 外挿
+\[
+  u_h^{\mathrm{ext}}(P)
+  =
+  \frac{4u_{h/2}(P)-u_h(P)}{3}
+\]
+によって \(h^2\) の主誤差を消すことができます．
+</p>
 
+<p>
+一方，再入角を持つ領域では，解に corner singularity が生じます．
+角の開き角を \(\omega\)，特異指数を
+\[
+  \alpha=\frac{\pi}{\omega}
+\]
+とすると，内部点でも pollution effect により
+\[
+  u_h(P)=u(P)+A(P)h^{2\alpha}+O(h^2)
+\]
+のような誤差構造が現れることがあります．
+この場合，通常の \(h^2\) 外挿ではなく，
+\[
+  u_h^{\mathrm{sing}}(P)
+  =
+  \frac{2^{2\alpha}u_{h/2}(P)-u_h(P)}
+       {2^{2\alpha}-1}
+\]
+を使うのが自然です．
+</p>
 
+<div class="box">
+  今回の実験では，
+  <ul>
+    <li>滑らかな問題では通常の Richardson 外挿が効くこと，</li>
+    <li>特異性がある場合には通常の外挿がそのままでは危ないこと，</li>
+    <li>defect correction は「高次情報で residual を測り，低次作用素で補正する」方法であること，</li>
+    <li>特異性があると defect が局所的に集中すること，</li>
+  </ul>
+  を確認します．
+</div>
+
+</article>
+</div>
+
+<h2>2．実験A：1次元模型で defect correction を見る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+まず，defect correction の原型を，1次元の周期問題で確認します．
+問題は
+\[
+  -u''+u=f \quad \text{on } [0,1]
+\]
+で，周期境界条件を課します．
+厳密解を
+\[
+  u(x)=\sin(2\pi x)
+\]
+とします．
+</p>
+
+<p>
+2次精度の差分作用素を \(A_2\)，4次精度の差分作用素を \(A_4\) とします．
+まず低次解
+\[
+  A_2u^{(0)}=f
+\]
+を求めます．
+次に，高次作用素から見た defect
+\[
+  d=A_4u^{(0)}-f
+\]
+を計算します．
+そして，低次作用素で補正方程式
+\[
+  A_2\delta u=-d
+\]
+を解き，
+\[
+  u^{(1)}=u^{(0)}+\delta u
+\]
+とします．
+</p>
+
+<p>
+  ここで重要なのは，高次作用素 \(A_4\) を直接解くのではなく，
+  高次作用素は defect の計算に使い，補正方程式は低次作用素 \(A_2\) で解くことです．
+  これは第6回で説明した defect correction の基本構造です．
+</p>
+
+</article>
+</div>
+
+<h2>3．実験B：滑らかな Poisson 問題で点値外挿を見る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+次に，2次元正方形領域
+\[
+  \Omega=(0,1)^2
+\]
+で Poisson 問題
+\[
+  -\Delta u=f,\quad u=0\ \text{on }\partial\Omega
+\]
+を解きます．
+厳密解は
+\[
+  u(x,y)=\sin(\pi x)\sin(\pi y)
+\]
+とします．
+したがって
+\[
+  f(x,y)=2\pi^2\sin(\pi x)\sin(\pi y)
+\]
+です．
+</p>
+
+<p>
+一次 Lagrange 有限要素法で \(u_h\) と \(u_{h/2}\) を計算し，
+内部節点
+\[
+  P=\left(\frac12,\frac12\right)
+\]
+で通常の Richardson 外挿
+\[
+  \frac{4u_{h/2}(P)-u_h(P)}{3}
+\]
+を行います．
+この場合，解は滑らかなので，外挿による精度改善が期待できます．
+</p>
+</article>
+</div>
+
+<h2>4．実験C：L-shaped domain で特異性を見る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+次に，L-shaped domain
+\[
+  \Omega=(-1,1)^2\setminus([0,1]\times[-1,0])
+\]
+を考えます．
+原点が再入角であり，開き角は
+\[
+  \omega=\frac{3\pi}{2}
+\]
+です．
+したがって，特異指数は
+\[
+  \alpha=\frac{\pi}{\omega}=\frac{2}{3}
+\]
+です．
+</p>
+
+<p>
+厳密解として，角特異性を持つ調和関数
+\[
+  u(r,\theta)=r^\alpha\sin(\alpha\theta),
+  \quad
+  \alpha=\frac23
+\]
+を用います．
+この関数は角点近くで特異性を持ちます．
+Poisson 方程式としては
+\[
+  -\Delta u=0
+\]
+であり，境界値として厳密解を与えます．
+</p>
+
+<p>
+内部点
+\[
+  P=\left(-\frac12,\frac12\right)
+\]
+で，通常の Richardson 外挿と，特異指数に合わせた外挿
+\[
+  \frac{2^{2\alpha}u_{h/2}(P)-u_h(P)}
+       {2^{2\alpha}-1}
+\]
+を比較します．
+</p>
+</article>
+</div>
+
+<h2>5．実験D：defect の集中を可視化する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+最後に，2次元 P1 FEM 解に対して，簡単な residual/defect indicator を計算します．
+P1 要素では各要素内で \(\Delta u_h=0\) なので，内部 residual と辺をまたぐ法線微分のジャンプを用いて，
+どこに defect が集中しているかを可視化します．
+</p>
+
+<p>
+これは完全な Rannacher 型 defect correction ではありません．
+しかし，特異性があると residual や defect が角点近くに集まりやすいことを確認するには十分です．
+第6回の defect correction と Vision 9 の defect collection をつなぐための第一歩として位置づけます．
+</p>
+
+<div class="warning">
+  本記事の 2次元 FEM 部分では，Rannacher 型の完全な defect correction はまだ実装していません．
+  ここでは，1次元模型で defect correction の原型を確認し，
+  2次元では外挿と defect 分布の可視化を行います．
+  完全な 2次元 FEM defect correction は，高次補間と macro mesh の設計を含むため，次の発展課題とします．
+</div>
+</article>
+</div>
+
+<h2>6．実行方法</h2>
+<div class="news">
+<article class="news-item">
+<p>
+以下のコードを，たとえば
+</p>
+
+<pre><code>extrapolation_defect_singularity_experiments.py</code></pre>
+
+<p>
+として保存し，Python で実行します．
+必要なパッケージは
+</p>
+
+<pre><code>numpy scipy matplotlib</code></pre>
+
+<p>
+です．Google Colab では通常そのまま使えます．ローカル環境では，必要に応じて
+</p>
+
+<pre><code>pip install numpy scipy matplotlib</code></pre>
+
+<p>
+を実行してください．
+</p>
+
+<details open>
+<summary>完全な Python コードを表示</summary>
 <div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code class="language-python">#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+&quot;&quot;&quot;
+Extrapolation, defect correction, and singularity experiments.
+
+This script accompanies the blog article:
+外挿法と誤差展開（第8回）：数値実験編
+外挿，defect correction，特異性の比較
+
+The script has three parts.
+
+Part A.
+  A small 1D periodic model problem for defect correction.
+  We solve
+      -u&#x27;&#x27; + u = f
+  on [0,1] with periodic boundary condition.
+  The exact solution is u(x)=sin(2*pi*x).
+  A second-order finite difference solution is improved by one defect
+  correction step using a fourth-order residual.
+
+Part B.
+  A 2D P1 finite element code for the Poisson equation.
+  We compare pointwise Richardson extrapolation on:
+    - a smooth square-domain problem,
+    - an L-shaped-domain singular problem.
+
+Part C.
+  A simple residual/defect indicator for the 2D P1 FEM solution.
+  This is not yet the full Rannacher-type FEM defect correction.
+  It is included to visualise where the defect concentrates,
+  especially for the L-shaped-domain singular problem.
+
+Requirements:
+  numpy, scipy, matplotlib
+&quot;&quot;&quot;
+
+import math
+import numpy as np
+from scipy.sparse import csr_matrix, lil_matrix, diags
+from scipy.sparse.linalg import spsolve
+import matplotlib.pyplot as plt
+import matplotlib.tri as mtri
+
+
+# ============================================================
+# Part A. 1D defect correction toy model
+# ============================================================
+
+def periodic_matrix_second_order(N):
+    &quot;&quot;&quot;
+    Matrix for -u&#x27;&#x27; + u on a periodic grid with N points.
+    The second-order approximation is used for -u&#x27;&#x27;.
+    &quot;&quot;&quot;
+    h = 1.0 / N
+
+    main = (2.0 / h**2 + 1.0) * np.ones(N)
+    off = (-1.0 / h**2) * np.ones(N - 1)
+
+    A = diags([main, off, off], [0, -1, 1], shape=(N, N), format=&quot;lil&quot;)
+    A[0, N - 1] = -1.0 / h**2
+    A[N - 1, 0] = -1.0 / h**2
+
+    return A.tocsr()
+
+
+def periodic_matrix_fourth_order(N):
+    &quot;&quot;&quot;
+    Matrix for -u&#x27;&#x27; + u on a periodic grid with N points.
+    The fourth-order approximation is used for -u&#x27;&#x27;.
+
+    Formula:
+        -u&#x27;&#x27;(x_i) ≈
+        (30 u_i -16(u_{i-1}+u_{i+1}) + (u_{i-2}+u_{i+2}))/(12 h^2).
+    &quot;&quot;&quot;
+    h = 1.0 / N
+
+    main = (30.0 / (12.0 * h**2) + 1.0) * np.ones(N)
+    off1 = (-16.0 / (12.0 * h**2)) * np.ones(N - 1)
+    off2 = (1.0 / (12.0 * h**2)) * np.ones(N - 2)
+
+    A = diags(
+        [main, off1, off1, off2, off2],
+        [0, -1, 1, -2, 2],
+        shape=(N, N),
+        format=&quot;lil&quot;,
+    )
+
+    # periodic wrap for distance 1
+    A[0, N - 1] = -16.0 / (12.0 * h**2)
+    A[N - 1, 0] = -16.0 / (12.0 * h**2)
+
+    # periodic wrap for distance 2
+    A[0, N - 2] = 1.0 / (12.0 * h**2)
+    A[1, N - 1] = 1.0 / (12.0 * h**2)
+    A[N - 2, 0] = 1.0 / (12.0 * h**2)
+    A[N - 1, 1] = 1.0 / (12.0 * h**2)
+
+    return A.tocsr()
+
+
+def defect_correction_1d(N):
+    &quot;&quot;&quot;
+    One defect correction step for the periodic model problem.
+
+    Exact solution:
+        u(x)=sin(2*pi*x).
+
+    Equation:
+        -u&#x27;&#x27; + u = f.
+    &quot;&quot;&quot;
+    x = np.arange(N) / N
+    exact = np.sin(2.0 * math.pi * x)
+    f = (1.0 + (2.0 * math.pi) ** 2) * exact
+
+    A2 = periodic_matrix_second_order(N)
+    A4 = periodic_matrix_fourth_order(N)
+
+    # Low-order solution.
+    u0 = spsolve(A2, f)
+
+    # Defect measured by the high-order operator.
+    defect = A4 @ u0 - f
+
+    # Correct using the stable low-order operator.
+    correction = spsolve(A2, -defect)
+    u1 = u0 + correction
+
+    err0 = np.linalg.norm(u0 - exact) / math.sqrt(N)
+    err1 = np.linalg.norm(u1 - exact) / math.sqrt(N)
+
+    return err0, err1
+
+
+def run_defect_correction_1d():
+    print(&quot;=&quot; * 80)
+    print(&quot;Part A. 1D defect correction toy model&quot;)
+    print(&quot;Problem: -u&#x27;&#x27; + u = f, periodic, exact u=sin(2*pi*x)&quot;)
+    print(&quot;=&quot; * 80)
+    print(f&quot;{&#x27;N&#x27;:&gt;6} | {&#x27;err low-order&#x27;:&gt;14} {&#x27;rate&#x27;:&gt;7} | {&#x27;err corrected&#x27;:&gt;14} {&#x27;rate&#x27;:&gt;7}&quot;)
+    print(&quot;-&quot; * 80)
+
+    old0 = None
+    old1 = None
+
+    for N in [16, 32, 64, 128, 256]:
+        err0, err1 = defect_correction_1d(N)
+
+        if old0 is None:
+            r0 = &quot;   ---&quot;
+            r1 = &quot;   ---&quot;
+        else:
+            r0 = f&quot;{math.log(old0 / err0, 2.0):7.3f}&quot;
+            r1 = f&quot;{math.log(old1 / err1, 2.0):7.3f}&quot;
+
+        print(f&quot;{N:6d} | {err0:14.6e} {r0} | {err1:14.6e} {r1}&quot;)
+
+        old0 = err0
+        old1 = err1
+
+    print()
+    print(&quot;Expected behaviour:&quot;)
+    print(&quot;  low-order solution       : about second order&quot;)
+    print(&quot;  defect-corrected solution: about fourth order&quot;)
+    print()
+
+
+# ============================================================
+# Part B. 2D P1 FEM for the Poisson equation
+# ============================================================
+
+def generate_square_mesh(N):
+    &quot;&quot;&quot;
+    Uniform triangular mesh of [0,1]^2.
+
+    N is the number of subdivisions in each coordinate direction.
+    &quot;&quot;&quot;
+    nodes = []
+    index = {}
+
+    for j in range(N + 1):
+        for i in range(N + 1):
+            x = i / N
+            y = j / N
+            index[(i, j)] = len(nodes)
+            nodes.append((x, y))
+
+    triangles = []
+
+    for j in range(N):
+        for i in range(N):
+            v00 = index[(i, j)]
+            v10 = index[(i + 1, j)]
+            v01 = index[(i, j + 1)]
+            v11 = index[(i + 1, j + 1)]
+
+            # Split each square along the same diagonal.
+            triangles.append((v00, v10, v11))
+            triangles.append((v00, v11, v01))
+
+    return np.array(nodes, dtype=float), np.array(triangles, dtype=int)
+
+
+def generate_lshape_mesh(N):
+    &quot;&quot;&quot;
+    Uniform triangular mesh of the L-shaped domain
+
+        Omega = (-1,1)^2 \\ ([0,1] x [-1,0]).
+
+    The reentrant corner is at the origin.
+    N should be even so that the origin and common test points are grid points.
+    &quot;&quot;&quot;
+    nodes = []
+    index = {}
+
+    for j in range(N + 1):
+        y = -1.0 + 2.0 * j / N
+        for i in range(N + 1):
+            x = -1.0 + 2.0 * i / N
+            index[(i, j)] = len(nodes)
+            nodes.append((x, y))
+
+    triangles = []
+
+    for j in range(N):
+        for i in range(N):
+            # cell centre
+            xc = -1.0 + 2.0 * (i + 0.5) / N
+            yc = -1.0 + 2.0 * (j + 0.5) / N
+
+            # remove the fourth quadrant
+            if (xc &gt; 0.0) and (yc &lt; 0.0):
+                continue
+
+            v00 = index[(i, j)]
+            v10 = index[(i + 1, j)]
+            v01 = index[(i, j + 1)]
+            v11 = index[(i + 1, j + 1)]
+
+            triangles.append((v00, v10, v11))
+            triangles.append((v00, v11, v01))
+
+    # Remove unused nodes.
+    used = sorted(set(int(v) for tri in triangles for v in tri))
+    new_id = {old: new for new, old in enumerate(used)}
+    new_nodes = np.array([nodes[i] for i in used], dtype=float)
+    new_tris = np.array([[new_id[int(v)] for v in tri] for tri in triangles], dtype=int)
+
+    return new_nodes, new_tris
+
+
+def boundary_nodes_from_triangles(triangles):
+    &quot;&quot;&quot;
+    Return boundary nodes by detecting edges that belong to only one triangle.
+    &quot;&quot;&quot;
+    edge_count = {}
+
+    for tri in triangles:
+        for a, b in [(tri[0], tri[1]), (tri[1], tri[2]), (tri[2], tri[0])]:
+            edge = tuple(sorted((int(a), int(b))))
+            edge_count[edge] = edge_count.get(edge, 0) + 1
+
+    bnodes = set()
+    bedges = []
+
+    for edge, count in edge_count.items():
+        if count == 1:
+            bedges.append(edge)
+            bnodes.update(edge)
+
+    return np.array(sorted(bnodes), dtype=int), bedges
+
+
+def assemble_poisson(nodes, triangles, f):
+    &quot;&quot;&quot;
+    Assemble the P1 stiffness matrix and load vector for
+
+        -Delta u = f.
+
+    The load vector uses centroid quadrature.
+    &quot;&quot;&quot;
+    nnode = nodes.shape[0]
+    rows = []
+    cols = []
+    data = []
+    rhs = np.zeros(nnode)
+
+    for tri in triangles:
+        coords = nodes[tri, :]
+        x0, y0 = coords[0]
+        x1, y1 = coords[1]
+        x2, y2 = coords[2]
+
+        detJ = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0)
+        area = abs(detJ) / 2.0
+
+        # Gradients of barycentric basis functions.
+        b = np.array([y1 - y2, y2 - y0, y0 - y1]) / detJ
+        c = np.array([x2 - x1, x0 - x2, x1 - x0]) / detJ
+        grads = np.vstack([b, c]).T
+
+        localK = area * (grads @ grads.T)
+
+        xc = (x0 + x1 + x2) / 3.0
+        yc = (y0 + y1 + y2) / 3.0
+        localF = area * f(xc, yc) / 3.0 * np.ones(3)
+
+        for a in range(3):
+            A = int(tri[a])
+            rhs[A] += localF[a]
+            for bidx in range(3):
+                B = int(tri[bidx])
+                rows.append(A)
+                cols.append(B)
+                data.append(localK[a, bidx])
+
+    K = csr_matrix((data, (rows, cols)), shape=(nnode, nnode))
+    return K, rhs
+
+
+def solve_dirichlet_poisson(nodes, triangles, f, g):
+    &quot;&quot;&quot;
+    Solve the P1 FEM system with Dirichlet boundary value g.
+    &quot;&quot;&quot;
+    K, rhs = assemble_poisson(nodes, triangles, f)
+    bnodes, _ = boundary_nodes_from_triangles(triangles)
+
+    all_nodes = np.arange(nodes.shape[0])
+    is_boundary = np.zeros(nodes.shape[0], dtype=bool)
+    is_boundary[bnodes] = True
+
+    interior = all_nodes[~is_boundary]
+    boundary = all_nodes[is_boundary]
+
+    u = np.zeros(nodes.shape[0])
+    u[boundary] = np.array([g(nodes[i, 0], nodes[i, 1]) for i in boundary])
+
+    rhs_i = rhs[interior] - K[interior, :][:, boundary] @ u[boundary]
+    K_ii = K[interior, :][:, interior]
+
+    u[interior] = spsolve(K_ii, rhs_i)
+
+    return u
+
+
+def find_node(nodes, point, tol=1.0e-12):
+    &quot;&quot;&quot;
+    Find a node with coordinate equal to point.
+    &quot;&quot;&quot;
+    p = np.array(point, dtype=float)
+    dist = np.linalg.norm(nodes - p[None, :], axis=1)
+    idx = int(np.argmin(dist))
+
+    if dist[idx] &gt; tol:
+        raise ValueError(f&quot;Point {point} is not a mesh node. nearest distance={dist[idx]}&quot;)
+
+    return idx
+
+
+def smooth_exact(x, y):
+    return math.sin(math.pi * x) * math.sin(math.pi * y)
+
+
+def smooth_rhs(x, y):
+    return 2.0 * math.pi**2 * smooth_exact(x, y)
+
+
+def lshape_angle(x, y):
+    &quot;&quot;&quot;
+    Angle in the L-shaped domain with the removed fourth quadrant.
+
+    Near the reentrant corner, the domain corresponds to
+        0 &lt; theta &lt; 3*pi/2.
+    &quot;&quot;&quot;
+    theta = math.atan2(y, x)
+    if theta &lt; 0.0:
+        theta += 2.0 * math.pi
+    return theta
+
+
+def singular_exact_factory(alpha):
+    def exact(x, y):
+        r = math.hypot(x, y)
+        if r == 0.0:
+            return 0.0
+        theta = lshape_angle(x, y)
+        return (r ** alpha) * math.sin(alpha * theta)
+    return exact
+
+
+def zero_rhs(x, y):
+    return 0.0
+
+
+def run_point_extrapolation_smooth():
+    &quot;&quot;&quot;
+    Smooth square-domain test.
+
+    exact u = sin(pi x) sin(pi y).
+    We evaluate at P=(1/2,1/2).
+    &quot;&quot;&quot;
+    print(&quot;=&quot; * 80)
+    print(&quot;Part B1. Smooth square-domain test&quot;)
+    print(&quot;u=sin(pi x) sin(pi y), P=(1/2,1/2)&quot;)
+    print(&quot;=&quot; * 80)
+
+    point = (0.5, 0.5)
+    exact_value = smooth_exact(*point)
+
+    values = {}
+
+    for N in [8, 16, 32, 64]:
+        nodes, tris = generate_square_mesh(N)
+        uh = solve_dirichlet_poisson(nodes, tris, smooth_rhs, smooth_exact)
+        idx = find_node(nodes, point)
+        values[N] = uh[idx]
+
+    print(f&quot;{&#x27;N&#x27;:&gt;6} | {&#x27;P1 value&#x27;:&gt;14} {&#x27;error&#x27;:&gt;12} | {&#x27;Richardson&#x27;:&gt;14} {&#x27;error&#x27;:&gt;12}&quot;)
+    print(&quot;-&quot; * 80)
+
+    for N in [8, 16, 32]:
+        val_h = values[N]
+        val_h2 = values[2 * N]
+        ext = (4.0 * val_h2 - val_h) / 3.0
+
+        err = abs(val_h - exact_value)
+        err_ext = abs(ext - exact_value)
+
+        print(f&quot;{N:6d} | {val_h:14.10f} {err:12.4e} | {ext:14.10f} {err_ext:12.4e}&quot;)
+
+    print()
+
+
+def run_point_extrapolation_lshape():
+    &quot;&quot;&quot;
+    L-shaped-domain singular test.
+
+    exact u = r^alpha sin(alpha theta), alpha=2/3.
+    We evaluate at P=(-1/2,1/2).
+    &quot;&quot;&quot;
+    print(&quot;=&quot; * 80)
+    print(&quot;Part B2. L-shaped-domain singular test&quot;)
+    print(&quot;u=r^alpha sin(alpha theta), alpha=2/3, P=(-1/2,1/2)&quot;)
+    print(&quot;=&quot; * 80)
+
+    alpha = 2.0 / 3.0
+    exact = singular_exact_factory(alpha)
+    point = (-0.5, 0.5)
+    exact_value = exact(*point)
+
+    values = {}
+
+    for N in [16, 32, 64, 128]:
+        nodes, tris = generate_lshape_mesh(N)
+        uh = solve_dirichlet_poisson(nodes, tris, zero_rhs, exact)
+        idx = find_node(nodes, point)
+        values[N] = uh[idx]
+
+    q = 2.0 * alpha
+    factor = 2.0 ** q
+
+    print(f&quot;{&#x27;N&#x27;:&gt;6} | {&#x27;P1 value&#x27;:&gt;14} {&#x27;error&#x27;:&gt;12} | {&#x27;std ext&#x27;:&gt;14} {&#x27;error&#x27;:&gt;12} | {&#x27;singular ext&#x27;:&gt;14} {&#x27;error&#x27;:&gt;12}&quot;)
+    print(&quot;-&quot; * 112)
+
+    for N in [16, 32, 64]:
+        val_h = values[N]
+        val_h2 = values[2 * N]
+
+        std_ext = (4.0 * val_h2 - val_h) / 3.0
+        sing_ext = (factor * val_h2 - val_h) / (factor - 1.0)
+
+        err = abs(val_h - exact_value)
+        err_std = abs(std_ext - exact_value)
+        err_sing = abs(sing_ext - exact_value)
+
+        print(
+            f&quot;{N:6d} | &quot;
+            f&quot;{val_h:14.10f} {err:12.4e} | &quot;
+            f&quot;{std_ext:14.10f} {err_std:12.4e} | &quot;
+            f&quot;{sing_ext:14.10f} {err_sing:12.4e}&quot;
+        )
+
+    print()
+    print(&quot;The standard h^2 extrapolation is not designed for h^(2 alpha) pollution.&quot;)
+    print(&quot;The singular extrapolation uses the exponent q=2 alpha.&quot;)
+    print()
+
+
+# ============================================================
+# Part C. residual / defect indicator for 2D P1 FEM
+# ============================================================
+
+def element_gradients(nodes, triangles, uh):
+    &quot;&quot;&quot;
+    Compute constant gradients of a P1 function on each triangle.
+    &quot;&quot;&quot;
+    grads = np.zeros((len(triangles), 2))
+    areas = np.zeros(len(triangles))
+
+    for it, tri in enumerate(triangles):
+        coords = nodes[tri, :]
+        x0, y0 = coords[0]
+        x1, y1 = coords[1]
+        x2, y2 = coords[2]
+
+        detJ = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0)
+        area = abs(detJ) / 2.0
+
+        b = np.array([y1 - y2, y2 - y0, y0 - y1]) / detJ
+        c = np.array([x2 - x1, x0 - x2, x1 - x0]) / detJ
+
+        grad = np.array([np.dot(uh[tri], b), np.dot(uh[tri], c)])
+
+        grads[it] = grad
+        areas[it] = area
+
+    return grads, areas
+
+
+def p1_residual_indicator(nodes, triangles, uh, f):
+    &quot;&quot;&quot;
+    A simple residual/defect indicator for P1 FEM.
+
+    Since the P1 function is linear on each element, Delta uh = 0
+    inside each element. Thus the element residual is approximately f.
+    The edge part uses jumps of the normal derivative across interior edges.
+
+    This is not a full a posteriori estimator implementation.
+    It is a lightweight diagnostic to visualise where the defect concentrates.
+    &quot;&quot;&quot;
+    grads, areas = element_gradients(nodes, triangles, uh)
+
+    eta2 = np.zeros(len(triangles))
+
+    # element residual part: h_T^2 ||f||^2_T, approximated at centroid
+    for it, tri in enumerate(triangles):
+        coords = nodes[tri, :]
+        xc = float(np.mean(coords[:, 0]))
+        yc = float(np.mean(coords[:, 1]))
+        hT = max(
+            np.linalg.norm(coords[0] - coords[1]),
+            np.linalg.norm(coords[1] - coords[2]),
+            np.linalg.norm(coords[2] - coords[0]),
+        )
+        eta2[it] += (hT**2) * (f(xc, yc) ** 2) * areas[it]
+
+    # edge map
+    edge_to_tri = {}
+    for it, tri in enumerate(triangles):
+        for local_edge in [(0, 1), (1, 2), (2, 0)]:
+            a = int(tri[local_edge[0]])
+            b = int(tri[local_edge[1]])
+            edge = tuple(sorted((a, b)))
+            edge_to_tri.setdefault(edge, []).append(it)
+
+    for edge, elems in edge_to_tri.items():
+        if len(elems) != 2:
+            continue
+
+        i, j = elems
+        p0 = nodes[edge[0]]
+        p1 = nodes[edge[1]]
+        tangent = p1 - p0
+        length = np.linalg.norm(tangent)
+
+        # A unit normal. The sign is irrelevant because we square the jump.
+        normal = np.array([tangent[1], -tangent[0]]) / length
+
+        jump = np.dot(grads[i] - grads[j], normal)
+        contribution = 0.5 * length * jump**2
+
+        eta2[i] += contribution / 2.0
+        eta2[j] += contribution / 2.0
+
+    return np.sqrt(eta2)
+
+
+def plot_lshape_defect_indicator(N=64, filename=&quot;lshape_defect_indicator.png&quot;):
+    &quot;&quot;&quot;
+    Plot the residual/defect indicator for the singular L-shaped problem.
+    &quot;&quot;&quot;
+    alpha = 2.0 / 3.0
+    exact = singular_exact_factory(alpha)
+
+    nodes, tris = generate_lshape_mesh(N)
+    uh = solve_dirichlet_poisson(nodes, tris, zero_rhs, exact)
+
+    eta = p1_residual_indicator(nodes, tris, uh, zero_rhs)
+
+    triang = mtri.Triangulation(nodes[:, 0], nodes[:, 1], tris)
+
+    plt.figure(figsize=(6, 5))
+    plt.tripcolor(triang, facecolors=eta, shading=&quot;flat&quot;)
+    plt.colorbar(label=&quot;residual / defect indicator&quot;)
+    plt.gca().set_aspect(&quot;equal&quot;)
+    plt.title(&quot;L-shaped domain: defect indicator&quot;)
+    plt.xlabel(&quot;x&quot;)
+    plt.ylabel(&quot;y&quot;)
+    plt.tight_layout()
+    plt.savefig(filename, dpi=200)
+    plt.close()
+
+    print(&quot;=&quot; * 80)
+    print(&quot;Part C. Defect indicator plot&quot;)
+    print(f&quot;Wrote {filename}&quot;)
+    print(&quot;The defect indicator should be large near the reentrant corner.&quot;)
+    print(&quot;=&quot; * 80)
+    print()
+
+
+def main():
+    run_defect_correction_1d()
+    run_point_extrapolation_smooth()
+    run_point_extrapolation_lshape()
+    plot_lshape_defect_indicator(N=64)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre>
+</div>
+</details>
+
+</article>
+</div>
+
+<h2>7．出力結果の読み方</h2>
+<div class="news">
+<article class="news-item">
+<h3>7.1．1次元 defect correction</h3>
+
+<p>
+最初の表では，低次解 \(u^{(0)}\) の誤差と，defect correction 後の \(u^{(1)}\) の誤差が表示されます．
+期待される挙動は，
+</p>
+
+<ul>
+  <li>低次解：おおよそ2次精度，</li>
+  <li>defect correction 後：おおよそ4次精度，</li>
+</ul>
+
+<p>
+です．
+この実験は，defect correction が「低次作用素を使いながら高次情報を取り込む」方法であることを示すためのものです．
+</p>
+
+<h3>7.2．滑らかな正方形領域</h3>
+
+<p>
+滑らかな問題では，点値誤差に \(h^2\) 型の主誤差が現れやすいため，
+通常の Richardson 外挿が有効に働くことが期待されます．
+表では，P1 FEM の節点値誤差と，外挿後の誤差を比較します．
+</p>
+
+<h3>7.3．L-shaped domain</h3>
+
+<p>
+L-shaped domain では，再入角による特異性があるため，通常の \(h^2\) 外挿が必ずしも最適ではありません．
+特異指数
+\[
+  \alpha=\frac23
+\]
+に対して，
+\[
+  q=2\alpha=\frac43
+\]
+を使った外挿の方が，主誤差構造に合う可能性があります．
+</p>
+
+<p>
+ただし，有限のメッシュ幅では，誤差は
+\[
+  A h^{2\alpha}+B h^2+\cdots
+\]
+の混合になっているため，常に特異外挿だけが圧倒的に良く見えるとは限りません．
+大切なのは，滑らかな場合と特異な場合で，外挿すべき冪が変わるという視点です．
+</p>
+
+<h3>7.4．defect indicator</h3>
+
+<p>
+コードを実行すると，
+</p>
+
+<pre><code>lshape_defect_indicator.png</code></pre>
+
+<p>
+という画像が出力されます．
+この図では，P1 FEM 解に対する簡単な residual/defect indicator を表示しています．
+L-shaped domain では，再入角近くに defect が集中しやすいはずです．
+これは Vision 9 の defect collection とつながる観察です．
+</p>
+</article>
+</div>
+
+<h2>8．Vision 8 への接続</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Vision 8 では，Richardson 外挿法を幾何条件と結びつけることを考えています．
+今回の実験では，滑らかな正方形領域では通常の \(h^2\) 外挿が自然ですが，
+L-shaped domain では外挿係数が
+\[
+  4
+\]
+ではなく，
+\[
+  2^{2\alpha}
+\]
+に変わることを見ました．
+つまり，外挿係数そのものが領域の幾何，具体的には再入角の大きさに依存します．
+</p>
+
+<div class="box">
+  外挿法は単なる後処理ではありません．
+  特異性がある場合，外挿法は幾何条件を読んで係数を変える必要があります．
+  ここに Vision 8「Richardson外挿法と幾何条件」への自然な接続があります．
+</div>
+</article>
+</div>
+
+<h2>9．Vision 9 への接続</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Vision 9 では，defect を単に補正するだけでなく，
+どこに集まっているかを読み，数値解法を横断的に改善する視点を考えています．
+L-shaped domain のような角特異性を持つ問題では，
+defect は領域全体に一様に分布するのではなく，再入角近くに集中します．
+</p>
+
+<p>
+この視点は，FEM だけでなく，PINNs や Deep Ritz 法にもつながります．
+損失関数が全体として小さくても，特異点近くの誤差や residual が取り残される可能性があります．
+その意味で，corner singularity は defect collection の試験問題として非常に重要です．
+</p>
+
+<div class="box">
+  Vision 9 への接続は，
+  \[
+    \text{defect はどこに集まるのか}
+  \]
+  を可視化し，補正し，サンプリングや学習に反映する点にあります．
+</div>
+</article>
+</div>
+
+<h2>10．今回のまとめ</h2>
+<div class="news">
+<article class="news-item">
+<ul>
+  <li>1次元模型では，defect correction により2次精度の解を4次精度に改善できることを確認します．</li>
+  <li>滑らかな正方形領域では，通常の \(h^2\) Richardson 外挿が自然に働きます．</li>
+  <li>L-shaped domain では角特異性により，通常の \(h^2\) 外挿だけでは不十分なことがあります．</li>
+  <li>特異指数 \(\alpha\) に応じて，外挿係数を \(2^{2\alpha}\) に変える必要があります．</li>
+  <li>defect indicator により，再入角近くに defect が集中する様子を可視化できます．</li>
+  <li>この実験は，Vision 8 の幾何条件付き外挿と，Vision 9 の defect collection へ自然につながります．</li>
+</ul>
+
+<p>
+  第8回の位置づけは，「完全な最終実装」ではなく，「理論が予言する現象を見える形にする第一段階」です．
+  完全な 2次元 FEM defect correction，異方性メッシュ上の外挿，PINNs/Deep Ritz との比較は，
+  この先の発展課題として扱います．
+</p>
+
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<ul>
+  <li>
+    Rolf Rannacher,
+    <em>Special Topics in Numerics III: Extrapolation and Defect Correction</em>,
+    Lecture Notes, Heidelberg University, 2017.
+  </li>
+  <li>
+    Pierre Grisvard,
+    <em>Elliptic Problems in Nonsmooth Domains</em>,
+    Pitman, 1985.
+  </li>
+  <li>
+    Monique Dauge,
+    <em>Elliptic Boundary Value Problems on Corner Domains</em>,
+    Lecture Notes in Mathematics, vol. 1341, Springer, 1988.
+  </li>
+  <li>
+    Q. Lin and N. Yan,
+    <em>Construction and Analysis of High Efficient Finite Element Methods</em>,
+    Hebei University Publishers, 1996.
+  </li>
+</ul>
+</article>
 </div>
 
 
