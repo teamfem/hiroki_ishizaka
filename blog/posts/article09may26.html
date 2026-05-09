@@ -142,26 +142,1335 @@
 \]
 により \(c_2h^2\) の項を消すことができます．
 </p>
-<div class="note">
-  <p>
+<p>
   外挿法の本質は，「小さい \(h\) を使うこと」ではなく，
   「誤差展開の低次項を消すこと」
   です．
   したがって，誤差展開が数値的に見えていない段階で外挿しても，
   期待した精度向上が得られないことがあります．
-  </p>
-</div>
+</p>
 <p>
-Rannacher の講義ノートでは，ODE に対する外挿について，
-一般の一段法に対して誤差展開を導く流れが説明されています．
-また，実際の外挿は区間全体に一度だけ使うというよりも，
-各時間ステップで局所的に用いて整合次数を上げる，という見方が示されています．
+ODE に対する外挿について，実際の外挿は区間全体に一度だけ使うというよりも，各時間ステップで局所的に用いて整合次数を上げる，という見方です．
+</p>
+</article>
+</div>
+
+<h2>2．非stiff問題とは何か</h2>
+<div class="news">
+<article class="news-item">
+<p>
+ODE の数値解法では，しばしば non-stiff problem と stiff problem を区別します．非stiff問題とは，解の中に非常に速く減衰する成分や非常に高速に振動する成分がなく，陽的な時間離散法でも，安定性のために極端に小さい時間刻みを要求されない問題です．言い換えると，時間刻み幅 \(h\) を主に精度の要求から選べる問題です．
+</p>
+<p>
+例えば，
+\[
+  u'(t)=\lambda u(t)
+\]
+を考えます．\(\lambda=-1\) なら，解は \(e^{-t}\) のようにゆっくり減衰します．この場合，陽的 Euler 法や midpoint rule でも，適切な時間刻みを選べば自然に計算できます．このような状況は非stiff的です．
+</p>
+<p>
+一方，\(\lambda=-1000\) のような大きな負の値をもつ成分があると，その成分は真の解では非常に速く減衰します．しかし，陽的な方法では安定性のために非常に小さい時間刻みが必要になります．このように，解の精度というよりも数値安定性によって時間刻みが強く制限される場合を　stiff と呼びます．
+</p>
+<p>
+したがって，非stiff問題では「精度のために \(h\) を小さくする」という感覚が比較的そのまま通用します．一方，stiff問題では「安定性のために \(h\) を小さくせざるを得ない」という別の制約が現れます．この違いが，ODE 外挿法で基礎スキームを選ぶときに重要になります．
+</p>
+<p>
+非stiff問題では，陽的で軽い基礎スキームを使いやすいため，Gragg 型の extrapolation method に進みます．一方，stiff問題では，陽的方法では安定性制約が厳しくなるため，陰的 Euler 法や Crank--Nicolson 型の trapezoidal rule が候補になります．
 </p>
 </article>
 </div>
 
 
+<h2>3．非stiff問題：Gragg型外挿法の位置づけ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+非stiffな問題では，できるだけ計算の軽い陽的な基礎スキームを使いたいものです．二段階の midpoint rule が重要になります．その基本形は
+\[
+  y_{n+1}=y_{n-1}+2h f(t_n,y_n)
+\]
+です．この方法は陽的であり，関数評価が少なく，かつ対称性をもっています．
+</p>
+<p>
+ただし，単純な midpoint rule には振動的な誤差成分が現れます．そこで Gragg 型の方法では，細かい副刻みで midpoint rule を進めた後，終点付近の値を平均します．大きなステップを \(H\)，副刻みを \(\delta=H/m\) とすると，
+\[
+\begin{aligned}
+  \eta_0 &= y_n,\\
+  \eta_1 &= y_n+\delta f(t_n,y_n),\\
+  \eta_{j+1}
+  &=
+  \eta_{j-1}
+  +2\delta f(t_n+j\delta,\eta_j)
+\end{aligned}
+\]
+と計算し，
+\[
+  a(\delta)
+  =
+  \frac14\left\{
+    \eta_{m-1}+2\eta_m+\eta_{m+1}
+  \right\}
+\]
+を外挿に使います．この平均化により，主要な振動成分が抑えられ，偶数冪の誤差展開を利用しやすくなります．
+</p>
+<p>
+この部分は，Crank--Nicolson の話とは少し違います．Gragg 型外挿は，非stiffな問題で陽的 midpoint rule を基礎にして高精度化する流れです．一方，Crank--Nicolson は陰的な台形則であり，stiff問題でも安定性の観点から候補に入ります．
+</p>
+</article>
+</div>
+
+<h2>4．Crank--Nicolson法はODEでは台形則である</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Crank--Nicolson 法は，ODE の言葉で書けば陰的台形則です．すなわち，
+\[
+  y_{n+1}
+  =
+  y_n
+  +
+  \frac h2
+  \left\{
+    f(t_n,y_n)+f(t_{n+1},y_{n+1})
+  \right\}
+\]
+です．右辺に \(y_{n+1}\) が含まれるため，これは陰的な方法です．線形問題や半線形問題では線形方程式を解き，非線形問題では Newton 法などの反復を使います．
+</p>
+<p>
+放物型方程式を空間離散すると，しばしば
+\[
+  M\dot U(t)+AU(t)=F(t)
+\]
+の形の ODE 系が現れます．この ODE 系に台形則を適用したものが，時間方向の Crank--Nicolson 法です．したがって，ODE の台形則を理解することは，PDE の Crank--Nicolson 法を理解する入口になります．
+</p>
+</article>
+</div>
+
+<h2>5．滑らかな非stiff問題では，きれいに精度が上がる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+まず，Crank--Nicolson 法がよく働く場合を見ます．典型例は，
+\[
+  u'(t)=-u(t),\quad u(0)=1,\qquad 0\leq t\leq 1
+\]
+です．厳密解は
+\[
+  u(t)=e^{-t}
+\]
+なので，
+\[
+  u(1)=e^{-1}
+\]
+です．この問題は滑らかで，stiffでもありません．
+</p>
+<p>
+このような場合，Crank--Nicolson 法の最終時刻誤差は典型的に
+\[
+  y_h(1)-u(1)=c_2h^2+c_4h^4+O(h^6)
+\]
+という偶数冪の展開をもちます．そのため，
+\[
+  \frac{4y_{h/2}(1)-y_h(1)}{3}
+\]
+を使えば，\(O(h^2)\) の主誤差が消え，\(O(h^4)\) の精度が観測されます．
+</p>
+<p>
+  つまり，滑らかな非stiff問題では，
+  \[
+    \text{Crank--Nicolson} = O(h^2),
+    \quad
+    \text{外挿後} = O(h^4)
+  \]
+  という期待通りの挙動が見えます．
+</p>
+</article>
+</div>
+
+<h2>6．では，なぜ精度が上がらないことがあるのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+ここがこの記事の中心です．
+Crank--Nicolson 法は2次精度の方法ですが，実際の計算では「2次精度に見えない」または「外挿しても4次精度に見えない」ことがあります．その主な理由は，理想的な誤差展開
+\[
+  y_h(T)=u(T)+c_2h^2+c_4h^4+\cdots
+\]
+が，実用的な刻み幅の範囲でまだ見えていないことです．
+</p>
+<h3>6.1．まだ漸近領域に入っていない</h3>
+<p>
+外挿法は，誤差がすでに
+\[
+  c_2h^2+c_4h^4+\cdots
+\]
+の形で振る舞っていることを前提にしています．しかし，\(h\) が十分小さくない段階では，この形が数値的に現れないことがあります．このとき，
+\[
+  \frac{4y_{h/2}-y_h}{3}
+\]
+を作っても，実際には \(c_2h^2\) の項だけをきれいに消しているわけではありません．その結果，外挿値があまり良くならない，場合によっては悪くなることがあります．
+</p>
+<h3>6.2．stiff成分が残る</h3>
+<p>
+線形方程式
+\[
+  u'(t)=\lambda u(t)
+\]
+を考えます．Crank--Nicolson 法の増幅因子は
+\[
+  R_{\mathrm{CN}}(z)
+  =
+  \frac{1+z/2}{1-z/2},
+  \quad z=h\lambda
+\]
+です．\( \lambda<0 \) が大きな負の値であるとき，これは速く減衰する stiff 成分を表します．
+ところが，
+\[
+  z\to -\infty
+  \quad\Longrightarrow\quad
+  R_{\mathrm{CN}}(z)\to -1
+\]
+です．つまり，Crank--Nicolson 法は A-stable ですが，非常に stiff な成分を強く減衰させるわけではありません．符号を変えながら残る成分が出ます．
+</p>
+<p>
+一方，後退 Euler 法の増幅因子は
+\[
+  R_{\mathrm{BE}}(z)=\frac{1}{1-z}
+\]
+であり，
+\[
+  z\to -\infty
+  \quad\Longrightarrow\quad
+  R_{\mathrm{BE}}(z)\to 0
+\]
+です．したがって，後退 Euler 法は1次精度ですが，stiff成分の減衰という意味では非常に強いです．
+</p>
+<p>
+  Crank--Nicolson 法は「安定」ではありますが，
+  「強く減衰する」とは限りません．
+  この違いを混同すると，stiff問題で
+  「安定なはずなのに精度が上がらない」
+  という現象が起こったときに混乱します．
+</p>
+<h3>6.3．初期層・非滑らかな初期値</h3>
+<p>
+放物型方程式では，初期値が十分滑らかでない場合，初期時刻付近に急激な変化，いわゆる初期層が生じます．連続問題では時間発展により解が滑らかになりますが，数値計算では初期の非滑らかさが時間離散誤差に強く影響します．この場合，Crank--Nicolson 法を使っても，初期時刻付近の誤差が支配的になり，期待される2次精度が見えにくくなることがあります．
+</p>
+<p>
+このような場合には，初期の数ステップだけ後退 Euler 型の減衰を入れて，
+その後 Crank--Nicolson に切り替える方法が使われることがあります．
+これはしばしば Rannacher smoothing または Rannacher time stepping と呼ばれます．
+考え方は単純で，最初に stiff成分や初期層をある程度減衰させてから，
+2次精度の Crank--Nicolson に移るというものです．
+</p>
+<h3>6.4．空間離散誤差・反復誤差・丸め誤差が混ざる</h3>
+<p>
+PDEの計算では，時間離散誤差だけを見ているつもりでも，
+実際には空間離散誤差が混ざります．
+たとえば，空間メッシュを固定したまま時間刻みだけ細かくすると，
+ある段階から時間誤差ではなく空間誤差が支配的になります．
+この場合，Crank--Nicolson の時間精度を上げても，全体誤差はあまり減りません．
+</p>
+<p>
+また，非線形問題では Newton 法の反復誤差，線形ソルバーの許容誤差，
+丸め誤差も影響します．
+外挿法は差を取る操作を含むため，近い値どうしの引き算により丸め誤差の影響を受けやすいこともあります．
+</p>
+</article>
+</div>
+
+<h2>7．Rannacherの資料との関係</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Rannacher の資料では，stiffな初期値問題に外挿法を適用するには，
+A-stable な基礎スキームが必要であると説明されています．
+候補として，1次の陰的 Euler 法と2次の台形則が挙げられます．
+台形則は \(h^2\) の誤差展開を持つため外挿には魅力がありますが，
+強い A-stability を欠くため，データ摂動に敏感になり得ると説明されています．
+そのため，実用上はよりロバストな陰的 Euler 法が好まれる場面があります．
+</p>
+<p>
+この点は，Crank--Nicolson 法を使うときに非常に重要です．
+Crank--Nicolson は台形則そのものなので，滑らかな問題では高精度ですが，
+stiff成分や初期層があると，期待した誤差展開が見えにくくなります．
+したがって，
+</p>
+<p>
+  Crank--Nicolson は高精度化の候補である．
+  しかし，stiff成分を消す方法ではない．
+  外挿の成功は，誤差展開が実際に見えているかどうかに依存する．
+</p>
+<p>
+と理解しておくのが安全です．
+</p>
+</article>
+</div>
+
+<h2>8．安定性の用語整理：まず絶対安定性，A安定性，L安定性</h2>
+<div class="news">
+<article class="news-item">
+<p>
+ODE の時間離散法を調べていると，
+「A安定性」「L安定性」「B安定性」「G安定性」など，
+多くの「〇〇安定性」が出てきます．
+これらは固定された有限個のリストではありません．
+どの問題を，どの観点から安定に解きたいかによって，
+安定性の概念は変わります．
+</p>
+<p>
+ただし，この記事の目的は，
+外挿法と Crank--Nicolson 法を理解することです．
+そのためには，まず
+</p>
+
+<ul>
+  <li>絶対安定性，</li>
+  <li>A安定性，</li>
+  <li>L安定性，</li>
+</ul>
+
+<p>
+を押さえれば十分です．
+G安定性やB安定性は，より発展的な安定性概念として位置づけられます．
+</p>
+
+<h3>8.1．基準になるテスト方程式</h3>
+<p>
+ODE の安定性を調べるとき，基本になるのは線形テスト方程式
+\[
+  u'(t)=\lambda u(t)
+\]
+です．ここで \(\lambda\in\mathbb{C}\) とします．
+もし \(\operatorname{Re}\lambda\le 0\) なら，真の解
+\[
+  u(t)=e^{\lambda t}u(0)
+\]
+は時間とともに増大しません．
+したがって，数値解も不自然に増大しないことが望まれます．
+</p>
+<p>
+多くの1ステップ法をこの方程式に適用すると，
+\[
+  y_{n+1}=R(z)y_n,\quad z=h\lambda
+\]
+という形になります．
+ここで \(R(z)\) は増幅因子です．
+この \(R(z)\) の性質を見ることで，数値法の安定性を調べます．
+</p>
+
+<h3>8.2．絶対安定性</h3>
+
+<p>
+ある \(z=h\lambda\) に対して
+\[
+  |R(z)|\leq 1
+\]
+が成り立つとき，その方法はその \(z\) に対して絶対安定であると言います．
+また，
+\[
+  S=\{z\in\mathbb{C}: |R(z)|\leq 1\}
+\]
+を安定領域と呼びます．
+</p>
+<p>
+絶対安定性は，
+「この時間刻み \(h\) と固有値 \(\lambda\) の組合せで，
+数値解が増大しないか」
+を見る概念です．
+たとえば陽的 Euler 法では
+\[
+  R(z)=1+z
+\]
+なので，
+\[
+  |1+z|\leq 1
+\]
+を満たす範囲でしか安定ではありません．
+このため，stiff 問題では陽的方法が非常に小さい時間刻みを要求することがあります．
+</p>
+
+<h3>8.3．A安定性</h3>
+<p>
+A安定性は，絶対安定性を左半平面全体に要求する概念です．
+つまり，安定領域が
+\[
+  \{z\in\mathbb{C}: \operatorname{Re}z\leq 0\}
+\]
+をすべて含むとき，その方法は A-stable であると言います．
+</p>
+<p>
+これは stiff 問題で重要です．
+\(\operatorname{Re}\lambda\leq 0\) なら真の解は増大しないので，
+時間刻み \(h>0\) をどのように取っても，
+数値解も増大しないことが望まれるからです．
+</p>
+<p>
+後退 Euler 法では
+\[
+  R_{\mathrm{BE}}(z)=\frac{1}{1-z}
+\]
+です．また，Crank--Nicolson 法，すなわち台形則では
+\[
+  R_{\mathrm{CN}}(z)=\frac{1+z/2}{1-z/2}
+\]
+です．
+これらはいずれも A-stable です．
+</p>
+<p>
+  ただし，A安定性は「増大しない」ことを保証する概念です．
+  「速く減衰すべき成分を，数値的にも速く消す」
+  ことまでは保証しません．
+  この点が，Crank--Nicolson 法で重要になります．
+</p>
+<h3>8.4．L安定性</h3>
+<p>
+L安定性は，A安定性に加えて，強い減衰性を要求する概念です．
+典型的には
+\[
+  R(z)\to 0
+  \quad (z\to-\infty)
+\]
+が成り立つことを求めます．
+</p>
+<p>
+後退 Euler 法では
+\[
+  R_{\mathrm{BE}}(z)=\frac1{1-z}
+\]
+なので，
+\[
+  R_{\mathrm{BE}}(z)\to 0
+  \quad (z\to-\infty)
+\]
+です．
+したがって，後退 Euler 法は stiff 成分を強く減衰させます．
+</p>
+<p>
+一方，Crank--Nicolson 法では
+\[
+  R_{\mathrm{CN}}(z)=\frac{1+z/2}{1-z/2}
+\]
+であり，
+\[
+  R_{\mathrm{CN}}(z)\to -1
+  \quad (z\to-\infty)
+\]
+です．
+したがって，Crank--Nicolson 法は A-stable ですが，L-stable ではありません．
+非常に速く減衰すべき stiff 成分が，符号を変えながら残ることがあります．
+</p>
+<p>
+この性質は，
+「Crank--Nicolson 法では，期待した精度向上が見えないことがある」
+という現象と関係します．
+理想的には
+\[
+  y_h(T)=u(T)+c_2h^2+c_4h^4+\cdots
+\]
+という誤差展開が見えてほしいのですが，
+stiff 成分や初期層が残ると，この展開が数値的にきれいに見えません．
+その場合，Richardson extrapolation を行っても，
+期待した \(O(h^4)\) の改善が現れないことがあります．
+</p>
+<h3>8.5．強A安定性，または stiff decay</h3>
+<p>
+文献によっては，A安定性に加えて stiff 成分を十分に減衰させる性質を，
+strong A-stability，stiff decay，または L-stability に近い言葉で説明することがあります．
+用語には多少の揺れがありますが，この記事では次のように理解しておけば十分です．
+</p>
+<p>
+  A安定性は「左半平面で増大しない」ことを意味します．
+  L安定性は，さらに「非常に stiff な成分を強く減衰させる」ことを意味します．
+  Crank--Nicolson 法は前者を満たしますが，後者は満たしません．
+</p>
+<h3>8.6．発展的な安定性概念</h3>
+<p>
+絶対安定性，A安定性，L安定性のほかにも，数値解析には多くの安定性概念があります．
+ただし，それらは同じ一直線上に並ぶ概念ではありません．
+対象とする問題，数値法，評価したい性質によって使い分けられます．
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>安定性</th>
+      <th>主な対象</th>
+      <th>大まかな意味</th>
+      <th>この記事での位置づけ</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>絶対安定性</td>
+      <td>ODEの1ステップ法</td>
+      <td>\(|R(z)|\le 1\) となる範囲を調べる</td>
+      <td>必須</td>
+    </tr>
+    <tr>
+      <td>A安定性</td>
+      <td>stiff ODE</td>
+      <td>左半平面全体で安定</td>
+      <td>必須</td>
+    </tr>
+    <tr>
+      <td>L安定性</td>
+      <td>stiff ODE</td>
+      <td>stiff 成分を強く減衰させる</td>
+      <td>必須</td>
+    </tr>
+    <tr>
+      <td>A(\(\alpha\))安定性</td>
+      <td>放物型・sectorial問題</td>
+      <td>左半平面全体ではなく，ある扇形領域で安定</td>
+      <td>補足</td>
+    </tr>
+    <tr>
+      <td>零安定性</td>
+      <td>線形多段法</td>
+      <td>刻み幅を小さくしたとき，誤差が暴走しない</td>
+      <td>発展的</td>
+    </tr>
+    <tr>
+      <td>G安定性</td>
+      <td>多段法・エネルギー型解析</td>
+      <td>離散エネルギーの意味で安定</td>
+      <td>発展的</td>
+    </tr>
+    <tr>
+      <td>B安定性</td>
+      <td>非線形ODE</td>
+      <td>連続問題の収縮性を数値法も保つ</td>
+      <td>発展的</td>
+    </tr>
+    <tr>
+      <td>代数的安定性</td>
+      <td>Runge--Kutta法</td>
+      <td>B安定性を保証するための係数条件</td>
+      <td>発展的</td>
+    </tr>
+    <tr>
+      <td>SSP / TVD安定性</td>
+      <td>保存則・双曲型問題</td>
+      <td>全変動や単調性を壊さない</td>
+      <td>別文脈</td>
+    </tr>
+    <tr>
+      <td>von Neumann安定性</td>
+      <td>差分法・PDE</td>
+      <td>Fourierモードごとの増幅率を調べる</td>
+      <td>別文脈</td>
+    </tr>
+    <tr>
+      <td>エネルギー安定性</td>
+      <td>PDE時間発展問題</td>
+      <td>離散エネルギーが増えない，または制御される</td>
+      <td>PDE編で重要</td>
+    </tr>
+    <tr>
+      <td>最大値安定性</td>
+      <td>放物型・楕円型問題</td>
+      <td>最大値原理や正値性を離散的に保つ</td>
+      <td>PDE編で重要</td>
+    </tr>
+    <tr>
+      <td>symplectic性</td>
+      <td>Hamilton系</td>
+      <td>エネルギー保存に近い長時間挙動を保つ</td>
+      <td>別文脈</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+この表から分かるように，「〇〇安定性」は一つの階層にきれいに並ぶものではありません．
+たとえば A安定性やL安定性は stiff ODE の時間刻みに関する安定性です．
+一方，G安定性やB安定性は，より構造的な安定性です．
+SSP安定性や von Neumann安定性は，PDEや保存則の文脈でよく現れます．
+</p>
+<h3>8.7．この記事での結論</h3>
+<p>
+第4回の記事では，まず次の理解で十分です．
+</p>
+<p>
+  \[
+    \text{絶対安定性}
+    =
+    \text{与えられた }z=h\lambda\text{ で数値解が増大しないかを見る}
+  \]
+  \[
+    \text{A安定性}
+    =
+    \text{左半平面全体で増大しない}
+  \]
+  \[
+    \text{L安定性}
+    =
+    \text{非常に stiff な成分を強く減衰させる}
+  \]
+</p>
+<p>
+Crank--Nicolson 法は A安定ですが，L安定ではありません．
+したがって，滑らかな非stiff問題では高精度に働きやすく，
+Richardson extrapolation による精度改善も期待できます．
+しかし，stiff問題や初期層を含む問題では，
+stiff 成分が十分に減衰せず，
+理想的な誤差展開が数値的に見えにくくなることがあります．
+このため，Crank--Nicolson 法で常に精度が上がるとは限りません．
+</p>
+<p>
+Crank--Nicolson 法に Richardson extrapolation を組み合わせると，
+滑らかな非stiff問題では高次精度化が期待できます．
+しかし，stiff 成分や非滑らかな初期値がある場合には，
+Crank--Nicolson 法の弱い減衰性により，理想的な偶数冪の誤差展開が
+数値的に現れないことがあります．
+したがって，単純な外挿だけでは不十分です．
+</p>
+</article>
+</div>
+
+<h2>9．研究メモ：Crank--Nicolson外挿をどう救うか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+ここまで見たように，Crank--Nicolson 法は2次精度であり，
+滑らかな非stiff問題では
+\[
+  y_k(T)=u(T)+c_2(T)k^2+c_4(T)k^4+O(k^6)
+\]
+のような偶数冪の誤差展開が期待できます．
+この場合，
+\[
+  y_{\mathrm{ext}}(T)
+  =
+  \frac{4y_{k/2}(T)-y_k(T)}{3}
+\]
+とすれば，\(k^2\) の主誤差が消え，
+形式的には
+\[
+  y_{\mathrm{ext}}(T)=u(T)+O(k^4)
+\]
+となります．
+</p>
+
+<p>
+しかし，実際の数値計算では，Crank--Nicolson 法に Richardson extrapolation を
+組み合わせても，期待したほど精度が上がらないことがあります．
+これは，外挿法そのものが間違っているというより，
+外挿が前提としている誤差展開
+\[
+  y_k(T)=u(T)+c_2(T)k^2+c_4(T)k^4+\cdots
+\]
+が数値的にきれいに現れていない，と見る方が自然です．
+</p>
+
+<h3>9.1．なぜ Crank--Nicolson 外挿は壊れるのか</h3>
+
+<p>
+Crank--Nicolson 法の増幅因子は，線形テスト方程式
+\[
+  u'(t)=\lambda u(t)
+\]
+に対して
+\[
+  R_{\mathrm{CN}}(z)=\frac{1+z/2}{1-z/2},
+  \quad z=k\lambda
+\]
+です．
+この方法は A-stable ですが，
+\[
+  R_{\mathrm{CN}}(z)\to -1
+  \quad (z\to-\infty)
+\]
+となるため，非常に速く減衰すべき stiff 成分を強く消すわけではありません．
+</p>
+
+<p>
+したがって，初期値が滑らかでない場合や，放物型問題で高周波成分が強く残る場合には，
+Crank--Nicolson 法は符号を変える数値振動を残すことがあります．
+この成分が残ると，低次の誤差項が
+\[
+  c_2k^2+c_4k^4+\cdots
+\]
+というきれいな形で観測されにくくなります．
+その結果，Richardson extrapolation によって \(k^2\) の項を消そうとしても，
+期待した \(O(k^4)\) の改善が現れないことがあります．
+</p>
+
+  <p>
+  つまり，問題は
+  「Crank--Nicolson 法が2次精度かどうか」
+  だけではありません．
+  外挿法に必要なのは，単なる収束次数ではなく，
+  誤差が安定した漸近展開を持つことです．
+  </p>
+
+<h3>9.2．基本的な解決策：damping を入れる</h3>
+
+<p>
+この問題に対する自然な解決策は，
+Crank--Nicolson 法の前に，あるいは途中に，
+stiff 成分を減衰させる damping を入れることです．
+典型的には，最初の1ステップを Crank--Nicolson 法で進める代わりに，
+後退 Euler 法の半ステップを2回行います．
+</p>
+
+<p>
+模式的には，
+\[
+  \text{CN 1 step of size } k
+\]
+の代わりに，
+\[
+  \text{BE 2 half-steps of size } k/2
+\]
+を初期段階に入れます．
+後退 Euler 法の増幅因子は
+\[
+  R_{\mathrm{BE}}(z)=\frac{1}{1-z}
+\]
+であり，
+\[
+  R_{\mathrm{BE}}(z)\to 0
+  \quad (z\to-\infty)
+\]
+です．
+そのため，後退 Euler 法は stiff 成分を強く減衰させます．
+</p>
+
+<p>
+このような初期 damping により，非滑らかな初期値や高周波成分の影響を抑え，
+その後に Crank--Nicolson 法を使うことで，
+Crank--Nicolson 法の2次精度と偶数冪展開を回復しやすくなります．
+この考え方は，しばしば Rannacher smoothing と呼ばれます．
+</p>
+
+<h3>9.3．外挿法と組み合わせると何が研究になるか</h3>
+
+<p>
+ここで重要なのは，単に
+「Crank--Nicolson 法に外挿をかけたら精度が上がった」
+と主張するだけでは弱いということです．
+滑らかな非stiff問題では，これは古典的な Richardson extrapolation の枠内にあります．
+研究として面白いのは，
+</p>
+
+  <p>
+  \[
+    \text{Crank--Nicolson 外挿が壊れる理由を明確にし，}
+  \]
+  \[
+    \text{damping により誤差展開を回復する}
+  \]
+  </p>
+
+<p>
+という問題設定です．
+つまり，外挿が効く状況だけを見るのではなく，
+外挿が効かない理由を特定し，
+それを補正する設計を与えることが重要です．
+</p>
+
+<p>
+たとえば，damping 付き Crank--Nicolson 近似を \(y_k^{R}(T)\) と書き，
+次のような誤差展開を示すことが目標になります．
+\[
+  y_k^{R}(T)
+  =
+  u(T)+c_2(T)k^2+c_4(T)k^4+O(k^6).
+\]
+この展開が得られれば，
+\[
+  y_{\mathrm{ext}}^{R}(T)
+  =
+  \frac{4y_{k/2}^{R}(T)-y_k^{R}(T)}{3}
+\]
+に対して
+\[
+  y_{\mathrm{ext}}^{R}(T)=u(T)+O(k^4)
+\]
+が期待できます．
+</p>
+
+<h3>9.4．PDE・FEMでの定理の形</h3>
+
+<p>
+放物型方程式や Stokes 型問題を有限要素法で空間離散した場合には，
+時間刻み幅を \(k\)，メッシュサイズを \(h\) として，
+たとえば次のような評価を目標にできます．
+\[
+  \|u(T)-u_{h,k}^{R,\mathrm{ext}}(T)\|
+  \leq
+  C\left(k^4+h^{r+1}\right).
+\]
+ここで \(u_{h,k}^{R,\mathrm{ext}}\) は，
+damping を入れた Crank--Nicolson 近似に Richardson extrapolation を施した近似解です．
+</p>
+
+<p>
+ただし，初期値が非滑らかな場合には，定数 \(C\) が時刻 \(T\) に依存し，
+\[
+  C=C(T),\quad C(T)\to\infty \quad (T\downarrow 0)
+\]
+となる可能性があります．
+これは放物型問題の smoothing 効果を使う解析では自然な現象です．
+したがって，初期時刻直後と正の時刻 \(T>0\) を分けて評価することが重要になります．
+</p>
+
+<h3>9.5．研究課題としての整理</h3>
+
+<p>
+この方向で考えるべき課題は，次のように整理できます．
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>課題</th>
+      <th>内容</th>
+      <th>研究としての意味</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>失敗原因の特定</td>
+      <td>stiff成分，初期層，非滑らかな初期値により誤差展開が崩れる理由を調べる</td>
+      <td>外挿法の限界を明確化する</td>
+    </tr>
+    <tr>
+      <td>damping設計</td>
+      <td>後退 Euler 半ステップや高周波フィルターで stiff 成分を抑える</td>
+      <td>Crank--Nicolson の弱点を補う</td>
+    </tr>
+    <tr>
+      <td>誤差展開の回復</td>
+      <td>damping 後の近似が偶数冪展開を持つことを示す</td>
+      <td>Richardson外挿の理論的基礎になる</td>
+    </tr>
+    <tr>
+      <td>FEM誤差との分離</td>
+      <td>時間誤差 \(k^4\) と空間誤差 \(h^{r+1}\) を分けて評価する</td>
+      <td>PDE/FEM論文として重要</td>
+    </tr>
+    <tr>
+      <td>数値実験</td>
+      <td>単純CN外挿の失敗例と，damping付き外挿の成功例を比較する</td>
+      <td>現象の説得力を高める</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>9.6．まとめ</h3>
+
+<p>
+Crank--Nicolson 法と Richardson extrapolation の組合せは，
+滑らかな非stiff問題では自然に高精度化できます．
+しかし，stiff問題や非滑らかな初期値を含む問題では，
+Crank--Nicolson 法の弱い減衰性により，外挿に必要な誤差展開が見えにくくなります．
+</p>
+
+<p>
+そのため，研究としては，
+単に Crank--Nicolson 法に外挿を適用するのではなく，
+</p>
+
+<p>
+Crank--Nicolson 外挿が壊れる理由を明確にし，
+damping により誤差展開を回復する．
+この視点は，外挿法を単なる数値テクニックではなく，
+誤差解析の問題として捉えるための入口になる．
+</p>
+
+<p>
+という方向が有望です．
+これは，時間発展問題の数値解析，有限要素法，stiff問題，非滑らかな初期値の解析を結びつけるテーマになります．
+</p>
+
+<h3>9.7．PDEでは初期値の正則性がなぜ重要になるか</h3>
+
+<p>
+Crank--Nicolson 法を PDE，特に放物型方程式に適用する場合，
+ODEの場合よりも初期値の正則性が重要になります．
+理由は，空間離散後の系に非常に大きな固有値が現れるからです．
+これらは高周波モードに対応します．
+</p>
+
+<p>
+後退 Euler 法は L-stable であり，高周波モードを強く減衰させます．
+そのため，初期値があまり滑らかでない場合でも比較的ロバストです．
+一方，Crank--Nicolson 法は A-stable ですが L-stable ではありません．
+線形テスト方程式に対する増幅因子は
+\[
+  R_{\mathrm{CN}}(z)=\frac{1+z/2}{1-z/2}
+\]
+であり，
+\[
+  R_{\mathrm{CN}}(z)\to -1
+  \quad (z\to-\infty)
+\]
+となります．
+したがって，速く消えるべき高周波成分が符号を変えながら残ることがあります．
+</p>
+
+<p>
+このため，Crank--Nicolson 法で期待される2次精度，
+さらに Richardson extrapolation による4次精度を観測するには，
+初期値が十分滑らかであること，
+または初期段階で高周波成分を減衰させる処理が必要になります．
+その代表的な方法が Rannacher smoothing です．
+</p>
+
+  <p>
+  まとめると，後退 Euler 法は低次だが初期値の粗さに強く，
+  Crank--Nicolson 法は高次だが初期値の粗さに敏感です．
+  したがって，PDEで Crank--Nicolson 外挿を使う場合には，
+  初期値の正則性，初期層，高周波モードの減衰を明示的に扱う必要があります．
+  </p>
+
+<h3>9.8．初期値を \(L^2\) に落としたい場合</h3>
+
+<p>
+後退 Euler 法でも，標準的なエネルギー評価をそのまま使うと，
+初期値に \(H^1\) 正則性を仮定することがあります．
+しかし，これは後退 Euler 法そのものが \(L^2\) 初期値で使えないという意味ではありません．
+放物型問題には平滑化効果があるため，
+\(u_0\in L^2\) から出発しても，正の時刻 \(t>0\) では解が滑らかになります．
+</p>
+
+<p>
+その場合，評価は
+\[
+  \|u(t_n)-U^n\|_{L^2}
+  \leq
+  C\left(k t_n^{-1}+h^{r+1}t_n^{-(r+1)/2}\right)\|u_0\|_{L^2}
+\]
+のように，\(t_n\downarrow0\) で定数が悪くなる形になります．
+これは \(L^2\) 初期値を扱う場合には自然な現象です．
+</p>
+
+<p>
+一方，Crank--Nicolson 法では，高周波成分を強く減衰させないため，
+\(L^2\) 初期値に対しては後退 Euler 法より慎重な扱いが必要です．
+そのため，初期段階で後退 Euler 型の damping を入れる
+Rannacher smoothing が重要になります．
+この smoothing によって初期値由来の高周波成分を抑えたあと，
+Crank--Nicolson 法の2次精度，さらに Richardson extrapolation による高次化を狙う，
+という方針が考えられます．
+</p>
+
+</article>
+</div>
+
+<h2>10．自分で計算するときのチェックリスト</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Crank--Nicolson で精度が上がらないときは，次を確認するとよいです．
+</p>
+<ul>
+  <li>
+    まず，空間誤差を十分小さくして，時間誤差だけが見える設定にしているか．
+  </li>
+  <li>
+    \(h,h/2,h/4\) の計算で，誤差比が本当に \(2^2=4\) に近づいているか．
+  </li>
+  <li>
+    外挿後の誤差比が \(2^4=16\) に近づく範囲があるか．
+  </li>
+  <li>
+    初期値が滑らかか．初期層がないか．
+  </li>
+  <li>
+    問題が stiff すぎないか．\(h|\lambda|\) が大きすぎないか．
+  </li>
+  <li>
+    Newton 法や線形ソルバーの許容誤差が十分小さいか．
+  </li>
+  <li>
+    丸め誤差の領域まで \(h\) を小さくしすぎていないか．
+  </li>
+</ul>
+</article>
+</div>
+
+<h2>11．Pythonで確認する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+ここでは，三つの実験を行います．
+</p>
+
+<ul>
+  <li>滑らかな非stiff問題で，Crank--Nicolson と1段外挿が期待通りに働くことを確認する．</li>
+  <li>stiffな減衰問題で，Crank--Nicolson が stiff成分を強く減衰しないことを確認する．</li>
+  <li>増幅因子を直接比較し，Crank--Nicolson と後退 Euler の違いを見る．</li>
+</ul>
+
+<p>
+コードはHTML内にそのまま掲載しています．
+この部分だけをコピーして Python ファイルとして実行できます．
+</p>
+
 <div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code class="language-python">#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+&quot;&quot;&quot;
+Crank--Nicolson, Richardson extrapolation, and a stiffness warning.
+
+This script accompanies the article:
+外挿法と誤差展開（第4回）：ODEにおける外挿法と Crank--Nicolson
+
+The message of the code is deliberately modest:
+
+1. For a smooth non-stiff problem, Crank--Nicolson is second-order,
+   and one Richardson extrapolation step gives fourth-order behaviour.
+
+2. For a stiff decay mode, Crank--Nicolson is A-stable but not strongly damping.
+   The expected clean error expansion may not be visible on practical step sizes.
+   In such a case, Richardson extrapolation can be unreliable.
+
+3. Backward Euler is only first-order, but it damps stiff modes strongly.
+&quot;&quot;&quot;
+
+import math
+
+
+def crank_nicolson_linear(lambda_value, y0, T, N):
+    &quot;&quot;&quot;
+    Crank--Nicolson method for
+
+        u&#x27;(t) = lambda_value * u(t),    u(0)=y0.
+
+    The amplification factor is
+
+        R_CN(z) = (1 + z/2)/(1 - z/2),    z = h lambda_value.
+    &quot;&quot;&quot;
+    h = T / N
+    z = h * lambda_value
+    R = (1.0 + 0.5 * z) / (1.0 - 0.5 * z)
+
+    return y0 * (R ** N)
+
+
+def backward_euler_linear(lambda_value, y0, T, N):
+    &quot;&quot;&quot;
+    Backward Euler method for
+
+        u&#x27;(t) = lambda_value * u(t),    u(0)=y0.
+
+    The amplification factor is
+
+        R_BE(z) = 1/(1 - z),    z = h lambda_value.
+    &quot;&quot;&quot;
+    h = T / N
+    z = h * lambda_value
+    R = 1.0 / (1.0 - z)
+
+    return y0 * (R ** N)
+
+
+def richardson_second_order(value_h, value_h2):
+    &quot;&quot;&quot;
+    Richardson extrapolation for a second-order method.
+
+    If
+        A(h) = exact + c_2 h^2 + c_4 h^4 + ...
+    then
+        A_ext(h) = (4 A(h/2) - A(h))/3
+    cancels the h^2 term.
+    &quot;&quot;&quot;
+    return (4.0 * value_h2 - value_h) / 3.0
+
+
+def observed_rate(error_old, error_new, h_old, h_new):
+    &quot;&quot;&quot;
+    Observed rate p assuming error ~ C h^p.
+    &quot;&quot;&quot;
+    if error_new == 0.0 or error_old == 0.0:
+        return None
+    return math.log(error_old / error_new) / math.log(h_old / h_new)
+
+
+def experiment_smooth_nonstiff():
+    &quot;&quot;&quot;
+    Smooth non-stiff test.
+
+    Problem:
+        u&#x27;(t) = -u(t),    u(0)=1,    0 &lt;= t &lt;= 1.
+
+    Exact solution:
+        u(1) = exp(-1).
+
+    This is the friendly case. Crank--Nicolson behaves as expected.
+    &quot;&quot;&quot;
+    lam = -1.0
+    y0 = 1.0
+    T = 1.0
+    exact = math.exp(-1.0)
+
+    print(&quot;=&quot; * 88)
+    print(&quot;Experiment 1: smooth non-stiff problem&quot;)
+    print(&quot;u&#x27;(t)=-u(t), u(0)=1, exact u(1)=exp(-1)&quot;)
+    print(&quot;=&quot; * 88)
+    print(f&quot;{&#x27;N&#x27;:&gt;6} {&#x27;h&#x27;:&gt;10} | {&#x27;CN error&#x27;:&gt;14} {&#x27;rate&#x27;:&gt;7} | {&#x27;extrap error&#x27;:&gt;14} {&#x27;rate&#x27;:&gt;7}&quot;)
+    print(&quot;-&quot; * 88)
+
+    previous = None
+
+    for N in [4, 8, 16, 32, 64, 128, 256]:
+        h = T / N
+
+        y_h = crank_nicolson_linear(lam, y0, T, N)
+        y_h2 = crank_nicolson_linear(lam, y0, T, 2 * N)
+        y_ext = richardson_second_order(y_h, y_h2)
+
+        err_cn = abs(y_h - exact)
+        err_ext = abs(y_ext - exact)
+
+        if previous is None:
+            rate_cn_text = &quot;   ---&quot;
+            rate_ext_text = &quot;   ---&quot;
+        else:
+            h_old, err_cn_old, err_ext_old = previous
+            rate_cn = observed_rate(err_cn_old, err_cn, h_old, h)
+            rate_ext = observed_rate(err_ext_old, err_ext, h_old, h)
+            rate_cn_text = &quot;   ---&quot; if rate_cn is None else f&quot;{rate_cn:7.3f}&quot;
+            rate_ext_text = &quot;   ---&quot; if rate_ext is None else f&quot;{rate_ext:7.3f}&quot;
+
+        print(f&quot;{N:6d} {h:10.6f} | {err_cn:14.6e} {rate_cn_text} | {err_ext:14.6e} {rate_ext_text}&quot;)
+
+        previous = (h, err_cn, err_ext)
+
+    print()
+    print(&quot;In this case the expected pattern is visible:&quot;)
+    print(&quot;  Crank--Nicolson            : O(h^2)&quot;)
+    print(&quot;  one Richardson extrapolation: O(h^4)&quot;)
+    print()
+
+
+def experiment_stiff_decay():
+    &quot;&quot;&quot;
+    Stiff decay test.
+
+    Problem:
+        u&#x27;(t) = -1000 u(t),    u(0)=1,    0 &lt;= t &lt;= 1.
+
+    Exact solution:
+        u(1) = exp(-1000), which is essentially zero in double precision.
+
+    The point is not that Crank--Nicolson is unstable. It is A-stable.
+    The point is that it does not strongly damp very stiff modes when h*lambda
+    is large and negative.
+    &quot;&quot;&quot;
+    lam = -1000.0
+    y0 = 1.0
+    T = 1.0
+    exact = math.exp(lam * T)  # underflows to 0.0 in double precision
+
+    print(&quot;=&quot; * 88)
+    print(&quot;Experiment 2: stiff decay mode&quot;)
+    print(&quot;u&#x27;(t)=-1000 u(t), u(0)=1, exact u(1)=exp(-1000)≈0&quot;)
+    print(&quot;=&quot; * 88)
+    print(f&quot;{&#x27;N&#x27;:&gt;6} {&#x27;h&#x27;:&gt;10} {&#x27;z=hλ&#x27;:&gt;10} | {&#x27;CN value&#x27;:&gt;14} {&#x27;CN error&#x27;:&gt;14} | {&#x27;extrap error&#x27;:&gt;14} | {&#x27;BE value&#x27;:&gt;14}&quot;)
+    print(&quot;-&quot; * 88)
+
+    for N in [5, 10, 20, 40, 80, 160, 320, 640]:
+        h = T / N
+        z = h * lam
+
+        y_cn = crank_nicolson_linear(lam, y0, T, N)
+        y_cn_half = crank_nicolson_linear(lam, y0, T, 2 * N)
+        y_ext = richardson_second_order(y_cn, y_cn_half)
+        y_be = backward_euler_linear(lam, y0, T, N)
+
+        err_cn = abs(y_cn - exact)
+        err_ext = abs(y_ext - exact)
+
+        print(f&quot;{N:6d} {h:10.6f} {z:10.1f} | {y_cn:14.6e} {err_cn:14.6e} | {err_ext:14.6e} | {y_be:14.6e}&quot;)
+
+    print()
+    print(&quot;The exact value is essentially zero.&quot;)
+    print(&quot;For coarse steps, Crank--Nicolson leaves a stiff component with large magnitude.&quot;)
+    print(&quot;Richardson extrapolation is not reliable until the asymptotic regime is reached.&quot;)
+    print(&quot;Backward Euler is low-order, but it damps this stiff component much more strongly.&quot;)
+    print()
+
+
+def experiment_amplification_factors():
+    &quot;&quot;&quot;
+    Compare amplification factors for large negative z.
+
+    For z=h*lambda, lambda&lt;0:
+        R_CN(z) = (1+z/2)/(1-z/2),
+        R_BE(z) = 1/(1-z).
+
+    As z -&gt; -infinity,
+        R_CN(z) -&gt; -1,
+        R_BE(z) -&gt; 0.
+    &quot;&quot;&quot;
+    print(&quot;=&quot; * 88)
+    print(&quot;Experiment 3: amplification factors&quot;)
+    print(&quot;=&quot; * 88)
+    print(f&quot;{&#x27;z&#x27;:&gt;10} | {&#x27;R_CN(z)&#x27;:&gt;16} {&#x27;|R_CN|&#x27;:&gt;10} | {&#x27;R_BE(z)&#x27;:&gt;16} {&#x27;|R_BE|&#x27;:&gt;10}&quot;)
+    print(&quot;-&quot; * 88)
+
+    for z in [-0.5, -1, -2, -5, -10, -50, -100, -1000]:
+        R_cn = (1.0 + 0.5 * z) / (1.0 - 0.5 * z)
+        R_be = 1.0 / (1.0 - z)
+
+        print(f&quot;{z:10.1f} | {R_cn:16.10f} {abs(R_cn):10.6f} | {R_be:16.10f} {abs(R_be):10.6f}&quot;)
+
+    print()
+    print(&quot;Crank--Nicolson is A-stable, but |R_CN(z)| tends to 1 for z -&gt; -infinity.&quot;)
+    print(&quot;Backward Euler is strongly damping, because |R_BE(z)| tends to 0.&quot;)
+    print()
+
+
+def main():
+    experiment_smooth_nonstiff()
+    experiment_stiff_decay()
+    experiment_amplification_factors()
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre>
+</div>
+
+<h3>実行結果の例</h3>
+
+<pre><code>========================================================================================
+Experiment 1: smooth non-stiff problem
+u&#x27;(t)=-u(t), u(0)=1, exact u(1)=exp(-1)
+========================================================================================
+     N          h |       CN error    rate |   extrap error    rate
+----------------------------------------------------------------------------------------
+     4   0.250000 |   1.929129e-03    --- |   3.279809e-06    ---
+     8   0.125000 |   4.798223e-04   2.007 |   2.032718e-07   4.012
+    16   0.062500 |   1.198031e-04   2.002 |   1.267794e-08   4.003
+    32   0.031250 |   2.994127e-05   2.000 |   7.919569e-10   4.001
+    64   0.015625 |   7.484724e-06   2.000 |   4.949285e-11   4.000
+   128   0.007812 |   1.871144e-06   2.000 |   3.092637e-12   4.000
+   256   0.003906 |   4.677837e-07   2.000 |   1.929013e-13   4.003
+
+In this case the expected pattern is visible:
+  Crank--Nicolson            : O(h^2)
+  one Richardson extrapolation: O(h^4)
+
+========================================================================================
+Experiment 2: stiff decay mode
+u&#x27;(t)=-1000 u(t), u(0)=1, exact u(1)=exp(-1000)≈0
+========================================================================================
+     N          h       z=hλ |       CN value       CN error |   extrap error |       BE value
+----------------------------------------------------------------------------------------
+     5   0.200000     -200.0 |  -9.048344e-01   9.048344e-01 |   1.195324e+00 |   3.048033e-12
+    10   0.100000     -100.0 |   6.702843e-01   6.702843e-01 |   4.553743e-02 |   9.052870e-21
+    20   0.050000      -50.0 |   2.017241e-01   2.017241e-01 |   6.505613e-02 |   7.056616e-35
+    40   0.025000      -25.0 |   1.638939e-03   1.638939e-03 |   5.463131e-04 |   2.518060e-57
+    80   0.012500      -12.5 |   6.105254e-12   6.105254e-12 |   2.035085e-12 |   3.743678e-91
+   160   0.006250       -6.2 |   8.120767e-47   8.120767e-47 |   2.706922e-47 |  2.217782e-138
+   320   0.003125       -3.1 |  1.848285e-211  1.848285e-211 |  6.160949e-212 |  1.159672e-197
+   640   0.001563       -1.6 |   0.000000e+00   0.000000e+00 |   0.000000e+00 |  2.851810e-262
+
+The exact value is essentially zero.
+For coarse steps, Crank--Nicolson leaves a stiff component with large magnitude.
+Richardson extrapolation is not reliable until the asymptotic regime is reached.
+Backward Euler is low-order, but it damps this stiff component much more strongly.
+
+========================================================================================
+Experiment 3: amplification factors
+========================================================================================
+         z |          R_CN(z)     |R_CN| |          R_BE(z)     |R_BE|
+----------------------------------------------------------------------------------------
+      -0.5 |     0.6000000000   0.600000 |     0.6666666667   0.666667
+      -1.0 |     0.3333333333   0.333333 |     0.5000000000   0.500000
+      -2.0 |     0.0000000000   0.000000 |     0.3333333333   0.333333
+      -5.0 |    -0.4285714286   0.428571 |     0.1666666667   0.166667
+     -10.0 |    -0.6666666667   0.666667 |     0.0909090909   0.090909
+     -50.0 |    -0.9230769231   0.923077 |     0.0196078431   0.019608
+    -100.0 |    -0.9607843137   0.960784 |     0.0099009901   0.009901
+   -1000.0 |    -0.9960079840   0.996008 |     0.0009990010   0.000999
+
+Crank--Nicolson is A-stable, but |R_CN(z)| tends to 1 for z -&gt; -infinity.
+Backward Euler is strongly damping, because |R_BE(z)| tends to 0.
+</code></pre>
+</article>
+</div>
+
+<h2>12．実験から分かること</h2>
+<div class="news">
+<article class="news-item">
+<p>
+最初の実験では，滑らかな非stiff問題なので，
+Crank--Nicolson の誤差はきれいに \(O(h^2)\) で減少し，
+外挿後の誤差は \(O(h^4)\) で減少しています．
+これは理論通りの挙動です．
+</p>
+
+<p>
+二つ目の実験では，
+\[
+  u'(t)=-1000u(t)
+\]
+を扱っています．
+厳密解は \(t=1\) ではほぼ0です．
+しかし，粗い刻み幅では Crank--Nicolson の値が大きく残っています．
+これは不安定だからではありません．
+A-stable ではあります．
+問題は，stiff成分を強く減衰させないことです．
+</p>
+
+<p>
+この段階で Richardson extrapolation を行っても，
+滑らかな非stiff問題のようにきれいな \(O(h^4)\) 改善は期待できません．
+なぜなら，まだ
+\[
+  y_h(T)=u(T)+c_2h^2+c_4h^4+\cdots
+\]
+という漸近領域に入っていないからです．
+</p>
+</article>
+</div>
+
+<h2>13．今回のまとめ</h2>
+<div class="news">
+<article class="news-item">
+<ul>
+  <li>Crank--Nicolson 法は，ODEでは陰的台形則として理解できる．</li>
+  <li>滑らかな非stiff問題では，Crank--Nicolson は2次精度を示し，1段外挿で4次精度化できる．</li>
+  <li>しかし，stiff問題や初期層をもつ問題では，誤差展開が数値的に見えにくくなる．</li>
+  <li>Crank--Nicolson は A-stable だが，stiff成分を強く減衰させる L-stable な方法ではない．</li>
+  <li>精度が上がらない場合は，空間誤差，初期値の滑らかさ，stiff性，ソルバー誤差，丸め誤差を確認する必要がある．</li>
+</ul>
+
+<p>
+今回の重要な結論は，
+</p>
+<p>
+  Crank--Nicolson と外挿法は相性がよい場合がある．
+  しかし，それは誤差展開が見えている場合であって，
+  stiff問題や非滑らかな問題で自動的に精度が上がるわけではない．
+</p>
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<ul>
+  <li>
+    Rolf Rannacher,
+    <em>Special Topics in Numerics III: Extrapolation and Defect Correction</em>,
+    Lecture Notes, Heidelberg University, 2017.
+  </li>
+  <li>
+    V. Thomée,
+    <em>Galerkin Finite Element Methods for Parabolic Problems</em>,
+    Springer Series in Computational Mathematics.
+  </li>
+</ul>
+</article>
 </div>
 
 
