@@ -208,11 +208,11 @@ FreeFEMで誤差の挙動を調べる良い方法が見つかりません．FEni
 <ul>
     <li><a href="./posts/article10may26_5.html">第1回：CIP法の二つの顔：Constrained Interpolation Profile と Continuous Interior Penalty</a> <div class="news-date"><time datetime="2026-5-10">10th May 2026</time></div></li>
     <li><a href="./posts/article00may26_5.html">第2回：1次元移流方程式と semi-Lagrangian / Lagrange–Galerkin 更新</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
-    <li><a href="./posts/article00may26_5.html">第3回：</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
-    <li><a href="./posts/article00may26_5.html">第4回：</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
-    <li><a href="./posts/article00may26_5.html">第5回：</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
-    <li><a href="./posts/article00may26_5.html">第6回：</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
-    <li><a href="./posts/article00may26_5.html">第7回：</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
+    <li><a href="./posts/article00may26_5.html">第3回：古典的 CIP の Hermite 再構成を確認する</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
+    <li><a href="./posts/article00may26_5.html">第4回：点値導関数ではなく，弱モーメントでプロファイルを持つ方法を考える</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
+    <li><a href="./posts/article00may26_5.html">第5回：Continuous Interior Penalty を導関数プロファイルの正則化として見る</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
+    <li><a href="./posts/article00may26_5.html">第6回：保存形 Lagrange–Galerkin 有限要素法との接続を整理する</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
+    <li><a href="./posts/article00may26_5.html">第7回：数値実験の最小コードを作り，古典的 CIP，弱モーメント型，CIP 正則化型を比較する</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
 </ul>
 </p>    
 </article>
@@ -227,15 +227,53 @@ FreeFEMで誤差の挙動を調べる良い方法が見つかりません．FEni
 <p class="news-cont">
 <ul>
 	<li><a href="./posts/article00may26_5.html">第1回：なぜ境界未知量を持つのか</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
-	<li><a href="./posts/article00may26_5.html">第2回：</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
-	<li><a href="./posts/article00may26_5.html">第3回：</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
-    <li><a href="./posts/article00may26_5.html">第4回：</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
-    <li><a href="./posts/article00may26_5.html">第5回：</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
+	<li><a href="./posts/article00may26_5.html">第2回：Weak Galerkin法の見方</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
+	<li><a href="./posts/article00may26_5.html">第3回：ハイブリッド法の見方</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
+    <li><a href="./posts/article00may26_5.html">第4回：両者はどこまで同じで，どこから違うのか</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
+    <li><a href="./posts/article00may26_5.html">第5回：自分の研究との接続</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
 </ul>
 </p>
 </article>
 </div>
 
+<h2>有限要素法の非圧縮流れは，本当に非圧縮なのか？</h2>
+<div class="news">
+<article class="news-item">
+<p>
+    非圧縮流れでは，速度場が
+    \(\nabla \cdot u = 0\)
+    を満たすことが本質的です．しかし有限要素法では，多くの場合，
+    近似速度 \(u_h\) は
+    \[
+      (\nabla \cdot u_h, q_h)=0
+      \quad \forall q_h \in Q_h
+    \]
+    という弱い意味で発散自由であるにすぎません．
+  </p>
+
+  <p>
+    この連載では，Pelletier，Fortin，Camarero の古典的論文
+    <em>Are FEM solutions of incompressible flows really incompressible?</em>
+    を出発点として，弱い発散自由条件，点ごとの非圧縮性，局所質量保存，
+    そして pressure-robustness との関係を整理していきます．
+  </p>
+
+  <p>
+    キーワードは，
+    <strong>「数値解は，どの意味で非圧縮なのか」</strong>
+    です．
+  </p>
+<p class="news-cont">
+<ul>
+	<li><a href="./posts/article00may26_5.html">第1回：混合法で \( \nabla \cdot u_h \) は本当に成り立つのか</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
+	<li><a href="./posts/article00may26_5.html">第2回：単純な流れがなぜ頭痛の種になるのか</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
+	<li><a href="./posts/article00may26_5.html">第3回：弱い発散自由条件，局所質量保存，点ごとの非圧縮性</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
+    <li><a href="./posts/article00may26_5.html">第4回：Taylor–Hood，MINI，Scott–Vogelius，RT/BDM は何が違うのか</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
+    <li><a href="./posts/article00may26_5.html">第5回：pressure-robustness へ：非圧縮性の問題はどこへつながるか</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
+</ul>
+</p>
+</article>
+</div>
 
 <h2>Google ColabでFEniCSxの導入</h2>
 <div class="news">
