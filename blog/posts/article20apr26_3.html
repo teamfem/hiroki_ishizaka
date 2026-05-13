@@ -229,13 +229,12 @@ FreeFem++-nw freefem_demo/hello.edp</code></pre></div>
 <p>
 ここで，Poisson 方程式
 \[
--\Delta u = 1, \qquad u|_{\partial\Omega}=0
+-\Delta u = 1, \quad u|_{\partial\Omega}=0
 \]
 を単位正方形上で解きます．弱形式
 \[
 \int_\Omega 
-abla u \cdot 
-abla v\,dx = \int_\Omega f v\,dx
+\nabla u \cdot \nabla v\,dx = \int_\Omega f v\,dx
 \]
 を <code>solve</code> でそのまま書き，さらに格子点上でサンプリングした値を <code>freefem_demo/u_samples.txt</code> に保存します．
 </p>
