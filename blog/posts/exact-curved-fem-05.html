@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 28th May 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 28th May 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">第5回：単位円上の Poisson 問題で曲線メッシュを比較する</h1>
+<!---->
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+前回は，UFL の <code>grad</code> と <code>dx</code> の中で何が起きているかを整理した．
+弱形式は物理座標で書いているように見えるが，実際の要素積分は参照要素上へ引き戻され，
+勾配には \(DF_K^{-\top}\)，測度には \(|\det DF_K|\) が現れる，という話である．
+</p>
+
+<p>
+今回は，第1期の締めくくりとして，単位円上の Poisson 問題を使い，
+直線メッシュと曲線メッシュを比較する．
+ここでの目的は，高次有限要素法の性能を示すことではない．
+有限要素次数は常に \(k=1\) に固定し，幾何次数 \(q_{\rm geo}\) だけを変える．
+</p>
+
+<p>
+つまり，今回見たいのは次の点である．
+</p>
+
+\[
+\text{同じ } P^1 \text{ 有限要素空間を使ったとき，幾何表現を変えると何が変わるのか．}
+\]
+
+<p>
+この実験により，曲線幾何が主に幾何誤差を改善すること，そして \(P^1\) 近似の主要な有限要素誤差次数は自動的には変わらないことを確認する．
+</p>
+
+</article>
+</div>
+
+<h2>計算する問題</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+領域は単位円とする．
+</p>
+
+\[
+\Omega=\{(x_1,x_2)^\top\in\mathbb R^2:x_1^2+x_2^2<1\}.
+\]
+
+<p>
+Poisson 問題は，
+</p>
+
+\[
+-\Delta u=f\quad\text{in }\Omega,\qquad
+u=0\quad\text{on }\partial\Omega
+\]
+
+<p>
+である．
+</p>
+
+<p>
+今回は，厳密解を
+</p>
+
+\[
+u(x_1,x_2)=1-x_1^2-x_2^2
+\]
+
+<p>
+と選ぶ．
+この関数は単位円の境界上で
+</p>
+
+\[
+u=0\quad\text{on }\partial\Omega
+\]
+
+<p>
+を満たす．また，
+</p>
+
+\[
+-\Delta u=4
+\]
+
+<p>
+である．したがって，右辺は
+</p>
+
+\[
+f=4
+\]
+
+<p>
+とすればよい．
+</p>
+
+<p>
+このように厳密解が分かっている問題を使うことで，数値解 \(u_h\) の誤差を直接計算できる．
+</p>
+
+</article>
+</div>
+
+<h2>比較するメッシュ</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+今回比較するのは，幾何次数
+</p>
+
+\[
+q_{\rm geo}=1,2,3
+\]
+
+<p>
+である．有限要素次数はすべての場合で
+</p>
+
+\[
+k=1
+\]
+
+<p>
+に固定する．
+</p>
+
+<p>
+つまり，未知関数の近似空間はすべて一次 Lagrange 要素であり，変えているのはメッシュの幾何表現だけである．
+</p>
+
+<ul>
+<li>\(q_{\rm geo}=1\)：直線辺をもつ polygonal mesh</li>
+<li>\(q_{\rm geo}=2\)：二次の曲線幾何をもつ mesh</li>
+<li>\(q_{\rm geo}=3\)：三次の曲線幾何をもつ mesh</li>
+</ul>
+
+<p>
+\(q_{\rm geo}=1\) では，円周は直線の chord で近似される．
+そのため，計算領域は厳密な単位円ではなく，多角形領域になる．
+一方，\(q_{\rm geo}=2,3\) では，境界辺の途中に幾何ノードが入り，境界を曲線的に表現できる．
+</p>
+
+<p>
+この違いが，面積誤差や境界誤差に大きく反映される．
+</p>
+
+</article>
+</div>
+
+<h2>Gmsh/FEniCSx での基本方針</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+Gmsh 側では，メッシュ生成後に geometry order を指定する．
+概念的には次の部分である．
+</p>
+
+<pre><code>gmsh.model.mesh.generate(2)
+gmsh.model.mesh.setOrder(geometry_order)
+</code></pre>
+
+<p>
+ここで <code>geometry_order</code> が \(q_{\rm geo}\) に対応する．
+</p>
+
+<p>
+一方，FEniCSx 側では，有限要素空間を一次 Lagrange 空間として定義する．
+</p>
+
+<pre><code>V = fem.functionspace(mesh, ("Lagrange", 1))
+</code></pre>
+
+<p>
+この <code>1</code> が有限要素次数 \(k=1\) に対応する．
+したがって，たとえ <code>geometry_order</code> が 2 や 3 であっても，未知関数の近似空間は一次 Lagrange のままである．
+</p>
+
+<p>
+UFL では，Poisson 問題の弱形式を次のように書く．
+</p>
+
+<pre><code>u = ufl.TrialFunction(V)
+v = ufl.TestFunction(V)
+
+a = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
+L = f * v * dx
+</code></pre>
+
+<p>
+ここで <code>ufl.grad</code> の中では物理座標での勾配が扱われ，
+<code>dx</code> の中では曲線幾何に対応する積分測度が扱われる．
+実際の要素積分では，参照要素上に引き戻され，\(DF_K^{-\top}\) と \(|\det DF_K|\) が内部的に使われる．
+</p>
+
+</article>
+</div>
+
+<h2>幾何誤差</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+まず，メッシュの幾何表現そのものを調べるため，二つの幾何誤差を計算する．
+</p>
+
+<p>
+一つ目は，面積誤差である．
+</p>
+
+\[
+E_{\rm area}:=\bigl||\Omega_h|-\pi\bigr|.
+\]
+
+<p>
+ここで \(|\Omega_h|\) は，計算メッシュが表す領域の面積である．
+単位円の面積は \(\pi\) なので，この差を見れば，領域の面積がどれだけ正確に表されているかが分かる．
+</p>
+
+<p>
+二つ目は，境界半径誤差である．
+</p>
+
+\[
+E_{\rm bdry}:=
+\max_{x_q\in\partial\Omega_h}
+\bigl||x_q|-1\bigr|.
+\]
+
+<p>
+これは，境界上のサンプル点 \(x_q\) が，単位円の半径 1 からどれだけずれているかを測る量である．
+厳密な最大値ではなく，境界 coordinate map から得たサンプル点に対する診断量として用いる．
+</p>
+
+</article>
+</div>
+
+<h2>有限要素誤差</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+次に，有限要素解 \(u_h\) の相対誤差を計算する．
+\(H^1\)-seminorm 相対誤差は，
+</p>
+
+\[
+E_{H^1}
+:=
+\left(
+\sum_{K\in\mathcal K_h}
+\int_K |\nabla(u-u_h)|^2\,dx
+\right)^{1/2}
+/|u|_{H^1(\Omega)}
+\]
+
+<p>
+で定義する．
+</p>
+
+<p>
+また，\(L^2\)-norm 相対誤差は，
+</p>
+
+\[
+E_{L^2}
+:=
+\left(
+\sum_{K\in\mathcal K_h}
+\int_K |u-u_h|^2\,dx
+\right)^{1/2}
+/\|u\|_{L^2(\Omega)}
+\]
+
+<p>
+で定義する．
+</p>
+
+<p>
+観測次数は，連続する二つのメッシュに対して
+</p>
+
+\[
+{\rm rate}
+=
+\frac{\log(E_{\rm old}/E_{\rm new})}
+     {\log(h_{\rm old}/h_{\rm new})}
+\]
+
+<p>
+で計算する．
+</p>
+
+<p>
+一次 Lagrange 要素を用いているので，滑らかな解に対しては標準的に
+</p>
+
+\[
+E_{H^1}=O(h),\qquad E_{L^2}=O(h^2)
+\]
+
+<p>
+が期待される．
+</p>
+
+</article>
+</div>
+
+<h2>幾何誤差の結果</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+まず，単位円の幾何誤差を比較する．
+</p>
+
+<table>
+<thead>
+<tr>
+<th>\(q_{\rm geo}\)</th>
+<th>level</th>
+<th>\(h\)</th>
+<th>\(E_{\rm area}\)</th>
+<th>\(E_{\rm bdry}\)</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>0</td><td>\(4.000\times10^{-1}\)</td><td>\(8.013\times10^{-2}\)</td><td>\(1.916\times10^{-2}\)</td></tr>
+<tr><td>1</td><td>1</td><td>\(2.000\times10^{-1}\)</td><td>\(2.015\times10^{-2}\)</td><td>\(4.802\times10^{-3}\)</td></tr>
+<tr><td>1</td><td>2</td><td>\(1.000\times10^{-1}\)</td><td>\(5.205\times10^{-3}\)</td><td>\(1.240\times10^{-3}\)</td></tr>
+<tr><td>1</td><td>3</td><td>\(5.000\times10^{-2}\)</td><td>\(1.302\times10^{-3}\)</td><td>\(3.100\times10^{-4}\)</td></tr>
+<tr><td>2</td><td>0</td><td>\(4.000\times10^{-1}\)</td><td>\(1.549\times10^{-4}\)</td><td>\(4.596\times10^{-5}\)</td></tr>
+<tr><td>2</td><td>1</td><td>\(2.000\times10^{-1}\)</td><td>\(9.717\times10^{-6}\)</td><td>\(2.887\times10^{-6}\)</td></tr>
+<tr><td>2</td><td>2</td><td>\(1.000\times10^{-1}\)</td><td>\(6.473\times10^{-7}\)</td><td>\(1.924\times10^{-7}\)</td></tr>
+<tr><td>2</td><td>3</td><td>\(5.000\times10^{-2}\)</td><td>\(4.047\times10^{-8}\)</td><td>\(1.203\times10^{-8}\)</td></tr>
+<tr><td>3</td><td>0</td><td>\(4.000\times10^{-1}\)</td><td>\(2.282\times10^{-5}\)</td><td>\(1.184\times10^{-5}\)</td></tr>
+<tr><td>3</td><td>1</td><td>\(2.000\times10^{-1}\)</td><td>\(1.437\times10^{-6}\)</td><td>\(7.451\times10^{-7}\)</td></tr>
+<tr><td>3</td><td>2</td><td>\(1.000\times10^{-1}\)</td><td>\(9.587\times10^{-8}\)</td><td>\(4.968\times10^{-8}\)</td></tr>
+<tr><td>3</td><td>3</td><td>\(5.000\times10^{-2}\)</td><td>\(5.995\times10^{-9}\)</td><td>\(3.107\times10^{-9}\)</td></tr>
+</tbody>
+</table>
+
+<p>
+\(q_{\rm geo}=1\) では，境界は直線 chord で表されるため，面積誤差も境界誤差も比較的大きい．
+一方，\(q_{\rm geo}=2,3\) では，これらの誤差が大きく小さくなる．
+これは，計算が単なる多角形メッシュではなく，曲線幾何をもつメッシュ上で行われていることを示している．
+</p>
+
+</article>
+</div>
+
+<h2>有限要素誤差の結果</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+次に，Poisson 問題の相対有限要素誤差を見る．
+</p>
+
+<table>
+<thead>
+<tr>
+<th>\(q_{\rm geo}\)</th>
+<th>level</th>
+<th>\(h\)</th>
+<th>\(E_{H^1}\)</th>
+<th>rate</th>
+<th>\(E_{L^2}\)</th>
+<th>rate</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>0</td><td>\(4.000\times10^{-1}\)</td><td>\(1.465\times10^{-1}\)</td><td>--</td><td>\(6.316\times10^{-2}\)</td><td>--</td></tr>
+<tr><td>1</td><td>1</td><td>\(2.000\times10^{-1}\)</td><td>\(7.746\times10^{-2}\)</td><td>0.92</td><td>\(1.674\times10^{-2}\)</td><td>1.92</td></tr>
+<tr><td>1</td><td>2</td><td>\(1.000\times10^{-1}\)</td><td>\(4.044\times10^{-2}\)</td><td>0.94</td><td>\(4.426\times10^{-3}\)</td><td>1.92</td></tr>
+<tr><td>1</td><td>3</td><td>\(5.000\times10^{-2}\)</td><td>\(2.031\times10^{-2}\)</td><td>0.99</td><td>\(1.111\times10^{-3}\)</td><td>1.99</td></tr>
+<tr><td>2</td><td>0</td><td>\(4.000\times10^{-1}\)</td><td>\(1.480\times10^{-1}\)</td><td>--</td><td>\(2.598\times10^{-2}\)</td><td>--</td></tr>
+<tr><td>2</td><td>1</td><td>\(2.000\times10^{-1}\)</td><td>\(7.800\times10^{-2}\)</td><td>0.92</td><td>\(6.940\times10^{-3}\)</td><td>1.90</td></tr>
+<tr><td>2</td><td>2</td><td>\(1.000\times10^{-1}\)</td><td>\(4.057\times10^{-2}\)</td><td>0.94</td><td>\(1.837\times10^{-3}\)</td><td>1.92</td></tr>
+<tr><td>2</td><td>3</td><td>\(5.000\times10^{-2}\)</td><td>\(2.036\times10^{-2}\)</td><td>0.99</td><td>\(4.600\times10^{-4}\)</td><td>2.00</td></tr>
+<tr><td>3</td><td>0</td><td>\(4.000\times10^{-1}\)</td><td>\(1.426\times10^{-1}\)</td><td>--</td><td>\(2.447\times10^{-2}\)</td><td>--</td></tr>
+<tr><td>3</td><td>1</td><td>\(2.000\times10^{-1}\)</td><td>\(7.665\times10^{-2}\)</td><td>0.90</td><td>\(6.737\times10^{-3}\)</td><td>1.86</td></tr>
+<tr><td>3</td><td>2</td><td>\(1.000\times10^{-1}\)</td><td>\(4.023\times10^{-2}\)</td><td>0.93</td><td>\(1.811\times10^{-3}\)</td><td>1.89</td></tr>
+<tr><td>3</td><td>3</td><td>\(5.000\times10^{-2}\)</td><td>\(2.027\times10^{-2}\)</td><td>0.99</td><td>\(4.565\times10^{-4}\)</td><td>1.99</td></tr>
+</tbody>
+</table>
+
+<p>
+すべての幾何次数で，\(H^1\)-seminorm 誤差はおおむね一次，\(L^2\)-norm 誤差はおおむね二次に近づいている．
+これは，理論的に期待される \(P^1\) 有限要素法の収束挙動と整合している．
+</p>
+
+<p>
+一方で，\(q_{\rm geo}=1,2,3\) の \(H^1\) 誤差はかなり似ている．
+これは不思議ではない．
+なぜなら，今回変えているのは幾何次数だけであり，有限要素次数は常に \(k=1\) だからである．
+</p>
+
+</article>
+</div>
+
+<h2>結果の読み方</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+今回の結果から，次のことが分かる．
+</p>
+
+<ul>
+<li>geometry order を上げると，面積誤差と境界誤差は大きく改善する．</li>
+<li>有限要素次数を \(P^1\) に固定しているため，\(H^1\) 誤差の主要な次数は大きく変わらない．</li>
+<li>曲線幾何は，主に「領域をどれだけ正確に表すか」に効いている．</li>
+<li>有限要素近似そのものを高次化したいなら，finite element degree \(k\) も上げる必要がある．</li>
+</ul>
+
+<p>
+特に重要なのは，
+</p>
+
+\[
+\text{曲線幾何を高次にすること}
+\neq
+\text{有限要素近似を高次にすること}
+\]
+
+<p>
+である．
+</p>
+
+<p>
+この区別が曖昧だと，geometry order を上げても \(H^1\) 誤差が劇的に改善しないことを不自然に感じるかもしれない．
+しかし，今回の実験では，未知関数の近似空間はあくまで \(P^1\) に固定されている．
+したがって，主要な \(H^1\) 誤差が \(P^1\) 近似に支配されるのは自然である．
+</p>
+
+</article>
+</div>
+
+<h2>第1期のまとめ</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+第1期では，exact-curved FEM の基本的な考え方と，単位円上の Poisson 問題での実装実験を整理した．
+</p>
+
+<ol>
+<li>曲線領域を多角形近似せず，曲線のまま扱うという問題意識</li>
+<li>要素写像 \(F_K=\Psi_K\circ\Phi_{T_K}\) の分解</li>
+<li>geometry order と finite element degree の違い</li>
+<li>UFL の <code>grad</code> と <code>dx</code> の中での Jacobian 変換</li>
+<li>単位円上の Poisson 問題による数値確認</li>
+</ol>
+
+<p>
+これで，二次元の \(P^1\) Lagrange 要素に対する exact-curved FEM の原型が見えてきた．
+次の段階では，高次 Lagrange 要素や三次元への拡張を考えることになる．
+</p>
+
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+この第5回では，投稿中論文の数値実験部分をもとに，単位円上の Poisson 問題で直線メッシュと曲線メッシュを比較した．
+背景となる文献として，曲線要素上の補間理論，有限要素法の標準的文献，および筆者の関連研究を挙げておく．
+</p>
+
+<ol>
+<li>
+C. Bernardi,
+<em>Optimal finite-element interpolation on curved domains</em>,
+SIAM Journal on Numerical Analysis, 26(5), 1212--1240, 1989.
+</li>
+
+<li>
+P. G. Ciarlet,
+<em>The Finite Element Method for Elliptic Problems</em>,
+North-Holland, Amsterdam, 1978.
+</li>
+
+<li>
+P. G. Ciarlet and P.-A. Raviart,
+<em>Interpolation theory over curved elements, with applications to finite element methods</em>,
+Computer Methods in Applied Mechanics and Engineering, 1, 217--249, 1972.
+</li>
+
+<li>
+H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+<em>Anisotropic interpolation error estimates using a new geometric parameter</em>,
+Japan Journal of Industrial and Applied Mathematics, 40, 475--512, 2023.
+</li>
+
+<li>
+H. Ishizaka,
+<em>Exact-curved Lagrange finite elements for the Poisson problem in two dimensions</em>,
+submitted.
+</li>
+</ol>
+
+</article>
+</div>
+
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
