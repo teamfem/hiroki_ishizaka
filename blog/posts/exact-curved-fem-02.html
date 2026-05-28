@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 28th May 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 28th May 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">第2回：曲線要素写像を affine core と curved correction に分ける</h1>
+<!---->
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+<p>
+前回は，有限要素法で曲線領域を扱うとき，領域を多角形で近似する方法と，曲線境界を曲線として扱う方法があることを説明した．特に，単位円のような丸い領域では，直線辺だけで境界を近似すると，計算領域は厳密には円ではなく多角形になる．そのため，有限要素近似の誤差とは別に，幾何の近似誤差が入る．
+</p>
+
+<p>
+今回は，exact-curved FEM の基本になる要素写像を説明する．中心となる考え方は，参照三角形から曲線要素への写像を一度に見るのではなく，次のように二段階に分けて見ることである．
+</p>
+
+\[
+F_K=\Psi_K\circ\Phi_{T_K}.
+\]
+
+<p>
+ここで，\(\Phi_{T_K}\) は参照三角形から affine core への写像であり，\(\Psi_K\) は affine core から曲線要素への写像である．この分解により，アフィンなスケーリングと曲線幾何の効果を分けて考えることができる．
+</p>
+</article>
+</div>
+
+<h2>三つの要素：参照三角形，affine core，曲線要素</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+まず，三つの要素を区別する．
+</p>
+
+<ul>
+<li>参照三角形：\(\widehat T\)</li>
+<li>affine core：\(T_K\)</li>
+<li>物理的な曲線要素：\(K\)</li>
+</ul>
+
+<p>
+参照三角形 \(\widehat T\) は，すべての要素の出発点になる標準的な三角形である．たとえば，頂点を
+</p>
+
+\[
+\widehat p_1=(0,0)^\top,\quad
+\widehat p_2=(1,0)^\top,\quad
+\widehat p_3=(0,1)^\top
+\]
+
+<p>
+とする三角形を考える．
+</p>
+
+<p>
+次に，affine core \(T_K\) を考える．これは，参照三角形 \(\widehat T\) をアフィン写像で移した直線三角形である．つまり，\(T_K\) はまだ曲がっていない三角形であり，辺はすべて直線である．
+ただし，細長い三角形や，向きの異なる三角形を許す．この affine core が，要素のスケール，向き，異方性を担う．
+</p>
+
+<p>
+最後に，物理的な曲線要素 \(K\) を考える．これは，affine core \(T_K\) をさらに曲線写像で変形して得られる要素である．境界要素であれば，この曲線写像によって，直線辺が円弧や曲線境界に沿うように変形される．
+</p>
+</article>
+</div>
+
+<h2>二段階の写像</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+この三つの要素を，次の二段階の写像でつなぐ．
+</p>
+
+\[
+\widehat T
+\overset{\Phi_{T_K}}{\longrightarrow}
+T_K
+\overset{\Psi_K}{\longrightarrow}
+K.
+\]
+
+<p>
+まず，
+</p>
+
+\[
+\Phi_{T_K}:\widehat T\to T_K
+\]
+
+<p>
+はアフィン写像である．これは，参照三角形を拡大・縮小し，回転・反転・平行移動して，直線三角形 \(T_K\) を作る写像である．この部分が，三角形のサイズ，向き，異方性を表す．
+</p>
+
+<p>
+次に，
+</p>
+
+\[
+\Psi_K:T_K\to K
+\]
+
+<p>
+は曲線補正である．これは，直線三角形 \(T_K\) を曲線要素 \(K\) へ移す写像である．境界要素では，直線辺を曲線境界へ乗せる役割をもつ．
+</p>
+
+<p>
+したがって，参照三角形から物理的な曲線要素への写像は，
+</p>
+
+\[
+F_K=\Psi_K\circ\Phi_{T_K}:\widehat T\to K
+\]
+
+<p>
+となる．
+</p>
+
+</article>
+</div>
+
+<h2>三つの座標を区別する</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+この分解では，三つの座標を区別しておくと分かりやすい．
+</p>
+
+\[
+\widehat x\in\widehat T,\quad
+y=\Phi_{T_K}(\widehat x)\in T_K,\quad
+x=F_K(\widehat x)=\Psi_K(y)\in K.
+\]
+
+<p>
+ここで，\(\widehat x\) は参照三角形上の座標，\(y\) は affine core 上の座標，\(x\) は物理的な曲線要素上の座標である．
+</p>
+
+<p>
+つまり，計算や解析では，
+</p>
+
+\[
+\widehat x
+\longrightarrow
+y
+\longrightarrow
+x
+\]
+
+<p>
+という流れを常に意識する．この区別をしておくと，どの段階で異方性が入り，どの段階で曲率が入るのかが見えやすくなる．
+</p>
+
+</article>
+</div>
+
+<h2>なぜ一つの写像として扱わないのか</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+もちろん，参照三角形から曲線要素への写像 \(F_K\) だけを考えることもできる．実装上は，実際に \(F_K\) が要素写像として働く．しかし，解析の観点では，\(F_K\) をそのまま一つの写像として扱うと，二つの異なる効果が混ざってしまう．
+</p>
+
+<p>
+一つは，アフィンなスケーリングの効果である．これは，要素の大きさ，向き，細長さに関係する．異方性メッシュの解析では，この部分が非常に重要になる．
+</p>
+
+<p>
+もう一つは，曲線幾何の効果である．これは，境界が曲がっていることや，要素写像が非アフィンであることに由来する．この効果は，\(\Psi_K\) やその導関数 \(D\Psi_K\)，\(D^2\Psi_K\) によって表れる．
+</p>
+
+<p>
+したがって，
+</p>
+
+\[
+F_K=\Psi_K\circ\Phi_{T_K}
+\]
+
+<p>
+と分けておくと，
+</p>
+
+<ul>
+<li>異方性やスケールは \(\Phi_{T_K}\) 側で見る</li>
+<li>曲率や境界の曲がりは \(\Psi_K\) 側で見る</li>
+</ul>
+
+<p>
+という整理ができる．この分離が，exact-curved FEM の基本的な考え方である．
+</p>
+
+</article>
+</div>
+
+<h2>要素写像の微分</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+要素写像は
+</p>
+
+\[
+F_K=\Psi_K\circ\Phi_{T_K}
+\]
+
+<p>
+である．したがって，連鎖律により，
+</p>
+
+\[
+DF_K(\widehat x)
+=
+D\Psi_K(\Phi_{T_K}(\widehat x))\,D\Phi_{T_K}
+\]
+
+<p>
+となる．
+</p>
+
+<p>
+ここで \(\Phi_{T_K}\) はアフィン写像なので，\(D\Phi_{T_K}\) は定数行列であり，二階以上の微分は消える．
+そのため，曲率に関係する項は \(\Psi_K\) の高階微分から現れる．
+</p>
+
+<p>
+このことは，曲線要素での補間誤差解析において非常に重要である．
+アフィン要素では現れない曲率項が，\(\Psi_K\) の二階微分を通じて現れるからである．
+</p>
+
+</article>
+</div>
+
+<h2>affine core とは何か</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+ここで使う affine core という言葉は，特別な構造をもつ新しい要素を意味しているわけではない．
+単に，曲線要素 \(K\) の背後にある直線三角形 \(T_K\) を指している．
+</p>
+
+<p>
+つまり，affine core は「曲げる前の三角形」である．
+</p>
+
+<p>
+この affine core 上では，通常のアフィン三角形に対する補間誤差評価を使うことができる．
+その後，\(\Psi_K\) を通じて，その評価を曲線要素 \(K\) 上へ移す．
+この流れが，exact-curved FEM における補間誤差解析の基本になる．
+</p>
+
+</article>
+</div>
+
+<h2>補間誤差解析での流れ</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+曲線要素 \(K\) 上の関数 \(v\) を考える．
+この関数を affine core \(T_K\) 上に戻すために，
+</p>
+
+\[
+w:=v\circ\Psi_K
+\]
+
+<p>
+と置く．
+このとき，\(w\) は \(T_K\) 上の関数になる．
+</p>
+
+<p>
+exact-curved Lagrange 補間作用素を \(I_L^1\)，affine core 上の通常の Lagrange 補間作用素を \(I_{T_K}^1\) と書くと，
+</p>
+
+\[
+I_L^1v
+=
+\left(I_{T_K}^1w\right)\circ\Psi_K^{-1}
+\]
+
+<p>
+である．したがって，
+</p>
+
+\[
+v-I_L^1v
+=
+\left(w-I_{T_K}^1w\right)\circ\Psi_K^{-1}
+\]
+
+<p>
+となる．
+</p>
+
+<p>
+この式の意味は重要である．
+曲線要素上で直接補間誤差を評価するのではなく，まず affine core 上の補間誤差を評価し，それを \(\Psi_K^{-1}\) を通じて曲線要素へ戻す．
+これにより，アフィン要素上の既存の補間誤差評価を利用できる．
+</p>
+
+</article>
+</div>
+
+<h2>方向微分はどう変わるか</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+異方性補間誤差評価では，方向微分が重要になる．
+affine core \(T_K\) 上での方向を \(r_i\) とする．
+この方向は，曲線写像 \(\Psi_K\) によって物理要素 \(K\) 上の方向へ移される．
+</p>
+
+<p>
+具体的には，\(x=\Psi_K(y)\) とすると，
+</p>
+
+\[
+\tau_{K,i}(x)
+=
+D\Psi_K(y)r_i
+=
+D\Psi_K(\Psi_K^{-1}(x))r_i
+\]
+
+<p>
+と定義する．
+この \(\tau_{K,i}\) を，\(r_i\) に対応する transported direction と見る．
+</p>
+
+<p>
+このとき，\(w=v\circ\Psi_K\) に対して，
+</p>
+
+\[
+\frac{\partial w}{\partial r_i}(y)
+=
+\frac{\partial v}{\partial \tau_{K,i}}(\Psi_K(y))
+\]
+
+<p>
+となる．
+つまり，affine core 上の方向微分は，曲線要素上の transported direction に沿った方向微分として表される．
+</p>
+
+<p>
+この関係により，最終的な補間誤差評価を，曲線要素 \(K\) 上の量だけで書くことができる．
+</p>
+
+</article>
+</div>
+
+<h2>二階微分と曲率項</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+一階微分では，主に \(D\Psi_K\) が現れる．
+一方，二階微分を考えると，\(D^2\Psi_K\) が現れる．
+これが曲率の影響である．
+</p>
+
+<p>
+たとえば，\(w=v\circ\Psi_K\) を二階微分すると，
+</p>
+
+\[
+\frac{\partial^2 w}{\partial r_i\partial r_j}(y)
+=
+D^2v(\Psi_K(y))
+\left[
+D\Psi_K(y)r_i,
+D\Psi_K(y)r_j
+\right]
++
+\nabla v(\Psi_K(y))\cdot D^2\Psi_K(y)[r_i,r_j]
+\]
+
+<p>
+となる．
+</p>
+
+<p>
+右辺の第一項は，\(v\) の二階微分が \(D\Psi_K\) によって変換された項である．
+第二項は，\(\Psi_K\) の二階微分を含む．
+この第二項が，アフィン要素では消える曲線幾何特有の項である．
+</p>
+
+<p>
+したがって，曲線要素の補間誤差解析では，単に \(v\) の二階微分だけでなく，曲線写像の二階微分も管理する必要がある．
+</p>
+
+</article>
+</div>
+
+<h2>実装との関係</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+理論では，\(\Phi_{T_K}\) と \(\Psi_K\) を明確に分けて考える．
+しかし，FEniCSx/Gmsh の実装では，ユーザーが常に \(\Psi_K\) を解析的に入力しているわけではない．
+実装上は，Gmsh が生成した curved coordinate map が，要素写像 \(F_K\) の計算上の実現として使われる．
+</p>
+
+<p>
+そのため，実装では
+</p>
+
+\[
+F_K:\widehat T\to K
+\]
+
+<p>
+が直接使われるように見える．
+一方，理論では，この \(F_K\) を
+</p>
+
+\[
+F_K=\Psi_K\circ\Phi_{T_K}
+\]
+
+<p>
+と見て，affine scaling と curved correction を分けて解析する．
+</p>
+
+<p>
+ここで重要なのは，実装上の coordinate map と理論上の分解を混同しないことである．
+実装では \(F_K\) が quadrature や basis evaluation のために使われる．
+解析では，その \(F_K\) の背後に affine core と curved correction を見て，誤差評価を整理する．
+</p>
+
+</article>
+</div>
+
+<h2>まとめ</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+今回は，exact-curved FEM の基本となる要素写像
+</p>
+
+\[
+F_K=\Psi_K\circ\Phi_{T_K}
+\]
+
+<p>
+の意味を説明した．
+この分解により，直線三角形としての affine core \(T_K\) と，曲線幾何を表す curved correction \(\Psi_K\) を分けて考えることができる．
+</p>
+
+<p>
+この分け方の利点は，アフィン要素上の補間誤差評価をまず \(T_K\) 上で使い，その後 \(\Psi_K\) を通じて曲線要素 \(K\) 上へ移せることである．
+また，異方性の影響と曲率の影響を別々に追跡できる点も重要である．
+</p>
+
+<p>
+次回は，Gmsh の geometry order について説明する．
+特に，geometry order は有限要素次数ではない，という点を詳しく見る．
+これは，今回の数値実験を理解する上で非常に大切である．
+</p>
+
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+この第2回では，曲線要素写像の分解と補間誤差解析の基本構造を説明した．
+背景となる文献として，曲線要素上の補間理論，古典的な curved finite elements，および異方性補間誤差評価に関する文献を挙げておく．
+</p>
+
+<ol>
+<li>
+C. Bernardi,
+<em>Optimal finite-element interpolation on curved domains</em>,
+SIAM Journal on Numerical Analysis, 26(5), 1212--1240, 1989.
+</li>
+
+<li>
+P. G. Ciarlet and P.-A. Raviart,
+<em>Interpolation theory over curved elements, with applications to finite element methods</em>,
+Computer Methods in Applied Mechanics and Engineering, 1, 217--249, 1972.
+</li>
+
+<li>
+M. Zlámal,
+<em>Curved elements in the finite element method. I</em>,
+SIAM Journal on Numerical Analysis, 10(1), 229--240, 1973.
+</li>
+
+<li>
+M. Lenoir,
+<em>Optimal isoparametric finite elements and error estimates for domains involving curved boundaries</em>,
+SIAM Journal on Numerical Analysis, 23(3), 562--580, 1986.
+</li>
+
+<li>
+H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+<em>General theory of interpolation error estimates on anisotropic meshes</em>,
+Japan Journal of Industrial and Applied Mathematics, 38(1), 163--191, 2021.
+</li>
+
+<li>
+H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+<em>Anisotropic interpolation error estimates using a new geometric parameter</em>,
+Japan Journal of Industrial and Applied Mathematics, 40, 475--512, 2023.
+</li>
+
+<li>
+H. Ishizaka,
+<em>Exact-curved Lagrange finite elements for the Poisson problem in two dimensions</em>,
+submitted.
+</li>
+</ol>
+
+</article>
+</div>
+
+
+
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
