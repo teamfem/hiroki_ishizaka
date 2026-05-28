@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 28th May 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 28th May 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">第3回：Gmsh の geometry order は有限要素次数ではない</h1>
+<!---->
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+前回は，曲線要素写像を
+\[
+F_K=\Psi_K\circ\Phi_{T_K}
+\]
+と分けて考える理由を説明した．
+ここで，\(\Phi_{T_K}\) は参照三角形から affine core への写像であり，\(\Psi_K\) は affine core から曲線要素への写像である．
+この分解により，三角形のスケールや異方性と，曲線境界による幾何補正を分けて考えることができる．
+</p>
+
+<p>
+今回は，実装上で非常に混同しやすい点を整理する．
+それは，
+</p>
+
+\[
+\text{geometry order}
+\neq
+\text{finite element degree}
+\]
+
+<p>
+ということである．
+Gmsh で曲線メッシュを作るとき，<code>geometry_order</code> という量が出てくる．
+一方，FEniCSx で有限要素空間を作るときには，Lagrange 要素の次数 \(k\) を指定する．
+この二つは似て見えるが，意味はまったく違う．
+</p>
+
+</article>
+</div>
+
+<h2>二つの次数</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+今回区別したい次数は，次の二つである．
+</p>
+
+<ul>
+<li>幾何次数：\(q_{\rm geo}\)</li>
+<li>有限要素次数：\(k\)</li>
+</ul>
+
+<p>
+幾何次数 \(q_{\rm geo}\) は，メッシュの形をどの次数で表すかを決める．
+たとえば，円周を直線で表すのか，二次曲線的に表すのか，三次曲線的に表すのか，という違いである．
+</p>
+
+<p>
+一方，有限要素次数 \(k\) は，未知関数 \(u_h\) をどの次数の多項式で近似するかを決める．
+たとえば，\(k=1\) なら一次 Lagrange 要素，\(k=2\) なら二次 Lagrange 要素である．
+</p>
+
+<p>
+したがって，幾何次数は「領域や要素の形」を決める量であり，有限要素次数は「未知関数の近似空間」を決める量である．
+ここを混同すると，数値結果の解釈を誤りやすい．
+</p>
+
+</article>
+</div>
+
+<h2>幾何次数 \(q_{\rm geo}\) の意味</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+Gmsh でメッシュを作るとき，幾何次数を変えると，要素の coordinate map が変わる．
+簡単に言えば，
+</p>
+
+<ul>
+<li>\(q_{\rm geo}=1\)：直線辺をもつ三角形</li>
+<li>\(q_{\rm geo}=2\)：二次の幾何表現をもつ曲線三角形</li>
+<li>\(q_{\rm geo}=3\)：三次の幾何表現をもつ曲線三角形</li>
+</ul>
+
+<p>
+である．
+</p>
+
+<p>
+\(q_{\rm geo}=1\) の場合，円周は直線の chord で近似される．
+したがって，単位円をメッシュ化しても，実際の計算領域は多角形になる．
+</p>
+
+<p>
+一方，\(q_{\rm geo}=2,3\) の場合，境界辺の途中にも幾何ノードが入り，境界が曲線として表現される．
+そのため，単位円の境界をより正確に表すことができる．
+</p>
+
+<p>
+ここで変わっているのは，あくまで要素写像
+\[
+F_K:\widehat T\to K
+\]
+の幾何表現である．
+未知関数を近似する多項式次数が変わっているわけではない．
+</p>
+
+</article>
+</div>
+
+<h2>有限要素次数 \(k\) の意味</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+有限要素次数 \(k\) は，局所有限要素空間を決める．
+exact-curved Lagrange 要素では，曲線要素 \(K\) 上の局所空間を
+</p>
+
+\[
+V_L^k(K)
+=
+\left\{
+v:K\to\mathbb R
+:
+v=\widehat v\circ F_K^{-1},
+\quad
+\widehat v\in P^k(\widehat T)
+\right\}
+\]
+
+<p>
+と考える．
+</p>
+
+<p>
+ここで，\(P^k(\widehat T)\) は参照三角形上の \(k\) 次以下の多項式空間である．
+したがって，\(k=1\) なら参照三角形上で一次多項式を使う．
+それを \(F_K^{-1}\) によって物理要素 \(K\) 上へ押し出すことで，曲線要素上の有限要素関数を得る．
+</p>
+
+<p>
+重要なのは，\(F_K\) が曲線写像であれば，\(v=\widehat v\circ F_K^{-1}\) は物理座標 \(x\) の多項式とは限らない，という点である．
+それでも，有限要素次数 \(k\) は，参照要素上の多項式次数として定義される．
+</p>
+
+</article>
+</div>
+
+<h2>今回の数値実験では何を固定し，何を変えるのか</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+今回の数値実験では，有限要素次数は常に
+</p>
+
+\[
+k=1
+\]
+
+<p>
+に固定する．
+つまり，未知関数 \(u_h\) は一次 Lagrange 要素で近似する．
+</p>
+
+<p>
+その上で，幾何次数だけを
+</p>
+
+\[
+q_{\rm geo}=1,2,3
+\]
+
+<p>
+と変える．
+</p>
+
+<p>
+したがって，この実験で比較しているのは，
+</p>
+
+\[
+\text{同じ }P^1\text{ 有限要素空間を使ったときに，幾何表現を変えると何が変わるか}
+\]
+
+<p>
+という点である．
+これは，高次有限要素法の実験ではない．
+あくまで，未知関数の近似次数を \(P^1\) に固定したまま，メッシュの曲線幾何表現だけを変える実験である．
+</p>
+
+</article>
+</div>
+
+<h2>なぜ \(H^1\) 誤差はあまり変わらないのか</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+数値結果を見ると，\(q_{\rm geo}=1,2,3\) で幾何誤差は大きく変わる．
+たとえば，単位円の面積誤差や境界半径誤差は，geometry order を上げるとかなり小さくなる．
+</p>
+
+<p>
+一方で，有限要素誤差，特に \(H^1\) 誤差は，geometry order を上げても劇的には変わらない．
+これは自然である．
+なぜなら，未知関数の近似空間はすべての場合で \(P^1\) に固定されているからである．
+</p>
+
+<p>
+\(P^1\) 有限要素法では，十分滑らかな解に対して，標準的には
+</p>
+
+\[
+|u-u_h|_{H^1}=O(h),
+\qquad
+\|u-u_h\|_{L^2}=O(h^2)
+\]
+
+<p>
+が期待される．
+幾何表現を高次にしても，有限要素空間の次数が \(P^1\) のままであれば，主な \(H^1\) 誤差は \(P^1\) 近似によって決まる．
+</p>
+
+<p>
+したがって，geometry order を上げることの効果は，主に幾何誤差の改善として現れる．
+有限要素近似そのものの次数を上げたいなら，finite element degree \(k\) も上げる必要がある．
+</p>
+
+</article>
+</div>
+
+<h2>Gmsh では何をしているのか</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+Gmsh では，メッシュを生成した後に geometry order を指定することで，高次幾何のメッシュを作ることができる．
+概念的には，次のような指定である．
+</p>
+
+<pre><code>gmsh.model.mesh.generate(2)
+gmsh.model.mesh.setOrder(geometry_order)
+</code></pre>
+
+<p>
+ここで <code>geometry_order</code> が \(q_{\rm geo}\) に対応する．
+</p>
+
+<p>
+この指定により，Gmsh は直線三角形の頂点だけでなく，辺上や要素内部に幾何ノードを配置し，曲線的な coordinate map を構成する．
+この coordinate map が，FEniCSx に読み込まれた後，数値積分や基底関数の評価で使われる．
+</p>
+
+<p>
+ただし，この操作は有限要素空間の次数を変えるものではない．
+FEniCSx 側で
+</p>
+
+<pre><code>V = fem.functionspace(mesh, ("Lagrange", 1))
+</code></pre>
+
+<p>
+とすれば，未知関数の有限要素次数は \(k=1\) である．
+メッシュの geometry order が 2 や 3 であっても，この空間は一次 Lagrange 空間である．
+</p>
+
+</article>
+</div>
+
+<h2>組合せとして見る</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+幾何次数と有限要素次数は，組合せとして考えると分かりやすい．
+たとえば，次のような組合せがある．
+</p>
+
+<table>
+<thead>
+<tr>
+<th>幾何次数</th>
+<th>有限要素次数</th>
+<th>意味</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>\(q_{\rm geo}=1\)</td>
+<td>\(k=1\)</td>
+<td>直線メッシュ上の一次 Lagrange FEM</td>
+</tr>
+<tr>
+<td>\(q_{\rm geo}=2\)</td>
+<td>\(k=1\)</td>
+<td>曲線幾何上の一次 Lagrange FEM</td>
+</tr>
+<tr>
+<td>\(q_{\rm geo}=3\)</td>
+<td>\(k=1\)</td>
+<td>より高次の曲線幾何上の一次 Lagrange FEM</td>
+</tr>
+<tr>
+<td>\(q_{\rm geo}=2\)</td>
+<td>\(k=2\)</td>
+<td>二次曲線幾何上の二次 Lagrange FEM</td>
+</tr>
+<tr>
+<td>\(q_{\rm geo}=3\)</td>
+<td>\(k=2\)</td>
+<td>三次曲線幾何上の二次 Lagrange FEM</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+今回の実験は，このうち上の三つ，
+</p>
+
+\[
+(q_{\rm geo},k)=(1,1),\quad (2,1),\quad (3,1)
+\]
+
+<p>
+を比較している．
+つまり，幾何だけを変えて，有限要素空間は変えない実験である．
+この設定により，曲線幾何が幾何誤差に与える影響を見やすくしている．
+</p>
+
+</article>
+</div>
+
+<h2>まとめ</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+今回は，Gmsh の geometry order と有限要素次数の違いを整理した．
+geometry order \(q_{\rm geo}\) は，要素や境界をどの次数の幾何写像で表すかを決める．
+一方，finite element degree \(k\) は，未知関数をどの次数の多項式で近似するかを決める．
+</p>
+
+<p>
+今回の数値実験では，有限要素次数は常に \(k=1\) に固定し，幾何次数だけを \(q_{\rm geo}=1,2,3\) と変える．
+したがって，geometry order を上げると幾何誤差は小さくなるが，\(P^1\) 近似の主要な \(H^1\) 誤差次数が自動的に高次になるわけではない．
+</p>
+
+<p>
+次回は，FEniCSx/UFL において，弱形式を物理座標で書きながら，実際には参照要素上で積分が行われる仕組みを見る．
+特に，<code>grad</code> と <code>dx</code> の中で \(DF_K^{-\top}\) と \(|\det DF_K|\) がどのように現れるかを整理する．
+</p>
+
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+この第3回では，曲線幾何の次数と有限要素次数の違いを実装の観点から説明した．
+背景として，曲線有限要素法，isoparametric finite elements，および筆者の投稿中論文を挙げておく．
+</p>
+
+<ol>
+<li>
+C. Bernardi,
+<em>Optimal finite-element interpolation on curved domains</em>,
+SIAM Journal on Numerical Analysis, 26(5), 1212--1240, 1989.
+</li>
+
+<li>
+P. G. Ciarlet and P.-A. Raviart,
+<em>Interpolation theory over curved elements, with applications to finite element methods</em>,
+Computer Methods in Applied Mechanics and Engineering, 1, 217--249, 1972.
+</li>
+
+<li>
+M. Lenoir,
+<em>Optimal isoparametric finite elements and error estimates for domains involving curved boundaries</em>,
+SIAM Journal on Numerical Analysis, 23(3), 562--580, 1986.
+</li>
+
+<li>
+H. Ishizaka,
+<em>Exact-curved Lagrange finite elements for the Poisson problem in two dimensions</em>,
+submitted.
+</li>
+</ol>
+
+</article>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
