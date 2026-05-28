@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 28th May 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 28th May 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">第4回：UFL の <code>grad</code> と <code>dx</code> の中で何が起きているか</h1>
+<!---->
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+前回は，Gmsh の <code>geometry_order</code> と有限要素次数 \(k\) は別物であることを説明した．
+幾何次数 \(q_{\rm geo}\) はメッシュの形をどの次数で表すかを決める量であり，有限要素次数 \(k\) は未知関数をどの次数の多項式で近似するかを決める量である．
+</p>
+
+<p>
+今回は，FEniCSx/UFL で弱形式を書くときに使う <code>grad</code> と <code>dx</code> の意味を整理する．
+特に，曲線要素写像
+</p>
+
+\[
+F_K:\widehat T\to K
+\]
+
+<p>
+を使うとき，勾配変換に現れる \(DF_K^{-\top}\) と，積分測度に現れる \(|\det DF_K|\) が，実装上どこで扱われているのかを見る．
+</p>
+
+<p>
+結論から言うと，FEniCSx/UFL では，ユーザーが明示的に Jacobian を書かなくても，<code>grad</code> と <code>dx</code> の内部で，参照要素から物理要素への変換が処理される．
+</p>
+
+</article>
+</div>
+
+<h2>物理要素上の弱形式</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+Poisson 問題の標準的な弱形式を考える．有限要素解 \(u_h\) と試験関数 \(v_h\) に対して，剛性行列に対応する双線形形式は
+</p>
+
+\[
+a(u_h,v_h)=\int_{\Omega_h}\nabla u_h\cdot\nabla v_h\,dx
+\]
+
+<p>
+である．要素ごとに書けば，
+</p>
+
+\[
+a_K(u_h,v_h)=\int_K\nabla u_h\cdot\nabla v_h\,dx
+\]
+
+<p>
+である．ここで \(K\) は物理要素であり，曲線要素の場合は直線三角形とは限らない．
+この式は，数学的には物理座標 \(x\) 上で書かれている．しかし，実際の有限要素計算では，各要素積分は参照三角形 \(\widehat T\) 上の数値積分として評価される．
+</p>
+
+</article>
+</div>
+
+<h2>参照要素への引き戻し</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+曲線要素 \(K\) は，要素写像
+</p>
+
+\[
+F_K:\widehat T\to K
+\]
+
+<p>
+によって参照三角形 \(\widehat T\) から作られる．参照座標を \(\widehat x\)，物理座標を \(x\) とすれば，
+</p>
+
+\[
+x=F_K(\widehat x)
+\]
+
+<p>
+である．物理要素上の積分は，この写像を使って参照要素上の積分へ変換される．すなわち，
+</p>
+
+\[
+\int_K g(x)\,dx
+=
+\int_{\widehat T} g(F_K(\widehat x))\,|\det DF_K(\widehat x)|\,d\widehat x
+\]
+
+<p>
+となる．ここで \(DF_K(\widehat x)\) は要素写像の Jacobian matrix であり，\(|\det DF_K(\widehat x)|\) は面積要素の変換を表す．
+したがって，物理要素上で \(dx\) と書いていても，実装では参照要素上で \(|\det DF_K|\,d\widehat x\) として評価される．
+</p>
+
+</article>
+</div>
+
+<h2>勾配はどう変換されるか</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+次に，基底関数の勾配を考える．参照三角形上の基底関数を \(\widehat\phi_i\) とし，物理要素上の基底関数を
+</p>
+
+\[
+\phi_{K,i}=\widehat\phi_i\circ F_K^{-1}
+\]
+
+<p>
+と定義する．つまり，
+</p>
+
+\[
+\phi_{K,i}(F_K(\widehat x))=\widehat\phi_i(\widehat x)
+\]
+
+<p>
+である．このとき，連鎖律により，物理座標での勾配は
+</p>
+
+\[
+\nabla_x\phi_{K,i}(x)
+=
+DF_K(\widehat x)^{-\top}
+\nabla_{\widehat x}\widehat\phi_i(\widehat x),
+\qquad x=F_K(\widehat x)
+\]
+
+<p>
+となる．つまり，物理勾配 \(\nabla_x\) を計算するためには，参照勾配 \(\nabla_{\widehat x}\) に \(DF_K^{-\top}\) を掛ける必要がある．
+これが，<code>grad</code> の中で起きている変換である．
+</p>
+
+</article>
+</div>
+
+<h2>局所剛性行列の形</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+以上を使うと，局所剛性行列は次のように書ける．
+</p>
+
+\[
+A^K_{ij}
+=
+\int_K
+\nabla_x\phi_{K,j}\cdot\nabla_x\phi_{K,i}\,dx.
+\]
+
+<p>
+これを参照要素上に引き戻すと，
+</p>
+
+\[
+A^K_{ij}
+=
+\int_{\widehat T}
+\left(
+DF_K(\widehat x)^{-\top}
+\nabla_{\widehat x}\widehat\phi_j(\widehat x)
+\right)
+\cdot
+\left(
+DF_K(\widehat x)^{-\top}
+\nabla_{\widehat x}\widehat\phi_i(\widehat x)
+\right)
+|\det DF_K(\widehat x)|\,d\widehat x.
+\]
+
+<p>
+この式を見ると，二つの重要な要素が現れている．
+</p>
+
+<ul>
+<li>\(DF_K^{-\top}\)：勾配の変換</li>
+<li>\(|\det DF_K|\)：積分測度の変換</li>
+</ul>
+
+<p>
+曲線要素では \(DF_K\) が要素内で一定とは限らない．そのため，数値積分点ごとに \(DF_K\)，\(DF_K^{-\top}\)，\(|\det DF_K|\) が評価される．
+</p>
+
+</article>
+</div>
+
+<h2>UFL ではどう書くか</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+FEniCSx/UFL では，ユーザーは上のような Jacobian を直接書かずに，弱形式を物理座標で書く．
+たとえば，Poisson 問題なら次のように書く．
+</p>
+
+<pre><code>u = ufl.TrialFunction(V)
+v = ufl.TestFunction(V)
+
+a = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
+L = f * v * dx
+</code></pre>
+
+<p>
+ここで，<code>ufl.grad(u)</code> は物理座標での勾配 \(\nabla_x u_h\) を表す．
+しかし，実際の assembly では，参照要素上の勾配から物理勾配へ変換される．すなわち，内部的には
+</p>
+
+\[
+\nabla_x\phi_{K,i}
+=
+DF_K^{-\top}\nabla_{\widehat x}\widehat\phi_i
+\]
+
+<p>
+が使われる．また，<code>* dx</code> は物理要素上の積分を表す．しかし，実際には
+</p>
+
+\[
+dx
+\quad\leadsto\quad
+|\det DF_K(\widehat x)|\,d\widehat x
+\]
+
+<p>
+として参照要素上で評価される．したがって，UFL の <code>grad</code> と <code>dx</code> は，単なる記号ではなく，要素写像を通じた変換を背後に持っている．
+</p>
+
+</article>
+</div>
+
+<h2>コードに Jacobian が見えない理由</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+自分で有限要素コードを書く場合，局所行列を作るところで
+</p>
+
+<pre><code>J = ...
+detJ = ...
+invJT = ...
+</code></pre>
+
+<p>
+のような変数を明示的に計算することが多い．しかし，FEniCSx/UFL では，通常このような変数をユーザーが直接書かない．
+</p>
+
+<p>
+その理由は，FEniCSx の form compiler が，mesh に保存された coordinate map を使って，必要な Jacobian 変換を内部的に行うからである．
+曲線メッシュの場合でも，import された mesh の coordinate map が曲線幾何を表していれば，その map を通じて \(DF_K\)，\(DF_K^{-\top}\)，\(|\det DF_K|\) が評価される．
+</p>
+
+<p>
+つまり，コード上で Jacobian が見えないからといって，Jacobian を使っていないわけではない．むしろ，<code>grad</code> と <code>dx</code> の評価時に内部で使われている．
+</p>
+
+</article>
+</div>
+
+<h2>曲線メッシュで特に重要な点</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+直線三角形の場合，\(F_K\) はアフィン写像であり，\(DF_K\) は要素内で定数である．そのため，勾配変換や面積要素の変換も比較的単純である．
+</p>
+
+<p>
+一方，曲線要素の場合，\(F_K\) は一般に非アフィンである．そのため，
+</p>
+
+\[
+DF_K(\widehat x),\qquad
+DF_K(\widehat x)^{-\top},\qquad
+|\det DF_K(\widehat x)|
+\]
+
+<p>
+は参照要素内の点 \(\widehat x\) に依存する．このため，曲線要素では，quadrature point ごとに幾何情報が評価される．
+この違いが，曲線メッシュを扱う有限要素実装の本質である．
+</p>
+
+</article>
+</div>
+
+<h2>論文中の \(F_K=\Psi_K\circ\Phi_{T_K}\) との関係</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+理論では，要素写像を
+</p>
+
+\[
+F_K=\Psi_K\circ\Phi_{T_K}
+\]
+
+<p>
+と分解している．したがって，Jacobian は
+</p>
+
+\[
+DF_K(\widehat x)
+=
+D\Psi_K(\Phi_{T_K}(\widehat x))\,D\Phi_{T_K}
+\]
+
+<p>
+と書ける．この式は，勾配変換や積分測度に入る \(DF_K\) の中に，affine core のスケーリングと curved correction の両方が含まれていることを意味する．すなわち，
+</p>
+
+<ul>
+<li>\(D\Phi_{T_K}\)：アフィンなスケール，向き，異方性</li>
+<li>\(D\Psi_K\)：曲線幾何による補正</li>
+</ul>
+
+<p>
+が合成されて，実際の要素 Jacobian \(DF_K\) になる．
+実装では，この分解をユーザーが明示的に書いていなくても，mesh の coordinate map が \(F_K\) として使われる．解析では，この \(F_K\) を \(\Psi_K\circ\Phi_{T_K}\) と見て，幾何の影響を分けて評価する．
+</p>
+
+</article>
+</div>
+
+<h2>まとめ</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+今回は，FEniCSx/UFL の <code>grad</code> と <code>dx</code> の中で何が起きているかを整理した．
+UFL では弱形式を物理座標で書くが，実際の要素積分は参照要素上で行われる．
+</p>
+
+<p>
+その際，
+</p>
+
+\[
+\nabla_x\phi_{K,i}
+=
+DF_K^{-\top}\nabla_{\widehat x}\widehat\phi_i
+\]
+
+<p>
+によって勾配が変換され，
+</p>
+
+\[
+dx
+=
+|\det DF_K|\,d\widehat x
+\]
+
+<p>
+によって積分測度が変換される．
+</p>
+
+<p>
+FEniCSx では，これらの処理は form compiler によって内部的に行われる．したがって，コードに Jacobian が明示的に出てこなくても，曲線要素の幾何情報は <code>grad</code> と <code>dx</code> の評価に反映されている．
+</p>
+
+<p>
+次回は，実際に単位円上の Poisson 問題を設定し，\(q_{\rm geo}=1,2,3\) の曲線幾何表現を比較する．
+特に，幾何誤差 \(E_{\rm area}\)，\(E_{\rm bdry}\) と有限要素誤差 \(E_{H^1}\)，\(E_{L^2}\) の違いを見る．
+</p>
+
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+この第4回では，有限要素法における参照要素への引き戻し，勾配変換，および積分測度の変換を説明した．背景として，有限要素法の標準的な組み立てと曲線要素に関する文献を挙げておく．
+</p>
+
+<ol>
+<li>
+P. G. Ciarlet,
+<em>The Finite Element Method for Elliptic Problems</em>,
+North-Holland, Amsterdam, 1978.
+</li>
+<li>
+C. Bernardi,
+<em>Optimal finite-element interpolation on curved domains</em>,
+SIAM Journal on Numerical Analysis, 26(5), 1212--1240, 1989.
+</li>
+<li>
+P. G. Ciarlet and P.-A. Raviart,
+<em>Interpolation theory over curved elements, with applications to finite element methods</em>,
+Computer Methods in Applied Mechanics and Engineering, 1, 217--249, 1972.
+</li>
+<li>
+H. Ishizaka,
+<em>Exact-curved Lagrange finite elements for the Poisson problem in two dimensions</em>,
+submitted.
+</li>
+</ol>
+
+</article>
+</div>
+
+
+
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
