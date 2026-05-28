@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 28th May 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 28th May 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">有限要素法で「丸い領域」を丸いまま扱いたい</h1>
+<!---->
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+<p>
+有限要素法で円領域や曲線境界をもつ領域を扱うとき，多くの場合，まず領域を三角形や四面体で近似する．二次元の単位円であれば，円周を直線の辺でつないだ多角形領域として近似し，その上で有限要素法を適用する．これは実装が簡単であり，標準的な方法でもある．
+</p>
+<p>
+しかし，このとき計算している問題は，厳密には元の円領域上の問題ではなく，多角形近似された領域上の問題である．つまり，有限要素近似による誤差だけでなく，領域を多角形で近似したことによる幾何誤差も含まれる．
+</p>
+<p>
+そこで自然に出てくる問いは次である．
+</p>
+<blockquote>
+<p>
+有限要素法で，曲がった領域を本当に曲がったまま扱うことはできないのか？
+</p>
+</blockquote>
+<p>
+このシリーズでは，この問いを出発点として，exact-curved finite element method の理論と実装を少しずつ整理していく．
+第1期では，二次元の Poisson 問題を題材に，曲線境界をもつ領域上の Lagrange 有限要素法を考える．
+</p>
+<p>
+この記事は，投稿中の論文
+<em>Exact-curved Lagrange finite elements for the Poisson problem in two dimensions</em>
+の数値実験部分を，実装ノートとして補足するシリーズの第1回である．論文本文では理論と結果を中心にまとめたため，ブログでは，Gmsh/FEniCSx で曲線幾何をどう扱うか，geometry order と有限要素次数の違いは何か，UFL の <code>grad</code> と <code>dx</code> の内部で何が起きているかを，できるだけ丁寧に記録していく．
+</p>
+</article>
+</div>
+
+<h2>直線メッシュと曲線メッシュ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+たとえば，単位円
+$begin:math:display$
+\\Omega\=\\\{\(x\_1\,x\_2\)\\in\\mathbb R\^2\:x\_1\^2\+x\_2\^2\<1\\\}
+$end:math:display$
+を考える．通常の三角形メッシュでは，円周は直線の辺で近似される．そのため，計算領域は円ではなく，多角形になる．
+</p>
+<p>
+一方で，曲線メッシュを用いると，境界辺そのものを曲線として表すことができる．このとき，境界が円周に沿うように要素写像を作れば，計算領域はより正確に元の曲線領域を表すことができる．
+</p>
+<p>
+ここで重要なのは，曲線メッシュを使うことと，高次有限要素を使うことは同じではない，という点である．メッシュの幾何をどれだけ正確に表すかという問題と，未知関数をどの次数の多項式で近似するかという問題は，別の問題である．
+</p>
+</article>
+</div>
+
+<h2>geometry order と finite element degree は違う</h2>
+<div class="news">
+<article class="news-item">
+<p>
+今回の数値実験では，有限要素空間は常に一次 Lagrange 要素，つまり $begin:math:text$P\^1$end:math:text$ 要素に固定する．その上で，幾何表現の次数だけを変える．
+</p>
+<p>
+記号で書けば，有限要素次数は
+$begin:math:display$
+k\=1
+$end:math:display$
+に固定し，幾何次数を
+$begin:math:display$
+q\_\{\\rm geo\}\=1\,2\,3
+$end:math:display$
+と変える．
+</p>
+<p>
+$begin:math:text$q\_\{\\rm geo\}\=1$end:math:text$ の場合，境界は直線辺で表される．これは通常の polygonal mesh に対応する．一方，$begin:math:text$q\_\{\\rm geo\}\=2\,3$end:math:text$ とすると，境界や要素の幾何表現が曲線的になり，単位円をより正確に表すことができる．
+</p>
+<p>
+ただし，未知関数の近似空間は $begin:math:text$P\^1$end:math:text$ のままである．したがって，幾何表現を高次にしても，有限要素近似そのものが自動的に高次になるわけではない．この点は，数値結果を読むときに非常に重要である．
+</p>
+</article>
+</div>
+
+<h2>理論で使う要素写像</h2>
+<div class="news">
+<article class="news-item">
+<p>
+曲線要素上の有限要素法には，Ciarlet--Raviart，Zlámal，Scott，Lenoir らによる古典的研究がある．また，Bernardi は曲線領域に正確に適合する有限要素補間理論を展開している．このシリーズで扱う exact-curved FEM は，これらの流れを背景にしつつ，要素写像を affine core と curved correction に分けて見直す立場から出発する．
+</p>
+
+<p>
+このシリーズの中心になるのは，要素写像の分解である．曲がった要素 $begin:math:text$K$end:math:text$ を扱うために，参照三角形 $begin:math:text$\\widehat T$end:math:text$ から物理要素 $begin:math:text$K$end:math:text$ への写像を
+$begin:math:display$
+F\_K\=\\Psi\_K\\circ\\Phi\_\{T\_K\}
+$end:math:display$
+と書く．
+</p>
+<p>
+ここで，$begin:math:text$\\Phi\_\{T\_K\}$end:math:text$ は参照三角形から直線三角形である affine core $begin:math:text$T\_K$end:math:text$ への写像である．一方，$begin:math:text$\\Psi\_K$end:math:text$ は affine core $begin:math:text$T\_K$end:math:text$ を曲要素 $begin:math:text$K$end:math:text$ へ移す曲線補正である．
+</p>
+<p>
+つまり，
+</p>
+<ul>
+<li>$begin:math:text$\\Phi\_\{T\_K\}$end:math:text$：三角形のスケール，向き，異方性を表す部分</li>
+<li>$begin:math:text$\\Psi\_K$end:math:text$：曲線境界や曲がった幾何を表す部分</li>
+</ul>
+<p>
+と分けて考える．
+この分解により，有限要素補間の誤差を，まず affine core 上で評価し，その後，曲線写像 $begin:math:text$\\Psi\_K$end:math:text$ を通じて物理要素へ移すことができる．
+</p>
+</article>
+</div>
+
+<h2>実装では何が起きているのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+実装では，解析的な $begin:math:text$\\Psi\_K$end:math:text$ を自分で完全に書き下しているわけではない．Gmsh で曲線メッシュを作り，それを FEniCSx に読み込むと，メッシュの中に coordinate map が保存される．この coordinate map が，数値積分や基底関数の評価の段階で，要素写像 $begin:math:text$F\_K$end:math:text$ の役割を果たす．
+</p>
+<p>
+FEniCSx/UFL では，弱形式を物理座標で書く．たとえば Poisson 問題なら，
+$begin:math:display$
+\\int\_\{\\Omega\_h\}\\nabla u\_h\\cdot\\nabla v\_h\\\,dx
+$end:math:display$
+のように書く．しかし，実際の要素積分は参照要素上で行われる．そのとき，勾配には $begin:math:text$DF\_K\^\{\-\\top\}$end:math:text$，積分測度には $begin:math:text$\|\\det DF\_K\|$end:math:text$ が内部的に現れる．
+</p>
+<p>
+つまり，コード上で明示的に Jacobian を書いていなくても，UFL の <code>grad</code> と <code>dx</code> の内部で，参照要素から物理要素への変換が処理されている．この点は，後の回で詳しく見る．
+</p>
+</article>
+</div>
+
+<h2>このシリーズで扱うこと</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第1期では，次の内容を順に整理する予定である．
+</p>
+<ol>
+<li>有限要素法で「丸い領域」を丸いまま扱いたい</li>
+<li>曲線要素写像 $begin:math:text$F\_K\=\\Psi\_K\\circ\\Phi\_\{T\_K\}$end:math:text$ の意味</li>
+<li>Gmsh の geometry order と finite element degree の違い</li>
+<li>FEniCSx/UFL における Jacobian，<code>grad</code>，<code>dx</code> の意味</li>
+<li>単位円上の Poisson 問題で，直線メッシュと曲線メッシュを比較する</li>
+</ol>
+<p>
+その後，高次 Lagrange 要素，三次元の曲四面体，非適合要素，混合型要素，さらに Stokes 問題への拡張を考えていく．特に，Crouzeix--Raviart 要素や Raviart--Thomas 要素を曲単体上でどう定義するかは，今後の大きなテーマになる．
+</p>
+</article>
+</div>
+
+<h2>まとめ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+この第1回では，曲線領域を有限要素法で扱うときの基本的な問題意識を整理した．通常の polygonal mesh では，円領域は多角形として近似される．一方，exact-curved FEM の立場では，曲線境界を曲線として扱い，物理領域により忠実な有限要素空間を構成することを目指す．
+</p>
+<p>
+ただし，曲線幾何を高次にすることと，未知関数の近似次数を高次にすることは同じではない．この区別が，今回の数値実験を理解する鍵である．
+</p>
+<p>
+次回は，要素写像
+$begin:math:display$
+F\_K\=\\Psi\_K\\circ\\Phi\_\{T\_K\}
+$end:math:display$
+の意味をもう少し丁寧に見ていく．特に，affine core と curved correction を分けることで，何が見通しやすくなるのかを説明する．
+</p>
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<p>
+このシリーズの理論的背景として，曲線要素上の有限要素補間，曲線境界をもつ領域での有限要素法，異方性補間誤差評価，および筆者の関連研究を挙げておく．第1期では，特に Bernardi の exact curved element の考え方と，Ciarlet--Raviart，Zlámal，Scott，Lenoir らの曲線要素に関する古典的研究を意識している．また，本シリーズは，筆者の異方性メッシュ上の補間誤差解析，新しい幾何パラメータ，および投稿中の exact-curved Lagrange FEM 論文へ接続する研究ノートでもある．
+</p>
+
+<ol>
+<li>
+C. Bernardi, 
+<em>Optimal finite-element interpolation on curved domains</em>, 
+SIAM Journal on Numerical Analysis, 26(5), 1212--1240, 1989.
+</li>
+<li>
+P. G. Ciarlet and P.-A. Raviart, 
+<em>Interpolation theory over curved elements, with applications to finite element methods</em>, 
+Computer Methods in Applied Mechanics and Engineering, 1, 217--249, 1972.
+</li>
+<li>
+M. Zlámal, 
+<em>Curved elements in the finite element method. I</em>, 
+SIAM Journal on Numerical Analysis, 10(1), 229--240, 1973.
+</li>
+<li>
+R. Scott, 
+<em>Finite Element Techniques for Curved Boundaries</em>, 
+Ph.D. thesis, Massachusetts Institute of Technology, Cambridge, MA, 1973.
+</li>
+<li>
+M. Lenoir, 
+<em>Optimal isoparametric finite elements and error estimates for domains involving curved boundaries</em>, 
+SIAM Journal on Numerical Analysis, 23(3), 562--580, 1986.
+</li>
+<li>
+C. M. Elliott and T. Ranner, 
+<em>Finite element analysis for a coupled bulk--surface partial differential equation</em>, 
+IMA Journal of Numerical Analysis, 33(2), 377--402, 2013.
+</li>
+<li>
+G. Dziuk and C. M. Elliott, 
+<em>Finite element methods for surface PDEs</em>, 
+Acta Numerica, 22, 289--396, 2013.
+</li>
+<li>
+H. Ishizaka, K. Kobayashi and T. Tsuchiya, 
+<em>Anisotropic interpolation error estimates using a new geometric parameter</em>, 
+Japan Journal of Industrial and Applied Mathematics, 40, 475--512, 2023.
+</li>
+<li>
+H. Ishizaka,
+<em>Exact-curved Lagrange finite elements for the Poisson problem in two dimensions</em>,
+submitted.
+</li>
+</ol>
+</article>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
