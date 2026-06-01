@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 1st June 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 1st June 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">第6回：Exact-curved FEMs と isoparametric FEMs は何が違うのか</h1>
+<!---->
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+<p>
+このシリーズでは，曲線領域を有限要素法で扱うために，exact-curved FEM という見方を使っている．
+しかし，曲線メッシュや曲線要素に少し詳しい人なら，おそらく次の疑問を持つと思う．
+</p>
+<blockquote>
+<p>
+それは，普通の isoparametric FEM と何が違うのか？
+</p>
+</blockquote>
+<p>
+これは非常に自然な疑問である．
+実際，Gmsh で曲線メッシュを作り，FEniCSx に読み込んで，参照要素上で数値積分するという実装だけを見ると，isoparametric FEM とかなり似ている．
+</p>
+<p>
+だから，まず最初に結論を言っておく．
+</p>
+<blockquote>
+<p>
+実装の見た目はかなり似ている．しかし，解析で何を分けて見ているかが違う．
+</p>
+</blockquote>
+<p>
+本シリーズで強調している exact-curved FEM の特徴は，要素写像を
+</p>
+\[
+F_K=\Psi_K\circ\Phi_{T_K}
+\]
+<p>
+と分けて見る点にある．ここで，\(\Phi_{T_K}\) は直線三角形である affine core を作る写像であり，\(\Psi_K\) はその affine core を曲線要素へ移す写像である．
+</p>
+<p>
+つまり，曲線要素を一つの写像としてまとめて扱うのではなく，
+</p>
+<ul>
+<li>要素の大きさ・向き・細長さを表す部分</li>
+<li>境界の曲がりや曲率を表す部分</li>
+</ul>
+<p>
+を分けて考える．この分け方が，isoparametric FEM との大きな違いである．
+</p>
+</article>
+</div>
+
+<h2>まず isoparametric FEM とは何か</h2>
+<div class="news">
+<article class="news-item">
+<p>
+isoparametric FEM は，曲線境界をもつ領域を有限要素法で扱うための標準的な方法である．考え方はとても自然である．
+</p>
+<p>
+まず，参照要素 \(\widehat K\) を用意する．
+そして，参照要素上の形状関数を使って，物理要素 \(K\) への写像を作る．たとえば，幾何ノードを \(a_i\)，参照要素上の形状関数を \(\widehat\varphi_i\) とすると，典型的には
+</p>
+\[
+F_K(\widehat x)
+=
+\sum_i a_i\,\widehat\varphi_i(\widehat x)
+\]
+<p>
+のように書く．この写像 \(F_K\) によって，参照要素が物理要素へ移される．
+</p>
+<p>
+このとき，未知関数も同じ参照要素上の形状関数を使って近似する．したがって，幾何の写像と未知関数の近似が，同じような形状関数で作られる．これが isoparametric という名前の由来である．
+</p>
+<p>
+たとえば，二次 Lagrange 要素を使うなら，幾何も二次的に曲がり，未知関数も二次の形状関数で近似する，というのが典型的な考え方である．
+</p>
+<p>
+もちろん，現代のソフトウェアでは，幾何次数と有限要素次数を別々に指定できることも多い．しかし，isoparametric FEM の基本的な発想は，
+</p>
+<blockquote>
+<p>
+参照要素から物理要素への写像 \(F_K\) を作り，その写像を使って計算する
+</p>
+</blockquote>
+<p>
+というものである．
+</p>
+</article>
+</div>
+
+<h2>実装を見ると，たしかに似ている</h2>
+<div class="news">
+<article class="news-item">
+<p>
+曲線要素上で Poisson 問題を解くとき，局所剛性行列は，形式的には次のように書ける．
+</p>
+\[
+A^K_{ij}
+=
+\int_{\widehat T}
+\left(
+DF_K(\widehat x)^{-\top}
+\nabla_{\widehat x}\widehat\varphi_j(\widehat x)
+\right)
+\cdot
+\left(
+DF_K(\widehat x)^{-\top}
+\nabla_{\widehat x}\widehat\varphi_i(\widehat x)
+\right)
+|\det DF_K(\widehat x)|\,d\widehat x.
+\]
+<p>
+ここには，有限要素法でおなじみの二つの量が出てくる．
+</p>
+<ul>
+<li>\(DF_K^{-\top}\)：勾配を物理要素上の勾配へ変換するための因子</li>
+<li>\(|\det DF_K|\)：面積要素を変換するための因子</li>
+</ul>
+<p>
+これは isoparametric FEM でも現れる式である．そのため，実装だけを見ると，
+</p>
+<blockquote>
+<p>
+これは isoparametric FEM と同じでは？
+</p>
+</blockquote>
+<p>
+と思うのは自然である．
+</p>
+<p>
+実際，本シリーズでも，実装では Gmsh が作る curved coordinate map を使っている．FEniCSx/UFL は，弱形式を物理座標で書いても，内部では参照要素に引き戻して積分してくれる．この意味では，実装の表面は isoparametric FEM とかなり近い．
+</p>
+</article>
+</div>
+
+<h2>では，どこが違うのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+違いは，写像 \(F_K\) をどう見るかにある．
+</p>
+<p>
+isoparametric FEM では，通常，参照要素から物理要素への写像 \(F_K\) を一つの写像として扱う．もちろん，そのヤコビアン \(DF_K\) や行列式 \(\det DF_K\) を評価する．しかし，解析の中心にあるのは，あくまで一つの写像 \(F_K\) である．
+</p>
+<p>
+一方，本シリーズの exact-curved FEM では，その写像を
+</p>
+\[
+F_K=\Psi_K\circ\Phi_{T_K}
+\]
+<p>
+と分けて見る．
+</p>
+<p>
+この分解は，次の二段階を表している．
+</p>
+\[
+\widehat T
+\overset{\Phi_{T_K}}{\longrightarrow}
+T_K
+\overset{\Psi_K}{\longrightarrow}
+K.
+\]
+<p>
+ここで，
+</p>
+<ul>
+<li>\(\widehat T\)：参照三角形</li>
+<li>\(T_K\)：曲げる前の直線三角形，つまり affine core</li>
+<li>\(K\)：物理的な曲線要素</li>
+</ul>
+<p>
+である．
+</p>
+<p>
+つまり，まず参照三角形を直線三角形 \(T_K\) に写し，そのあと \(T_K\) を曲げて曲線要素 \(K\) にする．この「いったん直線三角形を経由する」見方が大切である．
+</p>
+</article>
+</div>
+
+<h2>たとえるなら，形を作る工程を分ける</h2>
+<div class="news">
+<article class="news-item">
+<p>
+少し直感的に言うと，isoparametric FEM では，最終的な曲線要素を一つの写像で作る．一方，exact-curved FEM の見方では，次の二段階に分ける．
+</p>
+<ol>
+<li>まず，参照三角形を伸ばしたり回したりして，直線三角形 \(T_K\) を作る．</li>
+<li>次に，その直線三角形を曲げて，曲線要素 \(K\) を作る．</li>
+</ol>
+<p>
+この二段階に分けることで，
+</p>
+<ul>
+<li>どれくらい細長い三角形なのか</li>
+<li>どの方向に伸びているのか</li>
+<li>どれくらい境界が曲がっているのか</li>
+</ul>
+<p>
+を別々に見ることができる．特に異方性メッシュを考えるときには，「細長さ」と「曲がり」を混ぜてしまうと，誤差評価が非常に見えにくくなる．そこで，affine core と curved correction を分けるのである．
+</p>
+</article>
+</div>
+
+<h2>比較表</h2>
+<div class="news">
+<article class="news-item">
+<p>
+ここまでの違いを表にまとめると，次のようになる．
+</p>
+<table>
+<thead>
+<tr>
+<th>観点</th>
+<th>isoparametric FEM</th>
+<th>exact-curved FEM in this series</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>基本的な見方</td>
+<td>参照要素から物理要素への写像 \(F_K\) を作る</td>
+<td>\(F_K=\Psi_K\circ\Phi_{T_K}\) と分解して見る</td>
+</tr>
+<tr>
+<td>幾何の扱い</td>
+<td>幾何ノードと形状関数で曲線要素を表す</td>
+<td>affine core と curved correction に分ける</td>
+</tr>
+<tr>
+<td>解析で見たいもの</td>
+<td>写像全体の性質</td>
+<td>affine scaling と curvature effect の分離</td>
+</tr>
+<tr>
+<td>異方性との相性</td>
+<td>写像全体のヤコビアンに混ざりやすい</td>
+<td>異方性は \(T_K\)，曲率は \(\Psi_K\) で追跡する</td>
+</tr>
+<tr>
+<td>実装上の見え方</td>
+<td>標準 FEM ソフトウェアで自然に実装される</td>
+<td>実装は isoparametric 的に見えることが多い</td>
+</tr>
+<tr>
+<td>目的</td>
+<td>曲線要素を実装する標準的枠組み</td>
+<td>曲線幾何をもつ有限要素法を解析しやすく整理する枠組み</td>
+</tr>
+</tbody>
+</table>
+<p>
+この表で重要なのは，exact-curved FEM が isoparametric FEM を否定しているわけではない，という点である．むしろ，実装では isoparametric 的な仕組みを使うことが自然である．
+違いは，その写像を解析の中でどう分解して見るかにある．
+</p>
+</article>
+</div>
+
+<h2>Bernardi の exact curved element との関係</h2>
+<div class="news">
+<article class="news-item">
+<p>
+曲線要素上の補間理論として重要なのが，Bernardi の exact curved element の理論である．そこでは，曲線要素の写像を，アフィン写像と曲線的な摂動の和として考える．形式的には，
+</p>
+\[
+G_K=\widetilde G_K+\varphi_K
+\]
+<p>
+のように表される．ここで，\(\widetilde G_K\) はアフィン写像，\(\varphi_K\) は曲線的な摂動である．
+</p>
+<p>
+この見方は，本シリーズの見方と非常に近い．実際，形式的には
+</p>
+\[
+G_K
+=
+\left(
+\mathrm{id}
++
+\varphi_K\circ\widetilde G_K^{-1}
+\right)
+\circ
+\widetilde G_K
+\]
+<p>
+と書ける．つまり，加法的な摂動として書かれた写像も，合成写像として見ることができる．
+</p>
+<p>
+ただし，本シリーズでは，この合成構造を最初から解析の中心に置く．すなわち，
+</p>
+\[
+F_K=\Psi_K\circ\Phi_{T_K}
+\]
+<p>
+として，affine scaling と curved correction を明示的に分ける．
+</p>
+</article>
+</div>
+
+<h2>異方性メッシュでなぜ効くのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+この分解が特に効いてくるのは，異方性メッシュを考えるときである．異方性メッシュでは，要素が細長くなることがある．そのため，単に要素サイズ \(h\) だけで誤差を測ると，方向ごとの情報が消えてしまう．
+</p>
+
+<p>
+そこで，affine core \(T_K\) 上で方向を決める．たとえば，\(T_K\) 上の方向を \(r_i\) とする．この方向は，曲線写像 \(\Psi_K\) によって，物理要素 \(K\) 上の方向へ運ばれる．
+</p>
+\[
+\tau_{K,i}(x)
+=
+D\Psi_K(\Psi_K^{-1}(x))r_i.
+\]
+<p>
+この \(\tau_{K,i}\) が transported direction である．
+</p>
+<p>
+こうすると，
+</p>
+<ul>
+<li>方向ごとの長さや異方性は affine core \(T_K\) 上で見る</li>
+<li>その方向が曲線要素上でどう変わるかは \(\Psi_K\) で見る</li>
+</ul>
+<p>
+という整理ができる．この分離により，異方性の影響と曲率の影響を，混ぜずに追跡できる．
+ここが，今回の exact-curved decomposition の一番大きな利点である．
+</p>
+</article>
+</div>
+
+<h2>では exact-curved FEM は新しい実装方法なのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+ここも誤解しやすい点である．本シリーズでいう exact-curved FEM は，「まったく新しい実装ソフトウェアの作り方」を意味しているわけではない．
+</p>
+<p>
+実装では，Gmsh や FEniCSx のような既存の有限要素ソフトウェアを使ってよい．実際，曲線メッシュを生成し，それを FEniCSx に読み込むと，ソフトウェア側は coordinate map を使って数値積分を処理してくれる．
+</p>
+<p>
+本シリーズの主張は，実装そのものよりも，解析の見方にある．すなわち，ソフトウェアが使っている coordinate map を，理論的には
+</p>
+\[
+F_K=\Psi_K\circ\Phi_{T_K}
+\]
+<p>
+という分解をもつものとして理解し，その上で補間誤差や有限要素誤差を評価する，という立場である．
+</p>
+<p>
+この意味で，exact-curved FEM は，isoparametric FEM と競合するものではない．むしろ，既存の曲線要素実装を，異方性や曲率の観点から見直すための理論的な整理である．
+</p>
+</article>
+</div>
+
+<h2>まとめ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+今回は，exact-curved FEMs と isoparametric FEMs の違いを整理した．
+実装だけを見ると，両者はかなり似ている．どちらも参照要素から物理要素への写像を使い，ヤコビアンを通じて勾配や積分測度を変換する．
+</p>
+<p>
+しかし，解析の立場では違いがある．isoparametric FEM では，要素写像 \(F_K\) を一つの写像として扱うことが多い．一方，本シリーズで扱う exact-curved FEM では，
+</p>
+\[
+F_K=\Psi_K\circ\Phi_{T_K}
+\]
+<p>
+と分けて，affine core \(T_K\) と curved correction \(\Psi_K\) を別々に扱う．
+</p>
+<p>
+この分解により，
+</p>
+<ul>
+<li>異方性は affine core 側で見る</li>
+<li>曲率は curved correction 側で見る</li>
+<li>実装で使われる coordinate map を，解析しやすい形に整理できる</li>
+</ul>
+<p>
+という利点が得られる．
+</p>
+<p>
+次回以降は，この視点を使って，Ritz 射影や有限要素解の \(L^\infty\) 評価，多様体上の FEM への展開についても考えていく．
+</p>
+
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+
+<p>
+この回では，isoparametric FEM と exact-curved FEM の関係を整理した．
+背景となる文献として，曲線要素，isoparametric FEM，exact curved interpolation，および本シリーズの基礎となる筆者の投稿中論文を挙げておく．
+</p>
+
+<ol>
+<li>
+C. Bernardi,
+<em>Optimal finite-element interpolation on curved domains</em>,
+SIAM Journal on Numerical Analysis, 26(5), 1212--1240, 1989.
+</li>
+
+<li>
+P. G. Ciarlet and P.-A. Raviart,
+<em>Interpolation theory over curved elements, with applications to finite element methods</em>,
+Computer Methods in Applied Mechanics and Engineering, 1, 217--249, 1972.
+</li>
+
+<li>
+M. Zlámal,
+<em>Curved elements in the finite element method. I</em>,
+SIAM Journal on Numerical Analysis, 10(1), 229--240, 1973.
+</li>
+
+<li>
+M. Lenoir,
+<em>Optimal isoparametric finite elements and error estimates for domains involving curved boundaries</em>,
+SIAM Journal on Numerical Analysis, 23(3), 562--580, 1986.
+</li>
+
+<li>
+H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+<em>Anisotropic interpolation error estimates using a new geometric parameter</em>,
+Japan Journal of Industrial and Applied Mathematics, 40, 475--512, 2023.
+</li>
+
+<li>
+H. Ishizaka,
+<em>Exact-curved Lagrange finite elements for the Poisson problem in two dimensions</em>,
+submitted.
+</li>
+</ol>
+
+</article>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
