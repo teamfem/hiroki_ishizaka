@@ -9,8 +9,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
-<meta name="description" content="Mathematics for Trustworthy Simulation">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,Certified FEM,AI4Math,Trustworthy Simulation,Anisotropic Meshes">
+<meta name="description" content="Certified finite element analysis under computable geometric conditions for trustworthy simulation, verified error control, and AI4Math-ready numerical analysis.">
 
 <link rel="stylesheet" href="./css/base.css">
 <link rel="stylesheet" href="./css/rwd.css">
@@ -87,8 +87,8 @@
 	<div class="main-image">
 		<div class="main-image-in-text wide" style="background-image: url(https://teamfem.github.io/hiroki_ishizaka/head_image.png);">
 			<div class="main-image-in-text-cont">
-			<p class="main-copy">Mathematics for Trustworthy Simulation</p>
-			<p class="sub-copy">Mathematics makes the invisible visible</p>
+			<p class="main-copy">Certified Mathematics for Trustworthy Simulation</p>
+			<p class="sub-copy">Computable geometry, verified error control, and AI4Math-ready FEM</p>
 			<div class="main-image-in-text-box">
 				
 			</div>
@@ -114,7 +114,7 @@
 <p style="font-weight:bold; font-size:200%;">ISHIZAKA Hiroki, Ph. D. (Dr.) <br>
 石坂 宏樹</p>
 E-mail: h.ishizaka005[at]gmail.com<br>
-PhD-level Numerical Analyst｜Scientific‑Computing SME (PDEs & FEMs)｜AI Evaluator (Math/Reasoning/Numerical Methods)｜JP/EN｜日本数学会員｜日本応用数理学会員<br><br>
+PhD-level Numerical Analyst｜Certified FEM &amp; Trustworthy Simulation｜Scientific‑Computing SME (PDEs &amp; FEMs)｜AI Evaluator (Math/Reasoning/Numerical Methods)｜JP/EN｜日本数学会員｜日本応用数理学会員<br><br>
 
 
 <h3 class="news-title">Self-introduction</h3>
@@ -127,57 +127,67 @@ PhD-level Numerical Analyst｜Scientific‑Computing SME (PDEs & FEMs)｜AI Eval
 <a href="https://sites.google.com/view/hiroki-ishizaka-website/home" rel="nofollow">スライド保管 (Under construction)</a> 
 </p>
 <br><br>
-<b>"Mathematics for trustworthy simulation, built on geometry. Reliable methods, quantified uncertainty."</b><br>
-<b>有限要素解の精度を上げる3つの戦略</b><br>
-"スキーム設計" × "メッシュ制御" × "コデザイン" = "誤差制御 (error control)"<br>
-これを, 数理(解析)×計算(実装)×データ(AI/同定)の協調設計として拡張します．<br><br>
+<b>"Certified finite element analysis under computable geometric conditions."</b><br>
+<b>計算可能な幾何条件に基づく，保証付き有限要素解析</b><br>
+私の研究の中心は，有限要素法（FEM）におけるメッシュ幾何，異方性誤差評価，離散安定性，平衡化フラックス，目的量誤差評価を結び，計算結果の「どこまで信じてよいか」を数学的に説明することです．<br>
+これは，単に数値解を高精度化するだけでなく，AI・データ同定・デジタルツインの時代に必要となる <b>trustworthy simulation</b> の基盤を作る試みです．<br><br>
 
-<b>Why “Trustworthy Simulation” now? - Digital Twins & Model Credibility</b><br>
-<b>"予測を作る"のではなく, "予測の信用度"を数学で作る</b><br>
-デジタルツインとは, 現実世界の情報をデジタル空間にコピーし, 将来予測などのシミュレーションを行い, その結果を現実の意思決定へフィードバックする枠組みです. <br>
-実際に, 防災・都市計画の文脈でデジタルツイン活用 (例: <a href="https://www.city.kobe.lg.jp/a93584/516920176162.html" target="_blank">神戸市×ドコモ×理研R-CCS「富岳」を活用したデジタルツインシミュレーション</a>)が進んでいます.<br>
-この段階で重要になるのは"見た目がもっともらしい"ではなく, "どこまで信じてよいか"を説明できるモデルの信憑性(credibility)です. そのために工学ではVerification/Validation/Uncertainty Quantification (<a href="https://www.asme.org/codes-standards/publications-information/verification-validation-uncertainty" target="_blank">VVUQ (ASME)</a>)が重視されます. <br>
-一方, 物理系ML(PINNs等)は, 単純な設定では成功例が多い一方, 対流・反応・多スケール・高周波成分などで問題が少し複雑になると, 重要な物理現象を十分に学べず失敗するケースが報告されており(参考: <a href="https://arxiv.org/abs/2109.01050" target="_blank">Characterizing possible failure modes in physics-informed neural networks</a>), "信頼性レイヤ(＝予測値に誤差・不確かさ・危険領域の情報を付与し, 意思決定に耐える形にする枠組み)"が不可欠です.<br>
-つまり, 数値計算で難しい問題(境界層・多スケール・保存則・外挿など)は，物理系ML(PINNs等)でも同様に難しく, "もっともらしく外れる"ことがあります(ハルシネーション). だからこそ, 予測値だけでなく, 誤差や不確かさ, 危険領域を定量化する“信頼性の枠組み(誤差制御)”が重要になってます.<br>
-そこで, 幾何 (メッシュ)・異方性解析・誤差評価 (error control)を核に、シミュレーションやデータ駆動モデルに対して"危ない領域" "必要な解像度" "目的量に対する誤差"を定量化し, 意思決定に耐えうるtrustworthy simulationを数学で支えることを目指します.<br><br>
+<b>有限要素解析の信頼性を高める4つの戦略</b><br>
+"スキーム設計" × "メッシュ制御" × "誤差保証" × "検証可能性" = "Certified error control"<br>
+これを，数理解析・計算実装・データ／AI・形式推論の協調設計として発展させます．<br><br>
+
+<b>Why “Trustworthy Simulation” now? — Digital Twins, AI4Math &amp; Model Credibility</b><br>
+<b>"予測を作る"だけでなく，"予測の信用度"を数学で作る</b><br>
+デジタルツインとは，現実世界の情報をデジタル空間に写し取り，将来予測などのシミュレーションを行い，その結果を現実の意思決定へフィードバックする枠組みです．<br>
+実際に，防災・都市計画の文脈でデジタルツイン活用（例：<a href="https://www.city.kobe.lg.jp/a93584/516920176162.html" target="_blank">神戸市×ドコモ×理研R-CCS「富岳」を活用したデジタルツインシミュレーション</a>）が進んでいます．<br>
+この段階で重要になるのは，見た目がもっともらしい結果ではなく，「どこまで信じてよいか」を説明できるモデルの信憑性（credibility）です．そのために工学では，Verification / Validation / Uncertainty Quantification（<a href="https://www.asme.org/codes-standards/publications-information/verification-validation-uncertainty" target="_blank">VVUQ (ASME)</a>）が重視されます．<br><br>
+
+一方，物理系機械学習（PINNs等）は有望ですが，対流・反応・多スケール構造・高周波成分・境界層を含む問題では，重要な物理現象を十分に学べず，もっともらしく外れることがあります（参考：<a href="https://arxiv.org/abs/2109.01050" target="_blank">Characterizing possible failure modes in physics-informed neural networks</a>）．<br>
+そのため，予測値だけでなく，誤差，不確かさ，危険領域，必要な解像度，目的量に対する信頼区間を与える <b>reliability layer</b> が不可欠です．<br><br>
+
+近年は AI4Math，形式推論，自動証明支援，Lean / Mathlib などの発展により，数学的結果を「発見する」だけでなく，「検証可能な形で記述し，再利用可能な知識として整理する」ことの重要性が増しています．私の立場は，AIでFEMを単に置き換えることではありません．むしろ，AI時代に耐える有限要素解析，すなわち <b>AI4Math-ready certified FEM</b> を構築することです．<br><br>
+
+そこで私は，幾何（メッシュ）・異方性解析・誤差評価・平衡化フラックス・DWR型目的量評価を核に，シミュレーションやデータ駆動モデルに対して「危ない領域」「必要な解像度」「目的量に対する誤差」を定量化し，意思決定に耐えうる trustworthy simulation を数学で支えることを目指しています．<br><br>
 
 <b>Local outreach (Matsuyama)</b><br>
-松山市では3D都市モデル等を用いた防災・避難の可視化/シミュレーション活用が進む一方，短時間での処理や結果提示の妥当性が課題として整理されています (<a href="https://www.mlit.go.jp/toshi/tosiko/content/001579903.pdf" target="_blank">国土交通省(MLIT):「松山スマートシティプロジェクト(R2-4実証)の概要」</a>).<br>
-例えばこのような取り組み対して, 誤差制御 (error control)と不確かさの定量化を"信頼性レイヤ"として組み込み, 意思決定に耐えるtrustworthy simulationの設計図を描くことを目指します.<br><br>
-
+松山市では3D都市モデル等を用いた防災・避難の可視化／シミュレーション活用が進む一方，短時間での処理や結果提示の妥当性が課題として整理されています（<a href="https://www.mlit.go.jp/toshi/tosiko/content/001579903.pdf" target="_blank">国土交通省(MLIT)：松山スマートシティプロジェクト(R2-4実証)の概要</a>）．<br>
+このような取り組みに対して，誤差制御と不確かさの定量化を信頼性レイヤとして組み込み，意思決定に耐える trustworthy simulation の設計図を描くことを目指します．<br><br>
 
 <b>Research Attitude and Perspectives</b><br>
-幾何（メッシュ）が精度と安定性をどう支配するのか，という問いを出発点に，有限要素法（FEM）を"FEM 2.0"として再設計しています．FEM 2.0では，効率性（Efficiency），抽象化（Abstraction），自動化（Automation），応用展開（Application）という4つの目標を置き，私の研究はそれらを貫く3つの Research Line（G/R/A）に整理します．また，教育と研究の橋渡しとして，Supplementary Visionsで学びの地図を整理しています．<br><br>
+幾何（メッシュ）が精度と安定性をどう支配するのか，という問いを出発点に，有限要素法（FEM）を <b>FEM 2.0</b> として再設計しています．FEM 2.0では，効率性（Efficiency），抽象化（Abstraction），自動化（Automation），応用展開（Application），検証性（Verification）という5つの目標を置き，私の研究を4つの Research Line（G/R/A/V）に整理します．<br><br>
 
-I study numerical analysis—the mathematics that makes computer simulations accurate and reliable.<br>
+I study numerical analysis — the mathematics that makes computer simulations accurate, reliable, and certifiable.<br>
 My main tool is the finite element method (FEM), widely used to model physical systems such as fluids, heat, and materials. A central question guides my work:
 <ul>
-<li>How does the geometry of the computational mesh control accuracy and stability? </li>
-<li>and how can we turn that knowledge into robust, partly automated FEMs?</li>
+<li>How does the geometry of the computational mesh control accuracy and stability?</li>
+<li>How can computable geometric conditions be turned into reliable error estimates?</li>
+<li>How can these estimates become certificates for simulation, data-driven models, and AI-assisted mathematics?</li>
 </ul>
 
-Within this long-term program, I think of my projects as three core research lines:
+Within this long-term programme, I organise my projects into four core research lines:
 <ul>
-  <li>G - Geometry & Anisotropic FEM Theory<br>New geometric properties (flatness parameter, weakly regular meshes, two-step transformations) and  
-  anisotropic error estimates for nonstandard elements (CR, Morley, DG, Nitsche), including discrete Sobolev/Korn inequalities and mesh-geometry conditions.</li>
-  <li>R — Reliable & Goal-Oriented PDE Simulation<br>Time-dependent and memory-effect PDEs (BDF/FBDF, fractional-order in time), pressure-robust Stokes/Navier–Stokes, and goal-oriented/verified error control via functional and hypercircle-type estimators and equilibrated fluxes.</li>
-  <li>A — Automation, Learning & New Numerical Methods<br>Using geometric parameters and a posteriori indicators as computable features for adaptive FEM, mesh generation, and scheme selection. I also study connections and comparisons with PINNs/Deep Ritz/meshless methods through a shared lens of representation–metric–projection. In particular, the flatness parameter is elementwise computable and serves as a quality-control indicator for anisotropic adaptive mesh generation. Combined with error indicators, it enables theory-consistent automation of refinement/smoothing/anisotropic metric design.</li>
+  <li><b>G — Geometry &amp; Anisotropic FEM Theory</b><br>New geometric properties, such as the flatness parameter, semi-regular mesh conditions, and two-step transformations, together with anisotropic error estimates for nonstandard elements (CR, Morley, DG, Nitsche), discrete Sobolev/Korn inequalities, and mesh-geometry conditions.</li>
+  <li><b>R — Reliable &amp; Goal-Oriented PDE Simulation</b><br>Time-dependent and memory-effect PDEs (BDF/FBDF, fractional order in time), pressure-robust Stokes/Navier–Stokes, and goal-oriented / verified error control via functional estimators, hypercircle-type estimates, DWR, and equilibrated fluxes.</li>
+  <li><b>A — Automation, Learning &amp; New Numerical Methods</b><br>Using geometric parameters and a posteriori indicators as computable features for adaptive FEM, mesh generation, and scheme selection. I also study connections with PINNs, Deep Ritz, and meshless methods through a shared lens of representation–metric–projection.</li>
+  <li><b>V — Verification, Formal Reasoning &amp; AI4Math</b><br>Connecting finite element error analysis, computable mesh conditions, equilibrated flux certificates, and goal-oriented bounds with AI-assisted mathematics, formal reasoning, and future formalisation. The aim is not merely to use AI for simulation, but to build FEM theory that remains verifiable and reusable in the AI4Math era.</li>
 </ul>
 
 This website is organised accordingly:
 <ul>
-  <li>Publications and Research show completed and near-completed results along these lines. </li>
-  <li>Research Visions collects open directions and long-term ideas, indexed by the three lines above.</li>
-  <li>History of Geometric Conditions in FEMs records the geometric side of Line G.</li>
+  <li>Publications and Research show completed and near-completed results along these lines.</li>
+  <li>Research Visions collects open directions and long-term ideas, indexed by the four lines above.</li>
+  <li>History of Geometric Conditions in FEM records the geometric side of Line G.</li>
+  <li>Supplementary Visions and Blog pages develop explanatory and exploratory materials around these themes.</li>
 </ul>
 
 <b>Near-future directions</b><br>
 <ul>
-  <li>Certified error control for decision-making: QoI（目的量）に対して"どこまで信じてよいか"を上界・誤差半径で提示</li>
-  <li>Credible digital twins on realistic meshes: 実運用の(歪んだ/異方性)メッシュを前提に, 幾何量+誤差指標で品質管理・適応を設計</li>
-  <li>Reliability layer for surrogates/physics-ML: 物理サロゲート(＝PDE/FEMシミュレーションの高速近似モデル)に対して, 破綻しやすい領域(境界層・外挿等)を検知・定量化</li>
+  <li><b>Certified error control for decision-making:</b> QoI（目的量）に対して，「どこまで信じてよいか」を上界・誤差半径・certificate として提示する．</li>
+  <li><b>Credible digital twins on realistic meshes:</b> 実運用の歪んだ／異方性メッシュを前提に，幾何量と誤差指標で品質管理・適応化を設計する．</li>
+  <li><b>Reliability layer for surrogates and physics-ML:</b> 物理サロゲートやPINNsに対して，破綻しやすい領域（境界層・外挿・保存則の崩れ等）を検知・定量化する．</li>
+  <li><b>AI4Math-ready finite element theory:</b> 異方性補間評価，準正則条件，平衡化フラックス，DWR型目的量評価を，形式化・再利用・自動検証に接続しやすい形へ整理する．</li>
 </ul>
-デジタルツインや物理AIが実運用に近づくほど，数理・計算科学・データ/AI・工学的要請 (目的量・安全率)をつなぐ分野横断が重要になります．私は数学 (幾何・誤差評価)を核に，これらを“誤差制御”として統一して扱います．<br><br>
+デジタルツインや物理AIが実運用に近づくほど，数理解析・計算科学・データ／AI・工学的要請（目的量・安全率）をつなぐ分野横断が重要になります．私は数学（幾何・誤差評価・検証可能性）を核に，これらを <b>certified error control</b> として統一して扱います．<br><br>
 
 <p><b><span style="color:red;">
 This site includes open directions (proposals). Published results are clearly labelled and linked on the Publications and Research pages.
@@ -209,6 +219,14 @@ This site includes open directions (proposals). Published results are clearly la
 
 <div class="news">
 <article class="news-item">
+
+<h3 class="news-title">Research Visions updated: Certified FEM, AI4Math-ready finite element theory, and formal reasoning. [<a href="./fem/">Research Visions</a>]</h3>
+<div class="news-thumb">
+</div>
+<div class="news-date"><time datetime="2026-6-8">8th June 2026</time></div>
+<div class="news-cat">
+<span class="cat cat001">Update</span>
+</div>
 
 <h3 class="news-title">"Exact-curved Lagrange finite elements for the Poisson problem in two dimensions." [<a href="https://arxiv.org/abs/2605.26566" target="_blank">Arxiv</a>]</h3>
 <div class="news-thumb">
@@ -294,7 +312,7 @@ parameter." [<a href="https://arxiv.org/pdf/2504.16012" target="_blank">Arxiv</a
 	
 </div>
 
-<div class="news-date"><time datetime="2026-6-01">1st June 2026</time></div>
+<div class="news-date"><time datetime="2026-6-8">8th June 2026</time></div>
 <div class="news-cat">
 <span class="cat cat001">Last Update</span>
 </div>
