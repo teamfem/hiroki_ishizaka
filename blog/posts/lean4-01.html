@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 8th June 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 8th June 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">第1回：Lean 4 は有限要素法研究に何をもたらすか</h1>
+<!---->
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+<b>Lean 4 と有限要素法をつなぐための準備ノート</b><br>
+(8th June 2026 <span class="cat cat001">Update</span>)
+<p>
+近年，AI4Math，形式推論，自動証明支援，Mathlib などの発展により，数学を「人間が読む証明」として書くだけでなく，「計算機が検証できる証明」として整理する流れが強くなっています．Lean 4 はその中心にある定理証明支援系の一つです．公式サイトでは，Lean は正しく保守可能で形式的に検証されたコードを可能にする，オープンソースのプログラミング言語かつ証明支援系として説明されています．
+</p>
+<p>
+この連載では，Lean 4 を単なる流行語として扱うのではなく，有限要素法，異方性メッシュ，誤差評価，平衡化フラックス，DWR 型目的量評価といった数値解析の理論を，将来的にどのように検証可能な知識として整理できるか，という観点から眺めます．
+</p>
+</article>
+</div>
+
+<h2>1. Lean 4 は何をする道具か</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Lean 4 は，プログラミング言語であると同時に，数学の定理や証明を形式的に記述するための証明支援系です．通常の数学論文では，「明らかに」「同様に」「標準的議論により」と書ける部分があります．しかし，Lean ではそのような省略は原則として通用しません．定義，仮定，補題，証明の各ステップを，計算機が確認できる形で記述する必要があります．
+</p>
+<p>
+これは一見すると面倒です．実際，面倒です．鉛筆で一行の証明が，Lean では十行になることもあります．しかしその代わり，証明のどこに暗黙の仮定があるか，どの補題に依存しているか，どの定義が再利用可能かがはっきりします．これは，有限要素法のように仮定と定数依存性が複雑になりやすい分野では，大きな意味を持ちます．
+</p>
+</article>
+</div>
+
+<h2>2. なぜ FEM 研究者が Lean 4 を気にするのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+有限要素法の誤差解析では，多くの場合，次のような構造が現れます．
+</p>
+<ul>
+  <li>連続問題の well-posedness</li>
+  <li>有限要素空間の定義</li>
+  <li>補間作用素や射影作用素の構成</li>
+  <li>安定性評価</li>
+  <li>補間誤差評価</li>
+  <li>Strang 型補題，inf-sup 条件，dual argument</li>
+  <li>a posteriori error estimator や certificate</li>
+</ul>
+<p>
+これらは人間にとっては見慣れた流れですが，機械的に検証しようとすると，定義の粒度や仮定の置き方が非常に重要になります．特に，異方性メッシュでは，shape-regularity の代わりに，最大角条件，準正則条件，flatness parameter などの幾何量が登場します．このような条件を形式化するには，「要素とは何か」「辺長とは何か」「体積とは何か」「退化しないとは何か」を正確に定義しなければなりません．
+</p>
+<p>
+つまり Lean 4 は，FEM をすぐに自動で証明してくれる魔法の杖ではありません．むしろ，FEM 理論をどの粒度で整理すべきかを突きつけてくる，かなり厳しい鏡です．鏡なので，見たくない定数依存性も映ります．そこがつらく，そして面白いところです．
+</p>
+</article>
+</div>
+
+<h2>3. まず形式化しやすい部分</h2>
+<div class="news">
+<article class="news-item">
+<p>
+いきなり「異方性メッシュ上の CR 要素の誤差評価」を Lean で完全形式化するのは，現実的には相当重いです．最初に狙うなら，次のような小さな部品がよいと思います．
+</p>
+<ul>
+  <li>有限集合上の和と局所量の総和</li>
+  <li>ノルム・半ノルム・三角不等式</li>
+  <li>単純な線形代数の補題</li>
+  <li>一次元区間上の P1 補間</li>
+  <li>参照要素から物理要素へのアフィン変換</li>
+  <li>局所誤差評価から大域誤差評価への足し上げ</li>
+</ul>
+<p>
+このあたりは，FEM の巨大な理論の中では小さな部品ですが，Lean で書くと「どの定義をどう再利用するか」という感覚が身につきます．最初から大聖堂を建てるより，まずレンガの形をそろえる，という感じです．
+</p>
+</article>
+</div>
+
+<h2>4. Lean 4 の最小例</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Lean では，命題と証明を次のような形で書きます．これは純粋に論理の例です．
+</p>
+
+<pre><code>example (P Q : Prop) (hP : P) (hPQ : P -> Q) : Q := by
+  exact hPQ hP</code></pre>
+
+意味は，「命題 \(P\)，\(Q\) があり，\(P\) が成り立ち，さらに \(P\) ならば \(Q\) が成り立つなら，\(Q\) が成り立つ」というだけです．数学的には当たり前ですが，Lean ではこの推論規則を明示します．<br><br>
+
+Mathlib を使えば，実数や代数構造，解析に関する豊富な定義や補題を利用できます．例えば，Mathlib を読み込んだ上で代数的な恒等式を tactic によって処理する，という方向に進めます．
+
+<pre><code>import Mathlib
+
+example (a b c : ℝ) : a + b + c = a + (b + c) := by
+  ring</code></pre>
+
+<p>
+ここで重要なのは，「Lean が勝手に数学を発見した」というより，既存のライブラリと tactic を使って，人間が与えた命題を検証しているという点です．AI4Math の文脈では，この「人間の構想」と「機械による検証」の役割分担が重要になります．
+</p>
+</article>
+</div>
+
+<h2>5. FEM への接続：証明を certificate として見る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+私の研究で扱っている平衡化フラックスや hypercircle 型評価，DWR 型目的量評価は，数値解に対して「この範囲に真の解や目的量がある」と示す certificate を与える方向です．Lean 4 のような証明支援系は，この certificate の理論的な部分を，より検証可能な形で整理するための道具になり得ます．
+</p>
+<p>
+もちろん，数値計算そのものをすべて Lean の中で実行する必要はありません．むしろ現実的には，FEniCSx や FreeFEM などで数値計算を行い，その背後にある数学的主張，例えば「この estimator が上界を与える」「この幾何条件の下でこの補間評価が成り立つ」といった部分を形式化する方が自然です．
+</p>
+<p>
+この意味で，Lean 4 は FEM 実装の代替ではありません．FEM 理論の「証明の骨格」を整理するための道具です．FEniCSx が計算の実験室だとすれば，Lean は証明の実験室です．白衣は不要ですが，忍耐は必要です．
+</p>
+</article>
+</div>
+
+<h2>6. この連載でやりたいこと</h2>
+<div class="news">
+<article class="news-item">
+<p>
+この連載では，次の順に進めたいと考えています．
+</p>
+<ol>
+  <li>Lean 4 は有限要素法研究に何をもたらすか</li>
+  <li>Lean 4 の命題・証明・tactic を最小例で見る</li>
+  <li>Mathlib で実数・ノルム・有限和を探す</li>
+  <li>三角不等式と局所誤差評価の形式化練習</li>
+  <li>参照区間上の P1 補間を Lean 的に眺める</li>
+  <li>アフィン変換とスケーリングをどう定義するか</li>
+  <li>FEM 誤差評価を形式化する前に必要な部品表</li>
+  <li>AI4Math と certified FEM：人間・AI・証明支援系の役割分担</li>
+</ol>
+<p>
+最終目標は，Lean 4 でいきなり大きな FEM 定理を証明することではありません．まずは，自分の研究で繰り返し現れる補題や構造を，形式化可能な粒度に分解することです．これは論文執筆にも有効です．証明が Lean に入るかどうか以前に，「どこが定義で，どこが補題で，どこが定数依存性か」が見えるようになるからです．
+</p>
+</article>
+</div>
+
+<h2>参考リンク</h2>
+<div class="news">
+<article class="news-item">
+<p>
+参考になりそうなサイトをあげておく．
+</p>
+<ul>
+  <li><a href="https://lean-lang.org/" target="_blank" rel="nofollow">Lean Programming Language</a></li>
+  <li><a href="https://lean-lang.org/learn/" target="_blank" rel="nofollow">Lean: Learn</a></li>
+  <li><a href="https://leanprover.github.io/theorem_proving_in_lean4/" target="_blank" rel="nofollow">Theorem Proving in Lean 4</a></li>
+  <li><a href="https://leanprover-community.github.io/" target="_blank" rel="nofollow">Lean community</a></li>
+  <li><a href="https://leanprover-community.github.io/mathlib4_docs/index.html" target="_blank" rel="nofollow">Mathlib4 documentation</a></li>
+</ul>
+
+</article>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
