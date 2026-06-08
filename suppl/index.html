@@ -7,8 +7,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
-<meta name="description" content="Mathematics for Trustworthy Simulation">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,AI4Math,形式推論,保証付き数値解析">
+<meta name="description" content="Learning map for trustworthy, certified and AI4Math-ready numerical analysis">
 
 <link rel="stylesheet" href="../css/base.css">
 <link rel="stylesheet" href="../css/rwd.css">
@@ -42,42 +42,14 @@
 		<div class="global-nav-in">
 			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
 			<ul id="menu">
-				<li>
-					<a href="../">Home</a>
-				</li>
-			
+				<li><a href="../">Home</a></li>
 				<li><a href="../publications/">Publications</a></li>
-				
-				<li>
-					<a href="../research/">Research</a>
-					<!--
-					<ul>
-						<li><a href="./research/research01/">Research1</a></li>
-						<li><a href="./research/research02/">Research2</a></li>
-					</ul>
-					-->
-				</li>
-				
-				<li>
-					<a href="../fem/">Research Visions</a>
-				</li>
-				
-				<li>
-					<a href="../suppl/">Supplementary Visions</a>
-				</li>
-				
-				<li>
-					<a href="../blog/">Blog</a>
-				</li>
-				
-				<li>
-					<a href="../geo/">History of Geometric Conditions in FEM</a>
-				</li>
-				
-				<li>
-					<a href="../links/">Links</a>
-				</li>
-				
+				<li><a href="../research/">Research</a></li>
+				<li><a href="../fem/">Research Visions</a></li>
+				<li><a href="../suppl/">Supplementary Visions</a></li>
+				<li><a href="../blog/">Blog</a></li>
+				<li><a href="../geo/">History of Geometric Conditions in FEM</a></li>
+				<li><a href="../links/">Links</a></li>
 			</ul>
 		</div>
 	</nav>
@@ -98,9 +70,7 @@
 				</a>
 				<meta itemprop="position" content="1">
 			</li>
-			<li class="bcl-last">
-				Supplementary Visions
-			</li>
+			<li class="bcl-last">Supplementary Visions</li>
 		</ol>
 	</nav>
 	<!--▲パンくずリスト-->
@@ -113,258 +83,226 @@
 			<div class="section-in">
 
 <h1 class="section-title">Supplementary Visions</h1>
-<h2>Visions of Education</h2>
+<h2>Visions of Education, Verification &amp; AI4Math Literacy</h2>
+
 <h3>Introduction</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
-ここでは，Research Visionsの主軸テーマから半歩だけ離れたアイディアや論文紹介を取り上げます．同時に，私自身の研究成果や関連分野を「学びの地図」としてシラバス的に整理し，可視化することを目指しています．<br><br>
+ここでは，Research Visions の主軸テーマから半歩だけ離れたアイディア，論文紹介，学習ルートを取り上げます．同時に，私自身の研究成果や関連分野を「学びの地図」としてシラバス的に整理し，可視化することを目指しています．<br><br>
 
-私の基本的な考え方は，研究も教育も「どこから来て，どこへ向かうのか」が見えているほど学びやすくなる，というものです．シラバス形式で道筋を示すと，「研究の最前線」にたどり着くまでに必要な知識や技術の階層がよく見えてきます．異方性有限要素法，混合型有限要素法，Crouzeix–Raviart 要素，圧力ロバストスキーム，半ノルム評価などのテーマも，いきなり最前線から入るのではなく，
-
+私の基本的な考え方は，研究も教育も「どこから来て，どこへ向かうのか」が見えているほど学びやすくなる，というものです．シラバス形式で道筋を示すと，「研究の最前線」にたどり着くまでに必要な知識や技術の階層がよく見えてきます．異方性有限要素法，混合型有限要素法，Crouzeix–Raviart 要素，圧力ロバストスキーム，半ノルム評価，平衡化フラックス，目的量誤差評価などのテーマも，いきなり最前線から入るのではなく，
 <ul>
   <li>どのあたりのレベルの人を想定しているか，</li>
   <li>どんな前提知識があれば読み進められるか，</li>
-  <li>学んだ先に，どのResearch Visionや論文につながっていくのか，</li>
+  <li>学んだ先に，どの Research Vision や論文につながっていくのか，</li>
+  <li>どの段階で「計算結果を保証する」視点に接続するのか，</li>
 </ul>
 といった「位置」と「道筋」が見えていると，格段に取り組みやすくなります．テーマを順に学んでいけば，数値解析研究の核心に近づくことができます．しかし，それらを本当に理解し応用できるようになるには，2〜3年ほどの学習と実践が必要になるでしょう．<br><br>
 
-このSupplementary Visionsでは，各テーマをシラバス形式で整理しつつ，
+近年は，AI支援型数学，形式推論，Lean / Mathlib に代表される形式化数学，自動証明支援の発展により，数学研究においても「発見すること」だけでなく，「証明・計算・誤差評価をどのように検証可能な形で残すか」が重要になっています．数値解析においても同じです．数値解を得るだけではなく，その解がどの程度信頼できるか，どの幾何条件の下で誤差評価が成立するか，目的量に対してどのような certificate を与えられるかを説明できることが，AI時代の数値解析リテラシーになると考えています．<br><br>
+
+この Supplementary Visions では，各テーマをシラバス形式で整理しつつ，
 <ul>
-  <li>【G】【R】【A】タグで, Research Line（幾何・信頼性・自動化）の位置づけを示し，</li>
+  <li>【G】【R】【A】【V】タグで，Research Line（幾何・信頼性・自動化・検証）の位置づけを示し，</li>
   <li>レベル・前提・到達目標・関連論文を明示することで，</li>
 </ul>
-学生や若手研究者が「自分はこの地図のどこにいて，次にどのステップに進めばよいか」を一目で把握できるようにすることを狙っています．このページ全体が，教育と研究のあいだをつなぐ「見える化」になればと思っています．
+学生や若手研究者が「自分はこの地図のどこにいて，次にどのステップに進めばよいか」を一目で把握できるようにすることを狙っています．このページ全体が，教育と研究のあいだをつなぐ「見える化」になればと思っています．<br><br>
+
+Research Line の略号は次のように使います．
+<ul>
+  <li>【G】Geometry &amp; Anisotropic FEM Theory：メッシュ幾何，flatness parameter，準正則条件，異方性補間誤差評価．</li>
+  <li>【R】Reliable &amp; Goal-Oriented PDE Simulation：誤差評価，目的量評価，平衡化フラックス，verified output．</li>
+  <li>【A】Automation, Learning &amp; New Numerical Methods：適応化，自動化，機械学習，PINNs / Deep Ritz / メッシュレス法との比較．</li>
+  <li>【V】Verification, Formal Reasoning &amp; AI4Math：形式推論，証明の再利用可能性，a posteriori certificate，AI支援型数学への接続．</li>
+</ul>
 
 <br><br>
 This page is updated periodically.<br><br>
-(3rd December 2025 <span class="cat cat001">Update</span>)
+(8th June 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
 
-<h3>有限要素法入門【G】【R】</h3>
+<h3>AI4Math時代の保証付き数値解析リテラシー【V】【R】【G】</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
 <b>位置づけ（Map）</b><br>
 <ul>
-  <li>Research Line：【G】【R】</li>
-  <li>想定レベル：学部3年〜学部4年（修士1年導入まで）</li>
-  <li>前提科目：線形代数（行列・連立一次方程式），関数解析入門，偏微分方程式入門</li>
-  <li>推奨ボリューム感：90分×15回（講義＋演習＋PC実習）</li>
-  <li>使用言語/環境：Python（NumPy）or FreeFem++, FEniCSx etc</li>
-  <li>前提設定：Google アカウント（Google Colab使用のため）</li>
-  <li>つながる：偏微分方程式論を数値解析視点で見直す，有限要素法における上級（非適合・混合型有限要素法 etc）・特別なトピック（安定化法，異方性有限要素法　etc）</li>
-  <li>教科書：配布ノート</li>
-  <li>参考文献：
-  <ul>
-  <li>Brenner & Scott, The Mathematical Theory of Finite Element Methods</li>
-  <li>Ciarlet, The Finite Element Method for Elliptic Problems</li>
-  <li>Ern & Guermond, Theory and Practice of Finite Elements</li>
-  </ul>
-  </li>
-  <li>到達目標：
-  <ul>
-  <li>Poisson型境界値問題について，弱形式の導出と境界条件の扱いを説明できる．</li>
-  <li>1次元P1要素の局所行列・組立を理解し，簡単なコードで解ける．</li>
-  <li>2次元P1有限要素法をライブラリ（例：FreeFem++）で実装し，収束の確認ができる．</li>
-  <li>誤差評価の基本概念（近似・安定性・収束率）を計算結果と結びつけて説明できる．</li>
-  </ul>
-  </li>
-  <li>成績評価例：
-  <ul>
-  <li>小課題（理論・演習）30%</li>
-  <li>計算実習レポート 30%</li>
-  <li>最終ミニプロジェクト（発表またはレポート）40%</li>
-  </ul>
-  </li>
+  <li>Research Line：【V】【R】【G】</li>
+  <li>想定レベル：修士〜博士，および数値解析・AI支援型数学の接点に関心を持つ研究者</li>
+  <li>前提科目：有限要素法入門，偏微分方程式論，関数解析，数値線形代数，誤差評価の基礎</li>
+  <li>推奨ボリューム感：90分×15回（講義＋演習＋ミニ形式化／検証実習）</li>
+  <li>つながる Research Visions：Vision 4（数値計算の自動化），Vision 7b（推論の信頼性），Vision 14（計量幾何），Vision 15（表現・計量・射影），Vision 17（AI4Math時代の保証付き有限要素解析）</li>
+  <li>到達目標：数値解・誤差評価・幾何条件・目的量評価を，検証可能な数学的 certificate として説明できるようになる．</li>
 </ul>
 
 <b>概要</b><br>
-偏微分方程式の弱形式化から有限要素空間による近似，連立一次方程式の組立、数値解の誤差評価までを一連の流れとして学ぶ．前半は1次元問題で「行列がどこから来るか」を手計算と簡単なPython実装で確認し，後半は2次元問題を通して現実的な有限要素計算（境界条件設定・可視化・収束実験）を体験する．最後に，メッシュ品質，混合型・異方性有限要素法など上級・特別トピックへの見通しを与える．
+AI支援型数学や形式推論の発展により，数学の学び方・研究の進め方は大きく変わりつつあります．しかし，数値解析において本当に重要なのは，AIに計算を任せることそのものではありません．むしろ，得られた数値解に対して，どの仮定の下で，どの誤差評価が，どの目的量に対して，どの程度の信頼性を与えるのかを明示できることです．<br><br>
+
+この講義・学習ルートでは，有限要素法の基本的な誤差評価を出発点に，a posteriori error estimate，equilibrated flux，DWR，hypercircle 法，計算可能なメッシュ幾何条件を結びつけ，最終的に「保証付き数値解析」を AI4Math 時代の共通言語として理解することを目指します．Lean / Mathlib などによる形式化そのものを直ちに完遂することよりも，まずは形式化・自動検証に向いた数学的構造を見抜く訓練を重視します．<br><br>
+
+15回の骨格：
+<ol>
+  <li>AI4Math と数値解析：発見・証明・計算保証をどうつなぐか</li>
+  <li>有限要素法における「保証」とは何か：a priori，a posteriori，verified output</li>
+  <li>弱形式・安定性・近似性：形式化しやすい定理構造を見抜く</li>
+  <li>Céa 型評価と Strang 型評価：仮定・結論・定数依存性の明示</li>
+  <li>メッシュ幾何条件：最大角条件，shape-regularity，準正則条件，flatness parameter</li>
+  <li>異方性補間誤差評価：二段変換と定数依存性の追跡</li>
+  <li>a posteriori error estimate：残差型評価と計算可能性</li>
+  <li>equilibrated flux：局所保存則と certificate の考え方</li>
+  <li>hypercircle 法：上界・下界・誤差半径の幾何学的理解</li>
+  <li>DWR と目的量誤差：随伴問題を用いた goal-oriented certificate</li>
+  <li>非適合要素・混合要素における検証：CR/RT を例として</li>
+  <li>数値実験の再現性：コード・メッシュ・誤差指標をどう残すか</li>
+  <li>AI支援型証明整理：補題探索，証明スケルトン，反例候補の使い方</li>
+  <li>形式推論への入口：Lean / Mathlib を意識した定義・補題・依存関係の整理</li>
+  <li>最終ミニプロジェクト：一つのFEM誤差評価を certificate として再記述する</li>
+</ol>
+
+演習・ミニプロジェクト例：
+<ul>
+  <li>Poisson 問題の Céa 型評価について，仮定・定数・結論を形式化しやすい形に書き直す．</li>
+  <li>簡単な残差型 a posteriori estimator を実装し，真の誤差との関係を確認する．</li>
+  <li>CR 要素と RT フラックス再構成を用いて，局所保存則と誤差上界の意味を整理する．</li>
+  <li>異方性メッシュ上で flatness parameter と誤差指標を比較し，どの要素が危険かを可視化する．</li>
+  <li>論文中の一つの定理を，Lean / Mathlib で将来形式化することを想定して，依存補題のリストに分解する．</li>
+</ul>
+
+このテーマの狙いは，「AIで数値解を出す」ことではありません．むしろ，AI支援型数学の時代において，有限要素法の誤差評価・幾何条件・保存則・目的量評価を，検証可能で再利用可能な知識として整理することです．これは，Research Visions における <b>Certified finite element analysis under computable geometric conditions</b> の教育版として位置づけています．
+
+<br><br>
+(8th June 2026 <span class="cat cat001">Update</span>)
+</p>
+</article>
+</div>
+
+<h3>有限要素法入門【G】【R】【V】</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+<b>位置づけ（Map）</b><br>
+<ul>
+  <li>Research Line：【G】【R】【V】</li>
+  <li>想定レベル：学部3年〜学部4年（修士1年導入まで）</li>
+  <li>前提科目：線形代数，関数解析入門，偏微分方程式入門</li>
+  <li>推奨ボリューム感：90分×15回（講義＋演習＋PC実習）</li>
+  <li>使用言語/環境：Python（NumPy）or FreeFem++，FEniCSx etc</li>
+  <li>前提設定：Google アカウント（Google Colab 使用のため）</li>
+  <li>つながる：偏微分方程式論を数値解析視点で見直す，非適合・混合型有限要素法，異方性有限要素法，AI4Math時代の保証付き数値解析リテラシー</li>
+  <li>参考文献：Brenner &amp; Scott，Ciarlet，Ern &amp; Guermond</li>
+</ul>
+
+<b>概要</b><br>
+偏微分方程式の弱形式化から有限要素空間による近似，連立一次方程式の組立，数値解の誤差評価までを一連の流れとして学ぶ．前半は1次元問題で「行列がどこから来るか」を手計算と簡単な Python 実装で確認し，後半は2次元問題を通して現実的な有限要素計算（境界条件設定・可視化・収束実験）を体験する．最後に，メッシュ品質，混合型・異方性有限要素法，a posteriori error estimate，verified computation など上級・特別トピックへの見通しを与える．
 
 <ol>
-<li>有限要素法とは何か：PDE→弱形式→離散化→線形方程式の全体像を緩く見る</li>
-<li>1次元Poisson問題：弱形式と境界条件（Dirichlet/Neumann）の整理</li>
-<li>1次元P1要素：基底関数，局所剛性行列・右辺ベクトル（最小限の導出）</li>
-<li>実習：1次元の組立をPythonで実装し，解を得る</li>
-<li>収束の見方：メッシュ幅と誤差（エネルギーノルム/\(L^2\)ノルムの直感）</li>
-<li>実習：収束率の確認（メッシュ細分・log-logプロット・次数の解釈・相対誤差）</li>
+<li>有限要素法とは何か：PDE→弱形式→離散化→線形方程式の全体像</li>
+<li>1次元 Poisson 問題：弱形式と境界条件（Dirichlet/Neumann）の整理</li>
+<li>1次元 P1 要素：基底関数，局所剛性行列・右辺ベクトル</li>
+<li>実習：1次元の組立を Python で実装し，解を得る</li>
+<li>収束の見方：メッシュ幅と誤差（エネルギーノルム／\(L^2\)ノルム）</li>
+<li>実習：収束率の確認（メッシュ細分・log-log プロット・次数の解釈）</li>
 <li>2次元三角形要素：参照要素・アフィン変換・数値積分の考え方</li>
-<li>2次元Poissonの有限要素定式化：実装に必要な最小の数式</li>
-<li>実習：2次元Poissonをライブラリで解く（境界条件・可視化）</li>
+<li>2次元 Poisson の有限要素定式化：実装に必要な最小の数式</li>
+<li>実習：2次元 Poisson をライブラリで解く（境界条件・可視化）</li>
 <li>実習：2次元での収束確認（メッシュ細分と誤差評価）</li>
-<li>係数が変わる問題/右辺が複雑な問題：弱形式の書き換え練習</li>
-<li>数値線形代数の入口：疎行列，反復法（CG/GMRES）の役割と性質</li>
-<li>実習：反復法・前処理の効果を体験（計算時間と反復回数の比較）</li>
-<li>上級・特別トピックへの導入：メッシュ品質，混合型・異方性有限要素法</li>
-<li>最終ミニプロジェクト発表/総括「何を学び，何が次に必要か」</li>
+<li>係数が変わる問題／右辺が複雑な問題：弱形式の書き換え練習</li>
+<li>数値線形代数の入口：疎行列，反復法（CG/GMRES）の役割</li>
+<li>実習：反復法・前処理の効果を体験</li>
+<li>上級・特別トピックへの導入：メッシュ品質，混合型・異方性有限要素法，誤差保証</li>
+<li>最終ミニプロジェクト発表／総括「何を学び，何が次に必要か」</li>
 </ol>
 
 最終ミニプロジェクト例：
 <ul>
-<li>連続問題の枠組みでPoisson問題の弱解の存在と一意性を証明する（学部）</li>
+<li>連続問題の枠組みで Poisson 問題の弱解の存在と一意性を証明する（学部）</li>
 <li>要素ごとの積分がなぜ大域行列の和になるかを基底関数の台と分割統一で説明する（学部）</li>
-<li>境界条件の違いによる解の変化を確認する（学部）</li>
-<li>Céaの補題を“抽象枠”で証明してPoisson問題に適用（修士）</li>
-<li>アフィン変換で剛性行列がどう変換されるか（修士）</li>
-<li>1次元P1の誤差評価を最後まで（エネルギーノルム）行う（修士）</li>
+<li>Céa の補題を抽象枠で証明して Poisson 問題に適用する（修士）</li>
+<li>アフィン変換で剛性行列がどう変換されるかを確認する（修士）</li>
 <li>メッシュが歪むと何が起きるかを確認する（修士）</li>
 </ul>
 
 <br><br>
-(14th December 2025 <span class="cat cat001">Update</span>)
+(8th June 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
 
-<h3>偏微分方程式論を数値解析視点で見直す【R】</h3>
+<h3>偏微分方程式論を数値解析視点で見直す【R】【V】</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
 <b>位置づけ（Map）</b><br>
 <ul>
-  <li>Research Line：【R】Reliable & Goal-Oriented PDE Simulation（解析→離散化→精度保証の背骨）</li>
+  <li>Research Line：【R】【V】Reliable &amp; Goal-Oriented PDE Simulation / Verification</li>
   <li>想定レベル：修士〜博士（「解析も計算もやりたい」人向け）</li>
-  <li>前提科目：偏微分方程式入門，関数解析入門（弱形式・Sobolev空間），線形代数（固有値・直交分解），数値解析（誤差・安定性）</li>
-  <li>推奨ボリューム感：90分×15回（講義＋演習）</li>
-  <li>使用言語/環境：LaTeXノート＋Python（NumPy）or FEniCSx/FreeFem++</li>
-  <li>つながる：異方性補間誤差評価を学ぶ，非適合・混合FEM（CR/RT），分数階時間微分方程式の数値解析，圧力ロバストStokes/NS，目的量誤差評価（DWR/Hypercircle）</li>
-  <li>到達目標：
-  <ul>
-  <li>PDEを見たときに「弱形式・安定性・正則性ボトルネック・離散化後の線形代数」を要約できる．</li>
-  <li>Céa/Strang/inf-sup/双対性（Aubin–Nitsche）など，どの評価枠を使うべきか判断できる．</li>
-  <li>数値計算で起きる典型的な破綻（次数低下，非対称による不安定，鞍点による収束不良）を，連続理論側の原因と対応づけて説明できる．</li>
-  </ul>
-  </li>
+  <li>前提科目：偏微分方程式入門，関数解析入門，線形代数，数値解析</li>
+  <li>つながる：異方性補間誤差評価，非適合・混合 FEM，分数階時間微分方程式，圧力ロバスト Stokes/NS，DWR/Hypercircle</li>
 </ul>
 
 <b>概要</b><br>
-純粋解析として学ぶPDE論を，「数値解析研究者が使う道具箱」として再配置する科目横断型学習．ポイントは，定理そのものよりも
-<ul>
-<li>どの弱形式に落ちるか</li>
-<li>どの安定性（エネルギー評価）が核か</li>
-<li>どこで正則性が壊れて次数が落ちるか</li>
-<li>離散化するとどんな行列構造（SPD/非対称/鞍点）になるか</li>
-</ul>
-を系統的に結びつけることにある．「解析⇄数値」を往復する視点の訓練として位置づける．<br><br>
+純粋解析として学ぶ PDE 論を，「数値解析研究者が使う道具箱」として再配置する科目横断型学習．ポイントは，定理そのものよりも，どの弱形式に落ちるか，どの安定性が核か，どこで正則性が壊れて次数が落ちるか，離散化するとどんな行列構造になるかを系統的に結びつけることにある．さらに，形式推論に接続しやすいように，仮定・定数・結論を明示する訓練を加える．<br><br>
 
 15回の骨格：
 <ol>
-<li>「PDE論→数値解析」翻訳テンプレ：弱形式・安定性・正則性・行列構造</li>
-<li>楕円型（Poisson）：Lax–Milgram，Poincaré，境界条件の扱い（数値）</li>
-<li>Céaの補題と誤差評価テンプレ（近似＋安定性＝誤差）</li>
-<li>正則性と次数：角・係数不連続・境界層（“なぜ落ちるか”）</li>
+<li>PDE論→数値解析の翻訳テンプレ：弱形式・安定性・正則性・行列構造</li>
+<li>楕円型（Poisson）：Lax–Milgram，Poincaré，境界条件の扱い</li>
+<li>Céa の補題と誤差評価テンプレ</li>
+<li>正則性と次数：角・係数不連続・境界層</li>
 <li>双対性（Aubin–Nitsche）と目的量の入口</li>
-<li>放物型（熱方程式）：エネルギー安定性と時間離散の思想（θ法/BDF）</li>
-<li>初期層・低正則データ：実際に次数が落ちるメカニズム</li>
+<li>放物型（熱方程式）：エネルギー安定性と時間離散の思想</li>
+<li>初期層・低正則データ：次数が落ちるメカニズム</li>
 <li>反復法とスペクトル：条件数・前処理が必要になる理由</li>
-<li>非対称（移流拡散）：安定化の必要性（SUPG/CIPの直感）</li>
-<li>鞍点（Stokes）：inf-supと離散安定性（圧力問題の本質）</li>
-<li>圧力ロバスト性：何を“消す”とロバストになるか（構造の理解）</li>
+<li>非対称（移流拡散）：安定化の必要性</li>
+<li>鞍点（Stokes）：inf-sup と離散安定性</li>
+<li>圧力ロバスト性：何を消すとロバストになるか</li>
 <li>事後誤差評価（残差型）と適応の最低限</li>
-<li>目的量誤差（DWR）と随伴の考え方（入口）</li>
-<li>分数階時間微分（時間作用素＝畳み込みとして再定式化）</li>
-<li>まとめ：チートシート</li>
+<li>目的量誤差（DWR）と随伴の考え方</li>
+<li>分数階時間微分：時間作用素＝畳み込みとして再定式化</li>
+<li>まとめ：証明・離散化・検証のチートシート</li>
 </ol>
 
-成果物（チートシート）：各テーマで以下を1枚にまとめる
-<ul>
-<li>Model / BC / data</li>
-<li>Weak form（双線形形式と汎関数）</li>
-<li>Stability estimate（何が保存されるか）</li>
-<li>Regularity bottleneck（どこで壊れるか）</li>
-<li>Discretisation hook（Céa/Strang/inf-sup/双対性）</li>
-<li>Linear algebra（SPD/非対称/鞍点）→ solver/preconditioner の指針</li>
-<li>（発展）a posteriori（残差 or DWR）への接続</li>
-</ul>
+成果物（チートシート）：Model / BC / data，Weak form，Stability estimate，Regularity bottleneck，Discretisation hook，Linear algebra，a posteriori への接続を1枚にまとめる．
 
 <br><br>
-(15th December 2025 <span class="cat cat001">Update</span>)
+(8th June 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
 
-<h3>異方性補間誤差評価を学ぶ - 基礎から応用まで【G】</h3>
+<h3>異方性補間誤差評価を学ぶ - 基礎から応用まで【G】【V】</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
 <b>概要と位置づけ（Map）</b><br>
 <ul>
-  <li>Research Line：【G】Geometry & Anisotropic FEM Theory</li>
+  <li>Research Line：【G】【V】Geometry &amp; Anisotropic FEM Theory / Verification</li>
   <li>想定レベル：学部4年〜修士1年</li>
   <li>前提科目：解析学，線形代数，偏微分方程式，FEM入門</li>
-  <li>推奨ボリューム感：1〜2セメスター相当（講義＋自習）</li>
-  <li>つながる Research Visions：Vision 1（多様体上の幾何条件），Vision 3（多角形要素），Vision 13・14・16（異方性FEMsの拡張）</li>
-  <li>関連する論文（例）：
-  <ul>
-  <li>H. Ishizaka, K. Kobayashi, T. Tsuchiya, Jpn. J. Ind. Appl. (2023)</li>
-  <li>H. Ishizaka, R. Suzuki, K. Kobayashi, T. Tsuchiya, CMAM (2021)</li>
-  </ul>
-  </li>
+  <li>つながる Research Visions：Vision 1，Vision 3，Vision 13，Vision 14，Vision 16，Vision 17</li>
+  <li>関連する論文（例）：Ishizaka–Kobayashi–Tsuchiya，JJIAM；Ishizaka–Suzuki–Kobayashi–Tsuchiya，CMAM</li>
 </ul>
 
 <b>異方性メッシュと有限要素法 ― 幾何条件と補間誤差評価</b><br>
-有限要素法（FEM）において，数値解の精度はメッシュ形状に大きく依存します．ここでは，古典的な幾何条件（最大角条件・最小角条件・shape regularity）から出発し，異方性メッシュ上での補間誤差評価を体系的に理解することを目指します．また，幾何条件の考え方を拡張し，新しい幾何パラメータを用いた現代的な理論まで触れることで，研究の最前線と教育をつなげます．さらに，境界層問題や特異点を含む問題など，実際の応用へとつなげる足がかりを提供します．
+有限要素法において，数値解の精度はメッシュ形状に大きく依存します．ここでは，古典的な幾何条件（最大角条件・最小角条件・shape regularity）から出発し，異方性メッシュ上での補間誤差評価を体系的に理解することを目指します．また，flatness parameter，準正則幾何条件，二段階アフィン変換を通して，定数依存性を追跡できる形で誤差評価を整理します．これは，将来的な形式化や自動検証にもつながる教材です．
 <ol>
   <li>有限要素法と補間誤差の基礎</li>
-  <ul>
-  <li>FEMの原型と歴史（Courant 1943からの発展）</li>
-  <li>三角形・四面体メッシュ</li>
-  <li>Lagrange補間誤差評価の導入</li>
-  </ul>
-  <li>幾何条件と古典的理論</li>
-  <ul>
-  <li>最大角条件（Synge 1957，Babuška–Aziz 1976, Křížek 1991, 1992）</li>
-  <li>最小角条件（Zlámal 1968）</li>
-  <li>Shape-regularity条件の登場とその同値な幾何条件（Ciarlet 1978, Křížek）</li>
-  </ul>
-  <li>異方性メッシュの例と古典的幾何条件の課題</li>
-  <ul>
-  <li>Graded meshの例（特異点近傍の補間）</li>
-  <li>Shape-regularityでは扱えない状況</li>
-  <li>Apel (1992)による異方性補間誤差評価の紹介</li>
-  </ul>
-  <li>新しい幾何パラメーターと統一的理論</li>
-  <ul>
-  <li>体積と辺長から定義される新しい幾何パラメーター</li>
-  <li>準正則幾何条件</li>
+  <li>最大角条件，最小角条件，shape-regularity 条件</li>
+  <li>異方性メッシュの例と古典的幾何条件の限界</li>
+  <li>flatness parameter と準正則幾何条件</li>
   <li>二段階アフィン変換によるスケーリング議論</li>
-  <li>最大角条件との同値性の証明</li>
-  <li>異方性誤差評価の統一的枠組み</li>
-  </ul>
-  <li>応用Ⅰ：境界層・特異点問題</li>
-  <ul>
-  <li>特異点（辺）・境界層とは？</li>
-  <li>流体方程式で現れる異方性構造</li>
-  <li>数値実験による異方性メッシュの効果確認</li>
-  </ul>
-  <li>応用Ⅱ：適応メッシュと数値シミュレーション</li>
-  <ul>
-  <li>非適合要素（CR, RT, Morley）への展開</li>
-  <li>DG法やNitsche法との関連</li>
-  <li>事後誤差評価とadaptive refinementへの展開示唆</li>
-  <li>今後の課題と未解決問題の紹介</li>
-  </ul>
+  <li>境界層・特異点問題への応用</li>
+  <li>CR, RT, Morley, DG, Nitsche 法への展開</li>
+  <li>a posteriori error estimate と adaptive refinement への接続</li>
 </ol>
-到達目標
-<ul>
-  <li>最大角条件や最小角条件といった古典的幾何条件の理解</li>
-  <li>Shape-regularity条件とその限界を説明できる</li>
-  <li>異方性メッシュを扱うための新しい幾何パラメーターの役割を理解する</li>
-  <li>補間誤差評価の理論と数値実験を関連づけて説明できる</li>
-  <li>応用問題（境界層・特異点・流体シミュレーションなど）において異方性メッシュの有効性を述べられる</li>
-</ul>
-このテーマは，単に誤差評価の理論を学ぶだけでなく，
-<ul>
-  <li>仮定を外すとどうなるか?</li>
-  <li>ルールを破るとどんな不都合が起こるか?</li>
-</ul>
-といった数学教育の醍醐味を実感できる教材です．
+
+到達目標：古典的幾何条件の役割，shape-regularity の限界，異方性メッシュを扱うための新しい幾何パラメータの意味，補間誤差評価と数値実験の関係を説明できるようになる．
 
 <br><br>
-(3rd December 2025 <span class="cat cat001">Update</span>)
+(8th June 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
@@ -375,348 +313,141 @@ This page is updated periodically.<br><br>
 <p class="news-cont">
 <b>位置づけ（Map）</b><br>
 <ul>
-  <li>Research Line：【R】Reliable & Goal-Oriented PDE Simulation</li>
+  <li>Research Line：【R】Reliable &amp; Goal-Oriented PDE Simulation</li>
   <li>想定レベル：修士〜博士</li>
-  <li>対象：純粋（解析）と数値（離散化・計算）を行き来したい人</li>
-  <li>前提科目：偏微分方程式入門，関数解析入門（弱形式・Sobolev空間），数値解析（時間離散の安定性），数値線形代数（反復法）</li>
-  <li>推奨ボリューム感：90分×15回（講義＋演習）</li>
-  <li>使用言語/環境：LaTeXノート＋Python（NumPy）or FEniCSx/FreeFem++</li>
-  <li>つながる Research Visions：Vision 11（記憶効果・時間遅れ・異常拡散の統一解析），Vision 6（BDF/長時間安定），Vision 12（応用側）</li>
-  <li>到達目標：
-  <ul>
-  <li>Caputo／Riemann–Liouville の違いを，初期条件の入れ方という観点で説明できる．</li>
-  <li>分数拡散モデルの弱形式を導出し，初期特異性が収束次数に与える影響を説明できる．</li>
-  <li>L1 スキームを実装し，収束挙動（次数低下を含む）を再現できる．</li>
-  </ul>
-  </li>
+  <li>前提科目：偏微分方程式入門，関数解析入門，時間離散の安定性，数値線形代数</li>
+  <li>つながる Research Visions：Vision 11，Vision 6，Vision 12，Vision 17</li>
 </ul>
 
 <b>概要</b><br>
-時間発展モデルの中には，過去の状態が将来に影響する「記憶効果」を持つものが多く現れる．分数階時間微分（主に Caputo 型）は，その記憶効果を自然に表す共通言語である．ここでは
-<ul>
-<li>連続問題（弱形式・存在一意性の見取り図・正則性と初期特異性）</li>
-<li>時間離散（L1 などの基本スキーム，安定性と誤差の骨格）</li>
-<li>計算量（メモリ項＝畳み込み和のボトルネック）</li>
-</ul>
-を一本線でつなぎ，「解析⇄数値」の往復を訓練する．<br><br>
+時間発展モデルの中には，過去の状態が将来に影響する記憶効果を持つものが多く現れます．分数階時間微分（主に Caputo 型）は，その記憶効果を自然に表す共通言語です．ここでは，連続問題（弱形式・存在一意性・正則性），時間離散（L1，L2-1σ，graded mesh，補正項），計算量（メモリ項＝畳み込み和）を一本線でつなぎ，「解析⇄数値」の往復を訓練します．<br><br>
 
 15回の骨格：
 <ol>
-<li>動機と地図：記憶効果・異常拡散・時間遅れ／「時間作用素＝畳み込み」という見方</li>
-<li>定義の最小セット：Caputo・R-L・核 k(t) の直感／初期条件の扱い</li>
-<li>連続問題 I：分数拡散の弱形式・存在一意性の見取り図（何を仮定すれば良いか）</li>
-<li>連続問題 II：正則性と初期特異性（なぜ t=0 で荒れやすいか）</li>
-<li>数値解析へ向けて：安定性→誤差方程式→評価（“どこがボトルネックか”を明示）</li>
-<li>時間離散 I：L1 スキーム導出（重みの構造，単調性，実装の要点）</li>
-<li>L1 の安定性：離散エネルギー型評価/離散 fractional Grönwall の入口</li>
-<li>L1 の誤差：次数低下の理由（初期特異性）と，評価の見方（理論×実験）</li>
-<li>改善策 I：graded time mesh（時間刻み非一様化）の設計と効果</li>
-<li>改善策 II：補正項・初期補正（high-order を成立させるための最低限）</li>
-<li>高次スキーム：L2-1σ（または同等の2次スキーム）の導出と比較</li>
-<li>空間離散との結合：FEM（Poisson 型）＋分数時間（誤差分解：時間/空間/正則性）</li>
-<li>計算量 I：メモリ項の素朴実装とボトルネック可視化</li>
-<li>計算量 II：高速化の入口＋誤差‐計算時間の地図</li>
-<li>研究への接続：記憶核つき発展方程式の統一枠組み/分数時間 Stokes・目的量誤差評価</li>
+<li>記憶効果・異常拡散・時間遅れの地図</li>
+<li>Caputo・Riemann–Liouville・核 \(k(t)\) の直感</li>
+<li>分数拡散の弱形式と存在一意性の見取り図</li>
+<li>正則性と初期特異性</li>
+<li>安定性→誤差方程式→評価の流れ</li>
+<li>L1 スキームの導出</li>
+<li>L1 の安定性</li>
+<li>L1 の誤差と次数低下</li>
+<li>graded time mesh</li>
+<li>補正項・初期補正</li>
+<li>高次スキーム L2-1σ</li>
+<li>空間 FEM との結合</li>
+<li>メモリ項の素朴実装とボトルネック</li>
+<li>高速化と誤差‐計算時間の地図</li>
+<li>分数時間 Stokes・目的量誤差評価への接続</li>
 </ol>
 
-演習・ミニプロジェクト：
-<ul>
-<li>分数拡散（1D）で L1 を実装し，初期特異性の有無で収束次数がどう変わるかを整理する．</li>
-<li>graded mesh/補正項/L2-1σ のいずれかを実装し，L1 と比較する．</li>
-<li>メモリ項高速化で，誤差‐計算時間のトレードオフを可視化する．</li>
-<li>空間FEMと組み合わせ，時間×空間の誤差分解（log 取り方・指標）をまとめる．</li>
-</ul>
-
-修論・博論テーマ候補:
-<ul>
-<li>L1（＋補正／graded）に関する「次数低下」の体系化</li>
-<li>分数時間（記憶）を含む拡散型モデルに対する誤差の支配領域を可視化する枠組み</li>
-<li>記憶核つき発展方程式の統一枠組み（分数階を特例として包含）＋誤差評価</li>
-<li>空間の異方性誤差評価と時間の記憶効果を結合した統一誤差評価（Vision 11 直結）</li>
-<li>分数時間を含む (Navier-)Stokes への拡張（圧力ロバスト設計・長時間安定）</li>
-</ul>
-
-
 <br><br>
-(15th December 2025 <span class="cat cat001">Update</span>)
+(8th June 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
 
-
-
-
-<h3>非適合 FEM と混合 FEM ― CR 要素と RT 要素を学ぶ</h3>
+<h3>非適合 FEM と混合 FEM ― CR 要素と RT 要素を学ぶ【G】【R】【V】</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
-有限要素法（FEM）の標準は「適合 FEM」ですが，これを拡張する形で 非適合 FEM や 混合 FEM が登場しました．非適合 FEM の代表例が Crouzeix–Raviart (CR) 要素であり，混合 FEM の代表例が Raviart–Thomas (RT) 要素です．
-CR 要素は「辺の積分平均」を自由度とし，RT 要素は「法線方向のフラックス」を自由度とします．一見異なる設計ですが，どちらも「整合性をあえて緩める」ことで，圧力ロバスト性や保存則の保証といった利点を持ちます．この2つを並行して学ぶことで，非適合 FEM の世界をより立体的に理解できます．
-
+有限要素法の標準は適合 FEM ですが，これを拡張する形で非適合 FEM や混合 FEM が登場しました．非適合 FEM の代表例が Crouzeix–Raviart (CR) 要素であり，混合 FEM の代表例が Raviart–Thomas (RT) 要素です．CR 要素は辺の積分平均を自由度とし，RT 要素は法線方向のフラックスを自由度とします．一見異なる設計ですが，どちらも「整合性をあえて緩める」ことで，圧力ロバスト性や保存則の保証といった利点を持ちます．この2つを並行して学ぶことで，非適合 FEM の世界をより立体的に理解できます．
 <ol>
   <li>適合 FEM の復習</li>
-  <ul>
-  <li>連続関数空間の構成</li>
-  <li>補間誤差評価と安定性</li>
-  </ul>
   <li>非適合 FEM の考え方</li>
-  <ul>
-  <li>連続性を緩める意義</li>
-  <li>弱形式における一貫性誤差の扱い</li>
-  </ul>
   <li>Crouzeix–Raviart (CR) 要素の定義</li>
-  <ul>
-  <li>自由度：辺積分平均</li>
-  <li>基底関数の構成方法</li>
-  <li>実装上の工夫（例：要素剛性行列の構成）</li>
-  <li>L2射影と異方性誤差評価</li>
-  <li>CR補間と異方性誤差評価</li>
-  </ul>
-  <li>混合 FEM の考え方</li>
-  <ul>
-  <li>保存則とフラックスの重要性</li>
-  <li>Raviart–Thomas (RT) 要素の定義</li>
-  <li>フラックス補間とダイバージェンスの扱い</li>
-  <li>L2射影とRT補間との関係</li>
-  <li>RT補間と異方性誤差評価</li>
-  </ul>
+  <li>混合 FEM と Raviart–Thomas (RT) 要素</li>
   <li>CR 要素と RT 要素の比較・補完性</li>
-  <ul>
-  <li>自由度：辺積分平均 vs 法線フラックス</li>
-  <li>ポアソン方程式に対する異方性誤差評価と安定性</li>
-  <li>圧力ロバスト性との関連</li>
-  </ul>
-  <li>応用と発展</li>
-  <ul>
   <li>Stokes 問題・鞍点型問題での利用</li>
-  <li>DG 法・Nitsche 法やMorley 法との関連</li>
-  <li>異方性メッシュ下での誤差評価の課題</li>
-  <li>将来展望：メッシュレス法・深層学習数値解法との融合</li>
-  </ul>
+  <li>平衡化フラックス，DWR，verified output への接続</li>
 </ol>
-到達目標
-<ul>
-  <li>適合 FEM，非適合 FEM，混合 FEM の位置づけを整理できる．</li>
-  <li>CR 要素と RT 要素の「自由度の違い」を理解する．</li>
-  <li>CR 要素と RT 要素が 誤差評価・保存則・安定性で果たす役割を知る．</li>
-  <li>Stokes 問題での 圧力ロバスト FEM の基盤を理解する．</li>
-</ul>
-CR 要素と RT 要素は「非適合 FEM」と「混合 FEM」の両輪です．前者は「解の近似を柔軟にする」発想，後者は「保存則や圧力ロバスト性を保証する」発想に立脚しています．両者を対比的に学ぶことで，有限要素法の多様な設計思想を体感でき，さらに研究の最前線である「圧力ロバスト FEM」や「異方性補間誤差評価」へと自然に接続できます．
+到達目標：適合 FEM，非適合 FEM，混合 FEM の位置づけを整理し，CR 要素と RT 要素が誤差評価・保存則・安定性・圧力ロバスト性で果たす役割を説明できるようになる．
 
 <br><br>
-(1st September 2025 <span class="cat cat001">Update</span>)
+(8th June 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
 
-<h3>混合型有限要素法と圧力ロバスト性</h3>
+<h3>混合型有限要素法と圧力ロバスト性【R】【G】【V】</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
-有限要素法の解析において，「速度と圧力を同時に求める」ような流体力学系の問題（ナヴィエ–ストークス方程式など）では，混合型有限要素法が重要な役割を果たします．しかし，このとき直面する大きな課題が 圧力の影響による不安定性 です．数値解の誤差が圧力に敏感になりすぎると，実際の物理現象をうまく再現できなくなります．この問題を回避するために登場する概念が 圧力ロバスト性（pressure-robustness） です．これは「圧力の寄与に数値解が不必要に引きずられない」ことを保証し，長時間計算や低粘性流れのような難しい状況でも信頼性の高い近似を可能にします．
+有限要素法の解析において，速度と圧力を同時に求める流体力学系の問題では，混合型有限要素法が重要な役割を果たします．しかし，このとき直面する大きな課題が圧力の影響による不安定性です．数値解の誤差が圧力に敏感になりすぎると，実際の物理現象をうまく再現できなくなります．この問題を回避する概念が圧力ロバスト性です．
 <ol>
   <li>有限要素法と補間誤差の基礎復習</li>
-  <ul>
-  <li>Poisson 方程式に対する標準的有限要素法</li>
-  <li>Sobolev 空間と弱形式の理解</li>
-  <li>補間誤差評価と幾何条件（最大角条件，shape-regularity）の復習</li>
-  </ul>
   <li>非適合要素と CR 法</li>
-  <ul>
-  <li>Crouzeix–Raviart (CR) 要素の構造：節点ではなく辺上平均を自由度にする発想</li>
-  <li>Poisson方程式への適用</li>
-  <li>非適合要素でありながら安定な誤差評価が可能である点 - 古典的誤差評価</li>
-  </ul>
-  <li>混合型有限要素法の導入</li>
-  <ul>
-  <li>変分形式における複数の未知量（例：速度と圧力）の同時解法</li>
-  <li>inf-sup 条件（Ladyzhenskaya–Babuška–Brezzi 条件）の意味と証明スケッチ</li>
-  <li>古典的誤差評価</li>
-  </ul>
+  <li>混合型有限要素法と inf-sup 条件</li>
   <li>圧力ロバスト性の考え方</li>
-  <ul>
-  <li>従来法における「圧力に引きずられる誤差」の具体例</li>
-  <li>圧力ロバストスキーム（例：divergence-free 補間，Linke のアプローチ）の紹介</li>
-  <li>半ノルム評価との関係（圧力の影響を切り離して精度を測る枠組み）</li>
-  </ul>
+  <li>divergence-free 補間と再構成作用素</li>
   <li>異方性メッシュと混合型要素</li>
-  <ul>
-  <li>境界層や細い領域で必要となる異方性メッシュの扱い</li>
-  <li>幾何パラメータを用いた誤差評価の調整</li>
-  <li>圧力ロバスト性が異方性条件とどう共存するか</li>
-  </ul>
-  <li>応用と発展</li>
-  <ul>
-  <li>ナヴィエ・ストークス方程式への応用</li>
-  <li>低粘性流れや長時間シミュレーションでの有効性</li>
-  <li>今後の研究課題（分数時間微分系 PDE への拡張など）</li>
-  </ul>
+  <li>半ノルム型誤差評価，平衡化フラックス，verified output への接続</li>
 </ol>
-到達目標
-<ul>
-  <li>「なぜ従来の混合型 FEM では圧力誤差が速度誤差に影響するのか」を説明できる</li>
-  <li>divergence-free 補間や Linke のアプローチなど, 代表的な設計手法を概要として説明できる</li>
-  <li>圧力ロバストな誤差評価がどのように導かれるか説明できる</li>
-  <li>異方性誤差評価を説明できる</li>
-  <li>圧力ロバスト FEM のアイディアを Stokes 方程式以外に応用できる可能性を議論できる</li>
-  <li>半ノルム型誤差評価の導入が，圧力ロバスト性とどう関係するかを説明できる</li>
-  <li>「圧力に影響されない設計」という観点で新しい研究課題を構想できる</li>
-</ul>
+到達目標：圧力誤差が速度誤差に影響する理由，圧力ロバストスキームの設計原理，異方性条件との共存，半ノルム型誤差評価との関係を説明できるようになる．
 
 <br><br>
-(2nd September 2025 <span class="cat cat001">Update</span>)
+(8th June 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
 
-
-
-<h3>不連続 Galerkin (DG) 法を学ぶ - 基礎から応用まで</h3>
+<h3>不連続 Galerkin (DG) 法を学ぶ - 基礎から応用まで【G】【R】</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
 <b>なぜ DG 法か？なぜ Nitsche 法か？</b><br>
-有限要素法（FEM）は「要素境界での連続性」を仮定することが多いですが，これをあえて外して「不連続」を許すことで新しい自由度と柔軟性が得られます．これが Discontinuous Galerkin (DG) 法です．一方，境界条件を「強制」せずに弱く課す方法として，Nitsche 法があります．「ペナルティ」と「整合項」をうまく組み合わせることで，安定性と精度を同時に保証できるのが特長です．どちらも「連続性や境界条件をあえて弱める」という柔軟な発想から生まれた数値解法です．
-
+有限要素法は要素境界での連続性を仮定することが多いですが，これをあえて外して不連続を許すことで新しい自由度と柔軟性が得られます．これが Discontinuous Galerkin (DG) 法です．一方，境界条件を強制せずに弱く課す方法として Nitsche 法があります．どちらも「連続性や境界条件をあえて弱める」という柔軟な発想から生まれた数値解法です．
 <ol>
   <li>DG 法とは何か</li>
-  <ul>
-  <li>弱形式の導出</li>
-  <li>要素間で不連続を許すメリット</li>
-  <li>境界条件や数値流束の基本</li>
-  </ul>
-  <li>代表的な DG 手法</li>
-  <ul>
-  <li>Interior Penalty (IP) 法</li>
-  <li>SIP/NIP 法の比較</li>
-  <li>ペナルティと安定性の考え方</li>
-  </ul>
+  <li>代表的な DG 手法：IP，SIP，NIP</li>
   <li>Nitsche 法の理論的基盤</li>
-  <ul>
-  <li>Dirichlet 条件を弱く課すアイデア</li>
-  <li>ペナルティ項と整合項の役割</li>
-  <li>連続 FEM との比較と橋渡し</li>
-  </ul>
   <li>境界条件処理の応用</li>
-  <ul>
-  <li>Robin・Neumann 条件の扱い</li>
-  <li>混合境界条件の一体的処理</li>
-  </ul>
   <li>拡張 DG と Nitsche 法の関係</li>
-  <ul>
-  <li>weakly over-penalised SIP</li>
-  <li>CutFEM への展開</li>
-  </ul>
   <li>異方性メッシュと DG</li>
-  <ul>
-  <li>異方性要素での安定性と誤差評価</li>
-  <li>幾何条件と DG 法の関係</li>
-  <li>Nitsche 法＋異方性補間誤差評価の展望</li>
-  </ul>
-  <li>Medius Analysis の登場</li>
-  <ul>
-  <li>誤差解析を簡潔化し，かつ安定性を保証する新手法</li>
-  <li>DG法における適用例</li>
-  </ul>
-  <li>応用：流体問題とインターフェイス問題</li>
-  <ul>
-  <li>Stokes/Navier–Stokes 方程式</li>
-  <li>インターフェイスを含む拡散問題</li>
-  </ul>
-  <li>まとめと発展</li>
-  <ul>
-  <li>DG 法の数理構造の抽象化</li>
-  <li>Medius Analysis による非適合要素・DG の統一解析の可能性</li>
-  <li>CutFEM・異方性 FEM への接続</li>
-  <li>今後の研究課題と未解決問題</li>
-  </ul>
+  <li>Medius analysis の登場</li>
+  <li>流体問題・インターフェイス問題への応用</li>
+  <li>誤差評価，保存則，条件数の観点からの総括</li>
 </ol>
-到達目標
-<ul>
-  <li>DG 法の弱形式を自分で導出できる．</li>
-  <li>代表的な DG スキーム（IP 法，SIP/NIP 法）の特長を説明できる．</li>
-  <li>Nitsche 法を通して境界条件処理の仕組みを理解する．</li>
-  <li>異方性や移動境界問題など応用的テーマに接続できる．</li>
-</ul>
 
-<b>【ここがポイント】誤差評価と保存則の視点から DG 法を学ぶと面白い</b><br>
-不連続 Galerkin 法（DG 法）は，一見すると「連続性を緩めただけ」の変種のように見えます．しかし，その真価は「誤差評価」と「保存則」の両方を結びつける点にあります．<br><br>
-
-まず誤差評価の側面では，数値流束やペナルティ項の設計によって安定性を保証でき，理論的な誤差評価も確立されています．この点は，連続 FEM の解析を土台にしながらも，より柔軟な拡張を可能にしていると言えます．<br><br>
-
-一方，保存則の観点から DG 法を眺めると，その魅力はさらに増します．その特長は，要素間で関数の連続性を要求せず，数値流束を介して結合する点にあります．この数値流束の設計こそが，DG 法の安定性や精度に大きな影響を与えます．<br><br>
-
-例えば，拡散方程式に対しては対称内部ペナルティ法（SIPG）がよく使われ，ペナルティパラメータの大きさによって解の安定性が左右されます．移流方程式ではアップウィンド流束を選ぶことで，不安定な数値振動を抑制できます．このように，適切な流束やパラメータ設定を行えば，DG 法は偏微分方程式が本来持つ エネルギー安定性 を，離散的にも再現することが可能です．一方で，不適切な選択をすると数値解に振動や発散が生じるため，慎重な設計が欠かせません．<br><br>
-
-このように，DG 法を学ぶ際には「誤差評価」と「保存則」という二つの視点を意識することが大切です．誤差評価の理論が安定性と精度の裏付けを与え，保存則の視点が物理現象に忠実な計算を保証します．両者が補い合うことで，DG 法は単なる数値手法を超えた「物理と数学の橋渡し」としての役割を果たします．<br><br>
-
-しかしながら，異方性メッシュの利用には注意が必要です．補間誤差評価そのものが「shape-regularity」仮定に依存しているため，古典的な理論をそのまま使えません．また，非適合項によって思ったより計算効率が上がらない可能性があります．これは真実か否かは未解決な問題があります．<br><br>
-
-また，通常のペナルティー項がオーバーペナルティになっています．それが条件数を増大させる原因となります．異方性やペナルティの取り方が行列のスペクトル構造に影響することをはまだ十分に解析・実験されていません．この現象は，教育的には「数値解析における誤差評価と連立方程式の数値線形代数的性質が結びついている」ことを示す良い題材になります．例えば，異方性要素の有無で反復解法の収束性がどう変わるかを比較することなどが考えられます．<br><br>
-
-ストークス方程式のニッチェ法においては，拡散係数が小さい場合や圧力が大きい場合，ペナルティパラメータを大きくとらないと，反復解法の収束が遅くなり，計算が収束しない場合が確認できます．
-
+DG 法を学ぶ際には「誤差評価」と「保存則」という二つの視点を意識することが大切です．誤差評価の理論が安定性と精度の裏付けを与え，保存則の視点が物理現象に忠実な計算を保証します．異方性やペナルティの取り方が行列のスペクトル構造に影響することはまだ十分には解析・実験されておらず，教育的にも研究的にも面白い題材です．
 
 <br><br>
-(1st September 2025 <span class="cat cat001">Update</span>)
+(8th June 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
 
-
-<h3>複素PDEと有限要素法</h3>
+<h3>複素PDEと有限要素法【R】【V】</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
-複素数を変数に含む偏微分方程式は，量子力学や時間調和波動問題などに現れます．実数 PDE と理論的な構造は似ていますが，エネルギー保存や半ノルム誤差評価など，複素数特有の性質を考慮する必要があります．この違いを調べることは，Céa 補題や安定性の理解を深める教材として有効です．教育的には「実と複素の違いを通して理論の本質を学ぶ」場となり，学生にとって身近なテーマとして取り組みやすい内容だと思います．
+複素数を変数に含む偏微分方程式は，量子力学や時間調和波動問題などに現れます．実数 PDE と理論的な構造は似ていますが，エネルギー保存や半ノルム誤差評価など，複素数特有の性質を考慮する必要があります．この違いを調べることは，Céa 補題や安定性の理解を深める教材として有効です．さらに，実 Hilbert 空間と複素 Hilbert 空間の違いを明示することは，形式推論や証明の再利用可能性を考える上でもよい練習になります．
 <br><br>
-(1st September 2025 <span class="cat cat001">Update</span>)
+(8th June 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
 
-<h3>有限要素法に残る未解決問題 ― Never Ending Story</h3>
+<h3>有限要素法に残る未解決問題 ― Never Ending Story【R】【V】</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
-有限要素法（FEM）は，熱伝導や流体，構造解析など幅広い分野で標準的に使われる数値解析手法です．一見，完成された理論に見えますが，実際には「まだ解けていない」重要な課題が数多く残されています．<br><br>
-
-このことを象徴するのが，V. Johnらによる論文 "Finite elements for scalar convection-dominated equations and incompressible flow problems – a never ending story?" です．論文タイトルが示すように，FEMには「終わらない物語」とも言うべき未解決問題が存在します．
+有限要素法は，熱伝導や流体，構造解析など幅広い分野で標準的に使われる数値解析手法です．一見，完成された理論に見えますが，実際には「まだ解けていない」重要な課題が数多く残されています．
 <ol>
   <li>移流支配問題での数値振動</li>
-  古典的な有限要素法を移流支配型の方程式にそのまま使うと，数値解が大きく振動してしまいます．なぜうまくいかないのか，どの条件なら安定になるのか，完全な理解はいまだ得られていません．
   <li>安定化手法の多様性と普遍性</li>
-  SUPG法，CIP法，局所投影安定化（LPS）など，数多くの安定化スキームが提案されています．しかし「どの手法が最も普遍的か」「理論と実装の両面で最適なのか」という問いには，まだ明確な答えがありません．
   <li>誤差評価と適応メッシュ</li>
-  数値解の信頼性を保証するために，誤差を事後的に評価し，メッシュを細かく調整する（適応メッシュ）手法があります．ただし「誤差評価がどこまで信頼できるか」「異方性メッシュで本当に最適化できるか」は未解決の部分が多く残っています．
+  <li>異方性メッシュでの保証付き計算</li>
   <li>非線形流体方程式への挑戦</li>
-  ナヴィエ–ストークス方程式のような非線形流体方程式では，数値安定性と物理的安定性の両立が難題です．長時間の計算で解が破綻しないスキームをどう設計するか，いまだに挑戦が続けられています．
+  <li>AI支援型数学・形式検証と数値解析の接続</li>
 </ol>
-こうした未解決問題の存在は，「数学や数値解析は完成された学問ではなく，今も発展し続けている」ことを示しています．大学や大学院で学ぶときに，単に定理や公式を覚えるのではなく，「なぜこれが難しいのか」「どこに改良の余地があるのか」を知ることは，研究への入り口として大きな意義があります．「既存の理論を学ぶこと」と「残された課題に挑むこと」が地続きであることを理解するきっかけになるでしょう．<br><br>
-
-有限要素法の Never Ending Story は，まさに「次の世代が続きを書いていく物語」なのです．
+こうした未解決問題の存在は，「数学や数値解析は完成された学問ではなく，今も発展し続けている」ことを示しています．大学や大学院で学ぶときに，単に定理や公式を覚えるのではなく，「なぜこれが難しいのか」「どこに改良の余地があるのか」を知ることは，研究への入り口として大きな意義があります．有限要素法の Never Ending Story は，まさに次の世代が続きを書いていく物語なのです．
 
 <br><br>
-(1st September 2025 <span class="cat cat001">Update</span>)
+(8th June 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
-
-
-
-<!--<h3>(仮)</h3>
-<div class="news">
-<article class="news-item">
-<p class="news-cont">
-Under construction
-</p>
-</article>
-</div>
-<li>Data-driven(仮)</li>-->
-
-
-
-
 
 <!--Gallery-->
 
@@ -734,7 +465,7 @@ Under construction
 
 <!--▼サイトフッター-->
 <footer class="site-footer">
-	<div class="copyright"><p><small>© 2022 ISHIZAKA Hiroki Website</small></p></div>
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
 </footer>
 <!--▲サイトフッター-->
 
