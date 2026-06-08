@@ -113,6 +113,63 @@
 
 <h1 class="section-title">Blog</h1>
 <!---->
+<h2>このBlogの読み方</h2>
+<div class="news">
+<article class="news-item">
+<p>
+このBlogでは，有限要素法（FEM）の実装・理論・研究メモを，連載形式で整理しています．
+FEniCSx / FreeFEM による実験，異方性メッシュと幾何条件，Exact-curved FEM，外挿法，CIP法，Weak Galerkin法，非圧縮流れなどを扱いながら，最終的には
+<strong>Certified finite element analysis under computable geometric conditions</strong>
+へ接続することを目指しています．
+</p>
+<p>
+新しく，Lean 4 と AI4Math に関する連載を追加します．これは，いきなりFEM全体を形式化する試みではなく，誤差評価・幾何条件・平衡化フラックス・目的量評価を，形式化可能な粒度へ分解していくための準備編です．
+</p>
+<p>
+主な入口：
+</p>
+<ul>
+  <li>計算から入る場合：FEniCSx / FreeFEM の記事</li>
+  <li>幾何条件から入る場合：メッシュ分割・異方性メッシュの記事</li>
+  <li>研究テーマから入る場合：Exact-curved FEM，外挿法，CIP法，非圧縮流れの記事</li>
+  <li>AI4Math・形式検証から入る場合：Lean 4 と AI4Math の記事</li>
+</ul>
+<p>
+This page is updated periodically.<br>
+(8th June 2026 <span class="cat cat001">Update</span>)
+</p>
+</article>
+</div>
+
+<h2>Lean 4 と AI4Math：保証付き有限要素解析への入口</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Lean 4 は，数学の定理や証明を形式的に記述し，機械的に検証するための証明支援系として利用できます．この連載では，Lean 4 を「流行のAIツール」としてではなく，有限要素法の誤差評価・幾何条件・certificate を再利用可能な数学的知識として整理するための道具として見ていきます．
+</p>
+<p>
+目標は，AIでFEMを置き換えることではありません．むしろ，AI4Math時代において，有限要素法の理論を検証可能で再利用可能な形へ近づけることです．そのために，まずは命題，定理，証明，ノルム，不等式，有限次元空間といった基本部品から始め，最終的には <strong>計算可能な幾何条件に基づく保証付き有限要素解析</strong> へ接続していきます．
+</p>
+<p class="news-cont">
+<ul>
+  <li><a href="./posts/lean4-01.html">第1回：Lean 4 は有限要素法研究に何をもたらすか</a> <div class="news-date"><time datetime="2026-6-8">8th June 2026</time></div></li>
+  <li>第2回：定理・証明・型 — Lean 4 の最小単位（準備中）</li>
+  <li>第3回：不等式をLeanで読む — FEM誤差評価への第一歩（準備中）</li>
+  <li>第4回：ノルム・半ノルム・内積をどう形式化するか（準備中）</li>
+  <li>第5回：メッシュ幾何条件は形式化できるか（準備中）</li>
+  <li>第6回：Certified FEM と AI4Math-ready numerical analysis（準備中）</li>
+</ul>
+</p>
+<p>
+関連ページ：
+<a href="../fem/">Research Visions</a>，
+<a href="../research/">Research</a>，
+<a href="../suppl/">Supplementary Visions</a>
+</p>
+</article>
+</div>
+
+
 <h2>有限要素法における幾何</h2>
 <div class="news">
 <article class="news-item">
