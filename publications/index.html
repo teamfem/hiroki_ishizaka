@@ -195,6 +195,11 @@ Poisson equation, Ver. 1. [<a href="https://arxiv.org/abs/2403.07899" target="_b
 定常版 [<a href="https://arxiv.org/abs/2602.01636" target="_blank">Arxiv</a>] を時間発展（半線形放物型）へ発展させる研究です．時間連続な検証チューブ上で厳密解の存在・局所一意性を Newton–Kantorovich 型で認証し，2つのスカラー判定 \(p(\rho)\le 0,\ q(\rho)<1\) に帰着させます．残差はエネルギーノルムでは閉じないため，解を \(L^\infty(0,T;V)\) で制御する最大正則性チューブを導入し，安定性・Lipschitz 定数を閉じた式で与えます．残差の空間部は CR-RT 平衡フラックスで評価し，同じフラックスで後ろ向き放物型随伴を認証する DWR を構成して，目標汎関数をチューブ半径について二次オーダーで区間確定（Verified Output）します．離散安定係数は拡散優位域でアスペクト比に依存しないことを示します．本枠組みは PDE 制約付き最適化（PDE-constrained optimisation）や出力フィードバック制御に接続でき，Verified Output は仕様保証（certification）の要になります．
 <br><hr>
 
+[O9] <b>H. Ishizaka</b>: (temporary title) Exact-curved Crouzeix–Raviart and Raviart–Thomas elements via an affine-core/curved-correction decomposition <br>
+曲線・曲面領域上の Poisson 問題に対する exact-curved Lagrange 有限要素法を，CR（Crouzeix–Raviart）要素・RT（Raviart–Thomas）要素へ拡張する研究です．要素写像を \(F_K=\Psi_K\circ\Phi_{T_K}\) と分解し，affine core（定数ヤコビアン）と curved correction（摂動）を分離することが鍵になります．affine core 上では RT 要素の Piola 変換と \(H(\mathrm{div})\) 適合性（面フラックスの単一価性）が保たれ，curved correction を発散の摂動として誤差評価に取り込みます．これにより，曲がった境界上でも equilibrated flux の構造を保ったまま CR–RT 再構成（Marini 型）を行えることを目指します．曲単体上の CR の定義，Piola 変換下の曲 RT，CR から RT への再構成を順に整備し，異方性単体（最大角条件なし）と組み合わせます．本研究は，曲線幾何・高次要素・混合型要素を見通しよく扱い，最終的に Stokes 問題・pressure-robustness・移動境界，そして計算可能な幾何条件に基づく保証付き有限要素解析（certified FEM）へ接続することを目指します．
+<br><hr>
+
+
 <h3>Active (Near-term)</h3>
 
 [O4a] <b>H. Ishizaka</b>: (temporary title) Pressure-robust CR Stokes with symmetric gradient on semi-regular meshes: a discrete Korn with minimal jump control <br>
