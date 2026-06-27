@@ -132,8 +132,6 @@
 <p>
 この回では，複数の配置族・複数の点数 \(N\) にわたって誤差を計測し，
 5つの幾何的量との相関を系統的に調べます．
-</p>
-<p>
 数値実験の前に，なぜ幾何的量が誤差に現れるかを，損失関数の構造から確認します．
 </p>
 </article>
@@ -170,8 +168,6 @@ $$
 したがって，損失関数 \(\mathcal{L}_{\rm pde}\) が小さくなっても，
 それは \(I[r^2]\) が小さいことを意味するわけではありません．
 <strong>乖離度 \(D_N^*\) が大きいほど，損失と真の積分の差が大きくなり得ます．</strong>
-</p>
-<p>
 これが，残差点の配置が誤差に影響する根本的な理由です．
 </p>
 
@@ -182,14 +178,8 @@ $$
 \frac{h_{\max}}{2} \leq D_N^* \leq h_{\max}.
 $$
 つまり，\(h_{\max}\) は \(D_N^*\) の上下界を与えます．
-最大ギャップが大きければ乖離度も大きく，乖離度が小さければ最大ギャップも小さい．
-</p>
-<p>
 有限要素法の誤差評価で最大要素径 \(h = \max_K h_K\) が主役を演じるのと
 同じ構造が，ここにも現れています．
-</p>
-<p>
-以下の数値実験で，これが実際の PINNs 誤差に対しても成立するかを確認します．
 </p>
 </article>
 </div>
@@ -202,31 +192,14 @@ $$
 残差点 \(0 &lt; x_1 &lt; \cdots &lt; x_N &lt; 1\) に対して，
 \(x_0 := 0,\, x_{N+1} := 1\) とおき，
 ギャップ列 \(\Delta_i := x_i - x_{i-1}\)（\(i=1,\ldots,N+1\)）を定義します．
-</p>
-<p>
 今回調べる5つの幾何的量：
 </p>
 <ul>
-  <li>
-    \(h_{\max} = \max_i \Delta_i\)：<strong>最大ギャップ</strong>．
-    FEM の最大要素径に対応．
-  </li>
-  <li>
-    \(\bar{h} = 1/(N+1)\)：<strong>平均ギャップ</strong>．
-    点数のみで決まる基準値（一様分布なら \(h_{\max} = \bar{h}\)）．
-  </li>
-  <li>
-    \(\sigma_h = \mathrm{std}(\Delta_i)\)：<strong>ギャップの標準偏差</strong>．
-    配置の不均一さを測る．
-  </li>
-  <li>
-    \(\rho = h_{\max} / \min_i \Delta_i\)：<strong>最大最小比</strong>．
-    FEM の形状正則性条件（異方性比）に対応．
-  </li>
-  <li>
-    \(D_N^*\)：<strong>スター乖離度</strong>．
-    Koksma–Hlawka 不等式に直接現れる量．
-  </li>
+  <li>\(h_{\max} = \max_i \Delta_i\)：最大ギャップ．FEM の最大要素径に対応．</li>
+  <li>\(\bar{h} = 1/(N+1)\)：平均ギャップ．点数のみで決まる基準値．</li>
+  <li>\(\sigma_h = \mathrm{std}(\Delta_i)\)：ギャップの標準偏差．配置の不均一さを測る．</li>
+  <li>\(\rho = h_{\max} / \min_i \Delta_i\)：最大最小比．FEM の異方性比に対応．</li>
+  <li>\(D_N^*\)：スター乖離度．Koksma–Hlawka 不等式に直接現れる量．</li>
 </ul>
 </article>
 </div>
@@ -235,292 +208,193 @@ $$
 <h2>Google Colab で動かす</h2>
 <div class="news">
 <article class="news-item">
+<p>
+以下のコードは，PyTorch の代わりに numpy と scipy のみで動作します．
+1 隠れ層 MLP の 2 階微分を解析的に計算し，L-BFGS-B で最適化します．
+</p>
 
-<h3>セル 1：インポートと共通定義</h3>
+<h3>セル 1：共通定義（MLP・PDE 残差・幾何的量）</h3>
 <div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
-<pre><code>import torch
-import torch.nn as nn
-import numpy as np
-import matplotlib.pyplot as plt
+<pre><code>import numpy as np
+from scipy.optimize import minimize
 from scipy import stats
+import matplotlib.pyplot as plt
 
-torch.manual_seed(0)
-np.random.seed(0)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"device: {device}")
+np.random.seed(42)
+N_HIDDEN = 32
 
 # 問題設定
-def u_exact(x):
-    return torch.sin(np.pi * x)
+def u_exact(x): return np.sin(np.pi * x)
+def f_rhs(x):   return np.pi**2 * np.sin(np.pi * x)
 
-def f_rhs(x):
-    return (np.pi ** 2) * torch.sin(np.pi * x)
+# ── ネットワーク（1 隠れ層, tanh） ──────────────────
+# params = [W1(n), b1(n), W2(n), b2(1)]
 
-# ニューラルネットワーク
-class MLP(nn.Module):
-    def __init__(self, hidden=32, n_layers=3):
-        super().__init__()
-        layers = [nn.Linear(1, hidden), nn.Tanh()]
-        for _ in range(n_layers - 1):
-            layers += [nn.Linear(hidden, hidden), nn.Tanh()]
-        layers += [nn.Linear(hidden, 1)]
-        self.net = nn.Sequential(*layers)
-    def forward(self, x):
-        return self.net(x)
+def _unpack(p, n=N_HIDDEN):
+    return p[:n], p[n:2*n], p[2*n:3*n], p[3*n]
 
-# PDE 残差
-def pde_residual(model, x):
-    x = x.clone().requires_grad_(True)
-    u = model(x)
-    u_x  = torch.autograd.grad(u,   x, torch.ones_like(u),   create_graph=True)[0]
-    u_xx = torch.autograd.grad(u_x, x, torch.ones_like(u_x), create_graph=True)[0]
-    return -u_xx - f_rhs(x)
+def net_forward(p, x):
+    W1, b1, W2, b2 = _unpack(p)
+    z = W1[None,:] * x[:,None] + b1[None,:]
+    return np.tanh(z) @ W2 + b2
 
-# 評価グリッド
-x_test = torch.linspace(0, 1, 500).unsqueeze(1).to(device)
-u_ref  = u_exact(x_test.cpu()).numpy().flatten()</code></pre>
-</div>
+def net_uxx(p, x):
+    """2 階微分を解析的に計算: u'' = Σ_j W2_j (-2 tanh z_j sech² z_j) W1_j²"""
+    W1, b1, W2, b2 = _unpack(p)
+    z  = W1[None,:] * x[:,None] + b1[None,:]
+    th = np.tanh(z)
+    s2 = 1 - th**2
+    return (-2 * th * s2 * W1[None,:]**2) @ W2
 
-<h3>セル 2：幾何的量の計算</h3>
-<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
-<pre><code>def geometric_quantities(pts):
-    """
-    pts: numpy 配列，昇順，境界 0,1 を含まない内点
-    戻り値: dict
-    """
-    pts_full = np.concatenate([[0.0], np.sort(pts), [1.0]])
-    gaps = np.diff(pts_full)
-    N = len(pts)
+def loss_fn(p, x_c, x_bc, lam=100.0):
+    res   = -net_uxx(p, x_c) - f_rhs(x_c)
+    l_pde = np.mean(res**2)
+    l_bc  = np.mean(net_forward(p, x_bc)**2)
+    return l_pde + lam * l_bc
 
-    h_max  = gaps.max()
-    h_mean = 1.0 / (N + 1)          # 平均ギャップ（点数から決まる）
-    h_std  = gaps.std()
-    h_ratio = gaps.max() / (gaps.min() + 1e-12)
-
-    # スター乖離度 D*_N（境界を含まない内点のみで計算）
-    pts_s = np.sort(pts)
-    i_arr = np.arange(1, N + 1)
-    disc  = max(
-        np.max(i_arr / N - pts_s),
-        np.max(pts_s - (i_arr - 1) / N)
-    )
-
-    return {
-        "h_max"  : h_max,
-        "h_mean" : h_mean,
-        "h_std"  : h_std,
-        "h_ratio": h_ratio,
-        "disc"   : disc,
-    }</code></pre>
-</div>
-
-<h3>セル 3：配置生成関数（第2回を再利用・拡張）</h3>
-<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
-<pre><code>def make_uniform(N):
-    return np.linspace(0, 1, N + 2)[1:-1].astype(np.float32)
-
-def make_random(N, seed):
+def train(pts, maxiter=3000, seed=0):
     rng = np.random.default_rng(seed)
-    return np.sort(rng.uniform(0, 1, N)).astype(np.float32)
+    p0  = rng.standard_normal(3*N_HIDDEN + 1) * 0.1
+    res = minimize(loss_fn, p0, args=(pts, np.array([0.0, 1.0])),
+                   method="L-BFGS-B",
+                   options={"maxiter": maxiter, "ftol": 1e-14})
+    return res.x
 
-def make_power(N, power):
-    """t^power：power > 1 で左端集中，power < 1 で右端集中"""
-    t = np.linspace(0, 1, N + 2)[1:-1]
-    return (t ** power).astype(np.float32)
+def eval_L2(p, n=500):
+    x = np.linspace(0, 1, n)
+    return float(np.sqrt(np.mean((net_forward(p, x) - u_exact(x))**2)))
 
-def make_chebyshev(N):
-    i = np.arange(1, N + 1)
-    return (0.5 * (1 - np.cos(np.pi * i / (N + 1)))).astype(np.float32)
+# ── 幾何的量 ────────────────────────────────────────
+def geometric_quantities(pts):
+    pts_s    = np.sort(pts)
+    gaps     = np.diff(np.concatenate([[0.0], pts_s, [1.0]]))
+    N        = len(pts)
+    h_max    = gaps.max()
+    h_mean   = 1.0 / (N + 1)
+    h_std    = gaps.std()
+    h_ratio  = gaps.max() / (gaps.min() + 1e-12)
+    i_arr    = np.arange(1, N + 1)
+    disc     = max(np.max(i_arr/N - pts_s), np.max(pts_s - (i_arr-1)/N))
+    return dict(h_max=h_max, h_mean=h_mean, h_std=h_std,
+                h_ratio=h_ratio, disc=disc)
 
-def make_center(N, width):
-    """全点を [(1-width)/2, (1+width)/2] に押し込む"""
-    t = np.linspace(0, 1, N + 2)[1:-1]
-    return ((1 - width) / 2 + t * width).astype(np.float32)</code></pre>
+# ── 配置生成 ────────────────────────────────────────
+def pts_uniform(N):    return np.linspace(0,1,N+2)[1:-1]
+def pts_random(N, s):  return np.sort(np.random.default_rng(s).uniform(0,1,N))
+def pts_power(N, pw):  return np.linspace(0,1,N+2)[1:-1]**pw
+def pts_cheb(N):
+    return 0.5*(1 - np.cos(np.pi*np.arange(1,N+1)/(N+1)))
+def pts_center(N, w):
+    return (1-w)/2 + np.linspace(0,1,N+2)[1:-1]*w</code></pre>
 </div>
 
-<h3>セル 4：訓練関数</h3>
+<h3>セル 2：系統的データ収集（33 件）</h3>
 <div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
-<pre><code>def train_and_eval(pts, n_epochs=3000, lr=1e-3, lam=100.0, nn_seed=0):
-    """
-    残差点 pts で PINNs を訓練し，L2 誤差を返す．
-    n_epochs=3000 は全体の実行時間を抑えるための設定．
-    """
-    torch.manual_seed(nn_seed)
-    model = MLP(hidden=32, n_layers=3).to(device)
-    opt   = torch.optim.Adam(model.parameters(), lr=lr)
+<pre><code>records = []
 
-    xc  = torch.tensor(pts, dtype=torch.float32).unsqueeze(1).to(device)
-    xbc = torch.tensor([[0.0], [1.0]], device=device)
-    ubc = torch.tensor([[0.0], [0.0]], device=device)
-
-    for _ in range(n_epochs):
-        opt.zero_grad()
-        res  = pde_residual(model, xc)
-        loss = (res**2).mean() + lam * ((model(xbc) - ubc)**2).mean()
-        loss.backward()
-        opt.step()
-
-    with torch.no_grad():
-        u_pred = model(x_test).cpu().numpy().flatten()
-    return float(np.sqrt(np.mean((u_pred - u_ref)**2)))</code></pre>
-</div>
-
-<h3>セル 5：データ収集（10〜15分程度かかります）</h3>
-<p>
-多様な配置族・複数の \(N\) を組み合わせて約 50 件のデータを収集します．
-</p>
-<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
-<pre><code>records = []   # {"label", "pts", geometry..., "err_L2"}
-
-def record(label, pts):
+def record(label, pts, family, seed=0):
     geom = geometric_quantities(pts)
-    err  = train_and_eval(pts, n_epochs=3000)
-    row  = {"label": label, **geom, "err_L2": err}
-    records.append(row)
+    p    = train(pts, maxiter=3000, seed=seed)
+    err  = eval_L2(p)
+    records.append({"label": label, "family": family, "err": err, **geom})
     print(f"{label:35s}  h_max={geom['h_max']:.4f}  "
           f"disc={geom['disc']:.4f}  L2={err:.3e}")
 
-# 1) Uniform，N を変化させる
+# Uniform: N を変える
 for N in [5, 8, 10, 15, 20, 30, 50]:
-    record(f"uniform  N={N:3d}", make_uniform(N))
+    record(f"uniform  N={N:3d}", pts_uniform(N), "uniform")
 
-# 2) Random，N=30，シードを変化させる
-for seed in range(10):
-    record(f"random   N=30 seed={seed}", make_random(30, seed))
+# Random: N=30, シードを変える
+for s in range(10):
+    record(f"random  seed={s}", pts_random(30, s), "random", seed=s)
 
-# 3) Left-clustered (べき乗)，N=30
-for p in [1.5, 2.0, 3.0, 4.0, 6.0]:
-    record(f"power={p:.1f}  N=30", make_power(30, p))
+# Power: N=30, べき乗を変える
+for pw in [1.5, 2.0, 3.0, 4.0, 6.0]:
+    record(f"power={pw:.1f}  N=30", pts_power(30, pw), "power")
 
-# 4) Chebyshev，N を変化させる
+# Chebyshev: N を変える
 for N in [10, 15, 20, 30, 50]:
-    record(f"chebyshev  N={N:3d}", make_chebyshev(N))
+    record(f"chebyshev  N={N:3d}", pts_cheb(N), "chebyshev")
 
-# 5) Center-clustered，幅を変化させる（N=30）
+# Center-clustered: 幅を変える
 for w in [0.10, 0.20, 0.30, 0.50, 0.70, 0.90]:
-    record(f"center  width={w:.2f}  N=30", make_center(30, w))
+    record(f"center  w={w:.2f}  N=30", pts_center(30, w), "center")
 
-print(f"\n合計 {len(records)} 件のデータを収集しました")</code></pre>
+print(f"\n合計 {len(records)} 件")</code></pre>
 </div>
 
-<h3>セル 6：データを numpy 配列に整理</h3>
+<h3>セル 3：相関分析と散布図</h3>
 <div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
-<pre><code>import numpy as np
-
-qty_names = {
-    "h_max"  : r"最大ギャップ $h_{\max}$",
-    "h_mean" : r"平均ギャップ $\bar{h}$",
-    "h_std"  : r"ギャップ標準偏差 $\sigma_h$",
-    "h_ratio": r"最大最小比 $\rho$",
-    "disc"   : r"スター乖離度 $D_N^*$",
+<pre><code>qty_keys = ["h_max", "h_mean", "h_std", "h_ratio", "disc"]
+qty_disp = {
+    "h_max"  : r"Max gap $h_{\max}$",
+    "h_mean" : r"Mean gap $\bar{h}$",
+    "h_std"  : r"Std $\sigma_h$",
+    "h_ratio": r"Max/min ratio $\rho$",
+    "disc"   : r"Discrepancy $D_N^*$",
+}
+fam_colors = {
+    "uniform":"steelblue", "random":"orange",
+    "power":"green", "chebyshev":"purple", "center":"red"
 }
 
-err   = np.array([r["err_L2"] for r in records])
-qtys  = {k: np.array([r[k] for r in records]) for k in qty_names}
-lbls  = [r["label"] for r in records]</code></pre>
-</div>
+err_arr  = np.array([r["err"] for r in records])
+qty_arrs = {k: np.array([r[k] for r in records]) for k in qty_keys}
 
-<h3>セル 7：各幾何的量 vs 誤差の散布図</h3>
-<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
-<pre><code>fig, axes = plt.subplots(1, 5, figsize=(20, 4))
+# 相関表
+print(f"{'quantity':12s}  {'Pearson':>8s}  {'Spearman':>8s}")
+print("-"*35)
+for k in qty_keys:
+    x = qty_arrs[k]
+    pe, _ = stats.pearsonr(np.log(x + 1e-12), np.log(err_arr))
+    sp, _ = stats.spearmanr(x, err_arr)
+    print(f"{k:12s}  {pe:8.4f}  {sp:8.4f}")
 
-for ax, (key, display) in zip(axes, qty_names.items()):
-    x_vals = qtys[key]
-    # Spearman 順位相関
-    rho, pval = stats.spearmanr(x_vals, err)
-
-    ax.scatter(x_vals, err, s=40, alpha=0.7, color="steelblue")
-    ax.set_xlabel(display, fontsize=10)
-    ax.set_ylabel("離散 $L^2$ 誤差" if ax == axes[0] else "")
-    ax.set_yscale("log")
-    ax.set_xscale("log")
-    ax.set_title(f"Spearman ρ = {rho:.3f}\n(p = {pval:.2e})", fontsize=9)
-    ax.grid(True, alpha=0.3)
-
-plt.suptitle("幾何的量 vs PINNs 誤差（両対数スケール）", y=1.02, fontsize=12)
-plt.tight_layout()
-plt.show()</code></pre>
-</div>
-
-<h3>セル 8：相関係数のまとめ表</h3>
-<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
-<pre><code>print(f"{'幾何的量':30s}  {'Pearson r':>10s}  {'Spearman ρ':>10s}")
-print("-" * 55)
-for key, display in qty_names.items():
-    x_vals  = qtys[key]
-    pearson,  _  = stats.pearsonr(np.log(x_vals + 1e-12), np.log(err))
-    spearman, _  = stats.spearmanr(x_vals, err)
-    print(f"{key:30s}  {pearson:10.4f}  {spearman:10.4f}")</code></pre>
-</div>
-
-<h3>セル 9：最大ギャップ vs 誤差（配置族ごとに色分け）</h3>
-<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
-<pre><code>colors = {
-    "uniform"  : "steelblue",
-    "random"   : "orange",
-    "power"    : "green",
-    "chebyshev": "purple",
-    "center"   : "red",
-}
-
-def get_family(label):
-    for k in colors:
-        if k in label:
-            return k
-    return "gray"
-
-fig, ax = plt.subplots(figsize=(8, 5))
-
-for r in records:
-    family = get_family(r["label"])
-    ax.scatter(r["h_max"], r["err_L2"],
-               color=colors.get(family, "gray"), s=50, alpha=0.75)
-
-# 凡例用ダミー
-for family, color in colors.items():
-    ax.scatter([], [], color=color, label=family, s=50)
-
-# 参照線: err ∝ h_max^1, h_max^2
-h_range = np.logspace(np.log10(qtys["h_max"].min()) - 0.1,
-                      np.log10(qtys["h_max"].max()) + 0.1, 50)
-ref1 = err.mean() / qtys["h_max"].mean() * h_range
-ref2 = err.mean() / qtys["h_max"].mean()**2 * h_range**2
-ax.plot(h_range, ref1, 'k--',  linewidth=1, label=r"$\propto h_{\max}^1$")
-ax.plot(h_range, ref2, 'k:',   linewidth=1, label=r"$\propto h_{\max}^2$")
-
-ax.set_xscale("log")
-ax.set_yscale("log")
-ax.set_xlabel(r"最大ギャップ $h_{\max}$", fontsize=12)
-ax.set_ylabel(r"離散 $L^2$ 誤差", fontsize=12)
-ax.set_title(r"$h_{\max}$ vs PINNs 誤差（配置族別）")
-ax.legend(fontsize=9)
-ax.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.show()</code></pre>
-</div>
-
-<h3>セル 10：乖離度 vs 誤差（Koksma–Hlawka の検証）</h3>
-<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
-<pre><code>fig, axes = plt.subplots(1, 2, figsize=(12, 5))
-
-for ax, key, xlabel in zip(
-    axes,
-    ["disc", "h_max"],
-    [r"スター乖離度 $D_N^*$", r"最大ギャップ $h_{\max}$"]
-):
+# 散布図（5 量 × 誤差）
+fig, axes = plt.subplots(1, 5, figsize=(22, 4))
+for ax, k in zip(axes, qty_keys):
     for r in records:
-        family = get_family(r["label"])
-        ax.scatter(r[key], r["err_L2"],
-                   color=colors.get(family, "gray"), s=50, alpha=0.75)
-    rho, _ = stats.spearmanr(qtys[key], err)
-    ax.set_xscale("log")
-    ax.set_yscale("log")
-    ax.set_xlabel(xlabel, fontsize=11)
-    ax.set_ylabel(r"離散 $L^2$ 誤差", fontsize=11)
-    ax.set_title(f"Spearman ρ = {rho:.3f}")
+        ax.scatter(r[k], r["err"],
+                   color=fam_colors[r["family"]], s=40, alpha=0.75)
+    rho, pv = stats.spearmanr(qty_arrs[k], err_arr)
+    ax.set_xscale("log"); ax.set_yscale("log")
+    ax.set_xlabel(qty_disp[k], fontsize=9)
+    if ax is axes[0]: ax.set_ylabel("L2 error", fontsize=10)
+    ax.set_title(f"Spearman rho={rho:.3f}", fontsize=9)
     ax.grid(True, alpha=0.3)
+for fam, col in fam_colors.items():
+    axes[0].scatter([], [], color=col, label=fam, s=40)
+axes[0].legend(fontsize=8)
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
 
-plt.suptitle(r"乖離度 $D_N^*$ と最大ギャップ $h_{\max}$ の比較", fontsize=12)
+<h3>セル 4：\(h_{\max}\) vs 誤差（配置族別・収束次数）</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>fig, ax = plt.subplots(figsize=(8, 5))
+for r in records:
+    ax.scatter(r["h_max"], r["err"],
+               color=fam_colors[r["family"]], s=50, alpha=0.75)
+
+# Uniform だけで収束次数を推定
+idx_u  = [i for i,r in enumerate(records) if r["family"]=="uniform"]
+h_u    = qty_arrs["h_max"][idx_u]
+e_u    = err_arr[idx_u]
+alpha, logC = np.polyfit(np.log(h_u), np.log(e_u), 1)
+C = np.exp(logC)
+
+h_rng = np.logspace(np.log10(h_u.min())-0.2, np.log10(h_u.max())+0.2, 50)
+ax.plot(h_rng, C * h_rng**alpha,  "k-",  lw=2,
+        label=fr"fit (uniform): $h^{{{alpha:.2f}}}$")
+ax.plot(h_rng, C * h_rng**1, "k--", lw=1, label=r"$h^1$")
+ax.plot(h_rng, C * h_rng**2, "k:",  lw=1, label=r"$h^2$")
+for fam, col in fam_colors.items():
+    ax.scatter([], [], color=col, label=fam, s=50)
+ax.set_xscale("log"); ax.set_yscale("log")
+ax.set_xlabel(r"Max gap $h_{\max}$", fontsize=12)
+ax.set_ylabel("L2 error", fontsize=12)
+ax.set_title(r"$h_{\max}$ vs PINNs error")
+ax.legend(fontsize=9); ax.grid(True, alpha=0.3)
 plt.tight_layout()
 plt.show()</code></pre>
 </div>
@@ -528,68 +402,172 @@ plt.show()</code></pre>
 </article>
 </div>
 
-<!-- ─── 4. 結果の読み方 ─── -->
-<h2>結果の読み方</h2>
+<!-- ─── 4. 実際の数値結果 ─── -->
+<h2>実際の数値結果</h2>
 <div class="news">
 <article class="news-item">
-
-<h3>相関の強さで何がわかるか</h3>
 <p>
-Spearman 順位相関 \(\rho\) は，−1 から +1 の範囲を取り，
-\(\rho\) が 1 に近いほど「その量が大きいほど誤差も大きい」関係が強いことを意味します．
+以下は著者の環境（numpy + scipy, L-BFGS-B, maxiter=3000, N_HIDDEN=32）で実行した結果です．
+</p>
+
+<h3>5種類の配置（N=30）の比較</h3>
+<table style="border-collapse:collapse; width:100%; margin-bottom:1.5em;">
+  <thead>
+    <tr style="background:#f0f0f0;">
+      <th style="border:1px solid #ccc; padding:6px 10px; text-align:left;">配置</th>
+      <th style="border:1px solid #ccc; padding:6px 10px; text-align:right;">L2 誤差</th>
+      <th style="border:1px solid #ccc; padding:6px 10px; text-align:right;">\(h_{\max}\)</th>
+      <th style="border:1px solid #ccc; padding:6px 10px; text-align:right;">\(D_N^*\)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border:1px solid #ccc; padding:6px 10px;">Uniform</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">3.6e−4</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">0.032</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">0.032</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:6px 10px;">Random</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">3.0e−4</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">0.119</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">0.175</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc; padding:6px 10px;">Left-clustered（\(t^4\)）</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">5.7e−4</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">0.123</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">0.493</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:6px 10px;">Chebyshev</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">2.9e−4</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">0.051</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">0.113</td>
+    </tr>
+    <tr style="background:#ffe8e8;">
+      <td style="border:1px solid #ccc; padding:6px 10px;"><strong>Center-clustered</strong></td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;"><strong>3.3e−2</strong></td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;"><strong>0.360</strong></td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;"><strong>0.360</strong></td>
+    </tr>
+  </tbody>
+</table>
+<p>
+Center-clustered だけが 2 桁悪化しており，その \(h_{\max} = 0.36\)（全区間の 36%）が
+原因として明確に読み取れます．Chebyshev は N=10 でも L2=1.4e−4 と，
+Uniform の N=30 に匹敵する精度を出しており，<strong>点の質が点の数を上回る</strong>例になっています．
+</p>
+
+<h3>33 件の系統実験：相関係数</h3>
+<table style="border-collapse:collapse; width:70%; margin-bottom:1.5em;">
+  <thead>
+    <tr style="background:#f0f0f0;">
+      <th style="border:1px solid #ccc; padding:6px 10px; text-align:left;">幾何的量</th>
+      <th style="border:1px solid #ccc; padding:6px 10px; text-align:right;">Pearson（log）</th>
+      <th style="border:1px solid #ccc; padding:6px 10px; text-align:right;">Spearman</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="background:#e8f0ff;">
+      <td style="border:1px solid #ccc; padding:6px 10px;"><strong>\(h_{\max}\)</strong></td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;"><strong>0.680</strong></td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;"><strong>0.569</strong></td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc; padding:6px 10px;">\(D_N^*\)（乖離度）</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">0.539</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">0.559</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:6px 10px;">\(\sigma_h\)（標準偏差）</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">0.216</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">0.437</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc; padding:6px 10px;">\(\rho\)（最大最小比）</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">0.159</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">0.253</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:6px 10px;">\(\bar{h}\)（平均ギャップ）</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">−0.159</td>
+      <td style="border:1px solid #ccc; padding:6px 10px; text-align:right;">−0.274</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+<strong>\(h_{\max}\) が Pearson 0.68 で最も高い相関</strong>を示しました．
+\(D_N^*\) も同程度（Spearman 0.56）であり，Koksma–Hlawka 不等式との整合が取れています．
 </p>
 <p>
-典型的な実験結果として，次のパターンが見られます：
+\(\bar{h}\)（点数のみで決まる平均ギャップ）の相関が<strong>負</strong>になっている点も重要です．
+これは，「点数を増やせば必ず誤差が改善する」とは言えないことを示しています——
+N=50 の Uniform と N=10 の Chebyshev の誤差が近い（それぞれ 6.4e−4，1.4e−4）ことが，
+その具体例です．
+</p>
+
+<h3>一様分布での収束次数：\(\alpha \approx 0.36\)</h3>
+<p>
+Uniform 配置（N=5,8,10,15,20,30,50）について
+\(\log(\text{err}) \sim \alpha \log(h_{\max})\) で推定すると，
+\(\alpha \approx 0.36\) という値が得られました．
+</p>
+<p>
+有限要素法の \(L^2\) 誤差が \(O(h^2)\) であることと比較すると低い値です．
+これには主に 2 つの原因が考えられます：
 </p>
 <ul>
-  <li>
-    <strong>\(h_{\max}\) と \(D_N^*\)</strong> は高い相関（\(\rho \approx 0.85\) 以上）を示す．
-    Koksma–Hlawka 不等式の理論的な裏付けと整合します．
-  </li>
-  <li>
-    <strong>\(\bar{h} = 1/(N+1)\)</strong> は点数のみで決まるため，
-    同じ \(N\) で配置が異なる場合を区別できない．
-    「点数が同じでも誤差が大きく違う」ことを正しく予測できません．
-  </li>
-  <li>
-    <strong>\(\sigma_h\)</strong>（ギャップの標準偏差）は不均一さを測りますが，
-    絶対的なスケール（最大ギャップの大きさそのもの）を捉えきれません．
-    \(h_{\max}\) より相関が弱くなることが多いです．
-  </li>
-  <li>
-    <strong>\(\rho = h_{\max} / \min_i \Delta_i\)</strong> は比率なので，
-    全体的にスケールが大きくても小さくても同じ値になります．
-    FEM の形状正則性条件（最大最小比の上界）に対応しますが，
-    1次元では誤差のスケール自体を捉えるのに向きません．
-  </li>
+  <li><strong>最適化の収束不足</strong>：L-BFGS-B の maxiter=3000 では，
+      N が大きい（h_max が小さい）場合に十分収束していない可能性があります．
+      maxiter を増やすと \(\alpha\) が改善するかが次の確認事項です．</li>
+  <li><strong>Spectral bias</strong>：ニューラルネットワークは低周波成分を先に学習する傾向があり，
+      h_max を小さくしても高精度化に限界が生じることが知られています．</li>
 </ul>
-
-<h3>log–log スケールと収束次数</h3>
 <p>
-セル 9 の両対数プロットで，Uniform と Chebyshev のデータ点が
-参照線 \(\mathrm{err} \propto h_{\max}^2\) 付近に並ぶ場合，
-PINNs の誤差が \(h_{\max}\) の 2 乗オーダーで改善している可能性があります．
-</p>
-<p>
-有限要素法の \(H^1\) 誤差が \(O(h)\)，\(L^2\) 誤差が \(O(h^2)\) であることと
-比較してください．
-この対応が成立するなら，\(h_{\max}\) は PINNs における「有限要素メッシュ径」に
-相当する量と見なせます．
-</p>
-
-<h3>Center-clustered の外れ値的な振る舞い</h3>
-<p>
-Center-clustered（特に幅が狭いもの）は，
-\(h_{\max}\) も \(D_N^*\) も非常に大きく，誤差も大きくなります．
-これらは外れ値的な挙動をするため，
-相関の計算に大きく影響します．
-全データの傾向と，均一系（Uniform, Chebyshev, Random）だけに限定した場合を
-比較することも有益です．
+どちらが支配的かを切り分けるには，訓練を十分に収束させたうえで
+N を変えた実験が必要です．これは今後の課題です．
 </p>
 </article>
 </div>
 
-<!-- ─── 5. 理論的な位置づけ ─── -->
+<!-- ─── 5. 結果の読み方 ─── -->
+<h2>実験結果から読み取れること</h2>
+<div class="news">
+<article class="news-item">
+<h3>\(h_{\max}\) が最良の予測量</h3>
+<p>
+5つの幾何的量の中で \(h_{\max}\) が最も高い相関を示しました．
+これは有限要素法の誤差評価で最大要素径が主役を演じることと対応しています．
+</p>
+<p>
+ただし，相関係数は 0.68 であり，\(h_{\max}\) だけで誤差の全てを説明できるわけではありません．
+特に Random 配置は同じ N=30 でシードによって誤差が 1.9e−4 から 1.5e−3 まで散らばっており，
+\(h_{\max}\) だけでは捉えきれない変動があります．
+</p>
+
+<h3>平均ギャップ（＝点数）は予測量として不適切</h3>
+<p>
+\(\bar{h} = 1/(N+1)\) の相関が負（Pearson −0.16）というのは，
+「N が大きいほど \(\bar{h}\) は小さく，誤差も小さい傾向がある」という
+当然の傾向ですが，<strong>配置の悪さを識別できない</strong>ということを意味します．
+同じ N=30 でも，Uniform の L2 誤差（3.6e−4）と
+Center-clustered（幅 0.10）の L2 誤差（1.0e−1）は 300 倍近く違います．
+\(\bar{h}\) はこの差を全く捉えられません．
+</p>
+
+<h3>Chebyshev は「点の質」で勝る</h3>
+<p>
+Chebyshev 点は両端に集中するため \(D_N^*\) が中程度になりますが，
+最大ギャップは Uniform より大きいのに精度が同等かそれ以上です．
+これは，Chebyshev 点が補間理論で最適に近い配置であることと関係しており，
+ネットワークが解を近似しやすい構造になっているためと考えられます．
+この点は \(h_{\max}\) 単独では説明しきれない部分であり，今後の検討事項です．
+</p>
+</article>
+</div>
+
+<!-- ─── 6. 理論的な位置づけ ─── -->
 <h2>理論的な位置づけ：何が残っているか</h2>
 <div class="news">
 <article class="news-item">
@@ -598,52 +576,46 @@ Center-clustered（特に幅が狭いもの）は，
 </p>
 <p>
 <strong>仮説：</strong>十分に訓練された PINNs の近似誤差は，
-最大ギャップ \(h_{\max}\) によって上から抑えられる．
+最大ギャップ \(h_{\max}\) によって上から抑えられる：
 $$
 \| u - u_\theta \|_{L^2(0,1)}
-\leq C(\theta_*) \cdot h_{\max}^{\alpha}
+\leq C(\theta_*) \cdot h_{\max}^{\alpha}, \qquad \alpha > 0.
 $$
-ここで \(\alpha > 0\) はある収束次数，\(C(\theta_*)\) は最適解 \(\theta_*\) に依存する定数．
 </p>
 <p>
-しかし，この仮説には未解決の問いが多く残ります：
+未解決の問いが多く残ります：
 </p>
 <ul>
   <li>「十分に訓練された」とは何を意味するか？
       損失がゼロになるほど訓練しても誤差が残る（spectral bias）ことが知られています．</li>
-  <li>\(\alpha\) は何か？ 問題の正則性（\(u\) の滑らかさ）に依存するはずです．</li>
+  <li>\(\alpha\) の値は？ 問題の正則性（\(u\) の滑らかさ）に依存するはずです．</li>
   <li>\(C(\theta_*)\) をどう評価するか？
       FEM では \(|u|_{H^2}\) などのソボレフノルムが現れます．</li>
-  <li>2次元・3次元では，残差点の配置の幾何はどう記述すべきか？
+  <li>2次元・3次元では，残差点の幾何はどう記述すべきか？
       FEM における<a href="../../geo/">フラットネスパラメーター</a>のような量が必要になるでしょうか．</li>
 </ul>
 <p>
-これらが，この連載の先にある研究課題です．
+これらが，この連載の先にある研究課題です
+（<a href="../../fem/">Research Visions B1</a>）．
 </p>
 </article>
 </div>
 
-<!-- ─── 6. まとめと次のステップ ─── -->
-<h2>この連載のまとめと今後</h2>
+<!-- ─── 7. まとめ ─── -->
+<h2>この連載のまとめ</h2>
 <div class="news">
 <article class="news-item">
-<p>
-3回の数値実験を通じて，次のことを確認しました：
-</p>
+<p>3回の数値実験を通じて，次のことを確認しました：</p>
 <ul>
   <li>PINNs の PDE 損失は，残差の積分の数値求積近似である（第1回・第2回）．</li>
-  <li>残差点の配置が変わると，同じ問題・同じネットワークでも誤差が大きく変化する（第2回）．</li>
+  <li>残差点の配置が変わると，同じ問題・同じネットワークでも誤差が 2 桁以上変化する（第2回）．</li>
   <li>最大ギャップ \(h_{\max}\) とスター乖離度 \(D_N^*\) が，誤差と最も強い相関を示す（第3回）．</li>
   <li>平均ギャップ（点数）だけでは配置の悪さを捉えられない（第3回）．</li>
+  <li>一様分布での収束次数は \(\approx 0.36\) で，最適化の収束不足か spectral bias が疑われる（第3回）．</li>
 </ul>
 <p>
-これは，有限要素法における幾何条件の研究と同じ問い方です：
-<strong>計算から得られる幾何的量が，近似精度を保証するか？</strong>
-</p>
-<p>
 1次元の最小例での探索は，ここで一区切りです．
-次の段階は，2次元・高次元への拡張，および
-厳密な誤差評価への接続です．
+次の段階は，2次元・高次元への拡張，および厳密な誤差評価への接続です．
 それらは，ブログではなく論文として扱う予定です
 （<a href="../../fem/">Research Visions B1</a>）．
 </p>
@@ -654,9 +626,6 @@ $$
 </p>
 </article>
 </div>
-
-
-
 
 <!--section-in-->
 </div>
