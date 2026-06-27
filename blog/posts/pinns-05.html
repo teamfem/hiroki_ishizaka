@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 27th June 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 27th June 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">第5回：コードと数学の辞書</h1>
+<p style="color:#888; margin-bottom:2em;">連載：PINNsはなぜ失敗するのか — 1次元から探る幾何条件の役割　|　27th June 2026</p>
+
+<!-- ─── 0. この回の目的 ─── -->
+<h2>この回の目的</h2>
+<div class="news">
+<article class="news-item">
+<p>
+<a href="./pinns-04.html">第4回</a>まで，コードを書いて動かすことに集中してきました．
+この回では一歩引いて，<strong>コードの各部分が何の数学的対象に対応するか</strong>を言語化します．
+</p>
+<p>
+これは単なる「コードの解説」ではありません．
+コードと数学の対応を明示することで，次の問いが立てられるようになります：
+</p>
+<ul>
+  <li>このコードが「正しい」とはどういう意味か？</li>
+  <li>誤差はどこから来るか？それぞれ何に依存するか？</li>
+  <li>FEM の理論のどの部分が，そのままここに使えるか？</li>
+</ul>
+<p>
+数学的解析への入口はここにあります．
+</p>
+</article>
+</div>
+
+<!-- ─── 1. コードの構成要素と数学的対象 ─── -->
+<h2>コードの構成要素と数学的対象の対応</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第4回のコードを数学の言葉で読み直します．
+</p>
+
+<h3>ネットワーク = 試験関数（trial function）</h3>
+<p>
+コード上の <code>net_u(p, x)</code> は，パラメータ \(\theta = (W_1, b_1, W_2, b_2)\) で決まる
+関数 \(u_\theta : [0,1] \to \mathbb{R}\) です：
+</p>
+<p>
+$$
+u_\theta(x) = W_2^\top \tanh(W_1 x + b_1) + b_2,
+\quad W_1, b_1, W_2 \in \mathbb{R}^n,\; b_2 \in \mathbb{R}.
+$$
+</p>
+<p>
+これは FEM の近似解 \(u_h = \sum_i c_i \varphi_i\) に対応します．
+ただし，FEM では \(c_i\) への依存性が線形であるのに対し，
+\(\theta\) への依存性は<strong>非線形</strong>です．これが最大の違いです．
+</p>
+
+<table style="border-collapse:collapse; width:100%; margin-bottom:1em; font-size:0.95em;">
+  <thead>
+    <tr style="background:#f0f0f0;">
+      <th style="border:1px solid #ccc; padding:7px 10px;">コード</th>
+      <th style="border:1px solid #ccc; padding:7px 10px;">数学的対象</th>
+      <th style="border:1px solid #ccc; padding:7px 10px;">FEM での対応物</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;"><code>p = [W1, b1, W2, b2]</code></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">パラメータ \(\theta \in \mathbb{R}^{3n+1}\)</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">係数ベクトル \(\mathbf{c} = (c_i)\)</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:7px 10px;"><code>net_u(p, x)</code></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">試験関数 \(u_\theta(x) \in C^\infty([0,1])\)</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">近似解 \(u_h = \sum_i c_i \varphi_i \in V_h\)</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;"><code>net_up(p, x)</code></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">\(u_\theta'(x)\)，\(u_\theta \in H^1(0,1)\)</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">\(u_h' = \sum_i c_i \varphi_i'\)</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:7px 10px;"><code>net_upp(p, x)</code></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">\(u_\theta''(x)\)，\(u_\theta \in H^2(0,1)\)</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">\(u_h'' = \sum_i c_i \varphi_i''\)（各要素内）</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;"><code>x_c</code>（残差点）</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">数値積分点 \(\{x_i\}_{i=1}^N \subset (0,1)\)</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">ガウス積分点 \(\hat{x}_q \in \hat{K}\)（参照要素）</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:7px 10px;"><code>x_q, w_q</code>（ガウス点）</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">ガウス–ルジャンドル点 \((\xi_q, \omega_q)\)</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">FEM の数値積分（全く同じ）</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;"><code>minimize(...)</code></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">\(\hat\theta = \arg\min_\theta \mathcal{L}(\theta)\)</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">連立一次方程式 \(K\mathbf{c} = \mathbf{f}\) を解く</td>
+    </tr>
+  </tbody>
+</table>
+</article>
+</div>
+
+<!-- ─── 2. 損失関数の数学的読み方 ─── -->
+<h2>損失関数の数学的読み方</h2>
+<div class="news">
+<article class="news-item">
+
+<h3>PINNs の損失：強形式残差の最小 2 乗近似</h3>
+<p>
+$$
+\mathcal{L}_{\rm PINNs}(\theta)
+= \frac{1}{N}\sum_{i=1}^N \bigl(-u_\theta''(x_i) - f(x_i)\bigr)^2
+\approx \int_0^1 \bigl(-u_\theta'' - f\bigr)^2 dx
+= \|-u_\theta'' - f\|_{L^2}^2.
+$$
+</p>
+<p>
+「積分を点評価で近似した」という構造です．
+\(\mathcal{L}_{\rm PINNs}(\theta) \to 0\) は
+\(\|-u_\theta'' - f\|_{L^2}^2 \to 0\) の近似的な条件です．
+</p>
+<p>
+しかし，<strong>損失 \(\approx 0\) は \(\|u - u_\theta\|_{L^2} \approx 0\) を直接意味しない</strong>点に注意が必要です．
+これは，離散的な評価点での残差がゼロでも，
+評価点間での挙動が制御されないためです（第3回の \(h_{\max}\) の問題がここに現れます）．
+</p>
+
+<h3>Deep Ritz の損失：エネルギー汎関数の数値積分</h3>
+<p>
+$$
+\mathcal{L}_{\rm DeepRitz}(\theta)
+= \sum_{i} w_i \Bigl[\frac{1}{2}(u_\theta'(x_i))^2 - f(x_i)u_\theta(x_i)\Bigr]
+\approx \int_0^1 \Bigl[\frac{1}{2}(u_\theta')^2 - fu_\theta\Bigr]dx
+= E(u_\theta).
+$$
+</p>
+<p>
+\(E(u_\theta)\) は Poisson 問題のエネルギー汎関数で，真の解 \(u\) において最小値を取ります：
+$$
+E(u) = \min_{v \in H^1_0} E(v) = -\frac{1}{2}\|u\|_{H^1_0}^2.
+$$
+したがって，\(\mathcal{L}_{\rm DeepRitz}(\hat\theta) \approx E(u)\) になれば
+\(u_{\hat\theta} \approx u\) が期待できます．
+これは<strong>最小化の目標が数学的に意味を持っている</strong>という点で PINNs より理論的に健全です．
+</p>
+<p>
+また，<strong>被積分関数の滑らかさ</strong>が PINNs と異なります：
+PINNs の被積分関数は \((-u_\theta''-f)^2\)（2階微分を含む），
+Deep Ritz は \((u_\theta')^2 - fu_\theta\)（1階微分のみ）．
+滑らかな関数の積分の方が，離散点での近似精度が高くなります（Koksma–Hlawka 不等式の \(V(g)\) 項）．
+</p>
+
+<h3>VPINN の損失：双線形形式の離散化</h3>
+<p>
+弱形式の双線形形式 \(a(u,v) = \int_0^1 u'v'\,dx\) と
+線形形式 \(\ell(v) = \int_0^1 fv\,dx\) を使うと，
+弱形式は「任意の \(v\in H^1_0\) に対して \(a(u,v)=\ell(v)\)」です．
+</p>
+<p>
+VPINN の損失はこれをテスト関数 \(\phi_k\)（Legendre 多項式）でサンプリングし：
+$$
+\mathcal{L}_{\rm VPINN}(\theta)
+= \sum_{k=1}^K \bigl(a_N(u_\theta, \phi_k) - \ell_N(\phi_k)\bigr)^2,
+$$
+ここで \(a_N, \ell_N\) はガウス数値積分による近似です．
+</p>
+<p>
+FEM の Galerkin 方程式 \(a(u_h, \phi_k) = \ell(\phi_k)\) と比べると，
+違いは2点のみです：
+</p>
+<ul>
+  <li>試験関数空間：FEM は有限次元の多項式空間，VPINN はニューラルネットワーク（非線形空間）</li>
+  <li>最適化手法：FEM は連立一次方程式，VPINN は非線形最小化</li>
+</ul>
+<p>
+テスト関数 \(\phi_k\) と積分点（ガウス点）は<strong>FEM と全く同じものが使えます</strong>．
+</p>
+</article>
+</div>
+
+<!-- ─── 3. 誤差の分解 ─── -->
+<h2>誤差の分解：3 つの誤差源</h2>
+<div class="news">
+<article class="news-item">
+<p>
+真の解 \(u\) と計算された近似解 \(u_{\hat\theta}\) の誤差を分解します：
+</p>
+<p>
+$$
+\|u - u_{\hat\theta}\|
+\leq
+\underbrace{\inf_{\theta} \|u - u_\theta\|}_{\text{①近似誤差}}
++
+\underbrace{\|u_{\theta^*} - u_{\hat\theta}\|}_{\text{②最適化誤差}}
++
+\underbrace{\text{（積分の離散化誤差）}}_{\text{③幾何誤差}}
+$$
+</p>
+
+<h3>① 近似誤差：ネットワークで \(u\) をどこまで近似できるか</h3>
+<p>
+FEM では Céa の補題が：
+$$
+\|u - u_h\|_{H^1} \leq C \inf_{v_h \in V_h} \|u - v_h\|_{H^1}
+$$
+を与え，さらに補間誤差評価が右辺を \(Ch|u|_{H^2}\) と評価します．
+</p>
+<p>
+ニューラルネットワークの場合，Barron (1993) の定理が：
+任意の \(f \in H^1\) に対して，\(n\) 個のニューロンを持つ 1 隠れ層ネットワークが
+\(\|f - u_\theta\|_{L^2} \leq C / \sqrt{n}\)
+で近似できることを示します．
+ただしこの評価は FEM の \(O(h^2)\) より遅く，次元の呪いの影響も異なります．
+</p>
+
+<h3>② 最適化誤差：L-BFGS-B は最小値に到達するか</h3>
+<p>
+これが現在最も理論的に難しい部分です．
+損失関数 \(\mathcal{L}(\theta)\) は \(\theta\) に関して<strong>非凸</strong>であるため，
+L-BFGS-B は局所最小値に収束する可能性があります．
+</p>
+<p>
+FEM では，剛性行列 \(K\) が対称正定値であれば連立方程式は一意解を持ちます．
+ニューラルネットワークではこれに対応する保証がなく，
+最適化誤差の定量的な評価は開問題です．
+</p>
+<p>
+実験的には，十分な隠れ層幅 \(n\) と適切な初期化で最適化が収束しやすくなることが観察されていますが，
+理論的保証はありません．
+</p>
+
+<h3>③ 幾何誤差：積分点の配置が積分近似精度を決める</h3>
+<p>
+これが第1〜4回で数値的に探索してきた部分です．
+Koksma–Hlawka 不等式：
+$$
+\left|\frac{1}{N}\sum_i g(x_i) - \int_0^1 g(x)dx\right| \leq D_N^* \cdot V(g)
+$$
+から，積分点の乖離度 \(D_N^*\) と被積分関数の全変動 \(V(g)\) の積で誤差が抑えられます．
+</p>
+<p>
+ここで：
+</p>
+<ul>
+  <li>\(D_N^* \leq h_{\max}\) より，最大ギャップが誤差の上界を与える（第3回の実験結果）</li>
+  <li>\(V(g)\) は被積分関数の滑らかさによる：PINNs の \((-u''-f)^2\) より
+      Deep Ritz の \((u')^2/2-fu\) の方が一般に滑らかで \(V(g)\) が小さい</li>
+  <li>VPINN でガウス点を使えば，\(n_q\) 点で次数 \(2n_q-1\) の多項式が厳密に積分され，
+      積分誤差は指数的に小さくなる（③がほぼゼロ）</li>
+</ul>
+<p>
+3 つの誤差のうち，<strong>③だけが幾何的量（点の配置）によって完全にコントロール可能</strong>です．
+これが，幾何条件の研究が意味を持つ理由です．
+</p>
+</article>
+</div>
+
+<!-- ─── 4. FEM との本質的な違い ─── -->
+<h2>FEM とのの本質的な違い：線形性 vs 非線形性</h2>
+<div class="news">
+<article class="news-item">
+<p>
+FEM と NN ベース手法の最大の違いを1行で言うと：
+</p>
+<p style="text-align:center; font-weight:bold; font-size:1.05em; padding:10px; background:#f8f8f8; border-left:4px solid #666;">
+FEM は線形空間で最適化する．NN は非線形空間で最適化する．
+</p>
+<p>
+FEM の近似解 \(u_h = \sum_i c_i \varphi_i\) は係数 \(\mathbf{c}\) に<strong>線形</strong>に依存します．
+そのため：
+</p>
+<ul>
+  <li>剛性行列 \(K_{ij} = a(\varphi_i, \varphi_j)\) が一度計算できれば連立一次方程式 \(K\mathbf{c}=\mathbf{f}\) を解くだけ</li>
+  <li>最適化誤差はゼロ（一意解が存在）</li>
+  <li>Céa の補題が使える</li>
+</ul>
+<p>
+NN の近似解 \(u_\theta\) はパラメータ \(\theta\) に<strong>非線形</strong>に依存します：
+</p>
+<ul>
+  <li>損失関数 \(\mathcal{L}(\theta)\) が非凸 → 局所最小への収束可能性</li>
+  <li>Céa の補題の類似が（まだ）証明されていない</li>
+  <li>しかし，①近似誤差については NN 近似論が整備されつつある</li>
+</ul>
+<p>
+この違いから，<strong>今研究が最も必要な部分が②最適化誤差</strong>であることが分かります．
+一方，③幾何誤差は数値積分の理論（Koksma–Hlawka，ガウス積分）がそのまま使えます．
+</p>
+</article>
+</div>
+
+<!-- ─── 5. コードを読むための数学用語集 ─── -->
+<h2>コードを読むための数学用語集</h2>
+<div class="news">
+<article class="news-item">
+<table style="border-collapse:collapse; width:100%; font-size:0.93em;">
+  <thead>
+    <tr style="background:#f0f0f0;">
+      <th style="border:1px solid #ccc; padding:7px 10px; text-align:left;">コード / 操作</th>
+      <th style="border:1px solid #ccc; padding:7px 10px; text-align:left;">数学的な言葉</th>
+      <th style="border:1px solid #ccc; padding:7px 10px; text-align:left;">関係する理論</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;"><code>net_u(p, x)</code></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">試験関数 \(u_\theta \in C^\infty \subset H^1_0\)</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">普遍近似定理（Cybenko 1989）</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:7px 10px;"><code>net_up(p, x)</code></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">\(u_\theta' \in L^2(0,1)\)，\(H^1\) の元の導関数</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">Sobolev 空間 \(H^1\) の理論</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;"><code>net_upp(p, x)</code></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">\(u_\theta'' \in L^2(0,1)\)，\(H^2\) 正則性を必要とする</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">楕円型方程式の正則性理論</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:7px 10px;"><code>loss_pinns</code></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">\(\|{-u_\theta''-f}\|_{L^2}^2\) の離散近似</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">Koksma–Hlawka 不等式，\(D_N^*\)</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;"><code>loss_deepritz</code></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">エネルギー汎関数 \(E(u_\theta)\) の数値積分</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">変分原理，Lax–Milgram の定理</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:7px 10px;"><code>loss_vpinn</code></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">\(\sum_k (a_N(u_\theta,\phi_k)-\ell_N(\phi_k))^2\)</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">Galerkin 法，双線形形式，ガウス積分</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;"><code>gauss_points(n_q)</code></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">次数 \(2n_q-1\) の多項式を厳密積分する点集合</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">Gauss–Legendre 求積法</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:7px 10px;"><code>minimize(..., "L-BFGS-B")</code></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">\(\hat\theta \approx \arg\min_\theta \mathcal{L}(\theta)\)</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">非線形最適化，準 Newton 法（開問題あり）</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;"><code>h_max</code></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">\(h_{\max} = \max_i \Delta_i\)，乖離度 \(D_N^*\) の上界</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">Koksma–Hlawka，FEM の最大要素径</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:7px 10px;"><code>eval_L2(p)</code></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">\(\|u - u_\theta\|_{L^2}\) の離散近似</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">\(L^2\) ノルム，Monte Carlo 誤差評価</td>
+    </tr>
+  </tbody>
+</table>
+</article>
+</div>
+
+<!-- ─── 6. まとめ ─── -->
+<h2>まとめ：数学的解析への入口</h2>
+<div class="news">
+<article class="news-item">
+<p>
+コードの各部分と数学の対応を整理すると，誤差解析の構造が見えます：
+</p>
+<ul>
+  <li><strong>③幾何誤差</strong>は Koksma–Hlawka とガウス積分の理論で評価できる．
+      \(h_{\max}\)（最大ギャップ）が鍵となる量（第1〜3回で数値的に確認）．</li>
+  <li><strong>①近似誤差</strong>は NN 近似論（Barron の定理など）で評価できる．
+      FEM の補間誤差評価とは異なる枠組みが必要．</li>
+  <li><strong>②最適化誤差</strong>は現在開問題．非凸損失の大域的最小化への収束保証がない．</li>
+</ul>
+<p>
+Hiroki さんの FEM 研究から直接持ち込める道具は<strong>③幾何誤差</strong>の部分です．
+次回（第6回）では，FEM のフラットネスパラメーターが
+この③の分析においてどう登場するかを見ていきます．
+</p>
+<p style="margin-top:2em;">
+← <a href="./pinns-04.html">第4回：PINNs / Deep Ritz / VPINN / WAN を並べて比べる</a><br>
+→ <a href="./pinns-06.html">第6回：私の研究との接続（準備中）</a><br>
+→ <a href="../../blog/">Blog トップへ戻る</a>
+</p>
+</article>
+</div>
+
+
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
