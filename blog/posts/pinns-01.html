@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 27th June 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 27th June 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">第1回：1次元 Poisson 問題で PINNs を動かす</h1>
+<p style="color:#888; margin-bottom:2em;">連載：PINNsはなぜ失敗するのか — 1次元から探る幾何条件の役割　|　27th June 2026</p>
+
+<!-- ─── 1. この連載の目的 ─── -->
+<h2>この連載の目的</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Physics-Informed Neural Networks（PINNs）は，損失関数の中に PDE の残差を組み込むことで，
+ニューラルネットワークに方程式を「覚えさせる」手法です．
+実装が容易で，メッシュを必要としないという点で注目されています．
+</p>
+<p>
+一方で，PINNs は「もっともらしく外れる」ことがあります．
+損失が十分に小さく見えても，実際の近似誤差が大きいケースが知られており，
+特に境界層・高周波成分・特異点を含む問題でその傾向が顕著です．
+</p>
+<p>
+この連載の問いは単純です：<strong>PINNs はなぜ失敗するのか？</strong>
+</p>
+<p>
+有限要素法（FEM）の誤差解析では，補間誤差・幾何条件・メッシュの配置が
+近似精度を決定することが分かっています．PINNs における「残差点の配置」は，
+FEM における「メッシュ」と類似した役割を担うはずです．
+この対応を出発点に，<strong>どの幾何的量が PINNs の誤差を支配するか</strong>を，
+1次元の最小例から数値的に探っていきます．
+</p>
+<p>
+第1回は準備回です．問題設定とコードの骨格を固め，まず「正常に動く」状態を確認します．
+</p>
+</article>
+</div>
+
+<!-- ─── 2. 問題設定 ─── -->
+<h2>問題設定</h2>
+<div class="news">
+<article class="news-item">
+<p>
+1次元 Poisson 問題を考えます：
+</p>
+<p>
+$$
+-u''(x) = f(x), \quad x \in (0,1), \quad u(0) = u(1) = 0.
+$$
+</p>
+<p>
+厳密解として
+$$
+u(x) = \sin(\pi x)
+$$
+を採用します．このとき右辺は \( f(x) = \pi^2 \sin(\pi x) \) です．
+</p>
+<p>
+これは最もシンプルな楕円型境界値問題であり，
+解は滑らかで特異性を持ちません．
+PINNs が「本来うまくいくはず」の設定です．
+第2回以降では，この「うまくいくはず」の設定を意図的に崩していきます．
+</p>
+</article>
+</div>
+
+<!-- ─── 3. PINNs の定式化 ─── -->
+<h2>PINNs の定式化</h2>
+<div class="news">
+<article class="news-item">
+<p>
+ニューラルネットワーク \( u_\theta : [0,1] \to \mathbb{R} \) で解を近似します．
+損失関数は次の二項から構成されます：
+</p>
+<p>
+$$
+\mathcal{L}(\theta) = \mathcal{L}_{\rm pde}(\theta) + \lambda\, \mathcal{L}_{\rm bc}(\theta),
+$$
+</p>
+<p>
+ここで
+</p>
+<p>
+$$
+\mathcal{L}_{\rm pde}(\theta)
+= \frac{1}{N} \sum_{i=1}^{N}
+\bigl( -u_\theta''(x_i) - f(x_i) \bigr)^2,
+\qquad
+\mathcal{L}_{\rm bc}(\theta)
+= u_\theta(0)^2 + u_\theta(1)^2.
+$$
+</p>
+<p>
+\( \{x_i\}_{i=1}^N \) は<strong>残差点（collocation points）</strong>と呼ばれます．
+この点の配置が誤差にどう影響するかが，この連載全体のテーマです．
+</p>
+<p>
+二階微分 \( u_\theta'' \) は PyTorch の自動微分（<code>autograd</code>）で計算します．
+</p>
+</article>
+</div>
+
+<!-- ─── 4. Google Colab で動かす ─── -->
+<h2>Google Colab で動かす</h2>
+<div class="news">
+<article class="news-item">
+<p>
+以下のコードは Google Colab にそのまま貼り付けて実行できます．
+PyTorch は Colab に標準で入っているため，追加インストールは不要です．
+</p>
+
+<h3>セル 1：インポートと設定</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>import torch
+import torch.nn as nn
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 再現性のためのシード固定
+torch.manual_seed(42)
+np.random.seed(42)
+
+# デバイス設定（GPU があれば GPU，なければ CPU）
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"device: {device}")</code></pre>
+</div>
+
+<h3>セル 2：問題設定</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code># 厳密解と右辺
+def u_exact(x):
+    return torch.sin(np.pi * x)
+
+def f_rhs(x):
+    return (np.pi ** 2) * torch.sin(np.pi * x)</code></pre>
+</div>
+
+<h3>セル 3：ニューラルネットワーク</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>class MLP(nn.Module):
+    """多層パーセプトロン（活性化関数: tanh）"""
+    def __init__(self, hidden=32, n_layers=3):
+        super().__init__()
+        layers = [nn.Linear(1, hidden), nn.Tanh()]
+        for _ in range(n_layers - 1):
+            layers += [nn.Linear(hidden, hidden), nn.Tanh()]
+        layers += [nn.Linear(hidden, 1)]
+        self.net = nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.net(x)</code></pre>
+</div>
+
+<h3>セル 4：PDE 残差（自動微分）</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>def pde_residual(model, x):
+    """
+    -u''(x) - f(x) を自動微分で計算する．
+    x は requires_grad=True が必要．
+    """
+    x = x.clone().requires_grad_(True)
+    u = model(x)
+    u_x = torch.autograd.grad(
+        u, x,
+        grad_outputs=torch.ones_like(u),
+        create_graph=True
+    )[0]
+    u_xx = torch.autograd.grad(
+        u_x, x,
+        grad_outputs=torch.ones_like(u_x),
+        create_graph=True
+    )[0]
+    return -u_xx - f_rhs(x)</code></pre>
+</div>
+
+<h3>セル 5：訓練ループ</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>def train_pinns(N_coll=30, n_epochs=5000, lr=1e-3, lam=100.0):
+    """
+    Parameters
+    ----------
+    N_coll  : 残差点の数（境界を除く内点）
+    n_epochs: エポック数
+    lr      : 学習率
+    lam     : 境界条件の重み
+    """
+    model = MLP(hidden=32, n_layers=3).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+
+    # 残差点：一様分布（内点のみ）
+    x_coll = torch.linspace(0, 1, N_coll + 2)[1:-1].unsqueeze(1).to(device)
+
+    # 境界点
+    x_bc = torch.tensor([[0.0], [1.0]], device=device)
+    u_bc = torch.tensor([[0.0], [0.0]], device=device)
+
+    loss_history = []
+
+    for epoch in range(n_epochs):
+        optimizer.zero_grad()
+
+        # PDE 損失
+        res = pde_residual(model, x_coll)
+        loss_pde = (res ** 2).mean()
+
+        # 境界条件損失
+        loss_bc = ((model(x_bc) - u_bc) ** 2).mean()
+
+        loss = loss_pde + lam * loss_bc
+        loss.backward()
+        optimizer.step()
+
+        loss_history.append(loss.item())
+
+        if (epoch + 1) % 1000 == 0:
+            print(f"Epoch {epoch+1:5d}  loss={loss.item():.4e}  "
+                  f"pde={loss_pde.item():.4e}  bc={loss_bc.item():.4e}")
+
+    return model, loss_history
+
+model, loss_history = train_pinns(N_coll=30, n_epochs=5000)</code></pre>
+</div>
+
+<h3>セル 6：結果の可視化</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>x_test = torch.linspace(0, 1, 200).unsqueeze(1).to(device)
+
+with torch.no_grad():
+    u_pred = model(x_test).cpu().numpy()
+
+u_ref  = u_exact(x_test.cpu()).numpy()
+x_np   = x_test.cpu().numpy().flatten()
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+
+# 左：解のプロット
+axes[0].plot(x_np, u_ref.flatten(),  label=r'厳密解 $\sin(\pi x)$', linewidth=2)
+axes[0].plot(x_np, u_pred.flatten(), '--', label='PINNs 近似解', linewidth=2)
+axes[0].set_xlabel('$x$')
+axes[0].set_ylabel('$u$')
+axes[0].set_title('1次元 Poisson 問題：厳密解 vs PINNs')
+axes[0].legend()
+axes[0].grid(True)
+
+# 右：損失の履歴
+axes[1].semilogy(loss_history)
+axes[1].set_xlabel('Epoch')
+axes[1].set_ylabel('Loss（対数スケール）')
+axes[1].set_title('訓練損失の推移')
+axes[1].grid(True)
+
+plt.tight_layout()
+plt.show()
+
+# 離散 L² 誤差
+err_L2 = np.sqrt(np.mean((u_pred.flatten() - u_ref.flatten()) ** 2))
+print(f"離散 L² 誤差: {err_L2:.4e}")</code></pre>
+</div>
+
+<h3>セル 7：残差点の配置と誤差の確認</h3>
+<p>
+残差点を図に重ねて，配置がどこにあるかを視覚的に確認します．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>N_coll = 30
+x_coll_np = np.linspace(0, 1, N_coll + 2)[1:-1]
+
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.plot(x_np, u_ref.flatten(), label=r'厳密解 $\sin(\pi x)$', linewidth=2)
+ax.plot(x_np, u_pred.flatten(), '--', label='PINNs 近似解', linewidth=2)
+ax.scatter(x_coll_np, np.sin(np.pi * x_coll_np),
+           color='red', zorder=5, s=40, label='残差点（一様）')
+ax.set_xlabel('$x$')
+ax.set_ylabel('$u$')
+ax.set_title('残差点の配置（一様分布，N=30）')
+ax.legend()
+ax.grid(True)
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+
+</article>
+</div>
+
+<!-- ─── 5. 結果の読み方 ─── -->
+<h2>結果の読み方</h2>
+<div class="news">
+<article class="news-item">
+<p>
+正常に動いた場合，次のような出力が得られます：
+</p>
+<ul>
+  <li>離散 \( L^2 \) 誤差が \( 10^{-3} \) 以下になれば，PINNs が解を捉えている状態です．</li>
+  <li>訓練損失が単調に減少していれば，最適化は安定しています．</li>
+  <li>近似解と厳密解のプロットがほぼ重なれば成功です．</li>
+</ul>
+<p>
+逆に，次の場合は何かが起きています：
+</p>
+<ul>
+  <li>損失が途中で下げ止まる → 学習率・ネットワーク構造を見直す．</li>
+  <li>解が境界でずれる → 境界損失の重み \( \lambda \) を増やす（デフォルトは 100）．</li>
+  <li>解が振動している → 残差点の数 <code>N_coll</code> を増やす，または活性化関数を変える．</li>
+</ul>
+<p>
+この問題は PINNs が「うまくいくはず」の設定です．
+ここで動作を確認しておくことが，次回以降で「意図的に失敗させる」実験の基準になります．
+</p>
+</article>
+</div>
+
+<!-- ─── 6. パラメータを変えてみる ─── -->
+<h2>パラメータを変えてみる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+コードのパラメータを変えて挙動を観察してみましょう．
+</p>
+
+<h3>残差点の数を変える</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code># 残差点の数を 5, 10, 30, 100 で比較する
+results = {}
+for N in [5, 10, 30, 100]:
+    m, _ = train_pinns(N_coll=N, n_epochs=3000)
+    with torch.no_grad():
+        u_p = m(x_test).cpu().numpy().flatten()
+    err = np.sqrt(np.mean((u_p - u_ref.flatten()) ** 2))
+    results[N] = (u_p, err)
+    print(f"N={N:4d}  L2誤差={err:.4e}")
+
+# プロット
+fig, axes = plt.subplots(1, 4, figsize=(16, 3), sharey=True)
+for ax, (N, (u_p, err)) in zip(axes, results.items()):
+    ax.plot(x_np, u_ref.flatten(), label='厳密解', linewidth=2)
+    ax.plot(x_np, u_p, '--', label='PINNs', linewidth=2)
+    x_c = np.linspace(0, 1, N + 2)[1:-1]
+    ax.scatter(x_c, np.sin(np.pi * x_c), color='red', s=30, zorder=5)
+    ax.set_title(f'N={N}  L2={err:.2e}')
+    ax.set_xlabel('$x$')
+    ax.grid(True)
+axes[0].set_ylabel('$u$')
+axes[0].legend(fontsize=8)
+plt.suptitle('残差点の数と近似誤差', y=1.02)
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+
+<h3>エポック数を変える</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code># 途中のスナップショットを取る
+model_snap = MLP(hidden=32, n_layers=3).to(device)
+optimizer_snap = torch.optim.Adam(model_snap.parameters(), lr=1e-3)
+
+x_coll = torch.linspace(0, 1, 32)[1:-1].unsqueeze(1).to(device)
+x_bc   = torch.tensor([[0.0], [1.0]], device=device)
+u_bc   = torch.tensor([[0.0], [0.0]], device=device)
+
+snapshots = {}
+for epoch in range(5001):
+    optimizer_snap.zero_grad()
+    res = pde_residual(model_snap, x_coll)
+    loss = (res**2).mean() + 100 * ((model_snap(x_bc) - u_bc)**2).mean()
+    loss.backward()
+    optimizer_snap.step()
+    if epoch in [100, 500, 1000, 5000]:
+        with torch.no_grad():
+            u_p = model_snap(x_test).cpu().numpy().flatten()
+        err = np.sqrt(np.mean((u_p - u_ref.flatten())**2))
+        snapshots[epoch] = (u_p, err)
+
+# プロット
+fig, axes = plt.subplots(1, 4, figsize=(16, 3), sharey=True)
+for ax, (ep, (u_p, err)) in zip(axes, snapshots.items()):
+    ax.plot(x_np, u_ref.flatten(), linewidth=2)
+    ax.plot(x_np, u_p, '--', linewidth=2)
+    ax.set_title(f'Epoch {ep}  L2={err:.2e}')
+    ax.set_xlabel('$x$')
+    ax.grid(True)
+axes[0].set_ylabel('$u$')
+plt.suptitle('エポック数と近似精度', y=1.02)
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+</article>
+</div>
+
+<!-- ─── 7. 次回予告 ─── -->
+<h2>次回：残差点の配置を「意図的に偏らせる」</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第2回では，残差点の分布を変えることで何が起きるかを調べます．
+</p>
+<ul>
+  <li>一様分布（第1回）</li>
+  <li>ランダム分布</li>
+  <li>区間の一方に集中させた場合</li>
+  <li>区間の端を避けた場合</li>
+</ul>
+<p>
+同じ問題・同じネットワークで，残差点の配置だけを変えたとき，
+誤差はどのように変化するでしょうか．
+</p>
+<p>
+FEM であれば「メッシュが粗い領域で誤差が大きくなる」という直感があります．
+PINNs ではこれが単純には成立しないケースがあります．
+</p>
+<p>
+それが，この探索の面白さです．
+</p>
+<p style="margin-top:2em;">
+→ <a href="../../blog/">Blog トップへ戻る</a>
+→ <a href="../../fem/">Research Visions（Vision 2, B1）</a>
+</p>
+</article>
+</div>
+
+
+
+
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
