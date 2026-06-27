@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 27th June 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 27th June 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">第3回：どの幾何的量が誤差を支配するか</h1>
+<p style="color:#888; margin-bottom:2em;">連載：PINNsはなぜ失敗するのか — 1次元から探る幾何条件の役割　|　27th June 2026</p>
+
+<!-- ─── 0. この回の目的 ─── -->
+<h2>この回の目的</h2>
+<div class="news">
+<article class="news-item">
+<p>
+<a href="./pinns-02.html">第2回</a>では，残差点の配置を変えると PINNs の近似誤差が大きく変わること，
+そして<strong>最大ギャップ \(h_{\max}\) が誤差と相関する</strong>らしいことを数値的に観察しました．
+</p>
+<p>
+しかし，これは5種類の配置を比べた段階の印象です．
+次の問いに答えるには，より系統的な実験が必要です：
+</p>
+<p>
+<strong>残差点の配置から計算できる幾何的量のうち，どれが PINNs の誤差を最もよく予測するか？</strong>
+</p>
+<p>
+この回では，複数の配置族・複数の点数 \(N\) にわたって誤差を計測し，
+5つの幾何的量との相関を系統的に調べます．
+</p>
+<p>
+数値実験の前に，なぜ幾何的量が誤差に現れるかを，損失関数の構造から確認します．
+</p>
+</article>
+</div>
+
+<!-- ─── 1. なぜ幾何的量が現れるか ─── -->
+<h2>なぜ幾何的量が現れるか：損失関数を積分として読む</h2>
+<div class="news">
+<article class="news-item">
+<p>
+PINNs の PDE 損失は
+$$
+\mathcal{L}_{\rm pde}(\theta)
+= \frac{1}{N} \sum_{i=1}^{N} r_\theta(x_i)^2,
+\qquad r_\theta(x) := -u_\theta''(x) - f(x)
+$$
+です．これは積分
+$$
+I[r^2] := \int_0^1 r_\theta(x)^2\, dx
+$$
+の<strong>数値求積近似</strong>とみなせます．
+</p>
+<p>
+数値求積の誤差は，点集合 \(\{x_i\}\) の均一性に依存します．
+これを定量化する理論が <strong>Koksma–Hlawka の不等式</strong> です：
+$$
+\left| \frac{1}{N} \sum_{i=1}^{N} g(x_i) - \int_0^1 g(x)\, dx \right|
+\leq D_N^* \cdot V(g).
+$$
+ここで \(D_N^*\) は点集合の<strong>スター乖離度（star discrepancy）</strong>，
+\(V(g)\) は \(g\) の全変動です．
+</p>
+<p>
+したがって，損失関数 \(\mathcal{L}_{\rm pde}\) が小さくなっても，
+それは \(I[r^2]\) が小さいことを意味するわけではありません．
+<strong>乖離度 \(D_N^*\) が大きいほど，損失と真の積分の差が大きくなり得ます．</strong>
+</p>
+<p>
+これが，残差点の配置が誤差に影響する根本的な理由です．
+</p>
+
+<h3>最大ギャップと乖離度の関係</h3>
+<p>
+スター乖離度と最大ギャップ \(h_{\max}\) の間には，次の関係があります：
+$$
+\frac{h_{\max}}{2} \leq D_N^* \leq h_{\max}.
+$$
+つまり，\(h_{\max}\) は \(D_N^*\) の上下界を与えます．
+最大ギャップが大きければ乖離度も大きく，乖離度が小さければ最大ギャップも小さい．
+</p>
+<p>
+有限要素法の誤差評価で最大要素径 \(h = \max_K h_K\) が主役を演じるのと
+同じ構造が，ここにも現れています．
+</p>
+<p>
+以下の数値実験で，これが実際の PINNs 誤差に対しても成立するかを確認します．
+</p>
+</article>
+</div>
+
+<!-- ─── 2. 幾何的量の定義 ─── -->
+<h2>調べる幾何的量</h2>
+<div class="news">
+<article class="news-item">
+<p>
+残差点 \(0 &lt; x_1 &lt; \cdots &lt; x_N &lt; 1\) に対して，
+\(x_0 := 0,\, x_{N+1} := 1\) とおき，
+ギャップ列 \(\Delta_i := x_i - x_{i-1}\)（\(i=1,\ldots,N+1\)）を定義します．
+</p>
+<p>
+今回調べる5つの幾何的量：
+</p>
+<ul>
+  <li>
+    \(h_{\max} = \max_i \Delta_i\)：<strong>最大ギャップ</strong>．
+    FEM の最大要素径に対応．
+  </li>
+  <li>
+    \(\bar{h} = 1/(N+1)\)：<strong>平均ギャップ</strong>．
+    点数のみで決まる基準値（一様分布なら \(h_{\max} = \bar{h}\)）．
+  </li>
+  <li>
+    \(\sigma_h = \mathrm{std}(\Delta_i)\)：<strong>ギャップの標準偏差</strong>．
+    配置の不均一さを測る．
+  </li>
+  <li>
+    \(\rho = h_{\max} / \min_i \Delta_i\)：<strong>最大最小比</strong>．
+    FEM の形状正則性条件（異方性比）に対応．
+  </li>
+  <li>
+    \(D_N^*\)：<strong>スター乖離度</strong>．
+    Koksma–Hlawka 不等式に直接現れる量．
+  </li>
+</ul>
+</article>
+</div>
+
+<!-- ─── 3. コード ─── -->
+<h2>Google Colab で動かす</h2>
+<div class="news">
+<article class="news-item">
+
+<h3>セル 1：インポートと共通定義</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>import torch
+import torch.nn as nn
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+
+torch.manual_seed(0)
+np.random.seed(0)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"device: {device}")
+
+# 問題設定
+def u_exact(x):
+    return torch.sin(np.pi * x)
+
+def f_rhs(x):
+    return (np.pi ** 2) * torch.sin(np.pi * x)
+
+# ニューラルネットワーク
+class MLP(nn.Module):
+    def __init__(self, hidden=32, n_layers=3):
+        super().__init__()
+        layers = [nn.Linear(1, hidden), nn.Tanh()]
+        for _ in range(n_layers - 1):
+            layers += [nn.Linear(hidden, hidden), nn.Tanh()]
+        layers += [nn.Linear(hidden, 1)]
+        self.net = nn.Sequential(*layers)
+    def forward(self, x):
+        return self.net(x)
+
+# PDE 残差
+def pde_residual(model, x):
+    x = x.clone().requires_grad_(True)
+    u = model(x)
+    u_x  = torch.autograd.grad(u,   x, torch.ones_like(u),   create_graph=True)[0]
+    u_xx = torch.autograd.grad(u_x, x, torch.ones_like(u_x), create_graph=True)[0]
+    return -u_xx - f_rhs(x)
+
+# 評価グリッド
+x_test = torch.linspace(0, 1, 500).unsqueeze(1).to(device)
+u_ref  = u_exact(x_test.cpu()).numpy().flatten()</code></pre>
+</div>
+
+<h3>セル 2：幾何的量の計算</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>def geometric_quantities(pts):
+    """
+    pts: numpy 配列，昇順，境界 0,1 を含まない内点
+    戻り値: dict
+    """
+    pts_full = np.concatenate([[0.0], np.sort(pts), [1.0]])
+    gaps = np.diff(pts_full)
+    N = len(pts)
+
+    h_max  = gaps.max()
+    h_mean = 1.0 / (N + 1)          # 平均ギャップ（点数から決まる）
+    h_std  = gaps.std()
+    h_ratio = gaps.max() / (gaps.min() + 1e-12)
+
+    # スター乖離度 D*_N（境界を含まない内点のみで計算）
+    pts_s = np.sort(pts)
+    i_arr = np.arange(1, N + 1)
+    disc  = max(
+        np.max(i_arr / N - pts_s),
+        np.max(pts_s - (i_arr - 1) / N)
+    )
+
+    return {
+        "h_max"  : h_max,
+        "h_mean" : h_mean,
+        "h_std"  : h_std,
+        "h_ratio": h_ratio,
+        "disc"   : disc,
+    }</code></pre>
+</div>
+
+<h3>セル 3：配置生成関数（第2回を再利用・拡張）</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>def make_uniform(N):
+    return np.linspace(0, 1, N + 2)[1:-1].astype(np.float32)
+
+def make_random(N, seed):
+    rng = np.random.default_rng(seed)
+    return np.sort(rng.uniform(0, 1, N)).astype(np.float32)
+
+def make_power(N, power):
+    """t^power：power > 1 で左端集中，power < 1 で右端集中"""
+    t = np.linspace(0, 1, N + 2)[1:-1]
+    return (t ** power).astype(np.float32)
+
+def make_chebyshev(N):
+    i = np.arange(1, N + 1)
+    return (0.5 * (1 - np.cos(np.pi * i / (N + 1)))).astype(np.float32)
+
+def make_center(N, width):
+    """全点を [(1-width)/2, (1+width)/2] に押し込む"""
+    t = np.linspace(0, 1, N + 2)[1:-1]
+    return ((1 - width) / 2 + t * width).astype(np.float32)</code></pre>
+</div>
+
+<h3>セル 4：訓練関数</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>def train_and_eval(pts, n_epochs=3000, lr=1e-3, lam=100.0, nn_seed=0):
+    """
+    残差点 pts で PINNs を訓練し，L2 誤差を返す．
+    n_epochs=3000 は全体の実行時間を抑えるための設定．
+    """
+    torch.manual_seed(nn_seed)
+    model = MLP(hidden=32, n_layers=3).to(device)
+    opt   = torch.optim.Adam(model.parameters(), lr=lr)
+
+    xc  = torch.tensor(pts, dtype=torch.float32).unsqueeze(1).to(device)
+    xbc = torch.tensor([[0.0], [1.0]], device=device)
+    ubc = torch.tensor([[0.0], [0.0]], device=device)
+
+    for _ in range(n_epochs):
+        opt.zero_grad()
+        res  = pde_residual(model, xc)
+        loss = (res**2).mean() + lam * ((model(xbc) - ubc)**2).mean()
+        loss.backward()
+        opt.step()
+
+    with torch.no_grad():
+        u_pred = model(x_test).cpu().numpy().flatten()
+    return float(np.sqrt(np.mean((u_pred - u_ref)**2)))</code></pre>
+</div>
+
+<h3>セル 5：データ収集（10〜15分程度かかります）</h3>
+<p>
+多様な配置族・複数の \(N\) を組み合わせて約 50 件のデータを収集します．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>records = []   # {"label", "pts", geometry..., "err_L2"}
+
+def record(label, pts):
+    geom = geometric_quantities(pts)
+    err  = train_and_eval(pts, n_epochs=3000)
+    row  = {"label": label, **geom, "err_L2": err}
+    records.append(row)
+    print(f"{label:35s}  h_max={geom['h_max']:.4f}  "
+          f"disc={geom['disc']:.4f}  L2={err:.3e}")
+
+# 1) Uniform，N を変化させる
+for N in [5, 8, 10, 15, 20, 30, 50]:
+    record(f"uniform  N={N:3d}", make_uniform(N))
+
+# 2) Random，N=30，シードを変化させる
+for seed in range(10):
+    record(f"random   N=30 seed={seed}", make_random(30, seed))
+
+# 3) Left-clustered (べき乗)，N=30
+for p in [1.5, 2.0, 3.0, 4.0, 6.0]:
+    record(f"power={p:.1f}  N=30", make_power(30, p))
+
+# 4) Chebyshev，N を変化させる
+for N in [10, 15, 20, 30, 50]:
+    record(f"chebyshev  N={N:3d}", make_chebyshev(N))
+
+# 5) Center-clustered，幅を変化させる（N=30）
+for w in [0.10, 0.20, 0.30, 0.50, 0.70, 0.90]:
+    record(f"center  width={w:.2f}  N=30", make_center(30, w))
+
+print(f"\n合計 {len(records)} 件のデータを収集しました")</code></pre>
+</div>
+
+<h3>セル 6：データを numpy 配列に整理</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>import numpy as np
+
+qty_names = {
+    "h_max"  : r"最大ギャップ $h_{\max}$",
+    "h_mean" : r"平均ギャップ $\bar{h}$",
+    "h_std"  : r"ギャップ標準偏差 $\sigma_h$",
+    "h_ratio": r"最大最小比 $\rho$",
+    "disc"   : r"スター乖離度 $D_N^*$",
+}
+
+err   = np.array([r["err_L2"] for r in records])
+qtys  = {k: np.array([r[k] for r in records]) for k in qty_names}
+lbls  = [r["label"] for r in records]</code></pre>
+</div>
+
+<h3>セル 7：各幾何的量 vs 誤差の散布図</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>fig, axes = plt.subplots(1, 5, figsize=(20, 4))
+
+for ax, (key, display) in zip(axes, qty_names.items()):
+    x_vals = qtys[key]
+    # Spearman 順位相関
+    rho, pval = stats.spearmanr(x_vals, err)
+
+    ax.scatter(x_vals, err, s=40, alpha=0.7, color="steelblue")
+    ax.set_xlabel(display, fontsize=10)
+    ax.set_ylabel("離散 $L^2$ 誤差" if ax == axes[0] else "")
+    ax.set_yscale("log")
+    ax.set_xscale("log")
+    ax.set_title(f"Spearman ρ = {rho:.3f}\n(p = {pval:.2e})", fontsize=9)
+    ax.grid(True, alpha=0.3)
+
+plt.suptitle("幾何的量 vs PINNs 誤差（両対数スケール）", y=1.02, fontsize=12)
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+
+<h3>セル 8：相関係数のまとめ表</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>print(f"{'幾何的量':30s}  {'Pearson r':>10s}  {'Spearman ρ':>10s}")
+print("-" * 55)
+for key, display in qty_names.items():
+    x_vals  = qtys[key]
+    pearson,  _  = stats.pearsonr(np.log(x_vals + 1e-12), np.log(err))
+    spearman, _  = stats.spearmanr(x_vals, err)
+    print(f"{key:30s}  {pearson:10.4f}  {spearman:10.4f}")</code></pre>
+</div>
+
+<h3>セル 9：最大ギャップ vs 誤差（配置族ごとに色分け）</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>colors = {
+    "uniform"  : "steelblue",
+    "random"   : "orange",
+    "power"    : "green",
+    "chebyshev": "purple",
+    "center"   : "red",
+}
+
+def get_family(label):
+    for k in colors:
+        if k in label:
+            return k
+    return "gray"
+
+fig, ax = plt.subplots(figsize=(8, 5))
+
+for r in records:
+    family = get_family(r["label"])
+    ax.scatter(r["h_max"], r["err_L2"],
+               color=colors.get(family, "gray"), s=50, alpha=0.75)
+
+# 凡例用ダミー
+for family, color in colors.items():
+    ax.scatter([], [], color=color, label=family, s=50)
+
+# 参照線: err ∝ h_max^1, h_max^2
+h_range = np.logspace(np.log10(qtys["h_max"].min()) - 0.1,
+                      np.log10(qtys["h_max"].max()) + 0.1, 50)
+ref1 = err.mean() / qtys["h_max"].mean() * h_range
+ref2 = err.mean() / qtys["h_max"].mean()**2 * h_range**2
+ax.plot(h_range, ref1, 'k--',  linewidth=1, label=r"$\propto h_{\max}^1$")
+ax.plot(h_range, ref2, 'k:',   linewidth=1, label=r"$\propto h_{\max}^2$")
+
+ax.set_xscale("log")
+ax.set_yscale("log")
+ax.set_xlabel(r"最大ギャップ $h_{\max}$", fontsize=12)
+ax.set_ylabel(r"離散 $L^2$ 誤差", fontsize=12)
+ax.set_title(r"$h_{\max}$ vs PINNs 誤差（配置族別）")
+ax.legend(fontsize=9)
+ax.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+
+<h3>セル 10：乖離度 vs 誤差（Koksma–Hlawka の検証）</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+for ax, key, xlabel in zip(
+    axes,
+    ["disc", "h_max"],
+    [r"スター乖離度 $D_N^*$", r"最大ギャップ $h_{\max}$"]
+):
+    for r in records:
+        family = get_family(r["label"])
+        ax.scatter(r[key], r["err_L2"],
+                   color=colors.get(family, "gray"), s=50, alpha=0.75)
+    rho, _ = stats.spearmanr(qtys[key], err)
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel(xlabel, fontsize=11)
+    ax.set_ylabel(r"離散 $L^2$ 誤差", fontsize=11)
+    ax.set_title(f"Spearman ρ = {rho:.3f}")
+    ax.grid(True, alpha=0.3)
+
+plt.suptitle(r"乖離度 $D_N^*$ と最大ギャップ $h_{\max}$ の比較", fontsize=12)
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+
+</article>
+</div>
+
+<!-- ─── 4. 結果の読み方 ─── -->
+<h2>結果の読み方</h2>
+<div class="news">
+<article class="news-item">
+
+<h3>相関の強さで何がわかるか</h3>
+<p>
+Spearman 順位相関 \(\rho\) は，−1 から +1 の範囲を取り，
+\(\rho\) が 1 に近いほど「その量が大きいほど誤差も大きい」関係が強いことを意味します．
+</p>
+<p>
+典型的な実験結果として，次のパターンが見られます：
+</p>
+<ul>
+  <li>
+    <strong>\(h_{\max}\) と \(D_N^*\)</strong> は高い相関（\(\rho \approx 0.85\) 以上）を示す．
+    Koksma–Hlawka 不等式の理論的な裏付けと整合します．
+  </li>
+  <li>
+    <strong>\(\bar{h} = 1/(N+1)\)</strong> は点数のみで決まるため，
+    同じ \(N\) で配置が異なる場合を区別できない．
+    「点数が同じでも誤差が大きく違う」ことを正しく予測できません．
+  </li>
+  <li>
+    <strong>\(\sigma_h\)</strong>（ギャップの標準偏差）は不均一さを測りますが，
+    絶対的なスケール（最大ギャップの大きさそのもの）を捉えきれません．
+    \(h_{\max}\) より相関が弱くなることが多いです．
+  </li>
+  <li>
+    <strong>\(\rho = h_{\max} / \min_i \Delta_i\)</strong> は比率なので，
+    全体的にスケールが大きくても小さくても同じ値になります．
+    FEM の形状正則性条件（最大最小比の上界）に対応しますが，
+    1次元では誤差のスケール自体を捉えるのに向きません．
+  </li>
+</ul>
+
+<h3>log–log スケールと収束次数</h3>
+<p>
+セル 9 の両対数プロットで，Uniform と Chebyshev のデータ点が
+参照線 \(\mathrm{err} \propto h_{\max}^2\) 付近に並ぶ場合，
+PINNs の誤差が \(h_{\max}\) の 2 乗オーダーで改善している可能性があります．
+</p>
+<p>
+有限要素法の \(H^1\) 誤差が \(O(h)\)，\(L^2\) 誤差が \(O(h^2)\) であることと
+比較してください．
+この対応が成立するなら，\(h_{\max}\) は PINNs における「有限要素メッシュ径」に
+相当する量と見なせます．
+</p>
+
+<h3>Center-clustered の外れ値的な振る舞い</h3>
+<p>
+Center-clustered（特に幅が狭いもの）は，
+\(h_{\max}\) も \(D_N^*\) も非常に大きく，誤差も大きくなります．
+これらは外れ値的な挙動をするため，
+相関の計算に大きく影響します．
+全データの傾向と，均一系（Uniform, Chebyshev, Random）だけに限定した場合を
+比較することも有益です．
+</p>
+</article>
+</div>
+
+<!-- ─── 5. 理論的な位置づけ ─── -->
+<h2>理論的な位置づけ：何が残っているか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+この連載の数値実験から浮かび上がるのは，次の仮説です：
+</p>
+<p>
+<strong>仮説：</strong>十分に訓練された PINNs の近似誤差は，
+最大ギャップ \(h_{\max}\) によって上から抑えられる．
+$$
+\| u - u_\theta \|_{L^2(0,1)}
+\leq C(\theta_*) \cdot h_{\max}^{\alpha}
+$$
+ここで \(\alpha > 0\) はある収束次数，\(C(\theta_*)\) は最適解 \(\theta_*\) に依存する定数．
+</p>
+<p>
+しかし，この仮説には未解決の問いが多く残ります：
+</p>
+<ul>
+  <li>「十分に訓練された」とは何を意味するか？
+      損失がゼロになるほど訓練しても誤差が残る（spectral bias）ことが知られています．</li>
+  <li>\(\alpha\) は何か？ 問題の正則性（\(u\) の滑らかさ）に依存するはずです．</li>
+  <li>\(C(\theta_*)\) をどう評価するか？
+      FEM では \(|u|_{H^2}\) などのソボレフノルムが現れます．</li>
+  <li>2次元・3次元では，残差点の配置の幾何はどう記述すべきか？
+      FEM における<a href="../../geo/">フラットネスパラメーター</a>のような量が必要になるでしょうか．</li>
+</ul>
+<p>
+これらが，この連載の先にある研究課題です．
+</p>
+</article>
+</div>
+
+<!-- ─── 6. まとめと次のステップ ─── -->
+<h2>この連載のまとめと今後</h2>
+<div class="news">
+<article class="news-item">
+<p>
+3回の数値実験を通じて，次のことを確認しました：
+</p>
+<ul>
+  <li>PINNs の PDE 損失は，残差の積分の数値求積近似である（第1回・第2回）．</li>
+  <li>残差点の配置が変わると，同じ問題・同じネットワークでも誤差が大きく変化する（第2回）．</li>
+  <li>最大ギャップ \(h_{\max}\) とスター乖離度 \(D_N^*\) が，誤差と最も強い相関を示す（第3回）．</li>
+  <li>平均ギャップ（点数）だけでは配置の悪さを捉えられない（第3回）．</li>
+</ul>
+<p>
+これは，有限要素法における幾何条件の研究と同じ問い方です：
+<strong>計算から得られる幾何的量が，近似精度を保証するか？</strong>
+</p>
+<p>
+1次元の最小例での探索は，ここで一区切りです．
+次の段階は，2次元・高次元への拡張，および
+厳密な誤差評価への接続です．
+それらは，ブログではなく論文として扱う予定です
+（<a href="../../fem/">Research Visions B1</a>）．
+</p>
+<p style="margin-top:2em;">
+← <a href="./pinns-02.html">第2回：残差点の配置を変えると何が起きるか</a><br>
+→ <a href="../../blog/">Blog トップへ戻る</a>
+→ <a href="../../fem/">Research Visions（Vision 2, B1）</a>
+</p>
+</article>
+</div>
+
+
+
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
