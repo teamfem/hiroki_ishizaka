@@ -111,387 +111,373 @@
 <div class="section-in">
 
 
-<h1 class="section-title">第6回：私の研究との接続</h1>
-<p style="color:#888; margin-bottom:2em;">連載：PINNsはなぜ失敗するのか — 1次元から探る幾何条件の役割　|　27th June 2026</p>
+<h1 class="section-title">第6回：私の研究との接続：PINNsはなぜ失敗するのか - 1次元から探る幾何条件の役割</h1>
+<p style="color:#666; font-size:0.95em;">第6回：私の研究との接続 ― 新しい幾何的パラメーター \(H_T\)</p>
 
-<!-- ─── 0. この回の位置づけ ─── -->
-<h2>この回の位置づけ</h2>
 <div class="news">
 <article class="news-item">
-<p>
-第1〜5回では，1次元の Poisson 問題を通じて，PINNs・Deep Ritz・VPINN・WAN の
-コードと数学の対応を整理しました．
-この回では視点を変えて，<strong>私が FEM 研究で蓄積してきた知見が，
-どのように NN ベース手法の数学的解析に繋がるか</strong>を書きます．
-</p>
-<p>
-これは完成した研究の紹介ではなく，「どこへ向かおうとしているか」の
-現時点でのロードマップです．
-</p>
-</article>
-</div>
 
-<!-- ─── 1. FEM 研究の核心：フラットネスパラメーター ─── -->
-<h2>FEM 研究の核心：フラットネスパラメーターとは何か</h2>
-<div class="news">
-<article class="news-item">
-<p>
-私の FEM 研究の中心的な成果は，<strong>異方性メッシュに対する計算可能な幾何条件</strong>の確立にあります
-（<a href="../../publications/">Publications</a> の核論文，小林・土屋との共著，Springer Japan J. Indust. Appl. Math.）．
-</p>
+<!-- ─────────────────────────────────────────── -->
+<h2>1. 前回までの整理</h2>
 
-<h3>FEM の幾何条件とは</h3>
 <p>
-有限要素法の誤差解析において，要素 \(K\) の形状が誤差に与える影響は古くから知られています．
-古典的な「正則性条件（regularity condition）」は，参照要素へのアフィン変換 \(F_K\) が
-ほぼ一様な拡大縮小を行うことを要求します：
-$$
-h_K \lesssim \rho_K, \quad
-\kappa_K := \frac{h_K}{\rho_K} \lesssim C
-$$
-ここで \(h_K\) は要素径，\(\rho_K\) は内接球の半径，\(\kappa_K\) はアスペクト比です．
-しかし，境界層解析など，細長い要素が必要な場合にはこの条件は過剰に制限的です．
-</p>
-
-<h3>フラットネスパラメーター</h3>
-<p>
-私たちが導入した「フラットネスパラメーター（flatness parameter）」は，
-アフィン変換 \(F_K = A_K\) を二段階に分解することで定義されます：
-</p>
-<p>
-$$
-A_K = B_K \cdot C_K, \quad
-B_K : \text{等方的スケーリング部分}, \quad
-C_K : \text{異方的部分（flatness を担う）}.
-$$
-</p>
-<p>
-フラットネスパラメーター \(\mu_K\) は \(C_K\) の条件数（最大固有値 / 最小固有値）として定義され，
-アスペクト比 \(\kappa_K\) より精密に要素の「扁平さ」を計測します．
-</p>
-<p>
-この量を使うと，異方性メッシュに対しても
-$$
-\|u - u_h\|_{H^1} \leq C \cdot \max_K \left(\frac{h_K^2}{\mu_K}\right) \cdot |u|_{H^2}
-$$
-という形の誤差評価が成立します．重要なのは，\(\mu_K\) が<strong>計算可能</strong>な量，
-すなわちメッシュから直接計算できる幾何的量である点です．
-これにより，誤差が大きい領域を事前に予測してメッシュを改良するという
-<em>a priori</em> 戦略が取れます．
-</p>
-</article>
-</div>
-
-<!-- ─── 2. 1次元での対応：h_max と D*_N ─── -->
-<h2>1 次元での対応：\(h_{\max}\) = フラットネスパラメーターの 1 次元版</h2>
-<div class="news">
-<article class="news-item">
-<p>
-第3回の実験に戻ります．33 通りの点配置に対して，5 種類の幾何的量と
-\(L^2\) 誤差の相関を測った結果，<strong>最大ギャップ \(h_{\max}\) が最も強い相関</strong>（Pearson 0.68）を示しました．
-</p>
-<p>
-これは偶然ではありません．1 次元では：
+第1回から第5回では，1次元Poisson問題 \(-u'' = \pi^2\sin(\pi x)\) を題材に，PINNsの誤差を三つの源から分解してきた：
 </p>
 <ul>
-  <li>FEM の「要素径 \(h_K\)」=「要素 \([x_k, x_{k+1}]\) の幅 \(\Delta_k\)」</li>
-  <li>FEM の「最大要素径 \(h_{\max}\)」= PINNs の「最大ギャップ \(h_{\max} = \max_k \Delta_k\)」</li>
+  <li>① 近似誤差（approximation error）：ネットワークで関数を近似する際の限界</li>
+  <li>② 最適化誤差（optimization error）：損失最小化が完了しないことによる誤差</li>
+  <li>③ 幾何誤差（geometric error）：コロケーション点配置の偏りによる数値積分誤差</li>
 </ul>
 <p>
-まったく同じ幾何的量です．
+Koksma–Hlawka不等式は，③の上界を与える：
+\[
+  \left|\frac{1}{N}\sum_{i=1}^N g(x_i) - \int_0^1 g(x)\,dx\right| \leq D_N^* \cdot V(g),
+\]
+ここで \(D_N^*\) は点配置の食い違い度（discrepancy）であり，
+\(\frac{h_{\max}}{2} \leq D_N^* \leq h_{\max}\) が成り立つ（\(h_{\max}\) は最大セル幅）．
 </p>
 <p>
-1 次元では「扁平さ」の概念は存在しないので，フラットネスパラメーターは
-\(\mu_K = h_K\) に退化します．
-<strong>1 次元の \(h_{\max}\) は，フラットネスパラメーターの最も単純な場合</strong>と見なせます．
+この「点配置が収束品質を決める」という構造は，FEMの誤差評価における幾何条件と本質的に同型である．
+ここでは，私の研究が提案した<strong>新しい幾何的パラメーター \(H_T\)</strong> と，その条件が何を意味するかを説明する．
 </p>
 
-<h3>Koksma–Hlawka を経由した理論的裏付け</h3>
+<!-- ─────────────────────────────────────────── -->
+<h2>2. FEM補間誤差の幾何依存性</h2>
+
 <p>
-第5回で整理したように，PINNs の積分誤差は：
-$$
-\left|\frac{1}{N}\sum_i g(x_i) - \int_0^1 g(x)dx\right| \leq D_N^* \cdot V(g)
-$$
-で抑えられ，\(h_{\max}/2 \leq D_N^* \leq h_{\max}\) から：
-$$
-\text{積分誤差} \leq h_{\max} \cdot V(g).
-$$
-この不等式は，<strong>Koksma–Hlawka による 1 次元の「幾何条件 → 誤差上界」</strong>です．
-FEM 誤差評価における「\(h_{\max} \cdot |u|_{H^2}\)」型の評価に対応します．
+FEMで \(-\Delta u = f\) を \(P_1\) 要素で離散化したとき，補間誤差の大きさは要素の形状に依存する．
+標準的な推定（形状正則条件のもと）は
+\[
+  \|u - u_h\|_{H^1(\Omega)} \leq C\, h\, |u|_{H^2(\Omega)}
+\]
+と書けるが，この \(C\) は要素の「つぶれ具合」で悪化しうる．
 </p>
-</article>
+<p>
+つぶれた要素（anisotropic mesh）が現れる場合，二つの量が誤差を増大させることが知られていた：
+</p>
+
+<div class="def-box">
+<div class="def-title">Theorem A（先行研究の枠組み）</div>
+<p>
+各要素 \(T\) に対し，要素径 \(h_T\) と anisotropy パラメーター \(\alpha_{\max}/\alpha_{\min}\)（長軸・短軸比）を用いると，
+\[
+  |\varphi - I_T\varphi|_{H^1(T)} \leq C\,
+  \frac{\alpha_{\max}}{\alpha_{\min}}
+  \cdot \frac{H_T}{h_T}
+  \cdot h_T\, |\varphi|_{H^2(T)}.
+\]
+長細い要素では \(\alpha_{\max}/\alpha_{\min} \gg 1\) となり，右辺が爆発する．
+</p>
 </div>
 
-<!-- ─── 3. 2次元への拡張ビジョン ─── -->
-<h2>2 次元への拡張：コロケーション点の Voronoi フラットネス</h2>
-<div class="news">
-<article class="news-item">
 <p>
-では 2 次元の PINNs/VPINN ではどうなるか．
-2 次元のコロケーション点集合 \(\{(x_i, y_i)\}_{i=1}^N \subset [0,1]^2\) を考えます．
+私の研究（Ishizaka–Kobayashi–Tsuchiya, Japan J. Indust. Appl. Math. 2023）の主眼は，
+<strong>\(\alpha_{\max}/\alpha_{\min}\) を消去した推定</strong>を導くことにあった．
 </p>
 
-<h3>FEM との対応：Voronoi セルが「要素」になる</h3>
+<!-- ─────────────────────────────────────────── -->
+<h2>3. 新しい幾何的パラメーター \(H_T\)</h2>
+
 <p>
-FEM では領域をメッシュ（三角形や四角形の要素）に分割します．
-コロケーション点に対しては，自然な「要素」が Voronoi 分割によって与えられます：
-</p>
-<p>
-$$
-V_i = \{ (x,y) \in [0,1]^2 : |(x,y)-(x_i,y_i)| \leq |(x,y)-(x_j,y_j)|,\; \forall j \neq i \}.
-$$
-</p>
-<p>
-各 Voronoi セル \(V_i\) は FEM の要素 \(K\) に対応します：
-</p>
-<table style="border-collapse:collapse; width:100%; font-size:0.93em; margin-bottom:1em;">
-  <thead>
-    <tr style="background:#f0f0f0;">
-      <th style="border:1px solid #ccc; padding:7px 10px;">FEM の量</th>
-      <th style="border:1px solid #ccc; padding:7px 10px;">コロケーション点集合の対応物</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="border:1px solid #ccc; padding:7px 10px;">要素 \(K\)</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">Voronoi セル \(V_i\)</td>
-    </tr>
-    <tr style="background:#fafafa;">
-      <td style="border:1px solid #ccc; padding:7px 10px;">要素径 \(h_K\)</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">\(h_i = \text{diam}(V_i)\)（Voronoi セルの直径）</td>
-    </tr>
-    <tr>
-      <td style="border:1px solid #ccc; padding:7px 10px;">アスペクト比 \(\kappa_K = h_K / \rho_K\)</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">\(\kappa_i = h_i / \rho_i\)（\(\rho_i\) = 内接円半径）</td>
-    </tr>
-    <tr style="background:#fafafa;">
-      <td style="border:1px solid #ccc; padding:7px 10px;">フラットネスパラメーター \(\mu_K\)</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">\(\mu_i\)（Voronoi セルの慣性テンソルの条件数）</td>
-    </tr>
-    <tr>
-      <td style="border:1px solid #ccc; padding:7px 10px;">最大要素径 \(h_{\max}\)</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">\(\tilde{h}_{\max} = \max_i h_i\)</td>
-    </tr>
-  </tbody>
-</table>
-<p>
-Voronoi セルが細長い（扁平な）ほど，その領域での数値積分精度が低下します．
-これは FEM で扁平要素の精度が下がる現象と対応します．
+以下の定義は，Ishizaka（Exact-curved Lagrange FEs, ver.9, Section 2.9）の (2.23) 式に基づく．
 </p>
 
-<h3>Voronoi フラットネスパラメーターの候補定義</h3>
+<div class="def-box">
+<div class="def-title">定義（幾何的パラメーター \(H_T\)）</div>
 <p>
-Voronoi セル \(V_i\) の慣性テンソル：
-$$
-M_i = \int_{V_i} \begin{pmatrix} (x-x_i)^2 & (x-x_i)(y-y_i) \\ (x-x_i)(y-y_i) & (y-y_i)^2 \end{pmatrix} dx\,dy
-$$
-の最大固有値 \(\lambda_{\max}(M_i)\) と最小固有値 \(\lambda_{\min}(M_i)\) の比を，
-Voronoi フラットネスパラメーターの候補として定義できます：
-$$
-\tilde\mu_i = \sqrt{\frac{\lambda_{\max}(M_i)}{\lambda_{\min}(M_i)}} \geq 1.
-$$
-等方的な点分布なら \(\tilde\mu_i \approx 1\)，特定方向に偏った点分布なら \(\tilde\mu_i \gg 1\)．
+三角形 \(T\) の頂点を \(p_1, p_2, p_3\) とし，辺 \(p_2 p_3\) を最長辺とする（\(h_T := |p_2 - p_3|\)）．
+残りの二辺の長さを
+\[
+  h_1 := |p_1 - p_2|, \quad h_2 := |p_1 - p_3|
+\]
+とし，\(|T|\) を \(T\) の面積とする．このとき，
+\[
+  \boxed{H_T := \frac{h_1 h_2}{|T|}\, h_T.}
+\]
 </p>
-<p>
-仮説：<strong>2 次元 PINNs の誤差は \(\tilde{h}_{\max} \cdot \tilde\mu_{\max} \cdot V(g)\) で上から抑えられる</strong>，
-ここで \(\tilde\mu_{\max} = \max_i \tilde\mu_i\)．
-この形は FEM の誤差評価 \(Ch_K^2 / \mu_K\) と類似しています．
-</p>
-</article>
 </div>
 
-<!-- ─── 4. 方法ごとの感度の違い ─── -->
-<h2>各手法での幾何条件の意味の違い</h2>
-<div class="news">
-<article class="news-item">
 <p>
-第4回で議論したように，各手法の積分誤差に対する感度は異なります．
-フラットネスパラメーターとの対応でまとめ直すと：
-</p>
-<table style="border-collapse:collapse; width:100%; font-size:0.93em;">
-  <thead>
-    <tr style="background:#f0f0f0;">
-      <th style="border:1px solid #ccc; padding:7px 10px;">手法</th>
-      <th style="border:1px solid #ccc; padding:7px 10px;">被積分関数の微分階数</th>
-      <th style="border:1px solid #ccc; padding:7px 10px;">幾何条件の影響</th>
-      <th style="border:1px solid #ccc; padding:7px 10px;">FEM での類比</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="border:1px solid #ccc; padding:7px 10px;"><strong>PINNs</strong></td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">2 階（\(u_\theta''\) を含む）</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">大（\(V(g)\) が大きい）</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">有限差分，\(H^2\) 正則性が必要</td>
-    </tr>
-    <tr style="background:#fafafa;">
-      <td style="border:1px solid #ccc; padding:7px 10px;"><strong>Deep Ritz</strong></td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">1 階（\(u_\theta'\) のみ）</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">中</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">Ritz 法，\(H^1_0\) で閉じている</td>
-    </tr>
-    <tr>
-      <td style="border:1px solid #ccc; padding:7px 10px;"><strong>VPINN</strong></td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">1 階（ガウス点で厳密）</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">小（ガウス点なら指数減衰）</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">Galerkin FEM，最も FEM に近い</td>
-    </tr>
-    <tr style="background:#fafafa;">
-      <td style="border:1px solid #ccc; padding:7px 10px;"><strong>WAN</strong></td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">1 階（テスト関数が適応的）</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">小（最悪ケースに最適化）</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">Petrov-Galerkin，最も一般的</td>
-    </tr>
-  </tbody>
-</table>
-<p>
-研究の観点からは，<strong>VPINN が最も誤差解析の枠組みを導入しやすい手法</strong>です．
-ガウス点を用いれば積分誤差（幾何誤差 ③）がほぼゼロになるため，
-残る①近似誤差と②最適化誤差に集中できます．
-</p>
-</article>
-</div>
-
-<!-- ─── 5. B1 論文の骨格 ─── -->
-<h2>B1 論文の骨格：幾何条件による NN 誤差評価</h2>
-<div class="news">
-<article class="news-item">
-<p>
-Research Visions の B1「PINNs の幾何的解析」に向けた論文の骨格として，
-現時点で以下の構成が見えています：
+この量は計算が容易である：辺長と面積のみで定まる．<br>
+先行研究の \(\alpha_1, \alpha_2\) 記法では \(H_T = \frac{\alpha_1 \alpha_2}{|T|} h_T\) と一致する（\(\alpha_1 = h_1\)，\(\alpha_2 = h_2\)）．
 </p>
 
-<h3>Section 1: 問題設定と動機</h3>
+<h3>3.1 幾何的意味</h3>
+
 <p>
-2 次元 Poisson 問題に対する VPINN の誤差解析を行う．
-動機は：AI ベース FEM が実際に使われるとき，コロケーション点の配置が
-（ユーザーの意図によらず）誤差に大きく影響する可能性があること．
+三角形の面積は \(|T| = \frac{1}{2} h_1 h_2 \sin\theta_1\) （\(\theta_1\) は \(p_1\) の内角）だから，
+\[
+  \frac{H_T}{h_T} = \frac{h_1 h_2}{|T|} = \frac{h_1 h_2}{\frac{1}{2}h_1 h_2 \sin\theta_1} = \frac{2}{\sin\theta_1}.
+\]
 </p>
 
-<h3>Section 2: Voronoi フラットネスパラメーターの定義</h3>
 <p>
-コロケーション点集合 \(\mathbf{X} = \{(x_i, y_i)\}\) に対して，
-Voronoi セルの幾何的量として \(\tilde h_{\max}\) と \(\tilde\mu_{\max}\) を定義する．
-これらが FEM のメッシュ幾何条件の類比物であることを示す．
+\(p_2 p_3\) が最長辺であるとき，\(\theta_1\)（最長辺の対角）は三角形の<strong>最大角</strong>である．
+したがって：
 </p>
 
-<h3>Section 3: 積分誤差の上界（定理）</h3>
-<p>
-VPINN の被積分関数 \(g = u_\theta' \varphi_k'\) に対して，
-2 次元 Koksma–Hlawka 不等式（またはそれに相当する境界）を適用し：
-$$
-|\text{積分誤差}| \leq C \cdot \tilde h_{\max} \cdot \tilde\mu_{\max} \cdot \|g\|_{C^1([0,1]^2)}
-$$
-を示す（候補の形；実際の証明では最適な形を探す）．
-</p>
+<ul>
+  <li>\(\theta_1 \to \pi\) （要素がつぶれる）\(\Rightarrow\) \(\sin\theta_1 \to 0\) \(\Rightarrow\) \(H_T/h_T \to \infty\)</li>
+  <li>\(\theta_1\) が \(\pi\) から離れている \(\Rightarrow\) \(\sin\theta_1\) が正から離れる \(\Rightarrow\) \(H_T/h_T\) が有界</li>
+</ul>
 
-<h3>Section 4: 数値実験による検証</h3>
+<div class="thm-box">
+<div class="thm-title">Theorem 1（新しい条件と最大角条件の同値性）</div>
 <p>
-1 次元の予備実験（第3回のブログ）の 2 次元版を実施する：
+次の条件は同値：
 </p>
 <ul>
-  <li>等方的点配置 vs. 異方的点配置（一方向に偏ったもの）</li>
-  <li>\(\tilde\mu_{\max}\) と \(L^2\) 誤差の相関</li>
-  <li>\(\tilde h_{\max}\) との相乗効果</li>
+  <li><strong>新しいメッシュ条件（Condition 7）：</strong>
+    \(\displaystyle\frac{H_T}{h_T} \leq \gamma_0 \quad \forall T \in \mathbb{T}_h\)
+  </li>
+  <li><strong>最大角条件（maximum-angle condition）：</strong>
+    \(\theta_{T,\max} \leq \gamma_1 < \pi \quad \forall T \in \mathbb{T}_h\)
+  </li>
 </ul>
-
-<h3>Section 5: FEM との対比</h3>
 <p>
-Kobayashi–Tsuchiya–Ishizaka のフラットネスパラメーターの結果との並列比較を行い，
-FEM と VPINN が同じ数学的構造を共有していることを示す．
+また \(d = 2\) では，\(H_T\) は三角形の外接円半径 \(R_T\) と同値（\(H_T \sim 2R_T\)）である．
 </p>
-<p>
-この対比が，論文の最も新しい貢献部分になります．
-</p>
-</article>
 </div>
 
-<!-- ─── 6. 今後の学習ロードマップとの対応 ─── -->
-<h2>今後の学習ロードマップ</h2>
-<div class="news">
-<article class="news-item">
 <p>
-前回（第5回）で整理した誤差の3分解（①近似誤差，②最適化誤差，③幾何誤差）と，
-B1 論文の目標を対応させると：
+最大角条件は，形状正則条件（minimum-angle condition）より緩い条件である．
+長細い三角形（辺が非常に異なる長さを持つ）も，最大角が \(\pi\) に近くなければ，
+収束に問題はないことを意味する．
 </p>
-<table style="border-collapse:collapse; width:100%; font-size:0.93em;">
-  <thead>
-    <tr style="background:#f0f0f0;">
-      <th style="border:1px solid #ccc; padding:7px 10px;">誤差源</th>
-      <th style="border:1px solid #ccc; padding:7px 10px;">B1 論文での扱い</th>
-      <th style="border:1px solid #ccc; padding:7px 10px;">必要な追加知識</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="border:1px solid #ccc; padding:7px 10px;">① 近似誤差</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">「十分なネットワーク幅があれば小さい」と仮定．
-          Barron の定理を引用する</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">Barron (1993)，E &amp; Yu (2018) の読み込み</td>
-    </tr>
-    <tr style="background:#fafafa;">
-      <td style="border:1px solid #ccc; padding:7px 10px;">② 最適化誤差</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">「L-BFGS-B が十分収束した」として数値的に評価する．
-          理論的には open problem として明示</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">（現状では理論化を保留）</td>
-    </tr>
-    <tr>
-      <td style="border:1px solid #ccc; padding:7px 10px;">③ 幾何誤差</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;"><strong>ここを定理として証明する</strong>．
-          Voronoi フラットネスパラメーターを使った上界</td>
-      <td style="border:1px solid #ccc; padding:7px 10px;">2 次元 Koksma–Hlawka（Niederreiter の本 など）</td>
-    </tr>
-  </tbody>
+
+<!-- ─────────────────────────────────────────── -->
+<h2>4. 二段階アフィン変換と \(H_T/h_T\) の役割</h2>
+
+<p>
+標準的な FEM 誤差解析は，参照要素 \(\hat{T}\) から物理要素 \(T\) への一つのアフィン写像を使う．
+しかしこれでは異方性要素でのスケーリングが適切に分離されない．
+私の研究（および Exact-curved paper）では，写像を<strong>二段階</strong>に分解する：
+</p>
+
+<div class="def-box">
+<div class="def-title">二段階アフィン変換</div>
+<p>
+\[
+  \hat{T} \xrightarrow{\Phi_{\tilde{T}}} \tilde{T} \xrightarrow{\Phi_T} T
+\]
+</p>
+<ul>
+  <li>
+    <strong>第1段階 \(\Phi_{\tilde{T}} = \tilde{A}\hat{A}\)：</strong>
+    対角スケーリング \(\hat{A} = \mathrm{diag}(h_1, h_2)\) でそれぞれの方向を個別にスケーリングし，
+    せん断行列 \(\tilde{A} = \begin{pmatrix}1 & s \\ 0 & t\end{pmatrix}\)（\(s^2+t^2=1\)）でせん断を加える．
+    中間要素 \(\tilde{T}\) が生成される．
+  </li>
+  <li>
+    <strong>第2段階 \(\Phi_T\)：</strong>
+    直交変換（回転・鏡映）\(A_T \in O(2)\) で物理要素 \(T\) へ送る．
+    このステップは等長なので，ノルムに影響しない（\(\|A_T\|_2 = \|A_T^{-1}\|_2 = 1\)）．
+  </li>
+</ul>
+</div>
+
+<p>
+<strong>鍵となる量は \(\tilde{A}\) の条件数である：</strong>
+</p>
+<p>
+\[
+  \|\tilde{A}\|_2 \|\tilde{A}^{-1}\|_2 = \frac{h_1 h_2}{|T|} = \frac{H_T}{h_T}.
+\]
+</p>
+<p>
+つまり \(H_T/h_T\) は，せん断変換の「歪み量」を正確に計測している．
+形状正則条件は \(\|\tilde{A}\| \|\tilde{A}^{-1}\|\) が有界であることを要求するが，
+それより緩い条件（最大角条件）でも同じ上界が得られることが，この分解で明らかになる．
+</p>
+
+<!-- ─────────────────────────────────────────── -->
+<h2>5. 改善された補間誤差評価（Theorem B）</h2>
+
+<div class="thm-box">
+<div class="thm-title">Theorem B / Corollary 1（正しい誤差評価，\(P_1\) 要素の場合）</div>
+<p>
+Assumption 1（\(H_T/h_T \leq \gamma_0\)）のもとで，
+\[
+  |v - I_T v|_{H^1(T)}
+  \leq C\,\gamma_0 \left(
+    h_1\, \left|\frac{\partial v}{\partial r_1}\right|_{H^1(T)}
+    + h_2\, \left|\frac{\partial v}{\partial r_2}\right|_{H^1(T)}
+  \right),
+\]
+ここで \(r_1 = (p_2 - p_1)/h_1\)，\(r_2 = (p_3 - p_1)/h_2\) は要素の二辺方向の単位ベクトル，
+定数 \(C\) は要素の形状に依存しない．
+</p>
+</div>
+
+<p>
+先行研究（Theorem A）と比較すると：
+</p>
+
+<table class="param-table">
+  <tr>
+    <th></th>
+    <th>誤差界に現れる幾何量</th>
+    <th>必要な条件</th>
+  </tr>
+  <tr>
+    <td>Theorem A（先行研究）</td>
+    <td>\(\dfrac{\alpha_{\max}}{\alpha_{\min}} \cdot \dfrac{H_T}{h_T}\)</td>
+    <td>最大角条件 ＋ 等方的スケーリング条件</td>
+  </tr>
+  <tr>
+    <td>Theorem B（本研究）</td>
+    <td>\(\dfrac{H_T}{h_T}\) のみ</td>
+    <td>最大角条件のみ（Assumption 1）</td>
+  </tr>
 </table>
+
 <p>
-つまり，<strong>B1 論文は「③だけを定理として証明し，①②を数値的に評価する」というスタイル</strong>で
-書けます．これが現実的な最初の形です．
+\(\alpha_{\max}/\alpha_{\min}\) の消去が本研究の核心的貢献であり，
+先行論文 [16]（Theorem 2）に存在した誤りの修正でもある．
 </p>
 
-<h3>近期の具体的なステップ</h3>
+<!-- ─────────────────────────────────────────── -->
+<h2>6. PINNs・VPINN との接続</h2>
+
+<h3>6.1 1次元での対応</h3>
+
 <p>
-学習・研究として，次のステップを想定しています：
+1次元区間 \([x_i, x_{i+1}]\) では，三角形の「二辺」はない（区間の端点のみ）．
+したがって \(H_T/h_T = 1\)（退化）であり，幾何的条件は \(h_{\max}\) のみが支配する．
+これが第3回の実験で \(h_{\max}\) と損失の間に相関（Pearson \(\approx 0.68\)）が見られた理由と整合する：
+1次元では \(H_T\) は追加の情報を持たない．
 </p>
-<ol>
-  <li>Niederreiter (1992) "Random Number Generation and Quasi-Monte Carlo Methods" の
-      Chapter 2（2 次元の星型乖離度と Koksma–Hlawka）を読む．
-      1 次元の Koksma–Hlawka を 2 次元に正確に拡張するための基礎です．</li>
-  <li>2 次元 VPINN のコードを書いて，等方・異方の点配置での誤差を数値的に測る
-      （第3回の 2 次元版）．</li>
-  <li>Voronoi セルのフラットネス \(\tilde\mu_i\) を計算するコードを書く
-      （scipy の Voronoi 分割 + 固有値計算で実装可能）．</li>
-  <li>定理の候補を書き，数値実験と整合するか確認する．</li>
-</ol>
-</article>
+
+<h3>6.2 2次元への拡張と新しい問い</h3>
+
+<p>
+2次元のPINNs / VPINNでは，コロケーション点 \(\{p_i\}_{i=1}^N \subset \Omega\) の配置が幾何誤差を決める．
+Delaunay 三角分割 \(\mathbb{T}_h\) をこれらの点から構成すれば，各三角形 \(T\) に対して
+\[
+  H_T = \frac{h_1 h_2}{|T|}\, h_T
+\]
+が計算できる．
+</p>
+
+<p>
+次の問いが生まれる：
+</p>
+
+<div class="def-box">
+<div class="def-title">研究上の問い</div>
+<p>
+VPINNのコロケーション点から Delaunay 三角分割を構成したとき，
+\(\max_T (H_T / h_T)\) と VPINN の近似誤差の間に，定量的な相関があるか？
+</p>
+<p>
+より具体的には：2次元 Poisson 問題において，コロケーション点配置を変えたときに，
+\(\max_T (H_T / h_T)\) が大きい配置ほど誤差が大きいという法則が，
+数値実験で確認できるか？
+</p>
 </div>
 
-<!-- ─── 7. この連載全体の位置づけ ─── -->
-<h2>この連載全体の位置づけ</h2>
-<div class="news">
-<article class="news-item">
 <p>
-この連載（第1〜6回）は，以下の三つの役割を持っています：
+FEM理論では Theorem B がこの方向の保証を与える．
+PINNs / VPINN でも同様の理論が成立するかは，現時点で未証明であるが，
+数値的なフィジビリティの検証が次のステップとなる．
 </p>
-<ol>
-  <li><strong>記録</strong>：1 次元実験の実施記録（コード・数値結果・考察）を公開することで，
-      研究の透明性を確保します．</li>
-  <li><strong>橋渡し</strong>：FEM の幾何条件研究と NN ベース PDE ソルバーの誤差解析を
-      接続するアイデアを言語化します．これが <a href="../../fem/">Research Visions B1</a> の種です．</li>
-  <li><strong>自己教育</strong>：「コードを書いて動かす」から「コードを数学的に説明できる」へ
-      ステップアップするための構造化された記録です．</li>
-</ol>
+
+<h3>6.3 三つの誤差源とパラメーターの対応</h3>
+
+<table class="param-table">
+  <tr>
+    <th>誤差の種類</th>
+    <th>FEM での量</th>
+    <th>VPINN/PINNs での候補</th>
+  </tr>
+  <tr>
+    <td>① 近似誤差</td>
+    <td>有限要素空間の次元・次数</td>
+    <td>ネットワーク幅・深さ（Barron 1993）</td>
+  </tr>
+  <tr>
+    <td>② 最適化誤差</td>
+    <td>線形系の解法（直接解法で消去可能）</td>
+    <td>Adam / L-BFGS / 学習率（未解決）</td>
+  </tr>
+  <tr>
+    <td>③ 幾何誤差</td>
+    <td>\(\max_T (H_T/h_T)\)（最大角条件と同値）</td>
+    <td>Delaunay 三角分割の \(\max_T (H_T/h_T)\)（仮説）</td>
+  </tr>
+</table>
+
+<!-- ─────────────────────────────────────────── -->
+<h2>7. 今後の研究方向</h2>
+
 <p>
-B1 論文に向けて，次の段階は 2 次元実験とフラットネスパラメーターの定義を洗練させることです．
-その過程もこの連載で記録していきます．
+私の研究の次の展開は以下の三段階として構想している：
 </p>
-<p style="margin-top:2em;">
-← <a href="./pinns-05.html">第5回：コードと数学の辞書</a><br>
-→ <a href="../../blog/">Blog トップへ戻る</a><br>
-→ <a href="../../fem/">Research Visions を見る</a>
+
+<table class="param-table">
+  <tr>
+    <th>段階</th>
+    <th>内容</th>
+    <th>キー結果</th>
+  </tr>
+  <tr>
+    <td><strong>B1（完了）</strong></td>
+    <td>アフィン三角形上の異方性補間誤差評価（\(H_T\) の導入）</td>
+    <td>Theorem B，\(\alpha_{\max}/\alpha_{\min}\) の消去</td>
+  </tr>
+  <tr>
+    <td><strong>B2（進行中）</strong></td>
+    <td>Exact-curved 要素への \(H_T\) の移植</td>
+    <td>\(F_K = \Psi_K \circ \Phi_{T_K}\) の分解，Theorem 1 &amp; 2</td>
+  </tr>
+  <tr>
+    <td><strong>B3（計画）</strong></td>
+    <td>PINNs / VPINN の幾何誤差に \(H_T\) を適用</td>
+    <td>2次元コロケーション点配置の幾何的品質評価</td>
+  </tr>
+</table>
+
+<p>
+B2では，アフィンコア \(T_K\) 上の \(H_T\) 評価を曲線要素 \(K = \Psi_K(T_K)\) へ転写する手法を確立した．
+B3では，この枠組みをニューラルネットワークの離散化に適用する．
 </p>
-</article>
+
+<!-- ─────────────────────────────────────────── -->
+<h2>まとめ</h2>
+
+<div class="correct-box">
+<div class="correct-title">第6回のポイント</div>
+<ul>
+  <li>
+    <strong>\(H_T\) の正しい定義：</strong>
+    \(H_T = \dfrac{h_1 h_2}{|T|} h_T\)（最長辺に接する2辺の長さ × 最長辺 ÷ 面積）．条件数や固有値比ではない．
+  </li>
+  <li>
+    <strong>幾何的意味：</strong>
+    \(H_T/h_T = 2/\sin\theta_1\) であり，最大角の情報を直接計測する．
+  </li>
+  <li>
+    <strong>メッシュ条件の同値：</strong>
+    \(H_T/h_T \leq \gamma_0 \Leftrightarrow\) 最大角条件（Theorem 1）．
+  </li>
+  <li>
+    <strong>主要な改善（Theorem B）：</strong>
+    先行研究の \(\alpha_{\max}/\alpha_{\min}\) を消去し，\(H_T/h_T\) のみで誤差を支配できる．
+  </li>
+  <li>
+    <strong>PINNsへの接続（仮説）：</strong>
+    2次元コロケーション点の Delaunay 三角分割の \(\max_T(H_T/h_T)\) が幾何誤差の指標となりうる．
+  </li>
+</ul>
 </div>
 
+<p>
+<a href="./pinns-05.html">← 第5回：コードと数学の辞書</a> ／
+<a href="./pinns-07.html">第7回：研究ビジョン全体図 →</a>
+</p>
+
+</article>
+</div>
 
 
 
