@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 27th June 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 27th June 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">第2回：残差点の配置を変えると何が起きるか</h1>
+<p style="color:#888; margin-bottom:2em;">連載：PINNsはなぜ失敗するのか — 1次元から探る幾何条件の役割　|　27th June 2026</p>
+
+<!-- ─── 0. 前回の復習 ─── -->
+<h2>前回の確認</h2>
+<div class="news">
+<article class="news-item">
+<p>
+<a href="./pinns-01.html">第1回</a>では，1次元 Poisson 問題
+$$
+-u''(x) = \pi^2 \sin(\pi x), \quad x \in (0,1), \quad u(0)=u(1)=0
+$$
+を PINNs で解き，<strong>一様分布の残差点 \(N=30\) 個</strong>を使った場合に離散 \(L^2\) 誤差が \(10^{-3}\) 程度になることを確認しました．
+</p>
+<p>
+今回は，問題・ネットワーク・訓練パラメータを完全に固定したまま，<strong>残差点の配置だけを変え</strong>，誤差がどう変わるかを観察します．
+</p>
+</article>
+</div>
+
+<!-- ─── 1. 実験設計 ─── -->
+<h2>実験設計</h2>
+<div class="news">
+<article class="news-item">
+<p>
+比較する配置は次の5種類です．いずれも \(N = 30\) 点を \((0,1)\) 上に置きます（境界点 \(x=0,1\) は別途処理）．
+</p>
+<ul>
+  <li><strong>Uniform</strong>：等間隔 \(x_i = i/(N+1)\)．第1回のベースライン．</li>
+  <li><strong>Random</strong>：一様乱数でサンプリングし昇順ソート．</li>
+  <li><strong>Left-clustered</strong>：べき乗写像 \(x_i = (i/(N+1))^4\) で左端 \(x=0\) 付近に集中．</li>
+  <li><strong>Chebyshev</strong>：チェビシェフ点 \(x_i = \tfrac{1}{2}(1 - \cos(\pi i/(N+1)))\)，両端に集中．</li>
+  <li><strong>Center-clustered</strong>：全点を中央の狭い帯 \([0.35, 0.65]\) に集中させる．</li>
+</ul>
+<p>
+各配置の「形」を先に可視化し，その後で PINNs を訓練して誤差を比較します．
+</p>
+</article>
+</div>
+
+<!-- ─── 2. コード ─── -->
+<h2>Google Colab で動かす</h2>
+<div class="news">
+<article class="news-item">
+
+<h3>セル 1：インポートと共通定義（第1回と同じ）</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>import torch
+import torch.nn as nn
+import numpy as np
+import matplotlib.pyplot as plt
+
+torch.manual_seed(0)
+np.random.seed(0)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"device: {device}")
+
+# ── 問題設定 ──────────────────────────────
+def u_exact(x):
+    return torch.sin(np.pi * x)
+
+def f_rhs(x):
+    return (np.pi ** 2) * torch.sin(np.pi * x)
+
+# ── ニューラルネットワーク ─────────────────
+class MLP(nn.Module):
+    def __init__(self, hidden=32, n_layers=3):
+        super().__init__()
+        layers = [nn.Linear(1, hidden), nn.Tanh()]
+        for _ in range(n_layers - 1):
+            layers += [nn.Linear(hidden, hidden), nn.Tanh()]
+        layers += [nn.Linear(hidden, 1)]
+        self.net = nn.Sequential(*layers)
+    def forward(self, x):
+        return self.net(x)
+
+# ── PDE 残差（自動微分）──────────────────────
+def pde_residual(model, x):
+    x = x.clone().requires_grad_(True)
+    u = model(x)
+    u_x = torch.autograd.grad(u, x,
+        grad_outputs=torch.ones_like(u), create_graph=True)[0]
+    u_xx = torch.autograd.grad(u_x, x,
+        grad_outputs=torch.ones_like(u_x), create_graph=True)[0]
+    return -u_xx - f_rhs(x)</code></pre>
+</div>
+
+<h3>セル 2：残差点の配置を生成する関数</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>def make_points(name, N, seed=0):
+    """
+    指定した配置で N 個の残差点を生成して返す（numpy 配列，昇順）．
+    境界点 x=0, 1 は含まない．
+    """
+    if name == "uniform":
+        pts = np.linspace(0, 1, N + 2)[1:-1]
+
+    elif name == "random":
+        rng = np.random.default_rng(seed)
+        pts = np.sort(rng.uniform(0, 1, N))
+
+    elif name == "left_clustered":
+        # べき乗写像: t^4 → 左端に集中
+        t = np.linspace(0, 1, N + 2)[1:-1]
+        pts = t ** 4
+
+    elif name == "chebyshev":
+        # チェビシェフ点: 両端に集中
+        i = np.arange(1, N + 1)
+        pts = 0.5 * (1 - np.cos(np.pi * i / (N + 1)))
+
+    elif name == "center_clustered":
+        # 全点を [0.35, 0.65] に押し込む
+        t = np.linspace(0, 1, N + 2)[1:-1]
+        pts = 0.35 + t * 0.30
+
+    else:
+        raise ValueError(f"Unknown: {name}")
+
+    return pts.astype(np.float32)</code></pre>
+</div>
+
+<h3>セル 3：配置の可視化</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>distributions = ["uniform", "random", "left_clustered", "chebyshev", "center_clustered"]
+labels = ["Uniform", "Random", "Left-clustered", "Chebyshev", "Center-clustered"]
+
+N = 30
+fig, axes = plt.subplots(5, 1, figsize=(10, 6), sharex=True)
+
+for ax, name, label in zip(axes, distributions, labels):
+    pts = make_points(name, N)
+    ax.scatter(pts, np.zeros_like(pts), s=25, color="steelblue")
+    # 連続する点の間隔をバーで表示
+    gaps = np.diff(np.concatenate([[0.0], pts, [1.0]]))
+    for j, (x0, g) in enumerate(zip(np.concatenate([[0.0], pts]), gaps)):
+        ax.barh(0, g, left=x0, height=0.4, alpha=0.15, color="steelblue")
+    ax.set_xlim(0, 1)
+    ax.set_yticks([])
+    ax.set_ylabel(label, fontsize=9, rotation=0, labelpad=90, va='center')
+
+axes[-1].set_xlabel("$x$")
+plt.suptitle(f"残差点の配置（N={N}）", y=1.01)
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+
+<h3>セル 4：各配置で PINNs を訓練する関数</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>def train_with_points(x_coll_np, n_epochs=5000, lr=1e-3, lam=100.0, seed=0):
+    """
+    x_coll_np: numpy 配列（残差点，境界点を除く内点）
+    """
+    torch.manual_seed(seed)
+    model = MLP(hidden=32, n_layers=3).to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+
+    x_coll = torch.tensor(x_coll_np, dtype=torch.float32).unsqueeze(1).to(device)
+    x_bc   = torch.tensor([[0.0], [1.0]], device=device)
+    u_bc   = torch.tensor([[0.0], [0.0]], device=device)
+
+    for epoch in range(n_epochs):
+        optimizer.zero_grad()
+        res      = pde_residual(model, x_coll)
+        loss_pde = (res ** 2).mean()
+        loss_bc  = ((model(x_bc) - u_bc) ** 2).mean()
+        loss     = loss_pde + lam * loss_bc
+        loss.backward()
+        optimizer.step()
+
+    return model
+
+# 評価用グリッド
+x_test = torch.linspace(0, 1, 500).unsqueeze(1).to(device)
+u_ref  = u_exact(x_test.cpu()).numpy().flatten()
+x_np   = x_test.cpu().numpy().flatten()</code></pre>
+</div>
+
+<h3>セル 5：5種類を一括訓練して誤差を記録（数分かかります）</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>N = 30
+results = {}
+
+for name, label in zip(distributions, labels):
+    pts = make_points(name, N)
+    model = train_with_points(pts, n_epochs=5000)
+    with torch.no_grad():
+        u_pred = model(x_test).cpu().numpy().flatten()
+    err_L2   = np.sqrt(np.mean((u_pred - u_ref) ** 2))
+    err_Linf = np.max(np.abs(u_pred - u_ref))
+    # 最大ギャップ（境界 0,1 を含む）
+    padded   = np.concatenate([[0.0], pts, [1.0]])
+    max_gap  = np.max(np.diff(padded))
+    results[name] = {
+        "label"  : label,
+        "pts"    : pts,
+        "u_pred" : u_pred,
+        "err_L2" : err_L2,
+        "err_Linf": err_Linf,
+        "max_gap": max_gap,
+    }
+    print(f"{label:20s}  L2={err_L2:.3e}  Linf={err_Linf:.3e}  max_gap={max_gap:.4f}")</code></pre>
+</div>
+
+<h3>セル 6：近似解の比較プロット</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>fig, axes = plt.subplots(5, 1, figsize=(10, 14), sharex=True, sharey=True)
+
+for ax, name, label in zip(axes, distributions, labels):
+    r = results[name]
+    ax.plot(x_np, u_ref, label="厳密解", linewidth=2, color="black")
+    ax.plot(x_np, r["u_pred"], '--', linewidth=1.8,
+            label=f"PINNs  L2={r['err_L2']:.2e}")
+    ax.scatter(r["pts"], np.zeros(len(r["pts"])) - 0.05,
+               s=15, color="red", zorder=5, label="残差点")
+    ax.set_ylabel(label, fontsize=9, rotation=0, labelpad=100, va='center')
+    ax.legend(loc="upper right", fontsize=8)
+    ax.set_ylim(-0.15, 1.15)
+    ax.grid(True, alpha=0.3)
+
+axes[-1].set_xlabel("$x$")
+plt.suptitle("配置別の近似解（N=30, 5000 エポック）", y=1.01)
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+
+<h3>セル 7：誤差と最大ギャップの関係</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>names_sorted  = sorted(results, key=lambda k: results[k]["max_gap"])
+max_gaps  = [results[k]["max_gap"]  for k in names_sorted]
+err_L2s   = [results[k]["err_L2"]   for k in names_sorted]
+err_Linfs = [results[k]["err_Linf"] for k in names_sorted]
+lbls      = [results[k]["label"]    for k in names_sorted]
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+
+for ax, errs, ylabel in zip(
+    axes,
+    [err_L2s, err_Linfs],
+    ["離散 $L^2$ 誤差", "離散 $L^\infty$ 誤差"]
+):
+    ax.scatter(max_gaps, errs, s=80, zorder=5, color="steelblue")
+    for g, e, lb in zip(max_gaps, errs, lbls):
+        ax.annotate(lb, (g, e), textcoords="offset points",
+                    xytext=(5, 3), fontsize=8)
+    ax.set_xlabel("最大ギャップ $h_{\\max}$")
+    ax.set_ylabel(ylabel)
+    ax.set_yscale("log")
+    ax.grid(True, alpha=0.4)
+    ax.set_title(f"{ylabel} vs 最大ギャップ")
+
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+
+<h3>セル 8：誤差のまとめ表</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>print(f"{'配置':22s}  {'L2 誤差':>12s}  {'Linf 誤差':>12s}  {'最大ギャップ':>12s}")
+print("-" * 65)
+for name in distributions:
+    r = results[name]
+    print(f"{r['label']:22s}  {r['err_L2']:12.3e}  "
+          f"{r['err_Linf']:12.3e}  {r['max_gap']:12.4f}")</code></pre>
+</div>
+
+</article>
+</div>
+
+<!-- ─── 3. 結果の読み方 ─── -->
+<h2>結果の読み方</h2>
+<div class="news">
+<article class="news-item">
+<p>
+実験からは，おおよそ次のパターンが観察されます（個々の結果は乱数シードやネットワーク初期値に依存します）：
+</p>
+
+<h3>Center-clustered が最も悪化しやすい</h3>
+<p>
+全残差点が \([0.35, 0.65]\) に集中している場合，
+端の領域 \([0, 0.35]\) と \([0.65, 1.0]\) には
+残差点が存在しません．
+このため，PDE の損失関数はその領域での残差を「見ていない」状態になります．
+損失が小さくなっても，端での近似誤差は大きいままです．
+</p>
+
+<h3>Chebyshev と Uniform は比較的良好</h3>
+<p>
+Chebyshev 点は両端に集中しているため，
+領域全体の最大ギャップが比較的小さく保たれます．
+結果として，Uniform と同程度か，やや良い精度になることが多いです．
+</p>
+
+<h3>Left-clustered は右端で誤差が大きくなる</h3>
+<p>
+左端 \(x \approx 0\) では点が密ですが，右端 \(x \approx 1\) に向かうにつれて点が疎になります．
+この場合，右端付近での近似が粗くなる傾向があります．
+</p>
+
+<h3>最大ギャップと誤差の相関</h3>
+<p>
+セル 7 のプロットで，<strong>最大ギャップ \(h_{\max}\) が大きい配置ほど誤差が大きい</strong>
+という傾向が見られます．
+これは有限要素法の誤差評価で \(h = \max_K h_K\)（最大要素径）が誤差を支配することと
+対応しています．
+</p>
+<p>
+ただし，これはあくまで傾向であり，厳密な単調性は成り立ちません．
+最大ギャップだけでは説明しきれないケースもあります（特に Random 配置）．
+どの幾何的量が誤差を最もよく予測するかは，第3回で本格的に調べます．
+</p>
+</article>
+</div>
+
+<!-- ─── 4. FEM との対比 ─── -->
+<h2>有限要素法との対比</h2>
+<div class="news">
+<article class="news-item">
+<p>
+有限要素法では，メッシュ幅 \(h\) と誤差の関係は次のように整理されています：
+</p>
+<p>
+$$
+\| u - u_h \|_{H^1(\Omega)}
+\leq C \, h \, |u|_{H^2(\Omega)}.
+$$
+</p>
+<p>
+ここで \(h = \max_K h_K\) は最大要素径です．
+最大要素径が大きい（＝粗いメッシュ領域が存在する）ほど誤差が大きくなります．
+</p>
+<p>
+PINNs において損失関数の残差項は
+$$
+\mathcal{L}_{\rm pde}(\theta)
+= \frac{1}{N} \sum_{i=1}^{N} r(x_i)^2
+$$
+であり，これは積分 \(\int_0^1 r(x)^2\, dx\) の<strong>数値求積近似</strong>とみなせます．
+残差点 \(\{x_i\}\) の配置が粗い領域では，この近似が不正確になります．
+</p>
+<p>
+最大ギャップ
+$$
+h_{\max}^{\rm coll} = \max\{ x_1,\, x_2 - x_1,\, \ldots,\, 1 - x_N \}
+$$
+は，この数値求積の粗さを測る <strong>計算可能な幾何的量</strong> です．
+</p>
+<p>
+これが，この連載で探りたい量の候補の一つです．
+</p>
+</article>
+</div>
+
+<!-- ─── 5. 補足実験 ─── -->
+<h2>補足実験：同じ配置・異なるシードで何回か試す</h2>
+<div class="news">
+<article class="news-item">
+<p>
+PINNs の訓練は確率的な最適化であるため，
+初期値のランダム性によって結果が変わります．
+配置の効果と初期値の効果を区別するために，
+同じ配置で複数のシードを試します．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>n_trials = 5
+target_distributions = ["uniform", "left_clustered", "center_clustered"]
+
+trial_results = {name: [] for name in target_distributions}
+
+for name in target_distributions:
+    pts = make_points(name, N=30)
+    for seed in range(n_trials):
+        m = train_with_points(pts, n_epochs=5000, seed=seed)
+        with torch.no_grad():
+            u_p = m(x_test).cpu().numpy().flatten()
+        err = np.sqrt(np.mean((u_p - u_ref) ** 2))
+        trial_results[name].append(err)
+
+# 結果の統計
+print(f"{'配置':22s}  {'平均':>10s}  {'標準偏差':>10s}  {'最小':>10s}  {'最大':>10s}")
+print("-" * 60)
+for name in target_distributions:
+    errs = trial_results[name]
+    print(f"{name:22s}  {np.mean(errs):10.3e}  {np.std(errs):10.3e}"
+          f"  {np.min(errs):10.3e}  {np.max(errs):10.3e}")</code></pre>
+</div>
+<p>
+この実験で，「Center-clustered の悪化」が初期値に依存するものか，
+配置そのものに起因するものかを確認できます．
+</p>
+</article>
+</div>
+
+<!-- ─── 6. 次回予告 ─── -->
+<h2>次回：どの幾何的量が誤差を支配するか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第3回では，誤差を予測する幾何的量を系統的に調べます．
+候補として考えているのは次のものです：
+</p>
+<ul>
+  <li>\(h_{\max} = \max_i \Delta x_i\)：最大ギャップ（有限要素法の最大要素径に対応）</li>
+  <li>\(\bar{h} = 1/N\)：平均間隔（全点が等間隔のとき \(h_{\max} = \bar{h}\)）</li>
+  <li>\(\sigma_h = \mathrm{std}(\Delta x_i)\)：間隔のばらつき（不均一性の指標）</li>
+  <li>\(\max_i \Delta x_i / \min_i \Delta x_i\)：最大最小比（異方性比に類似）</li>
+  <li>Discrepancy（一様分布からの乖離度）：数論的な均一性の指標</li>
+</ul>
+<p>
+複数の配置・複数の \(N\) に対して誤差を計算し，
+これらの量と誤差の相関を調べます．
+最も強く相関する量が，PINNs の「幾何条件」の候補になります．
+</p>
+<p>
+有限要素法でフラットネスパラメーターが異方性メッシュの幾何を一つの数で捉えたように，
+PINNs においても計算可能な幾何的量が誤差を制御できるとすれば，
+それは理論的な誤差評価への入口になります．
+</p>
+<p style="margin-top:2em;">
+← <a href="./pinns-01.html">第1回：1次元 Poisson 問題で PINNs を動かす</a><br>
+→ 第3回：どの幾何的量が誤差を支配するか（準備中）<br>
+→ <a href="../../blog/">Blog トップへ戻る</a>
+→ <a href="../../fem/">Research Visions（Vision 2, B1）</a>
+</p>
+</article>
+</div>
+
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
