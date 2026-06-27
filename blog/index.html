@@ -30,7 +30,7 @@
 
 <!--▼サイトヘッダー-->
 <header id="top" class="site-header">
-	
+
 	<div class="site-header-in">
 		<div class="site-header-conts">
 			<p class="site-title"><a href="../">ISHIZAKA Hiroki Website</a></p>
@@ -45,35 +45,29 @@
 				<li>
 					<a href="../">Home</a>
 				</li>
-			
+
 				<li><a href="../publications/">Publications</a></li>
-				
+
 				<li>
 					<a href="../research/">Research</a>
 				</li>
-				
+
 				<li>
 					<a href="../fem/">Research Visions</a>
-					<!--
-					<ul>
-						<li><a href="../fem/research01/">Research1</a></li>
-						<li><a href="../fem/research02/">Research2</a></li>
-					</ul>
-					-->
 				</li>
-				
+
 				<li>
 					<a href="../suppl/">Supplementary Visions</a>
 				</li>
-				
+
 				<li>
 					<a href="../blog/">Blog</a>
 				</li>
-				
+
 				<li>
 					<a href="../geo/">History of Geometric Conditions in FEM</a>
 				</li>
-								
+
 				<li>
 					<a href="../links/">Links</a>
 				</li>
@@ -133,10 +127,11 @@ FEniCSx / FreeFEM による実験，異方性メッシュと幾何条件，Exact
   <li>幾何条件から入る場合：メッシュ分割・異方性メッシュの記事</li>
   <li>研究テーマから入る場合：Exact-curved FEM，外挿法，CIP法，非圧縮流れの記事</li>
   <li>AI4Math・形式検証から入る場合：Lean 4 と AI4Math の記事</li>
+  <li>PINNs・深層学習数値解法から入る場合：PINNs と幾何条件の記事</li>
 </ul>
 <p>
 This page is updated periodically.<br>
-(8th June 2026 <span class="cat cat001">Update</span>)
+(27th June 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
@@ -333,7 +328,7 @@ FreeFEMで誤差の挙動を調べる良い方法が見つかりません．FEni
     <li><a href="./posts/article00may26.html">第6回：保存形 Lagrange–Galerkin 有限要素法との接続を整理する</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
     <li><a href="./posts/article00may26.html">第7回：数値実験の最小コードを作り，古典的 CIP，弱モーメント型，CIP 正則化型を比較する</a> <div class="news-date"><time datetime="2026-5-00">00th May 2026</time></div></li>
 </ul>
-</p>    
+</p>
 </article>
 </div>
 
@@ -417,6 +412,29 @@ FreeFEMで誤差の挙動を調べる良い方法が見つかりません．FEni
 </article>
 </div>
 
+<h2>PINNsはなぜ失敗するのか：1次元から探る幾何条件の役割</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Physics-Informed Neural Networks（PINNs）は，有限個の残差点で損失関数を最小化することにより偏微分方程式を解く手法です．しかし，境界層・高周波成分・特異点を含む問題では，「もっともらしく外れる」ことがあります．
+</p>
+<p>
+この連載では，1次元 Poisson 問題を出発点として，<strong>残差点の配置が近似誤差にどう影響するか</strong>を数値的に探ります．有限要素法で培われた幾何条件・補間誤差評価の視点から，PINNs の失敗モードを数学的に分類することを長期的な目標とします．
+</p>
+<p class="news-cont">
+<ul>
+    <li><a href="./posts/pinns-01.html">第1回：1次元 Poisson 問題で PINNs を動かす</a> <div class="news-date"><time datetime="2026-6-27">27th June 2026</time></div></li>
+    <li>第2回：残差点の配置と近似誤差の関係（準備中）</li>
+    <li>第3回：どの幾何的量が誤差を支配するか（準備中）</li>
+</ul>
+</p>
+<p>
+関連ページ：
+<a href="../fem/">Research Visions</a>（Vision 2, B1）
+</p>
+</article>
+</div>
+
 <h2>Google ColabでFEniCSxの導入</h2>
 <div class="news">
 <article class="news-item">
@@ -492,17 +510,15 @@ FreeFem++-nw freefem_demo/hello.edp</code></pre>
 </article>
 </div>
 
-<h2></h2>
-
 
 <!--section-in-->
 </div>
 </article>
-</div>	
+</div>
 </main>
 <!--▲メインコンテンツ-->
 
-	
+
 </div><!--main-body-in-->
 </div><!--main-body-->
 
