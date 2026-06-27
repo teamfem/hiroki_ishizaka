@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 27th June 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 27th June 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">第4回：PINNs / Deep Ritz / VPINN / WAN を並べて比べる</h1>
+<p style="color:#888; margin-bottom:2em;">連載：PINNsはなぜ失敗するのか — 1次元から探る幾何条件の役割　|　27th June 2026</p>
+
+<!-- ─── 0. この回の問い ─── -->
+<h2>この回の問い</h2>
+<div class="news">
+<article class="news-item">
+<p>
+<a href="./pinns-03.html">第3回</a>では，PINNs の損失関数が数値求積であり，
+最大ギャップ \(h_{\max}\) が誤差と相関することを確認しました．
+その議論の中で「PINNs は 2 階微分を使う点が弱点」という指摘が生まれました．
+</p>
+<p>
+この回では，その問いを正面から扱います：
+</p>
+<p>
+<strong>損失関数で使う微分の次数を下げると，何が変わるか？</strong>
+</p>
+<p>
+具体的には，同じ 1 次元 Poisson 問題に対して
+PINNs・Deep Ritz・VPINN・WAN の 4 手法を数学的に整理し，
+実装と数値比較を通じて各手法の性質を把握します．
+</p>
+</article>
+</div>
+
+<!-- ─── 1. なぜ微分の次数が問題か ─── -->
+<h2>なぜ微分の次数が問題になるか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+自動微分で \(k\) 階微分を計算するとき，計算グラフが \(k\) 段深くなります．
+各段で丸め誤差と近似誤差が蓄積するため，<strong>次数が高いほど誤差が増幅されます</strong>．
+</p>
+<p>
+さらに重要なのは，正則性の要求が変わることです：
+</p>
+<ul>
+  <li><strong>2 階微分を使う（PINNs）</strong>：残差 \(-u_\theta'' - f\) の数値積分 → \(u_\theta \in H^2\) が必要</li>
+  <li><strong>1 階微分を使う（Deep Ritz，VPINN）</strong>：エネルギーや弱形式の数値積分 → \(u_\theta \in H^1\) で十分</li>
+</ul>
+<p>
+有限要素法がなぜ弱形式（部分積分で次数を下げた形式）を使うか，理由は全く同じです．
+</p>
+</article>
+</div>
+
+<!-- ─── 2. 分類表 ─── -->
+<h2>4 手法の分類</h2>
+<div class="news">
+<article class="news-item">
+<p>
+1 次元 Poisson 問題 \(-u'' = f\)，\(u(0)=u(1)=0\) に対する 4 手法を整理します．
+</p>
+<table style="border-collapse:collapse; width:100%; margin-bottom:1em; font-size:0.95em;">
+  <thead>
+    <tr style="background:#f0f0f0;">
+      <th style="border:1px solid #ccc; padding:7px 10px; text-align:left;">手法</th>
+      <th style="border:1px solid #ccc; padding:7px 10px; text-align:center;">使う微分</th>
+      <th style="border:1px solid #ccc; padding:7px 10px; text-align:left;">損失の形</th>
+      <th style="border:1px solid #ccc; padding:7px 10px; text-align:left;">対応する古典的手法</th>
+      <th style="border:1px solid #ccc; padding:7px 10px; text-align:left;">適用範囲</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;"><strong>PINNs</strong></td>
+      <td style="border:1px solid #ccc; padding:7px 10px; text-align:center;">2 階</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">残差の 2 乗和</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">強形式・有限差分法</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">広い（変分構造不要）</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:7px 10px;"><strong>Deep Ritz</strong></td>
+      <td style="border:1px solid #ccc; padding:7px 10px; text-align:center;">1 階</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">エネルギー汎関数</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">Ritz 法・エネルギー最小化</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">自己随伴楕円型のみ</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;"><strong>VPINN</strong></td>
+      <td style="border:1px solid #ccc; padding:7px 10px; text-align:center;">1 階</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">弱形式残差の 2 乗和</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">Galerkin FEM（固定テスト関数）</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">比較的広い</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:7px 10px;"><strong>WAN</strong></td>
+      <td style="border:1px solid #ccc; padding:7px 10px; text-align:center;">1 階</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">min-max（敵対的）</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">Galerkin FEM（最適テスト関数）</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">最も広い（非自己随伴も）</td>
+    </tr>
+  </tbody>
+</table>
+</article>
+</div>
+
+<!-- ─── 3. 各手法の数学的定式化 ─── -->
+<h2>各手法の数学的定式化</h2>
+<div class="news">
+<article class="news-item">
+
+<h3>PINNs（Physics-Informed Neural Networks）</h3>
+<p>
+<strong>アイデア：</strong>強形式の PDE 残差がゼロになるようにネットワークを訓練する．
+</p>
+<p>
+$$
+\mathcal{L}_{\rm PINNs}(\theta)
+= \underbrace{\frac{1}{N}\sum_{i=1}^{N}\bigl(-u_\theta''(x_i) - f(x_i)\bigr)^2}_{\text{PDE 残差（2 階微分）}}
++ \lambda\underbrace{\bigl(u_\theta(0)^2 + u_\theta(1)^2\bigr)}_{\text{境界条件}}
+$$
+</p>
+<p>
+<strong>強み：</strong>変分構造がない問題（非線形，非自己随伴，移流支配など）でも形式的に書ける．<br>
+<strong>弱み：</strong>2 階微分の数値精度が低い，\(H^2\) 正則性を要求する，
+損失が小さくても真の誤差が大きい可能性がある（第3回参照）．
+</p>
+
+<h3>Deep Ritz</h3>
+<p>
+<strong>アイデア：</strong>PDE と等価なエネルギー汎関数を最小化する．
+部分積分により 2 階微分を 1 階に下げる．
+</p>
+<p>
+Poisson 問題 \(-u''=f\)，\(u|_{\partial\Omega}=0\) のエネルギー汎関数：
+$$
+E(v) = \frac{1}{2}\int_0^1 (v')^2\, dx - \int_0^1 f\cdot v\, dx.
+$$
+</p>
+<p>
+真の解 \(u\) は \(E(u) = \min_{v \in H^1_0} E(v)\) を達成します（変分原理）．ゆえに：
+$$
+\mathcal{L}_{\rm DeepRitz}(\theta)
+= \underbrace{\frac{1}{N}\sum_{i=1}^{N}\Bigl(\frac{1}{2}(u_\theta'(x_i))^2 - f(x_i)u_\theta(x_i)\Bigr)}_{\text{エネルギーの数値積分（1 階微分）}}
++ \lambda\underbrace{\bigl(u_\theta(0)^2 + u_\theta(1)^2\bigr)}_{\text{本質的境界条件}}
+$$
+</p>
+<p>
+<strong>強み：</strong>1 階微分のみ，\(H^1\) 正則性で十分，エネルギーは下に有界（最適化が安定）．<br>
+<strong>弱み：</strong>自己随伴な楕円型問題にしか使えない．
+移流項や非線形項があると変分形式が複雑になる．
+</p>
+
+<h3>VPINN（Variational PINN）</h3>
+<p>
+<strong>アイデア：</strong>弱形式（テスト関数で掛けて積分）の残差を損失にする．
+テスト関数 \(\{\phi_k\}_{k=1}^K\) は事前に固定する（Legendre 多項式など）．
+</p>
+<p>
+弱形式：任意の \(v \in H^1_0(0,1)\) に対して
+$$
+\int_0^1 u' v'\, dx = \int_0^1 f v\, dx.
+$$
+これを \(v = \phi_k\)（\(k=1,\ldots,K\)）でサンプリングした残差の 2 乗和：
+$$
+\mathcal{L}_{\rm VPINN}(\theta)
+= \sum_{k=1}^{K}\left(\underbrace{\int_0^1 u_\theta' \phi_k'\, dx - \int_0^1 f \phi_k\, dx}_{\text{弱形式残差（1 階微分）}}\right)^2
++ \lambda\underbrace{\bigl(u_\theta(0)^2 + u_\theta(1)^2\bigr)}_{\text{境界条件}}
+$$
+</p>
+<p>
+積分はガウス数値積分で近似します．
+積分点（ガウス点）が FEM のメッシュに対応します．
+</p>
+<p>
+<strong>強み：</strong>1 階微分のみ，テスト関数の選択で精度を制御できる，
+FEM との対応が明確でガウス点は数値積分に最適．<br>
+<strong>弱み：</strong>テスト関数を事前に選ぶ必要がある，
+K が小さいと弱形式を十分にサンプリングできない，自己随伴でない問題では不安定になることがある．
+</p>
+
+<h3>WAN（Weak Adversarial Network）</h3>
+<p>
+<strong>アイデア：</strong>テスト関数もニューラルネットワーク \(v_\phi\) で表し，
+「最もよく弱形式残差を露わにするテスト関数」を敵対的に探す．
+</p>
+<p>
+$$
+\min_\theta \max_{\phi \in \mathcal{A}}
+\underbrace{\left( \int_0^1 u_\theta' v_\phi'\, dx - \int_0^1 f v_\phi\, dx \right)}_{\text{弱形式残差（1 階微分）}}
+$$
+</p>
+<p>
+ここで \(\mathcal{A}\) はテスト関数ネットワーク \(v_\phi\) の許容集合（例えばノルム 1 に規格化したもの）．
+</p>
+<p>
+直感的には，「\(u_\theta\) の弱い点を最も突くテスト関数を \(v_\phi\) が動的に探し，
+\(u_\theta\) はそれに対抗して改善する」という構造です．
+</p>
+<p>
+<strong>強み：</strong>1 階微分のみ，テスト関数を事前指定しなくていい，
+非自己随伴・非線形問題にも原理的に適用可能，
+弱形式を「最も厳しいテスト」でサンプリングするため精度が高くなりやすい．<br>
+<strong>弱み：</strong>min-max 最適化は不安定になりやすい（GAN と同じ問題），
+計算コストが高い，収束の理論的保証が難しい．
+</p>
+
+<h3>FEM との対応の整理</h3>
+<p>
+古典的有限要素法の枠組みと対応させると：
+</p>
+<table style="border-collapse:collapse; width:100%; margin-bottom:1em; font-size:0.95em;">
+  <thead>
+    <tr style="background:#f0f0f0;">
+      <th style="border:1px solid #ccc; padding:7px 10px;">古典的手法</th>
+      <th style="border:1px solid #ccc; padding:7px 10px;">試験空間</th>
+      <th style="border:1px solid #ccc; padding:7px 10px;">テスト空間</th>
+      <th style="border:1px solid #ccc; padding:7px 10px;">NN 版</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;">有限差分法（強形式）</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">格子点</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">—</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">PINNs</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:7px 10px;">Ritz 法</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">有限次元空間</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">＝試験空間</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">Deep Ritz</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;">Galerkin FEM（同一空間）</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">NN \(u_\theta\)</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">固定基底 \(\phi_k\)</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">VPINN</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:7px 10px;">Petrov-Galerkin（最適テスト）</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">NN \(u_\theta\)</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">NN \(v_\phi\)（動的）</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">WAN</td>
+    </tr>
+  </tbody>
+</table>
+</article>
+</div>
+
+<!-- ─── 4. 実装コード ─── -->
+<h2>Google Colab で動かす</h2>
+<div class="news">
+<article class="news-item">
+<p>
+PINNs・Deep Ritz・VPINN の 3 手法を同じ問題・同じネットワーク構造で比較します．
+WAN は min-max 最適化のため numpy+scipy での実装が困難なので，
+PyTorch 版の骨格をセル 6 に示します．
+</p>
+
+<h3>セル 1：共通定義</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>import numpy as np
+from scipy.optimize import minimize
+from scipy.special import legendre as sp_legendre
+from numpy.polynomial.legendre import leggauss
+import matplotlib.pyplot as plt
+
+np.random.seed(0)
+N_HIDDEN = 32
+
+# ── 問題設定 ────────────────────────────────────────
+def u_exact(x): return np.sin(np.pi * x)
+def f_rhs(x):   return np.pi**2 * np.sin(np.pi * x)
+
+# ── ネットワーク（1 隠れ層, tanh） ──────────────────
+def _unpack(p, n=N_HIDDEN):
+    return p[:n], p[n:2*n], p[2*n:3*n], p[3*n]
+
+def net_u(p, x):
+    W1, b1, W2, b2 = _unpack(p)
+    z = W1[None,:] * x[:,None] + b1[None,:]
+    return np.tanh(z) @ W2 + b2
+
+def net_up(p, x):
+    """1 階微分"""
+    W1, b1, W2, b2 = _unpack(p)
+    z  = W1[None,:] * x[:,None] + b1[None,:]
+    s2 = 1 - np.tanh(z)**2
+    return (s2 * W1[None,:]) @ W2
+
+def net_upp(p, x):
+    """2 階微分"""
+    W1, b1, W2, b2 = _unpack(p)
+    z  = W1[None,:] * x[:,None] + b1[None,:]
+    th = np.tanh(z)
+    s2 = 1 - th**2
+    return (-2 * th * s2 * W1[None,:]**2) @ W2
+
+# 評価グリッド・初期パラメータ生成
+x_eval = np.linspace(0, 1, 500)
+u_ref  = u_exact(x_eval)
+
+def init_params(seed=0):
+    rng = np.random.default_rng(seed)
+    return rng.standard_normal(3*N_HIDDEN + 1) * 0.1
+
+def eval_L2(p):
+    return float(np.sqrt(np.mean((net_u(p, x_eval) - u_ref)**2)))</code></pre>
+</div>
+
+<h3>セル 2：PINNs の損失（2 階微分）</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>def loss_pinns(p, x_c, lam=100.0):
+    """
+    L = (1/N) Σ (-u''(x_i) - f(x_i))²  +  λ * BC
+    2 階微分を使う
+    """
+    res  = -net_upp(p, x_c) - f_rhs(x_c)
+    l_pde = np.mean(res**2)
+    x_bc  = np.array([0.0, 1.0])
+    l_bc  = np.mean(net_u(p, x_bc)**2)
+    return l_pde + lam * l_bc</code></pre>
+</div>
+
+<h3>セル 3：Deep Ritz の損失（1 階微分）</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>def loss_deepritz(p, x_q, w_q, lam=100.0):
+    """
+    L = Σ_i w_i [(1/2)(u'(x_i))² - f(x_i) u(x_i)]  +  λ * BC
+    エネルギー汎関数の数値積分（1 階微分のみ）
+    x_q, w_q: ガウス積分点と重み（[0,1] 上）
+    """
+    up = net_up(p, x_q)
+    u  = net_u(p, x_q)
+    energy = np.sum(w_q * (0.5 * up**2 - f_rhs(x_q) * u))
+    x_bc   = np.array([0.0, 1.0])
+    l_bc   = np.mean(net_u(p, x_bc)**2)
+    return energy + lam * l_bc
+
+# ガウス–ルジャンドル積分点を [0,1] 上に生成
+def gauss_points(n_q=50):
+    xi, wi = leggauss(n_q)          # [-1,1] 上
+    x_q = 0.5 * (xi + 1)           # [0,1] へ写像
+    w_q = 0.5 * wi
+    return x_q, w_q</code></pre>
+</div>
+
+<h3>セル 4：VPINN の損失（1 階微分 + ルジャンドルテスト関数）</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>def loss_vpinn(p, x_q, w_q, K=10, lam=100.0):
+    """
+    L = Σ_k (∫u'φ_k' dx - ∫f φ_k dx)²  +  λ * BC
+    テスト関数: φ_k(x) = P_k(2x-1)  (ルジャンドル多項式，[0,1] 上にシフト)
+    積分点: ガウス–ルジャンドル点（高精度）
+    1 階微分のみ使う
+    """
+    up  = net_up(p, x_q)       # (n_q,)
+    u   = net_u(p, x_q)        # (n_q,)
+    xi  = 2*x_q - 1             # [0,1] → [-1,1]
+
+    total = 0.0
+    for k in range(1, K + 1):
+        Pk   = sp_legendre(k)
+        dPk  = Pk.deriv()
+        # φ_k'(x) = d/dx P_k(2x-1) = 2 * P_k'(2x-1)
+        phi_k_prime = 2.0 * dPk(xi)      # (n_q,)
+        phi_k       = Pk(xi)              # (n_q,)
+
+        lhs = np.sum(w_q * up * phi_k_prime)   # ∫ u' φ_k' dx
+        rhs = np.sum(w_q * f_rhs(x_q) * phi_k) # ∫ f φ_k dx
+        total += (lhs - rhs)**2
+
+    x_bc = np.array([0.0, 1.0])
+    l_bc = np.mean(net_u(p, x_bc)**2)
+    return total + lam * l_bc</code></pre>
+</div>
+
+<h3>セル 5：3 手法を比較訓練</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>x_q, w_q = gauss_points(n_q=50)   # ガウス点（全手法共通）
+x_c      = np.linspace(0, 1, 32)[1:-1]  # 一様残差点（PINNs 用）
+
+results = {}
+
+for name, loss_fn, args in [
+    ("PINNs",     loss_pinns,    (x_c,)),
+    ("Deep Ritz", loss_deepritz, (x_q, w_q)),
+    ("VPINN",     loss_vpinn,    (x_q, w_q)),
+]:
+    p0  = init_params(seed=0)
+    res = minimize(loss_fn, p0, args=args,
+                   method="L-BFGS-B",
+                   options={"maxiter": 5000, "ftol": 1e-14})
+    err = eval_L2(res.x)
+    results[name] = {"p": res.x, "err": err, "success": res.success}
+    print(f"{name:12s}  L2={err:.3e}  converged={res.success}")
+
+print()
+for name, r in results.items():
+    print(f"{name:12s}  L2 error = {r['err']:.4e}")</code></pre>
+</div>
+
+<h3>セル 6：結果の可視化</h3>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>fig, axes = plt.subplots(1, 2, figsize=(13, 4))
+
+# 左：近似解の比較
+ax = axes[0]
+ax.plot(x_eval, u_ref, "k-", lw=2.5, label="Exact $\\sin(\\pi x)$", zorder=5)
+colors = {"PINNs": "steelblue", "Deep Ritz": "orange", "VPINN": "green"}
+for name, r in results.items():
+    u_p = net_u(r["p"], x_eval)
+    ax.plot(x_eval, u_p, "--", lw=1.8, color=colors[name],
+            label=f"{name}  L2={r['err']:.2e}")
+ax.set_xlabel("$x$"); ax.set_ylabel("$u$")
+ax.set_title("Comparison of solutions")
+ax.legend(fontsize=9); ax.grid(True, alpha=0.3)
+
+# 右：誤差 |u - u_ref| の比較
+ax = axes[1]
+for name, r in results.items():
+    u_p = net_u(r["p"], x_eval)
+    ax.semilogy(x_eval, np.abs(u_p - u_ref), lw=1.8,
+                color=colors[name], label=name)
+ax.set_xlabel("$x$"); ax.set_ylabel("Pointwise error $|u - u_{\\rm ref}|$")
+ax.set_title("Pointwise error")
+ax.legend(fontsize=9); ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()</code></pre>
+</div>
+
+<h3>セル 7：WAN の PyTorch 実装骨格（参考）</h3>
+<p>
+WAN の min-max 最適化は PyTorch で実装します．
+以下は骨格コードです（Google Colab の PyTorch 環境で動作します）．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<pre><code>import torch
+import torch.nn as nn
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+class MLP(nn.Module):
+    def __init__(self, hidden=32, n_layers=3):
+        super().__init__()
+        layers = [nn.Linear(1, hidden), nn.Tanh()]
+        for _ in range(n_layers - 1):
+            layers += [nn.Linear(hidden, hidden), nn.Tanh()]
+        layers += [nn.Linear(hidden, 1)]
+        self.net = nn.Sequential(*layers)
+    def forward(self, x): return self.net(x)
+
+def first_deriv(u, x):
+    return torch.autograd.grad(u, x, torch.ones_like(u), create_graph=True)[0]
+
+def weak_residual(u_net, v_net, x_q, w_q, x_bc, lam=100.0):
+    """
+    弱形式残差：∫ u' v' dx - ∫ f v dx
+    u_net: 試験関数ネットワーク
+    v_net: テスト関数ネットワーク（WAN では最大化対象）
+    """
+    x_q = x_q.clone().requires_grad_(True)
+    u   = u_net(x_q)
+    v   = v_net(x_q)
+    u_x = first_deriv(u, x_q)
+    v_x = first_deriv(v, x_q)
+    f   = (torch.pi**2) * torch.sin(torch.pi * x_q)
+
+    # 弱形式：∫ u'v' dx - ∫ f v dx
+    lhs = (w_q * u_x * v_x).sum()
+    rhs = (w_q * f   * v  ).sum()
+    res = lhs - rhs
+
+    # v のノルムで規格化（∥v∥_{H^1} = 1 を近似）
+    v_norm = torch.sqrt((w_q * (v_x**2 + v**2)).sum() + 1e-8)
+    loss_wan = res / v_norm
+
+    # 境界条件（u 側のみ）
+    loss_bc = (u_net(x_bc)**2).mean()
+    return loss_wan, loss_bc
+
+# ── 訓練ループ（交互最適化）──────────────────────────
+u_net = MLP().to(device)
+v_net = MLP().to(device)
+
+opt_u = torch.optim.Adam(u_net.parameters(), lr=1e-3)
+opt_v = torch.optim.Adam(v_net.parameters(), lr=1e-3)
+
+# ガウス点
+from numpy.polynomial.legendre import leggauss
+xi_np, wi_np = leggauss(50)
+x_q = torch.tensor(0.5*(xi_np+1), dtype=torch.float32).unsqueeze(1).to(device)
+w_q = torch.tensor(0.5*wi_np,     dtype=torch.float32).unsqueeze(1).to(device)
+x_bc = torch.tensor([[0.0],[1.0]], device=device)
+
+n_outer = 2000    # 外ループ（u の更新）
+n_inner = 5       # 内ループ（v の更新：最大化）
+lam = 100.0
+
+for step in range(n_outer):
+    # (1) v を最大化（adversarial step）
+    for _ in range(n_inner):
+        opt_v.zero_grad()
+        res, _ = weak_residual(u_net, v_net, x_q, w_q, x_bc, lam)
+        (-res).backward()   # 最大化 → 損失に負符号
+        opt_v.step()
+
+    # (2) u を最小化
+    opt_u.zero_grad()
+    res, loss_bc = weak_residual(u_net, v_net, x_q, w_q, x_bc, lam)
+    loss = res + lam * loss_bc
+    loss.backward()
+    opt_u.step()
+
+    if (step + 1) % 500 == 0:
+        print(f"Step {step+1:5d}  WAN res={res.item():.4e}")
+
+# 評価
+x_test = torch.linspace(0,1,500).unsqueeze(1).to(device)
+with torch.no_grad():
+    u_wan = u_net(x_test).cpu().numpy().flatten()
+u_ref_np = np.sin(np.pi * np.linspace(0,1,500))
+print(f"WAN L2 error = {np.sqrt(np.mean((u_wan - u_ref_np)**2)):.3e}")</code></pre>
+</div>
+
+</article>
+</div>
+
+<!-- ─── 5. 幾何条件との接続 ─── -->
+<h2>幾何条件との接続：積分点の役割の違い</h2>
+<div class="news">
+<article class="news-item">
+<p>
+4 手法はすべて，何らかの数値積分を含みます．
+その積分点の配置（幾何）が誤差に与える影響を整理します．
+</p>
+<table style="border-collapse:collapse; width:100%; margin-bottom:1em; font-size:0.95em;">
+  <thead>
+    <tr style="background:#f0f0f0;">
+      <th style="border:1px solid #ccc; padding:7px 10px;">手法</th>
+      <th style="border:1px solid #ccc; padding:7px 10px;">積分される量</th>
+      <th style="border:1px solid #ccc; padding:7px 10px;">滑らかさ</th>
+      <th style="border:1px solid #ccc; padding:7px 10px;">\(h_{\max}\) への感度</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;">PINNs</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">\((-u''-f)^2\)</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">低（\(u\) の 2 階微分を含む）</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">高い</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:7px 10px;">Deep Ritz</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">\((u')^2/2 - fu\)</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">中（\(u\) の 1 階微分）</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">中程度</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;">VPINN</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">\(u'\phi_k' - f\phi_k\)</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">中（ガウス点なら高精度）</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">低い（ガウス点は最適配置）</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:7px 10px;">WAN</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">\(u'v' - fv\)（\(v\) は動的）</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">中</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">低い（テスト関数が補正する）</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+VPINN でガウス–ルジャンドル点を使うと，
+\(n\) 点で次数 \(2n-1\) の多項式を厳密に積分できます（ガウス積分の精度保証）．
+これは「積分点の配置に最適性が数学的に保証されている」という意味で，
+PINNs の残差点が「どこでもよい」とは本質的に異なります．
+</p>
+<p>
+FEM との対応：ガウス点は FEM の数値積分でも使われます．
+VPINN はこの意味で FEM に最も近い手法です．
+</p>
+</article>
+</div>
+
+<!-- ─── 6. まとめ ─── -->
+<h2>まとめ：どの手法をいつ使うか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+4 手法の選択指針を整理します：
+</p>
+<ul>
+  <li>
+    <strong>PINNs</strong>：変分構造がない問題（移流支配，非自己随伴，複雑な非線形）には
+    現状これが最も素直に書けます．ただし 2 階微分の精度問題と
+    残差点配置への感度を常に意識する必要があります．
+  </li>
+  <li>
+    <strong>Deep Ritz</strong>：自己随伴な楕円型問題（Poisson，線形弾性，拡散方程式）では
+    まず Deep Ritz を試す価値があります．
+    1 階微分のみで済むため精度と安定性が改善します．
+  </li>
+  <li>
+    <strong>VPINN</strong>：FEM の経験・知識をそのまま活かせます．
+    テスト関数と積分点の設計に FEM の理論が流用でき，
+    誤差評価への接続も最もクリーンです．
+    数値積分の精度保証（ガウス点）が使える点で理論上最も健全です．
+  </li>
+  <li>
+    <strong>WAN</strong>：非自己随伴問題で VPINN が不安定になる場合や，
+    最適なテスト関数が事前に分からない問題に有望です．
+    ただし min-max 最適化の扱いに注意が必要です．
+  </li>
+</ul>
+<p>
+この連載でずっと問い続けてきた「幾何的量が誤差を支配するか」という問いは，
+すべての手法に共通します．
+積分の精度を保証する数学（Koksma–Hlawka，ガウス積分の誤差評価）が，
+どの手法にも地下水脈として流れています．
+</p>
+<p>
+VPINN においては，FEM の誤差評価で使うのと同じ道具——
+\(h_{\max}\)，メッシュの正則性，補間誤差——が
+ほぼそのまま使えます．これが，FEM の知見が AI-based PDE ソルバーの
+品質保証に接続できる最も直接的な入口です
+（<a href="../../fem/">Research Visions B1</a>）．
+</p>
+<p style="margin-top:2em;">
+← <a href="./pinns-03.html">第3回：どの幾何的量が誤差を支配するか</a><br>
+→ <a href="../../blog/">Blog トップへ戻る</a>
+→ <a href="../../fem/">Research Visions（Vision 2, B1）</a>
+</p>
+</article>
+</div>
+
+
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
