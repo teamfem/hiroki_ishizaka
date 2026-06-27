@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Blog post from 27th June 2026 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
+<meta name="description" content="Mathematics for Trustworthy Simulation">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 27th June 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title"第7回：研究ビジョン全体図 — 誤差の原因を突き止め，自動修復する AI-based FEM へ</h1>
+<p style="color:#888; margin-bottom:2em;">連載：PINNsはなぜ失敗するのか — 1次元から探る幾何条件の役割　|　27th June 2026</p>
+
+<!-- ─── 0. この連載が目指してきたもの ─── -->
+<h2>この連載が目指してきたもの</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第1回から第6回まで，1次元 Poisson 問題を題材に，
+PINNs・Deep Ritz・VPINN・WAN の動作とその数学的構造を掘り下げてきました．
+</p>
+<p>
+この回では一歩引いて，<strong>この連載全体が何に向かっているか</strong>を俯瞰します．
+個々の実験や定理は，より大きなビジョンの構成要素です．
+そのビジョンを言語化しておくことで，次に何を研究すべきかが見えてきます．
+</p>
+<p>
+ビジョンを一言で言うと：
+</p>
+<p style="text-align:center; font-size:1.1em; font-weight:bold; padding:15px; background:#f4f4f4; border-left:5px solid #333; margin: 1.5em 0;">
+「誤差が大きい原因を自動診断し，自動修復する，認証可能な AI-based FEM」
+</p>
+</article>
+</div>
+
+<!-- ─── 1. 現在地：幾何条件の解析 ─── -->
+<h2>現在地：幾何条件の解析（第1〜6回）</h2>
+<div class="news">
+<article class="news-item">
+<p>
+AI-based FEM（PINNs や VPINN など）が失敗するとき，その原因は3種類に分解できます（第5回）：
+</p>
+<p>
+$$
+\|u - u_{\hat\theta}\|
+\leq
+\underbrace{\inf_{\theta} \|u - u_\theta\|}_{\text{① 近似誤差}}
++
+\underbrace{\|u_{\theta^*} - u_{\hat\theta}\|}_{\text{② 最適化誤差}}
++
+\underbrace{\text{積分の離散化誤差}}_{\text{③ 幾何誤差}}
+$$
+</p>
+<p>
+この連載では，<strong>③ 幾何誤差</strong>に焦点を当ててきました．
+</p>
+<p>
+第3回の数値実験で，最大ギャップ \(h_{\max}\) が \(L^2\) 誤差と最も強い相関（Pearson 0.68）を
+持つことを実験的に確認しました．
+第6回では，これが私の FEM 研究のフラットネスパラメーター（Kobayashi–Tsuchiya–Ishizaka）と
+同じ数学的概念の 1 次元版であり，2 次元への拡張として Voronoi セルのフラットネスが
+自然な候補であることを示しました．
+</p>
+<p>
+この③の定量的評価，すなわち
+「コロケーション点の配置から計算できる量で誤差の上界を与える」
+ことが，<a href="../../fem/">Research Visions B1</a> の目標です．
+</p>
+</article>
+</div>
+
+<!-- ─── 2. 次の一手：適応的点配置（B2） ─── -->
+<h2>次の一手：誤差を診断して自動修復する（B2）</h2>
+<div class="news">
+<article class="news-item">
+<p>
+B1 の成果（③の定量的評価）が得られれば，それは診断ツールになります．
+「どこで誤差が大きいか」が分かれば，「そこに点を追加する」という修復が可能です．
+</p>
+<p>
+この発想は，古典的な<strong>適応型有限要素法（AFEM）</strong>と全く同じ構造を持ちます：
+</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:0.95em; margin: 1em 0;">
+  <thead>
+    <tr style="background:#f0f0f0;">
+      <th style="border:1px solid #ccc; padding:8px 12px;">AFEM</th>
+      <th style="border:1px solid #ccc; padding:8px 12px;">AI-based FEM（提案）</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border:1px solid #ccc; padding:8px 12px;">各要素の誤差指示子 \(\eta_K\) を計算</td>
+      <td style="border:1px solid #ccc; padding:8px 12px;">各 Voronoi セルの幾何量 \(\tilde h_i,\, \tilde\mu_i\) を計算</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:8px 12px;">\(\eta_K\) が大きい要素を Dörfler マーキング</td>
+      <td style="border:1px solid #ccc; padding:8px 12px;">\(\tilde h_i\) が大きいセルを選択</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc; padding:8px 12px;">選ばれた要素を細分化（メッシュを局所的に精緻化）</td>
+      <td style="border:1px solid #ccc; padding:8px 12px;">選ばれたセルにコロケーション点を追加</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:8px 12px;">再計算 → 全体誤差が減少することを保証</td>
+      <td style="border:1px solid #ccc; padding:8px 12px;">再最適化 → ③誤差の減少を保証（目標）</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+AFEM では Cascon et al. (2008) が「マーキング → 細分化 → 再計算」の繰り返しが
+最適収束することを証明しました．
+AI-based FEM の ③ に対して同様の収束定理を証明することが，<strong>B2 論文の目標</strong>です．
+</p>
+</article>
+</div>
+
+<!-- ─── 3. 3つの誤差源の診断ループ ─── -->
+<h2>3 つの誤差源の診断ループ：自動修復の全体像</h2>
+<div class="news">
+<article class="news-item">
+<p>
+③だけでなく，①②を含む診断ループ全体の設計が最終的な目標です．
+「誤差が大きいが原因が分からない」という状況に対して，次のループを自動で回します：
+</p>
+
+<div style="background:#f8f8f8; border:1px solid #ccc; border-radius:4px; padding:20px; margin:1em 0; font-family:monospace; font-size:0.93em; line-height:1.8;">
+<strong>［適応型 AI-based FEM ループ］</strong><br><br>
+1. 現在の設定で u_θ を計算<br>
+2. 計算可能な幾何量（h_max, Voronoi フラットネス）を評価<br>
+&nbsp;&nbsp;&nbsp;&nbsp;→ 大きい領域あり？&nbsp;&nbsp;→ <strong>③修復</strong>：その領域に点を追加<br>
+3. 複数 seed で損失の分散を評価<br>
+&nbsp;&nbsp;&nbsp;&nbsp;→ 分散大？&nbsp;&nbsp;→ <strong>②修復</strong>：初期値変更・再最適化<br>
+4. ネットワーク幅を 2 倍にして再実行し損失変化を評価<br>
+&nbsp;&nbsp;&nbsp;&nbsp;→ 損失が大きく下がる？&nbsp;&nbsp;→ <strong>①修復</strong>：ネットワークを拡大<br>
+5. 誤差が許容範囲に入った？<br>
+&nbsp;&nbsp;&nbsp;&nbsp;→ YES：終了（認証済み解として出力）<br>
+&nbsp;&nbsp;&nbsp;&nbsp;→ NO：1 に戻る
+</div>
+
+<p>
+このループの<strong>各ステップで何を計算しているか，その量が何を意味するか</strong>が，
+数学的に明確でなければなりません．そうでなければ「自動修復」は手品になってしまいます．
+</p>
+<p>
+③は Koksma–Hlawka と Voronoi フラットネスで，現在も数学的に明確にできます（B1, B2）．
+②は最適化理論の領域で未解決問題を含みます．
+①は NN 近似論（Barron の定理など）で部分的に評価できます．
+</p>
+<p>
+<strong>現在の研究（③）は，このループの最も数学的に確実な起点です．</strong>
+</p>
+</article>
+</div>
+
+<!-- ─── 4. なぜ③から始めるのか ─── -->
+<h2>なぜ③から始めるのか：先行診断可能性</h2>
+<div class="news">
+<article class="news-item">
+<p>
+①②③の中で，<strong>③だけが計算前に評価できます</strong>（<em>a priori</em>）．
+</p>
+<p>
+①と②の診断には「実際に計算を実行し，その結果を比較する」必要があります：
+①は幅を変えて 2 回実行する必要があり，②は seed を変えて複数回実行する必要があります．
+これらはすべて<em>事後的（a posteriori）</em>な評価です．
+</p>
+<p>
+一方，③の幾何量（\(h_{\max}\) や Voronoi フラットネス）は，
+<strong>コロケーション点の配置が決まった時点で計算できます</strong>．
+計算前に「この点配置では誤差が大きくなる」と分かれば，
+計算コストをかける前に点配置を修正できます．
+</p>
+<p>
+これが FEM においてメッシュ品質を事前に評価することと全く対応します：
+フラットネスパラメーターが大きいメッシュに気づけば，
+ソルバーを走らせる前にメッシュを修正できます．
+</p>
+<p>
+<em>a priori</em> な診断量の存在が，このシステム全体を「実用的」にします．
+③の研究はそのための基礎です．
+</p>
+</article>
+</div>
+
+<!-- ─── 5. 論文ロードマップ ─── -->
+<h2>論文ロードマップ</h2>
+<div class="news">
+<article class="news-item">
+<table style="border-collapse:collapse; width:100%; font-size:0.95em;">
+  <thead>
+    <tr style="background:#f0f0f0;">
+      <th style="border:1px solid #ccc; padding:8px 12px;">論文</th>
+      <th style="border:1px solid #ccc; padding:8px 12px;">主題</th>
+      <th style="border:1px solid #ccc; padding:8px 12px;">鍵となる数学</th>
+      <th style="border:1px solid #ccc; padding:8px 12px;">対応する誤差源</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border:1px solid #ccc; padding:8px 12px;"><strong>B1</strong>（進行中）</td>
+      <td style="border:1px solid #ccc; padding:8px 12px;">VPINN の幾何誤差：Voronoi フラットネスパラメーターによる上界評価</td>
+      <td style="border:1px solid #ccc; padding:8px 12px;">Koksma–Hlawka，Gauss 求積，Voronoi 幾何学</td>
+      <td style="border:1px solid #ccc; padding:8px 12px;">③</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:8px 12px;"><strong>B2</strong>（次）</td>
+      <td style="border:1px solid #ccc; padding:8px 12px;">適応的点配置アルゴリズムと収束解析：AFEM の類比</td>
+      <td style="border:1px solid #ccc; padding:8px 12px;">Dörfler マーキング，収束定理，③の上界</td>
+      <td style="border:1px solid #ccc; padding:8px 12px;">③の修復</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc; padding:8px 12px;"><strong>B3</strong>（将来）</td>
+      <td style="border:1px solid #ccc; padding:8px 12px;">①②③診断ループの統合：数値実験システムと理論的枠組み</td>
+      <td style="border:1px solid #ccc; padding:8px 12px;">NN 近似論，最適化誤差の数値評価，信頼性工学</td>
+      <td style="border:1px solid #ccc; padding:8px 12px;">①②③統合</td>
+    </tr>
+  </tbody>
+</table>
+<p style="margin-top:1em;">
+B1 なしに B2 は書けません．B2 なしに B3 は書けません．
+現在の連載はこのロードマップの B1 の基礎実験と理論整理に対応しています．
+</p>
+</article>
+</div>
+
+<!-- ─── 6. この研究が何を変えるか ─── -->
+<h2>この研究が何を変えるか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+AI-based FEM（PINNs, VPINN など）は現在，急速に実用化が進んでいます．
+しかし，「結果が信用できるか」という品質保証の問題は未解決のままです．
+</p>
+<p>
+古典的 FEM には 50 年以上の誤差解析の蓄積があります：
+要素の形状条件（フラットネスパラメーター）から出発し，
+適応的細分化（AFEM）を経て，信頼性の高いシミュレーション技術が確立されました．
+</p>
+<p>
+AI-based FEM にはまだその蓄積がありません．
+しかし，<strong>同じ数学的構造が存在する</strong>ことがこの連載を通じて見えてきました：
+</p>
+<ul>
+  <li>FEM のフラットネスパラメーター ↔ Voronoi セルフラットネス（コロケーション点の幾何量）</li>
+  <li>AFEM のマーキング戦略 ↔ 大ギャップ領域への点追加</li>
+  <li>誤差評価 → 細分化 → 収束 ↔ 診断 → 修復 → 収束（B2 の目標）</li>
+</ul>
+<p>
+この対応を厳密に数学化することが，私の研究の核心です．
+AI-based FEM が「動く」ことは多くの人が示しています．
+「なぜ動くのか，なぜ失敗するのか，どう直すのか」を数学的に説明することが，
+信頼できる AI-based FEM シミュレーション技術への道です．
+</p>
+</article>
+</div>
+
+<!-- ─── 7. この連載のまとめ ─── -->
+<h2>この連載のまとめ：7 回で見えてきたこと</h2>
+<div class="news">
+<article class="news-item">
+<table style="border-collapse:collapse; width:100%; font-size:0.93em;">
+  <thead>
+    <tr style="background:#f0f0f0;">
+      <th style="border:1px solid #ccc; padding:7px 10px;">回</th>
+      <th style="border:1px solid #ccc; padding:7px 10px;">内容</th>
+      <th style="border:1px solid #ccc; padding:7px 10px;">得られた知見</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;"><a href="./pinns-01.html">第1回</a></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">1次元 Poisson で PINNs を動かす</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">N 増加で誤差減少するが FEM ほど速くない</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:7px 10px;"><a href="./pinns-02.html">第2回</a></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">残差点の配置を変えると何が起きるか</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">中心集中配置で誤差 100 倍；\(h_{\max}\) が候補</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;"><a href="./pinns-03.html">第3回</a></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">どの幾何的量が誤差を支配するか</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">\(h_{\max}\) が最強相関（Pearson 0.68）；収束次数 α≈0.36</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:7px 10px;"><a href="./pinns-04.html">第4回</a></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">PINNs / Deep Ritz / VPINN / WAN の比較</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">被積分関数の階数が幾何誤差感度を決める</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;"><a href="./pinns-05.html">第5回</a></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">コードと数学の辞書</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">誤差の 3 分解（①②③）；③だけが <em>a priori</em> 評価可能</td>
+    </tr>
+    <tr style="background:#fafafa;">
+      <td style="border:1px solid #ccc; padding:7px 10px;"><a href="./pinns-06.html">第6回</a></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">私の研究との接続</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">フラットネスパラメーター → Voronoi フラットネスへ拡張；B1 論文の骨格</td>
+    </tr>
+    <tr>
+      <td style="border:1px solid #ccc; padding:7px 10px;"><strong>第7回（本回）</strong></td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">研究ビジョン全体図</td>
+      <td style="border:1px solid #ccc; padding:7px 10px;">診断ループの全体像；B1→B2→B3 のロードマップ</td>
+    </tr>
+  </tbody>
+</table>
+<p style="margin-top:1.5em;">
+次のステップは，第6回で示した Voronoi フラットネスの定義を厳密にし，
+2次元 VPINN で数値実験を行うことです．
+その進捗もこのブログで記録していきます．
+</p>
+<p style="margin-top:2em;">
+← <a href="./pinns-06.html">第6回：私の研究との接続</a><br>
+→ <a href="../../fem/">Research Visions を見る（B1, B2 の詳細）</a><br>
+→ <a href="../../blog/">Blog トップへ戻る</a>
+</p>
+</article>
+</div>
+
+
+
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
