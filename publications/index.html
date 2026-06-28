@@ -187,9 +187,13 @@ Poisson equation, Ver. 1. [<a href="https://arxiv.org/abs/2403.07899" target="_b
 <p class="news-cont">
 現在進行中の探索的トピックです．論文化は今後の検証次第ですが，発展性が高いと考えており，最小モデルから体系化を進めています．既存手法との関係（同値性／差別化点）を整理し，論文化の射程を定めています．
 <br><br>
-14th June 2026 <span class="cat cat001">Last Update</span>
+28th June 2026 <span class="cat cat001">Last Update</span>
 
 <h3>Flagship (Top priority)</h3>
+
+[O10] <b>H. Ishizaka</b>: (temporary title) Fully discrete, atom-robust certified stability for memory-dominated diffusion on anisotropic meshes: a graph-norm scheme with computable \(\alpha_0\)-uniform constants <br>
+連続版（coercivity-gap 論文および companion [N3]）が同定したグラフノルム安定性を，完全離散レベルで認証する研究です．主結果は，混合測度核（絶対連続部＋原子的遅延）に対する fully discrete なグラフノルム安定性であり，瞬間的 coercivity 定数 \(\alpha_0\) について一様，かつ計算可能な定数と検証可能な下界を備えることを目指します．核心的困難は離散性そのものにあります：連続では \(\mu((0,\delta])\to 0\ (\delta\downarrow 0)\) という脱出路が効きますが，離散時間刻み \(\tau_n\) がこれを塞ぐため，原子成分にロバストな（atom-robust）解析が別途必要になります．構造保存スキームは，主方程式と内部変数族の間の cross-term cancellation（連続版の \(\alpha_0\) 一様性の源）を離散で再現し，\(\alpha_0\) 非依存の離散安定定数を継承します．空間側は CR–RT 補間誤差評価を異方性（準正則）メッシュへ展開し，最大角型の制御を保持しつつ計算可能な flatness 条件で測る計算可能アスペクト比ロバスト定数で閉じます（shape-regular を仮定する既存研究との差別化点）．時間離散は convolution quadrature（弱特異な絶対連続核に有利）と古典スキーム（原子的遅延の自然な扱いに有利）の選択を設計判断として整理します．本論文は certified という研究プログラムの theorem-level の核を担い，連続版が定義した certified-discretisation problem に解を与えることを目標とします．
+<br><hr>
 
 [O5] <b>H. Ishizaka</b>: (temporary title) Certified space–time DWR with explicit CR–RT equilibrated fluxes for semilinear parabolic problems on anisotropic meshes <br>
 定常版 [<a href="https://arxiv.org/abs/2602.01636" target="_blank">Arxiv</a>] を時間発展（半線形放物型）へ発展させる研究です．時間連続な検証チューブ上で厳密解の存在・局所一意性を Newton–Kantorovich 型で認証し，2つのスカラー判定 \(p(\rho)\le 0,\ q(\rho)<1\) に帰着させます．残差はエネルギーノルムでは閉じないため，解を \(L^\infty(0,T;V)\) で制御する最大正則性チューブを導入し，安定性・Lipschitz 定数を閉じた式で与えます．残差の空間部は CR-RT 平衡フラックスで評価し，同じフラックスで後ろ向き放物型随伴を認証する DWR を構成して，目標汎関数をチューブ半径について二次オーダーで区間確定（Verified Output）します．離散安定係数は拡散優位域でアスペクト比に依存しないことを示します．本枠組みは PDE 制約付き最適化（PDE-constrained optimisation）や出力フィードバック制御に接続でき，Verified Output は仕様保証（certification）の要になります．
