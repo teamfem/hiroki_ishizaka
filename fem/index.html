@@ -760,10 +760,48 @@ AI支援型数学，形式推論，自動証明支援の発展により，数学
 \]
 を用います．両者を使い分けることで，有限の伝播時間と長期的な履歴効果を同じ研究プログラムの中に位置づけます．<br><br>
 
+<h4>マルチスケール縮約との接続</h4>
+本Visionは，homogenisation，variational multiscale method，Mori–Zwanzig型縮約などのマルチスケール法とも接続します．微細自由度を消去すると，その影響は有効係数だけに吸収されるとは限らず，粗視化変数の過去に依存するmemory kernelや，初期微細構造に由来する残差として現れ得ます．<br><br>
+
+例えば，解像する粗視化変数 \(U\) と未解像変数 \(z\) を
+\[
+\begin{aligned}
+  \partial_t U+A_{HH}U+A_{Hf}z&=F,\\
+  \partial_t z+A_{fH}U+A_{ff}z&=0
+\end{aligned}
+\]
+のように分け，\(z\) を消去すると，形式的に
+\[
+  \partial_t U+A_{HH}U
+  -\int_0^t A_{Hf}e^{-(t-s)A_{ff}}A_{fH}U(s)\,ds
+  =\widetilde F(t)
+\]
+という粗視化方程式が得られます．ここで
+\[
+  \mathcal K(t)=-A_{Hf}e^{-tA_{ff}}A_{fH}
+\]
+は，未解像スケールの応答を記録する作用素値memory kernelです．したがって，本Visionにおけるkernelは経験的に追加される項に限らず，微細モデルから導出される有効力学としても位置づけられます．<br><br>
+
+長期的には，
+\[
+  \text{fine-scale model}
+  \longrightarrow
+  \text{coarse/fine decomposition}
+  \longrightarrow
+  \text{effective memory}
+  \longrightarrow
+  \text{kernel identification}
+  \longrightarrow
+  \text{finite atomic approximation}
+  \longrightarrow
+  \text{certified discretisation}
+\]
+という一連の流れを構築します．これにより，空間マルチスケール法と時間非局所モデルを分離せず，upscaling error，memory-model error，kernel approximation error，空間・時間離散化誤差を同じ誤差予算の中で追跡することを目指します．<br><br>
+
 本Visionでは，次の四つの課題を一つの流れとして扱います．
 <ol>
   <li><b>モデル化（modelling）</b><br>
-  未解像過程を，どのようなdelay law，memory kernel，作用素によって表現すべきかを明らかにします．Taylor展開で履歴を局所時間微分へ置き換える近似モデルと，遅延をそのまま保持する非局所モデルの関係も重要な課題です．</li><br>
+  未解像過程を，どのようなdelay law，memory kernel，作用素によって表現すべきかを明らかにします．微細モデルのcoarse/fine分解やhomogenisationから有効memoryを導出する問題と，観測・高解像度計算から経験的にkernelを構成する問題の双方を扱います．Taylor展開で履歴を局所時間微分へ置き換える近似モデルと，遅延をそのまま保持する非局所モデルの関係も重要な課題です．</li><br>
 
   <li><b>適切性と安定性（well-posedness and stability）</b><br>
   解の存在・一意性だけでなく，kernelや測度の摂動が解へどのように伝播するかを評価します．とくに，分布kernelの原子近似，正の最小遅れにおけるkernel concentration，遅延が原点へ近づくときの安定性境界を定量化します．</li><br>
@@ -772,15 +810,21 @@ AI支援型数学，形式推論，自動証明支援の発展により，数学
   観測データや高解像度計算から，未知のdelay lawやmemory kernelをどこまで一意かつ安定に回収できるかを調べます．有限原子kernelの位置・質量の推定，一般の分布kernelに対する条件付き安定性，瞬時作用素と原点近傍のmemory massの識別可能性が中心課題です．</li><br>
 
   <li><b>離散化と検証（discretisation and verification）</b><br>
-  kernelの有限原子近似，空間Galerkin近似，時間離散化を組み合わせ，
+  微細モデルから粗視化モデルへのupscaling，memory modelの選択，kernelの有限原子近似，空間Galerkin近似，時間離散化を組み合わせ，
   \[
     \text{total error}
-    =\text{kernel error}+\text{space error}+\text{time error}
+    =\text{upscaling error}
+    +\text{memory-model error}
+    +\text{kernel error}
+    +\text{space error}
+    +\text{time error}
   \]
   という形で誤差を追跡します．さらに，正値性，最大値原理，保存則，確率的不確実性を含むphysical constraintを検査し，計算結果に対するcertificateを構成します．</li>
 </ol>
 
 現在の近い目標は，measure-valued delayをもつcoercive evolution equationに対するwell-posednessとkernel stabilityを基礎として，正の最小遅れのもとで有限原子kernel・空間Galerkin法・時間離散を統合した完全離散誤差解析を確立することです．その後，kernel inverse problem，確率的memory，最大値原理と正値性の成立・破綻，および未解像過程を含む縮約モデルへ展開します．<br><br>
+
+マルチスケール方向では，まず有限次元またはGalerkin型のcoarse/fine分解から作用素値memory kernelを厳密に導出し，その符号・減衰・coercivity・有限原子近似を調べます．次に，異方性FEM，variational multiscale法，数値homogenisationと接続し，微細スケールの消去とkernel近似，さらに空間・時間離散化の各極限がどの条件で整合するかを明らかにすることを目指します．<br><br>
 
 応用候補として，非フーリエ熱伝導，粘弾性・生体システム，縮約された流体・輸送モデル，理想化された大気海洋モデルなどを想定しています．ただし，これらの応用へ進む際にも，現象名を付けるだけではなく，kernelの物理的意味，観測可能性，安定性，数値誤差を明示することを重視します．<br><br>
 
@@ -798,10 +842,13 @@ AI支援型数学，形式推論，自動証明支援の発展により，数学
 
 関連する Vision:
 <ul>
+  <li>Vision 5：coarse/fine分解，縮約，memory closureの数理構造の抽象化</li>
   <li>Vision 7／7b：確率PDE，kernel同定，推論の信頼性</li>
   <li>Vision 11：記憶効果・時間遅れ・異常拡散の解析</li>
   <li>Vision 12：理想化された気候・災害・輸送モデルへの展開</li>
-  <li>Vision 17：離散化誤差とkernel誤差に対するcertificate</li>
+  <li>Vision 13／14：異方性PDE・空間マルチスケール離散化との接続</li>
+  <li>Vision 15：表現・計量・射影による縮約法と数値解法の統一的理解</li>
+  <li>Vision 17：upscaling・kernel・離散化誤差に対するcertificate</li>
 </ul>
 
 関連Blog：<a href="../blog/posts/unresolved-memory-01.html">未解像過程の記憶をどう安定にモデル化・同定・離散化するか</a>
