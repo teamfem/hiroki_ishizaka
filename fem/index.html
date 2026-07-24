@@ -185,16 +185,16 @@ Research LineとVisionの対応（暫定マップ）:
   <li>【G】Geometry & Anisotropic FEM Theory<br>
   → Vision 1, 3, 10, 11, 13, 14, 16, 17</li>
   <li>【R】Reliable & Goal-Oriented PDE Simulation<br>
-  → Vision 4, 6, 7b, 8, 11, 12, 17</li>
+  → Vision 4, 6, 7b, 8, 11, 12, 17, 18</li>
   <li>【A】Automation, Learning & New Numerical Methods<br>
-  → Vision 2, 4, 5, 7, 7b, 8, 9, 12, 15, 17</li>
+  → Vision 2, 4, 5, 7, 7b, 8, 9, 12, 15, 17, 18</li>
   <li>【V】Verification, Formal Reasoning &amp; AI4Math<br>
-  → Vision 4, 7b, 14, 15, 17</li>
+  → Vision 4, 7b, 14, 15, 17, 18</li>
 </ul>
 
 <br><br>
 This page is updated periodically.<br><br>
-(8th June 2026 <span class="cat cat001">Update</span>)
+(25th July 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
@@ -591,6 +591,7 @@ Richardson 外挿法は，粗い分割と細かい分割で得られた解を組
   <li>Vision 6：BDF/FBDF・長時間安定との連携</li>
   <li>Vision 12：現象側の応用（気象・災害モデル）</li>
   <li>Vision 15：分数階も“計量と射影”で整理</li>
+  <li>Vision 18：未解像過程のmemory modelling・kernel stability・同定・完全離散化</li>
 </ul>
 
 </p>
@@ -615,6 +616,7 @@ Richardson 外挿法は，粗い分割と細かい分割で得られた解を組
   <li>Vision 6：長時間・圧力ロバスト設計を導入</li>
   <li>Vision 7：不確実性の組み込み（SPDE）</li>
   <li>Vision 14：異方性メッシュ・幾何条件の適用</li>
+  <li>Vision 18：未解像過程のmemory closureとkernel uncertainty</li>
 </ul>
 
 </p>
@@ -737,6 +739,77 @@ AI支援型数学，形式推論，自動証明支援の発展により，数学
 </article>
 </div>
 
+
+
+<h3>Vision 18: 未解像過程の記憶と信頼できる非マルコフ型シミュレーション【R】【A】【V】</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+<b>位置づけ：〖Core〗（基礎理論・kernel stability・完全離散解析）／〖Expansion〗（同定・確率・応用）</b><br><br>
+
+複雑な多重スケール現象を数値計算するとき，すべての時間・空間スケールを直接解像することはできません．しかし，計算から除かれた自由度の影響は単に消えるのではなく，現在の状態だけでは表せない「過去への依存」として残ることがあります．このような非マルコフ的な効果を，経験的な補正項として加えるだけでなく，安定性・同定可能性・離散化誤差まで含めて数学的に制御することが本Visionの目的です．<br><br>
+
+代表的なモデルとして，測度値時間遅れをもつ発展方程式
+\[
+  \partial_t u(t)+A_0u(t)
+  +\int_{[0,\tau]}A_1\widetilde u(t-s)\,d\mu(s)=f(t)
+\]
+を考えます．有限測度 \(\mu\) を用いることで，分布遅延，離散遅延，複数遅延，およびそれらの混合を一つの式で扱えます．また，長い履歴や減衰する記憶を表す場合には，Volterra型memory
+\[
+  \int_0^t k(t-s)A_1u(s)\,ds
+\]
+を用います．両者を使い分けることで，有限の伝播時間と長期的な履歴効果を同じ研究プログラムの中に位置づけます．<br><br>
+
+本Visionでは，次の四つの課題を一つの流れとして扱います．
+<ol>
+  <li><b>モデル化（modelling）</b><br>
+  未解像過程を，どのようなdelay law，memory kernel，作用素によって表現すべきかを明らかにします．Taylor展開で履歴を局所時間微分へ置き換える近似モデルと，遅延をそのまま保持する非局所モデルの関係も重要な課題です．</li><br>
+
+  <li><b>適切性と安定性（well-posedness and stability）</b><br>
+  解の存在・一意性だけでなく，kernelや測度の摂動が解へどのように伝播するかを評価します．とくに，分布kernelの原子近似，正の最小遅れにおけるkernel concentration，遅延が原点へ近づくときの安定性境界を定量化します．</li><br>
+
+  <li><b>同定（identification）</b><br>
+  観測データや高解像度計算から，未知のdelay lawやmemory kernelをどこまで一意かつ安定に回収できるかを調べます．有限原子kernelの位置・質量の推定，一般の分布kernelに対する条件付き安定性，瞬時作用素と原点近傍のmemory massの識別可能性が中心課題です．</li><br>
+
+  <li><b>離散化と検証（discretisation and verification）</b><br>
+  kernelの有限原子近似，空間Galerkin近似，時間離散化を組み合わせ，
+  \[
+    \text{total error}
+    =\text{kernel error}+\text{space error}+\text{time error}
+  \]
+  という形で誤差を追跡します．さらに，正値性，最大値原理，保存則，確率的不確実性を含むphysical constraintを検査し，計算結果に対するcertificateを構成します．</li>
+</ol>
+
+現在の近い目標は，measure-valued delayをもつcoercive evolution equationに対するwell-posednessとkernel stabilityを基礎として，正の最小遅れのもとで有限原子kernel・空間Galerkin法・時間離散を統合した完全離散誤差解析を確立することです．その後，kernel inverse problem，確率的memory，最大値原理と正値性の成立・破綻，および未解像過程を含む縮約モデルへ展開します．<br><br>
+
+応用候補として，非フーリエ熱伝導，粘弾性・生体システム，縮約された流体・輸送モデル，理想化された大気海洋モデルなどを想定しています．ただし，これらの応用へ進む際にも，現象名を付けるだけではなく，kernelの物理的意味，観測可能性，安定性，数値誤差を明示することを重視します．<br><br>
+
+この研究が目指す流れは，
+\[
+  \text{unresolved dynamics}
+  \longrightarrow
+  \text{memory model}
+  \longrightarrow
+  \text{kernel identification}
+  \longrightarrow
+  \text{certified computation}
+\]
+です．非マルコフ型モデルを「経験的に導入された項」から，「同定可能で，近似誤差を保証できる計算対象」へ変えることを長期的な目標とします．<br><br>
+
+関連する Vision:
+<ul>
+  <li>Vision 7／7b：確率PDE，kernel同定，推論の信頼性</li>
+  <li>Vision 11：記憶効果・時間遅れ・異常拡散の解析</li>
+  <li>Vision 12：理想化された気候・災害・輸送モデルへの展開</li>
+  <li>Vision 17：離散化誤差とkernel誤差に対するcertificate</li>
+</ul>
+
+関連Blog：<a href="../blog/posts/unresolved-memory-01.html">未解像過程の記憶をどう安定にモデル化・同定・離散化するか</a>
+
+</p>
+</article>
+</div>
+
 <!--<h3>(仮)</h3>
 <div class="news">
 <article class="news-item">
@@ -767,7 +840,7 @@ Under construction
 
 <!--▼サイトフッター-->
 <footer class="site-footer">
-	<div class="copyright"><p><small>© 2022 ISHIZAKA Hiroki Website</small></p></div>
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
 </footer>
 <!--▲サイトフッター-->
 
