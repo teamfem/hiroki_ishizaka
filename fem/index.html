@@ -747,6 +747,46 @@ AI支援型数学，形式推論，自動証明支援の発展により，数学
 <p class="news-cont">
 <b>位置づけ：〖Core〗（基礎理論・kernel stability・完全離散解析）／〖Expansion〗（同定・確率・応用）</b><br><br>
 
+<h4>本研究の独自性</h4>
+本研究の独自性は，memoryやdelayを導入すること自体ではなく，未解像過程を表すkernelを，固定されたモデル係数ではなく，解析・同定・近似・検証の対象となる数理的変数として扱う点にあります．とくに，空間主部を含む遅延作用素
+\[
+  A_1:V\longrightarrow V^*
+\]
+を自然なエネルギー空間上で扱い，分布遅延・原子遅延・混合遅延を，代表元に依存しないmeasure-valued history operatorとして統一します．<br><br>
+
+現在までに構築している理論の特徴は，次の点にあります．
+<ul>
+  <li>
+  kernelの全質量が小さいことを仮定するのではなく，遅延質量が原点から離れているというcausal structureを指数重みによって利用し，有限時間well-posednessを導くこと，
+  </li>
+  <li>
+  kernel摂動を一つのjoined trajectoryの時間並進へ還元するasymmetric residual principleを用いること，
+  </li>
+  <li>
+  delay massの移動をWasserstein距離で測り，trajectoryのfractional time regularityから定量的kernel stabilityを導くこと，
+  </li>
+  <li>
+  正の遅れにおけるkernel concentration・finite-atomic quadratureと，原点近傍におけるsingular stability boundaryを明確に区別すること．
+  </li>
+</ul>
+
+長期的には，この理論を
+\[
+  \text{multiscale reduction}
+  \longrightarrow
+  \text{memory modelling}
+  \longrightarrow
+  \text{kernel identification}
+  \longrightarrow
+  \text{kernel discretisation}
+  \longrightarrow
+  \text{certified computation}
+\]
+という研究プログラムへ発展させます．異方性有限要素法による空間誤差制御と，measure-valued memoryによる時間非局所性・モデル誤差の制御を結び付け，upscaling，kernel同定，kernel近似，空間離散化，時間離散化の各誤差を同じ誤差予算の中で追跡できるtrustworthy non-Markovian simulationの構築を目指します．<br><br>
+
+<p><b>Research statement:</b><br>
+My research treats memory kernels not as fixed modelling inputs, but as mathematical variables to be derived, identified, approximated, and certified together with the numerical solution.</p>
+
 複雑な多重スケール現象を数値計算するとき，すべての時間・空間スケールを直接解像することはできません．しかし，計算から除かれた自由度の影響は単に消えるのではなく，現在の状態だけでは表せない「過去への依存」として残ることがあります．このような非マルコフ的な効果を，経験的な補正項として加えるだけでなく，安定性・同定可能性・離散化誤差まで含めて数学的に制御することが本Visionの目的です．<br><br>
 
 代表的なモデルとして，測度値時間遅れをもつ発展方程式
@@ -788,7 +828,9 @@ AI支援型数学，形式推論，自動証明支援の発展により，数学
   \longrightarrow
   \text{coarse/fine decomposition}
   \longrightarrow
-  \text{effective memory} \\
+  \text{effective memory}
+\]
+\[
   \longrightarrow
   \text{kernel identification}
   \longrightarrow
