@@ -7,8 +7,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,history-dependent model,cancer progression,periodontal disease,latent-state inference,dynamic prediction,certified computation">
-<meta name="description" content="Mathematics for Trustworthy Simulation, Certified FEM, history-dependent modelling, model reduction, and reliable progression prediction">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,anisotropic FEM,Crouzeix-Raviart,Raviart-Thomas,Nedelec,de Rham,discrete maximum principle,maximum norm,history-dependent PDE,exact-curved FEM,certified computation">
+<meta name="description" content="Research visions centred on computable geometric conditions, anisotropic FEM, CR-RT structure, maximum-norm estimates, de Rham complexes, history-dependent PDEs, exact-curved geometry, and certified computation">
 
 <link rel="stylesheet" href="../css/base.css">
 <link rel="stylesheet" href="../css/rwd.css">
@@ -113,91 +113,166 @@
 			<div class="section-in">
 
 <h1 class="section-title">Research Visions</h1>
-<h2>Finite Element Methods 2.0: Certified FEM, AI4Math &amp; Machine Learning</h2>
-<h3>Introduction</h3>
+
+<h2>Certified FEM under Computable Geometric Conditions</h2>
+<h3>Core Programme and Research Expansions</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
-<b>複雑な現象を正しく，効率的に，そして誰でも使える形で数値化する</b><br>
-それが私の研究の大きな目標です．<br><br>
-有限要素法（FEM）は 1943 年にクーランの論文で原型が示されて以来，およそ 80 年にわたり，数理解析と応用の両面で発展を続けてきました．一見すると完成された理論のように見えますが，現実の複雑な現象を正確に数値化するためには，まだ多くの課題が残されています．現代の科学・工学では，非線形性，異方性，マルチスケール性，さらには複雑な領域形状や境界条件を含む偏微分方程式が次々に現れます．こうした問題に対して，高精度で効率的な数値解法を提供することは，シミュレーション科学全体の根幹に関わる重要な課題です．<br><br>
+<b>複雑な数値計算を，幾何・構造・誤差の三つの側面から検証可能にすること</b>が，私の研究の中心目標です．
+私はこれまで，flatness parameter，semi-regularity，two-step transformationを用いた異方性補間誤差評価と，
+Crouzeix–Raviart，Raviart–Thomas，Morley，DG，Nitsche法の解析を進めてきました．
+今後は，これらの成果を横に拡散させるのではなく，依存する定理を順に積み上げ，
+<b>Certified finite element analysis under computable geometric conditions</b>
+として統合します．<br><br>
 
-私はこれまでに，最大角条件と同値な新しい幾何条件や異方性有限要素法の理論を構築し，従来の shape regularity に基づく古典的解析を超えた，より精密な補間誤差評価を与えてきました．これらの成果は，境界層や特異点を含む「難しい問題」に対して有効なアダプティブ FEM の基盤となります．さらに，Nitsche 法の異方性解析やCrouzeix–Raviart要素を用いた誤差評価など，従来は十分に研究されていなかった非適合要素の理論も発展させています．<br><br>
+現在の研究は，次の四つの中核programmeと，一つの横断的programmeに整理します．
 
-今後は，これらの数理的成果を活かしつつ，機械学習（ML）とFEMの融合に加えて，AI支援型数学，形式推論，自動証明支援，および検証可能な数値解析との接続を進めていきます．ここで目指すのは，単にAIで数値解を予測することではありません．むしろ，有限要素法の幾何条件，補間誤差評価，離散安定性，平衡化フラックス，目的量誤差評価を，検証可能で再利用可能な数学的知識として整理し，AI時代に耐える「保証付き有限要素解析」の基盤を構築することです．<br><br>
+<h4>Core G1：異方性CR–RT，離散最大値原理，maximum-norm解析</h4>
+最も近い新規課題は，異方性単体メッシュ上のCR法に対する離散最大値原理と，
+\(P_1\)／CR有限要素解の異方性 \(L^\infty\) 誤差評価です．
+ここでは，
+\[
+  \text{element geometry}
+  +
+  \text{metric-angle condition}
+  +
+  \text{patch connectivity}
+  +
+  \text{discrete Green function}
+\]
+を区別し，semi-regularityが補間・安定性を制御する条件である一方，
+DMPやmaximum-norm quasi-optimalityには追加の単調性・接続条件が必要になり得ることを明らかにします．
+詳細はVision 20にまとめます．
 
-たとえば，私が提案した幾何パラメータを特徴量として利用し，シミュレーションデータから誤差分布や最適メッシュ分割を学習することで，理論とデータ駆動を組み合わせた「解釈可能で安全な ML × FEM」を実現します．同時に，誤差評価やメッシュ条件を certificate として明示することで，得られた数値結果を「なぜ信頼してよいのか」まで説明できる枠組みを目指します．この方向性を，私は <b>Certified finite element analysis under computable geometric conditions</b> と位置づけています．<br><br>
+<h4>Core G2：3D Nédélec補間から異方性de Rham・Maxwellへ</h4>
+次の基礎投資は，三次元四面体上のNédélec補間の定量的安定性です．
+既存のRT補間評価と
+\[
+  P_1^c
+  \xrightarrow{\nabla}
+  N_0
+  \xrightarrow{\operatorname{curl}}
+  RT_0
+  \xrightarrow{\operatorname{div}}
+  P_0
+\]
+を同じ計算可能な幾何条件で制御し，可換射影，離散Poincaré不等式，
+安定Hodge分解，discrete compactness，verified Maxwellへ進みます．
+詳細はVision 21にまとめます．
 
-長期的な視点で，以下の5つの柱を中心に展開しています．これらは，有限要素法の理論深化から応用分野への展開までをつなぐ道筋であり，基礎と応用の両輪を兼ね備えた研究の方向性を示しています．
-<ol> 
-<li><b>効率性 — 複雑な現象を効率的に近似する数値計算手法の開発</b><br> 移流拡散方程式，ナヴィエ–ストークス方程式，インターフェイス問題，確率モデルや最適化問題など，幅広い偏微分方程式を対象とします．私は，新しい幾何パラメータや異方性メッシュ条件を活かし，従来より少ない計算資源で高精度を実現できる手法を探ります．これは，気候シミュレーションや異常気象予測のように，大域スケールと局所スケールが混在する現象にもつながる挑戦です．</li><br> 
-<li><b>抽象化 — 計算スキームの数理構造を解明し統一的に理解できる理論の構築</b><br> 数値スキームは経験や試行錯誤に基づいて作られることが多く，その背後にある数理構造が十分に明らかでない場合もあります．私は，スキームの共通パターンや本質的性質を数理的に整理し，異なる手法を統一的に理解できる理論の構築を目指しています．さらに，機械学習を併用することで，理論では表しきれない複雑な依存関係をデータから補完し，理論とデータ駆動のハイブリッドによる柔軟で拡張性の高い数値解析フレームワークを築きます．</li><br> 
-<li><b>自動化 — 機械学習や誤差評価を活用し，メッシュ生成やスキーム選択の自動化を推進</b><br> 有限要素法には，メッシュ生成，近似空間の設定，方程式ソルバー，誤差評価，結果の可視化など，多段階の工程があります．これらは従来，専門家の知識と判断に依存してきました．私は，機械学習を組み込んだアルゴリズムで，これらのプロセスをできる限り自動化します．具体的には，過去のデータから誤差を予測してメッシュ分割方針を決定したり，問題の特徴に応じて最適な数値スキームを自動で選ぶ仕組みを作ります．特に異方性有限要素法は，MLと組み合わせることで，解の特異性や境界層に応じた分割方向を自動的に判断できるようになり，大幅な効率化が期待できます．最終的には，専門家だけでなく，学生や異分野の研究者でも「条件を入力すれば高度なシミュレーションが動く」環境を実現します．</li> <br> 
-<li><b>応用 — 異方性 PDE 全般への展開と実問題への適用</b><br> 異方性を含む偏微分方程式（プリミティブ方程式，非フーリエ熱伝導方程式，記憶効果をもつ熱・拡散モデルなど）や，気候現象・災害・マイクロスケール物理現象など実社会の課題を対象とし，理論的成果を応用に架橋します．気候変動や異常気象，洪水・土砂災害のような現象は，大域スケールと局所スケールが複雑に絡み合い，数値解析の限界を試す挑戦的な課題です．私は，異方性メッシュや幾何パラメータの理論を活かし，強い勾配や特異性を効率的に捉える新しい数値シミュレーションを開発したいと考えています．さらに確率的要素を取り込むことで，不確実性を含む災害リスク評価や「リスクの可視化」にも挑戦します．この第四の柱は，純粋理論と応用社会課題の双方を結びつける研究として大きな意義を持つと考えています．</li><br>
-<li><b>検証性 — AI4Math時代に耐える保証付き有限要素解析の構築</b><br> AI支援型数学や形式推論が発展する時代には，数値解を得るだけでなく，その誤差・安定性・目的量をどのように保証するかが重要になります．私は，計算可能な幾何条件，異方性補間評価，平衡化フラックス，DWR型目的量評価を統合し，有限要素計算の出力に対して明示的な certificate を与える枠組みを発展させます．将来的には，補間評価，メッシュ条件，局所再構成，誤差上界の一部を，Lean / Mathlib などの形式化数学やAI支援型証明とも接続できる形に整理することを目指します．</li>
-</ol>
+<h4>Core M：記憶・時間遅れをもつ履歴依存型発展方程式</h4>
+memory系列では，measure-valued delay，positive-type memory，graph-space well-posedness，
+kernel stabilityを連続理論として閉じ，BDF／convolution quadratureの構造保存完全離散化へ進みます．
+この系列は異方性FEMの主系列と分離して管理し，同時に本格執筆するmemory論文は一編までとします．
+詳細はVision 11・18にまとめます．
 
-ここで挙げた5つの柱は，有限要素法・数値解法を「Finite Element Methods 2.0」として再設計するうえでの目標（横軸）を表しています．  一方で，このページで挙げる個々のVision（研究ビジョン）は，これらの目標を貫く4つのResearch Line（縦軸）に整理することができます．
+<h4>Core Q：exact-curved geometryから形状微分・ALE・FSIへ</h4>
+exact-curved Lagrange FEMを，曲CR–RT，shape differentiation，移動領域ALE，
+流体–構造連成，界面出力認証へ発展させます．
+目標は，幾何が変化する問題で
+\[
+  \text{geometry error}
+  \quad\text{と}\quad
+  \text{PDE/discretisation error}
+\]
+を混同しない解析です．詳細はVision 10にまとめます．
 
+<h4>Cross-cutting V：保証付き出力・形式推論・AI4Math</h4>
+平衡化フラックス，DWR，離散Green関数，maximum-norm certificate，
+model-reduction errorを，計算可能な誤差保証として統合します．
+AIや形式推論は研究の主目的ではなく，証明構造・幾何条件・certificateを
+検証可能で再利用可能な形へ整理する補助手段として位置づけます．詳細はVision 17にまとめます．
+<br><br>
+
+<h3>Current research order</h3>
+幾何・有限要素側の基本順序は，
+\[
+\boxed{
+  \text{CR-DMP and anisotropic }L^\infty
+  \longrightarrow
+  \text{3D Nédélec stability}
+  \longrightarrow
+  \text{anisotropic de Rham/Hodge}
+  \longrightarrow
+  \text{Maxwell or certified bound preservation}
+}
+\]
+です．<br><br>
+
+memory系列は別レーンとして，
+\[
+\boxed{
+  \text{continuous kernel theory}
+  \longrightarrow
+  \text{structure-preserving full discretisation}
+  \longrightarrow
+  \text{space--time certification and model adaptivity}
+}
+\]
+と進めます．<br><br>
+
+exact-curved系列は，
+\[
+\boxed{
+  \text{curved Lagrange}
+  \longrightarrow
+  \text{curved CR--RT}
+  \longrightarrow
+  \text{shape differentiation}
+  \longrightarrow
+  \text{ALE/FSI}
+  \longrightarrow
+  \text{certified interface outputs}
+}
+\]
+と進めます．
+実際の投稿・執筆状況は
+<a href="../publications/">Publications</a>
+にまとめます．
+
+<h3>Core and Expansion</h3>
 <ul>
-  <li>【G】Geometry & Anisotropic FEM Theory<br>
-  flatness parameter・準正則条件・二段変換といった幾何パラメータを用いて，異方性メッシュ上の補間誤差評価，非適合・混合・DGの解析，離散Sobolev/Korn不等式や幾何条件の体系化を目指すラインです．  </li>
-  <li>【R】Reliable & Goal-Oriented PDE Simulation<br>
-  BDF/FBDFや分数階時間微分を含む時間発展問題，圧力ロバストなStokes / Navier–Stokesなどを対象に，functional型誤差評価やhypercircle法，平衡化フラックスを用いた目的量志向・精度保証付き（verified）シミュレーションを構築するラインです．  </li>
-  <li>【A】Automation, Learning & New Numerical Methods<br>
-  幾何パラメータや誤差指標を特徴量として利用し，アダプティブFEM・メッシュ生成・スキーム選択の自動化，FEMとPINNs / Deep Ritz / メッシュレス法の比較・統合を行うラインです．「表現・計量・射影」という共通視点で，多様な数値解法を同じ地図上に載せることを目指します．</li>
-  <li>【V】Verification, Formal Reasoning &amp; AI4Math<br>
-  有限要素法の誤差評価，幾何条件，平衡化フラックス，目的量評価を，AI支援型数学・形式推論・自動検証の文脈に接続するラインです．計算可能な幾何条件に基づく誤差保証を，単なる数値実験の裏付けではなく，検証可能な数学的 certificate として整理し，将来的には Lean / Mathlib などの形式化数学とも接続可能な有限要素解析の基盤を目指します．</li>
+  <li><b>〖Core〗：</b>
+  現在の公刊・投稿成果から直接つながり，主要補題と論文化の順序を具体的に管理するテーマ．
+  Vision 10，11，17，18，20，21が中心です．</li>
+  <li><b>〖Expansion〗：</b>
+  Coreで得られた幾何条件，安定性，certificateを他手法・他方程式・実問題へ広げるテーマ．
+  AI，SPDE，VEM，PINNs，気候・災害，疾患進行などを含み，共同研究または長期計画として扱います．</li>
 </ul>
 
-以下の Visionの見出しの右端に付いている【G】【R】【A】【V】タグは，そのVisionが主にどのResearch Lineに属するか（あるいは複数にまたがるか）を示します．
-<br><br>
-
-効率性，抽象化，自動化，応用，そして検証性にデータ駆動と形式推論の力を融合することで，私は「Finite Element Methods 2.0」をさらに進化させます．将来的には，ユーザーが現象や条件を入力するだけで，理論解析，誤差評価，機械学習，自動検証が連携し，信頼できる数値結果とその certificate を返す環境を実現したいと考えています．
-<br><br>
-
-私たちの研究で導入した新しい幾何パラメータは，これらの問題にも自然に関わると考えられます．<br><br>
-
-私の研究姿勢は，<span style="color:red">オープンサイエンス</span> の理念と深くつながっています．研究成果や未解決のアイディアを積極的に公開することで，分野全体の発展と新たな協働のきっかけを生み出すことを目指しています．研究者としての情報発信は，こうしたオープンサイエンスの実践そのものであり，研究の透明性と共有を大切にしています．<br><br>
-
-同時に，私は <span style="color:red">研究DX（デジタルトランスフォーメーション）</span> の理念に基づき，研究データ・インフラ・AIを活用した高付加価値で効率的な研究推進にも積極的に取り組んでいます．特に，幾何条件に基づく有限要素法の理論と，機械学習，自動化解析，AI支援型数学，形式推論を融合させることで，新しい数値解析の基盤を築くことを目指しています．こうした取り組みは，研究の進化を可能にするだけでなく，社会的潮流に調和した次世代型の数値解析を実現すると考えています．
-<br><br>
-
-詳細は今後の研究成果としてまとめていきます．<br><br>
-
-<p><b><span style="color:red;">
-このページで示した内容には未解決問題や研究アイディアが含まれています．
-それらは，私が導入した新しい幾何パラメータに基づいて展開しているものです．
-学術的に利用される場合は，関連論文をご参照ください．
-</span></b></p>
-
-ここに示すResearch Visionsは，私の研究の「旗印（核）」と「可能性の広がり」を併せて整理したものです．
-<ol>
-  <li>〖Core〗（旗印）：現在進行形で取り組み，数年以内に成果として結実させたいテーマ．</li>
-  <li>〖Expansion〗（広がり）：flatness条件や異方性解析を基盤に，将来的に展開し得る方向性．必ずしもすべてを自分で完結させるものではなく，共同研究や長期的な展望として位置づけています．
-  </li>
-</ol>
-
-各Visionは，このCore / Expansionという，時間スケールのラベルと上で示した【G】【R】【A】【V】というResearch Line（研究ライン）のラベルの「2軸」で整理されています．この二層構造により，「近未来に具体化する研究計画」と「より長期的な挑戦」を併せて提示しつつ，数値解析における全体像を見渡せるようにしています．
-<br><br>
-Research LineとVisionの対応（暫定マップ）:
+<h3>Research Line tags</h3>
 <ul>
-  <li>【G】Geometry & Anisotropic FEM Theory<br>
-  → Vision 1, 3, 10, 11, 13, 14, 16, 17</li>
-  <li>【R】Reliable & Goal-Oriented PDE Simulation<br>
-  → Vision 4, 6, 7b, 8, 11, 12, 17, 18, 19</li>
-  <li>【A】Automation, Learning & New Numerical Methods<br>
-  → Vision 2, 4, 5, 7, 7b, 8, 9, 12, 15, 17, 18, 19</li>
-  <li>【V】Verification, Formal Reasoning &amp; AI4Math<br>
-  → Vision 4, 7b, 14, 15, 17, 18, 19</li>
+  <li><b>【G】Geometry &amp; Anisotropic FEM Theory：</b>
+  幾何条件，方向別補間，CR–RT–Nédélec，DMP，\(L^\infty\)，de Rham/Hodge．</li>
+  <li><b>【R】Reliable &amp; Goal-Oriented PDE Simulation：</b>
+  平衡化フラックス，DWR，maximum-norm評価，履歴依存型PDE，形状感度，verified output．</li>
+  <li><b>【A】Automation, Learning &amp; New Numerical Methods：</b>
+  適応化，model adaptivity，データ同化，PINNs，学習支援型数値計算．</li>
+  <li><b>【V】Verification, Formal Reasoning &amp; AI4Math：</b>
+  計算可能なcertificate，形式化可能な補題列，誤差予算，自動検証．</li>
 </ul>
 
-<br><br>
-This page is updated periodically.<br><br>
+Research LineとVisionの対応:
+<ul>
+  <li>【G】→ Vision 1，3，10，13，14，16，17，20，21</li>
+  <li>【R】→ Vision 6，7b，10，11，14，17，18，19，20，21</li>
+  <li>【A】→ Vision 2，4，5，7，7b，8，9，12，15，18，19</li>
+  <li>【V】→ Vision 7b，10，14，17，18，19，20，21</li>
+</ul>
+
+<p>
+このページには未解決問題と将来構想が含まれます．
+個々のテーマをすべて同時に進行中とするのではなく，
+Coreで主要定理を閉じた後に，必要なExpansionへ進む方針です．
+</p>
+
+This page is updated periodically.<br>
 (26th July 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
+
 
 <h3>Vision 1: 球面・多様体上の幾何条件【G】</h3>
 <div class="news">
@@ -541,63 +616,218 @@ Richardson 外挿法は，粗い分割と細かい分割で得られた解を組
 </article>
 </div>
 
-<h3>Vision 10: 移動境界問題と二相流問題 ― 純粋理論から異方性解析へ【G】【R】</h3>
+
+<h3>Vision 10: Exact-curved geometry programme — 曲CR–RT・形状微分・ALE・FSI【G】【R】【V】</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
-移動境界問題や二相流問題は，時間依存する内部境界（インターフェイス）を伴う偏微分方程式の代表的な例であり，純粋理論と数値解析の双方に未解決の課題を含んでいます．純粋理論の観点からは，動的な境界を持つ問題に対して解の存在・一意性・正則性が十分に確立されておらず，解析学的研究が進められています．一方，数値解析においては，移動境界の表現と計算スキームの安定性確保が中心的な課題となります．<br><br>
+<b>位置づけ：〖Core〗（曲CR–RT・shape derivative）／〖Expansion〗（ALE・FSI・認証）</b><br><br>
 
-このとき有限要素法では大きく二つのアプローチがあります．第一は，境界の運動に応じて メッシュを逐次再分割する動的リメッシュ法であり，境界の幾何を正確に追跡できますが，理論的には誤差評価が複雑化し，計算コストも高くなります．第二は，メッシュを固定したまま非適合要素として境界を扱う方法です．ここでは，CutFEM に代表される手法が有効であり，固定メッシュ上での非適合境界条件を安定に処理できます．<br><br>
+exact-curved FEMの本質は，固定された曲領域上でPoisson問題を解くことだけではありません．
+領域そのものが未知量・設計変数・時間依存量となる問題において，
+曲領域をさらに多角形化することなく，
+\[
+  F_K=\Psi_K\circ\Phi_{T_K}
+\]
+という二段写像の像として扱う点にあります．
+\(\Phi_{T_K}\) は異方性を担うaffine core，
+\(\Psi_K\) は曲率・境界形状を担うcurved correctionです．
+この分解により，
+\[
+  \text{anisotropic affine deformation},
+  \quad
+  \text{curvature},
+  \quad
+  \text{domain motion},
+  \quad
+  \text{PDE approximation}
+\]
+の影響を分離して追跡します．
 
-近年注目を集めているアプローチが CutFEM です．これは固定された背景メッシュを用い，内部境界を「カット」して扱う手法であり，境界条件の処理には Nitsche 法 を基盤としています．CutFEM の利点は，メッシュを再生成せずに移動境界や二相流のインターフェイスを取り扱える点にあり，計算の柔軟性と効率を兼ね備えています．<br><br>
+<h4>10a．Exact-curved CR–RT foundation</h4>
+最初の基礎論文では，曲面上のCR平均自由度，
+非アフィンcontravariant Piola変換，
+法線流束の単一価性，発散可換性，
+curved Marini型CR–RT再構成を整備します．
+目標は，曲領域上で
+\[
+  (\nabla_h v_h,\boldsymbol q_h)
+  +(v_h,\operatorname{div}\boldsymbol q_h)
+  =
+  \text{boundary/interface terms}
+\]
+を幾何近似誤差なしに成立させ，
+平衡化フラックスと局所保存を構成することです．
 
-しかし，CutFEM の数値解析はまだ発展途上であり，とりわけ 異方性メッシュにおける誤差評価と安定性保証 は未解決課題です．インターフェイスがメッシュを横切る場合，極端に細長い要素や小さなカット要素が生じ，その安定性を保証する幾何条件が必要となります．私は，これまで構築してきた異方性メッシュ理論と幾何パラメータを CutFEM の枠組みに導入し，動的境界を伴う状況でも安定した誤差評価を可能にする理論基盤を確立したいと考えています．<br><br>
+<h4>10b．Shape differentiation</h4>
+形状摂動
+\[
+  \Omega(t)=\mathcal A_t(\Omega_0),
+  \qquad
+  K(t)=F_K(t)(\widehat K)
+\]
+に対し，時間・形状パラメータに一様な異方性補間評価と，
+\[
+  \partial_t^\bullet I_h(t)u
+  -
+  I_h(t)\partial_t^\bullet u
+\]
+というmaterial derivativeとの交換子評価を導きます．
+さらに，
+\[
+  \left|
+    J'(\Omega)[\boldsymbol V]
+    -
+    J_h'(\Omega)[\boldsymbol V]
+  \right|
+  \leq
+  C h^r\|\boldsymbol V\|_{W^{1,\infty}}
+\]
+型のshape-sensitivity error estimateを目指します．
+新規性は，
+<b>exact curved simplices + anisotropic affine cores + semi-regularity + shape sensitivity</b>
+の組合せです．
 
-この研究は，Nitsche 法と CutFEM の統合的解析を異方性の視点から再構築するものであり，従来の shape-regularity ベースの理論を超えた新しい数値解析の挑戦となります．動的リメッシュでは「効率的かつ安定な再分割基準」を幾何パラメータを通じて定式化することが課題となり，固定メッシュ法では「非適合性が誤差や安定性に与える影響」を幾何条件に基づき評価することが重要です．<br><br>
+<h4>10c．Geometry-exact ALE</h4>
+時間依存写像に対してALE速度
+\[
+  \boldsymbol w_h
+  =
+  \partial_tF_K(t)\circ F_K(t)^{-1}
+\]
+を定義し，
+\[
+  \partial_tJ_K
+  =
+  J_K\operatorname{div}\boldsymbol w_h
+\]
+に基づく離散geometric conservation law，
+時間一様なsemi-regularity，
+移動領域上のエネルギー安定性を解析します．
+exactであることはmesh qualityを保証しないため，
+要素反転・flatness退化・時間依存定数も明示的に追跡します．
 
-最終的には，存在定理などの純粋理論の成果と，数値解析における安定かつ効率的な離散スキーム設計を両輪に据え，異方性評価や幾何条件を統合した新しい解析枠組みを構築することを目指します．将来的には，移動境界や二相流の複雑な現象に対して，安定かつ高精度の有限要素スキームを提供することを目指します．
-<br><br>
+<h4>10d．Fluid–structure interaction</h4>
+FSIでは真の界面自体が未知であるため，
+exact-curvedとは真の界面を事前に知ることではありません．
+固体の離散変位が定める曲界面を，さらに直線化せず写像の像として扱うことを意味します．
+流体側と固体側で同じ曲界面を共有し，
+界面仕事の相殺，divergence preservation，局所質量保存，
+異方性境界層を統一した離散エネルギー評価を目指します．
+
+<h4>10e．Certified shape and interface outputs</h4>
+最終段階では，shape derivative，界面traction，流量，エネルギー交換などに対し，
+平衡化フラックスとgoal-oriented error estimationを用いたcertificateを構成します．
+この系列の論文化順は，
+\[
+  \text{curved CR--RT}
+  \longrightarrow
+  \text{shape derivative}
+  \longrightarrow
+  \text{ALE}
+  \longrightarrow
+  \text{FSI}
+  \longrightarrow
+  \text{certified interface outputs}
+\]
+です．
 
 関連する Vision:
 <ul>
-  <li>Vision 14：Nitsche・異方性解析を計量不変で統合</li>
-  <li>Vision 3：多角形要素設計の活用</li>
-  <li>Vision 12：災害・流体応用の実装先</li>
+  <li>Vision 14：計量幾何と時間依存異方性</li>
+  <li>Vision 17：平衡化フラックス・verified output</li>
+  <li>Vision 20：DMP・maximum-norm評価の曲領域への拡張</li>
+  <li>Vision 21：Piola変換・de Rham可換性</li>
 </ul>
-
 </p>
 </article>
 </div>
 
-<h3>Vision 11: 記憶効果・時間遅れ・異常拡散の統一解析【G】【R】</h3>
+
+
+<h3>Vision 11: 記憶・時間遅れをもつ履歴依存型発展方程式 — 連続理論から構造保存完全離散化へ【R】【G】【V】</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
-時間発展を伴う数理モデルの中には，過去の状態が将来の振る舞いに影響を与える 記憶効果 を持つものが多く存在します．材料科学における粘弾性モデル，生体システムの時間遅れ反応，熱伝導における非フーリエ現象，さらには確率的ゆらぎを伴う拡散現象などがその例です．これらは従来，時間遅れモデル や 異常拡散モデル として個別に研究されてきましたが，実際には密接に関連しており，その統一的理解が強く求められています．これらは一見バラバラの現象に見えますが，数学的には分数階微分という共通の枠組みで統一的に捉えることが可能です．分数階時間微分は，記憶効果や遅れを自然に表現でき，通常の整数階の時間発展方程式を拡張する柔軟な言語を提供します．<br><br>
+<b>位置づけ：〖Core〗（連続理論・kernel stability・完全離散解析）</b><br><br>
 
-私は，このテーマを一つの柱として据え，分数階時間微分 を共通の枠組みとして利用することで，記憶効果・時間遅れ・異常拡散を統一的に扱う理論基盤を構築したいと考えています．分数階時間微分は，単なる形式的拡張ではなく，系が持つ「過去からの影響の重み付け」を自然に表現するものであり，さまざまな物理・工学現象に適用可能です．<br><br>
+本Visionでは，記憶効果，分布遅延，離散遅延，弱特異kernelを，
+「分数階微分ですべて統一する」のではなく，
+それぞれのkernel・測度構造を保持した履歴依存型発展方程式として扱います．
+基本モデルは，
+\[
+  \partial_tu(t)+A_0u(t)
+  +
+  \int_{[0,\tau]}
+  A_1\widetilde u(t-s)\,d\mu(s)
+  =
+  f(t)
+\]
+および
+\[
+  \partial_tu(t)+A_0u(t)
+  +
+  \int_0^t k(t-s)A_1u(s)\,ds
+  =
+  f(t)
+\]
+です．現在値だけでは将来の時間発展を決められず，
+過去の軌道または拡張状態を必要とするという意味で履歴依存型です．
+確率性は必須ではありません．
 
-この方向性の魅力は，解析学と数値解析の両面で新しい挑戦を含む点にあります．解析学的には，分数階時間微分を含む偏微分方程式の 弱解の存在・一意性 を確立し，その解の正則性や長時間挙動を明らかにする必要があります．数値解析の側面では，これらのモデルに対して 安定かつ高精度な時間離散スキームを設計し，誤差評価を与えることが大きな課題となります．<br><br>
+<h4>11a．連続問題の構造</h4>
+近い段階では，
+<ul>
+  <li>positive-type memoryのcoercivity gapとcritical horizon，</li>
+  <li>瞬間的拡散が退化する場合のgraph-space well-posedness，</li>
+  <li>measure-valued delayに対するweighted well-posedness，</li>
+  <li>kernel摂動・原子近似・zero-delay limitに対する安定性</li>
+</ul>
+を相互に役割分担させ，連続理論を閉じます．
 
-特に，私がこれまで取り組んできた異方性メッシュ解析を組み合わせることで，空間的な特異構造（境界層・特異点）と時間的な記憶効果を同時に制御する新しい誤差評価が可能になると期待しています．これにより，記憶を伴う複雑な現象に対しても，効率的で精密な数値解を提供できる枠組みが構築できるはずです．例えば，時間方向に分数階微分を導入したストークス方程式に対して，圧力ロバスト性や長時間安定性を保証できるスキーム設計は，その重要なステップです．<br><br>
+<h4>11b．内部変数と構造保存離散化</h4>
+完全単調kernelまたは指数和近似について，memory項を内部変数の連続体または有限系として表現します．
+BDF／convolution quadratureを，単なるweight計算ではなく，
+内部変数系を同じ時間スキームで離散化したものとして理解し，
+cross-term cancellationとgraph energyを離散レベルで再現します．
+目標は，
+\[
+  \|U_\tau\|_{\mathrm{graph},\tau}
+  \leq
+  C\|\mathrm{data}\|,
+  \qquad
+  C\ \text{independent of the degenerating instantaneous coercivity}
+\]
+という一様安定性です．
 
-このように，幾何条件と異方性解析を中心とする「空間の柱」と，記憶効果・時間遅れ・異常拡散を扱う「時間の柱」を両輪とすることで，複雑な現象を統一的に理解し数値化するための基盤を作り上げたいと考えています．この挑戦は，単に数学理論の発展にとどまらず，非フーリエ熱伝導や生体リズム，異常拡散を含む気候モデルなど，多様な応用領域に直接的なインパクトを与える可能性を秘めています．
-<br><br>
-
-【追記】微視的熱伝導モデルに対する有限要素解析に取り組み，時間遅れを伴うPDEを数値的に解析した経験があります（[P1] H. Ishizaka and M. Tabata, JSIAM, 2007）．この研究は，古典的フーリエ則の枠組みを超えた非標準的な時間発展モデルに触れるきっかけであり，現在の研究テーマである「記憶効果・分数時間微分・異常拡散の統一的解析」への出発点とも言えます．
-<br><br>
+<h4>11c．空間異方性と認証</h4>
+時間・履歴構造を閉じた後に，CR–RT空間離散，
+flatness parameterに基づく異方性誤差評価，
+平衡化フラックスを組み合わせ，
+\[
+  \eta_{\mathrm{kernel}}
+  +
+  \eta_{\mathrm{space}}
+  +
+  \eta_{\mathrm{time}}
+  +
+  \eta_{\mathrm{flux}}
+\]
+という完全離散誤差予算を構成します．
+memory系列では，一つの論文に連続理論，完全離散化，逆問題，異方性FEM，応用をすべて詰め込まず，
+主定理ごとに分割します．
 
 関連する Vision:
 <ul>
-  <li>Vision 6：BDF/FBDF・長時間安定との連携</li>
-  <li>Vision 12：現象側の応用（気象・災害モデル）</li>
-  <li>Vision 15：分数階も“計量と射影”で整理</li>
-  <li>Vision 18：未解像過程のmemory modelling・kernel stability・同定・完全離散化</li>
+  <li>Vision 6：BDF系時間積分と長時間安定性</li>
+  <li>Vision 17：完全離散certificate</li>
+  <li>Vision 18：未解像状態の消去，kernel導出，model-reduction error</li>
+  <li>Vision 19：治療履歴と潜在状態に基づく疾患進行予測</li>
 </ul>
-
 </p>
 </article>
 </div>
+
 
 <h3>Vision 12: 異常気象・災害現象の数理モデルと数値解析【R】【A】</h3>
 <div class="news">
@@ -707,10 +937,12 @@ Virtual Element Method (VEM) は polygon/polyhedron 要素を直接扱える柔�
 
 
 
+
 <h3>Vision 17: AI4Math時代の保証付き有限要素解析 — 形式推論・自動検証・計算可能な幾何条件【V】【R】【G】【A】</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
+<b>位置づけ：〖Core〗（certificate・verified output・形式化可能な証明構造）</b><br><br>
 AI支援型数学，形式推論，自動証明支援の発展により，数学研究では「発見すること」だけでなく，「証明を検証可能な形で記述すること」，「既存の理論を再利用可能な知識として整理すること」の重要性が高まっています．有限要素法においても，数値解を得るだけでなく，その誤差・安定性・目的量をどのように保証するかが本質的な課題です．<br><br>
 
 私は，これまでに構築してきた異方性メッシュ理論，flatness parameter，準正則条件，二段変換，非適合要素・混合要素の誤差解析を基盤として，有限要素解析を「保証可能な数学的パイプライン」として再構成することを目指します．ここでは，メッシュの幾何条件，補間誤差評価，離散安定性，平衡化フラックス，DWR型目的量評価を連結し，計算結果に対して明示的な certificate を与える枠組みを発展させます．<br><br>
@@ -742,7 +974,7 @@ AI支援型数学，形式推論，自動証明支援の発展により，数学
 
 
 
-<h3>Vision 18: 未解像ダイナミクスと非マルコフ方程式: 記憶核の導出・同定・解析・信頼保証付き数値計算【R】【A】【V】</h3>
+<h3>Vision 18: 未解像ダイナミクスと履歴依存型発展方程式 — 記憶核の導出・同定・解析・信頼保証付き数値計算【R】【A】【V】</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
@@ -783,12 +1015,12 @@ AI支援型数学，形式推論，自動証明支援の発展により，数学
   \longrightarrow
   \text{certified computation}
 \]
-という研究プログラムへ発展させます．異方性有限要素法による空間誤差制御と，measure-valued memoryによる時間非局所性・モデル誤差の制御を結び付け，upscaling，kernel同定，kernel近似，空間離散化，時間離散化の各誤差を同じ誤差予算の中で追跡できるtrustworthy non-Markovian simulationの構築を目指します．<br><br>
+という研究プログラムへ発展させます．異方性有限要素法による空間誤差制御と，measure-valued memoryによる時間非局所性・モデル誤差の制御を結び付け，upscaling，kernel同定，kernel近似，空間離散化，時間離散化の各誤差を同じ誤差予算の中で追跡できるtrustworthy history-dependent simulationの構築を目指します．<br><br>
 
 <p><b>Research statement:</b><br>
 My research treats memory kernels not as fixed modelling inputs, but as mathematical variables to be derived, identified, approximated, and certified together with the numerical solution.</p>
 
-複雑な多重スケール現象を数値計算するとき，すべての時間・空間スケールを直接解像することはできません．しかし，計算から除かれた自由度の影響は単に消えるのではなく，現在の状態だけでは表せない「過去への依存」として残ることがあります．このような非マルコフ的な効果を，経験的な補正項として加えるだけでなく，安定性・同定可能性・離散化誤差まで含めて数学的に制御することが本Visionの目的です．<br><br>
+複雑な多重スケール現象を数値計算するとき，すべての時間・空間スケールを直接解像することはできません．しかし，計算から除かれた自由度の影響は単に消えるのではなく，現在の状態だけでは表せない「過去への依存」として残ることがあります．このような履歴依存効果を，経験的な補正項として加えるだけでなく，安定性・同定可能性・離散化誤差まで含めて数学的に制御することが本Visionの目的です．<br><br>
 
 代表的なモデルとして，測度値時間遅れをもつ発展方程式
 \[
@@ -1020,7 +1252,7 @@ J(U_{h,\tau,N})
   \; / \;
   \text{observable data}
 \]
-を明示し，同じ非マルコフ型方程式を安易に当てはめるのではなく，kernelの意味と推定可能性を検証します．具体的には，次の応用を想定しています．<br><br>
+を明示し，同じ履歴依存型方程式を安易に当てはめるのではなく，kernelの意味と推定可能性を検証します．具体的には，次の応用を想定しています．<br><br>
 
 <ol>
   <li><b>癌細胞集団・薬剤耐性・腫瘍微小環境</b><br>
@@ -1066,7 +1298,7 @@ J(U_{h,\tau,N})
   \longrightarrow
   \text{uncertainty-aware visualisation}
 \]
-です．非マルコフ型モデルを「経験的に導入された項」から，「同定可能で，近似誤差を保証できる計算対象」へ変えることを長期的な目標とします．<br><br>
+です．履歴依存型モデルを「経験的に導入された項」から，「同定可能で，近似誤差を保証できる計算対象」へ変えることを長期的な目標とします．<br><br>
 
 関連する Vision:
 <ul>
@@ -1077,6 +1309,7 @@ J(U_{h,\tau,N})
   <li>Vision 13／14：異方性PDE・空間マルチスケール離散化との接続</li>
   <li>Vision 15：表現・計量・射影による縮約法と数値解法の統一的理解</li>
   <li>Vision 17：upscaling・kernel・離散化誤差に対するcertificate</li>
+  <li>Vision 20：maximum-norm・正値性・bound-preserving離散化</li>
   <li>Vision 19：治療履歴と潜在状態に基づく癌・歯周病の動的進行予測</li>
 </ul>
 
@@ -1396,6 +1629,183 @@ My research aims to infer hidden disease states and history effects from longitu
 </p>
 </article>
 </div>
+
+<h3>Vision 20: 異方性CR–RTにおける離散最大値原理とmaximum-norm誤差評価【G】【R】【V】</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+<b>位置づけ：〖Core〗（次の新規論文候補・基礎解析）</b><br><br>
+
+本Visionは，異方性メッシュ上で
+\[
+  \text{解の符号・上下界を保つこと}
+  \quad\text{と}\quad
+  \text{点ごとの誤差を定量化すること}
+\]
+を明確に区別しながら，両者を計算可能な幾何条件の下で接続するものです．
+
+<h4>20a．CR法の離散最大値原理</h4>
+CR局所剛性行列の非対角成分の符号，
+異方性拡散テンソルに対するmetric-angle条件，
+正値性を保つ右辺離散化を解析します．
+semi-regularity
+\[
+  \sup_T\frac{H_T}{h_T}<\infty
+\]
+は補間・安定性の条件であり，
+\[
+  \nabla\lambda_i^{\top}D_T\nabla\lambda_j\leq0
+\]
+は単調性の条件です．
+この二つが同値ではないことを二次元・三次元の反例とともに整理します．
+さらに，CR自由度に対するDMPと，物理空間内のpointwise boundの違いを明らかにし，
+RT保存流束およびbound-preserving reconstructionへ接続します．
+
+<h4>20b．異方性 \(L^\infty\) 誤差評価</h4>
+最大ノルム誤差は，局所要素形状だけでなく，
+メッシュの接続・パッチ構造・離散Green関数に依存し得ます．
+したがって，
+\[
+  \|u-u_h\|_{L^\infty(\Omega)}
+  \leq
+  C\ell_h
+  \left[
+    \max_T
+    \sum_{i=1}^d
+    h_{T,i}^2
+    \|\partial_{\boldsymbol r_{T,i}}^2u\|_{L^\infty(\omega_T)}
+    +
+    \eta_{\mathrm{conn}}
+  \right]
+\]
+のように，方向別補間誤差とconnectivity termを分離することを目指します．
+最初は直線単体上の \(P_1\) FEMとRitz射影を対象とし，
+その後にCR conforming companion，broken \(L^\infty\)，
+exact-curved geometry，verified pointwise outputへ進みます．
+
+<h4>20c．DMPとmaximum-norm stabilityの関係</h4>
+\[
+  \text{DMP}
+  \not\Rightarrow
+  \text{optimal }L^\infty\text{ convergence}
+\]
+であり，逆も一般には成立しません．
+M行列条件，離散Green関数，Ritz射影安定性，
+patch connectivityのどれが十分条件・必要条件となるかを整理します．
+DMP論文とmaximum-norm論文は独立させつつ，
+局所幾何・反例・計算コードを共有します．
+
+<h4>Exit criteria</h4>
+<ul>
+  <li>二次元・三次元でCR固有のDMP結果が得られること，</li>
+  <li>DOF-level DMPとpointwise boundの差を定理化できること，</li>
+  <li>semi-regularityだけでは不足する接続条件を特定できること，</li>
+  <li>RT再構成またはconforming companionと結び付けられること</li>
+</ul>
+
+関連する Vision:
+<ul>
+  <li>Vision 10：曲領域・移動領域上のpointwise評価</li>
+  <li>Vision 14：metric geometryと異方性拡散テンソル</li>
+  <li>Vision 17：pointwise・bound-preserving certificate</li>
+  <li>Vision 21：CR–RT–Nédélecの離散構造</li>
+</ul>
+</p>
+</article>
+</div>
+
+<h3>Vision 21: 3D Nédélec補間から異方性de Rham・Hodge・Maxwellへ【G】【R】【V】</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+<b>位置づけ：〖Core〗（基礎投資・長期旗艦理論）</b><br><br>
+
+本Visionでは，既存の異方性RT補間理論を
+\(H(\operatorname{curl})\)適合Nédélec要素へ拡張し，
+三次元四面体上の低次de Rham complexを，
+計算可能な幾何条件の下で統一します．
+
+<h4>21a．Three-dimensional Nédélec interpolation</h4>
+第1種Nédélec補間に対して，two-step transformationと弱境界momentを用い，
+方向別微分，curl寄与，幾何係数を分離した評価を目指します．
+単に最大角条件付き定数を \(H_T/h_T\) で書き換えるのではなく，
+<ul>
+  <li>最大角退化時の定数発散率を陽に示すこと，</li>
+  <li>低正則性でedge momentを安定に定義すること，</li>
+  <li>RT補間と同一の幾何量で可換性を制御すること，</li>
+  <li>三次元四面体固有の方向別評価を得ること</li>
+</ul>
+を新規性の出口条件とします．
+単独論文として十分でない場合は，以下のde Rham論文の基礎節へ統合します．
+
+<h4>21b．Anisotropic de Rham stability</h4>
+最初の旗艦論文では，
+\[
+  P_1^c
+  \xrightarrow{\nabla}
+  N_0
+  \xrightarrow{\operatorname{curl}}
+  RT_0
+  \xrightarrow{\operatorname{div}}
+  P_0
+\]
+を対象として，
+<ul>
+  <li>局所・大域可換射影，</li>
+  <li>離散Poincaré不等式，</li>
+  <li>安定Hodge分解，</li>
+  <li>調和成分と領域位相，</li>
+  <li>必要な大域grading・patch connectivity，</li>
+  <li>最大角退化時の障害</li>
+</ul>
+を明らかにします．
+CR要素を無理にde Rham complexの矢印へ入れるのではなく，
+RT–CRの離散随伴・局所保存と，
+Nédélec–RTの可換性を，
+離散Hodge分解の中で接続します．
+
+<h4>21c．Maxwell and certification</h4>
+de Rham・Hodge理論を基礎に，
+discrete compactness，spectral correctness，
+Maxwell固有値問題へ進みます．
+最終的には，
+\[
+  \operatorname{curl}\Pi_h^N
+  =
+  \Pi_h^{RT}\operatorname{curl}
+\]
+と計算可能な幾何certificateを用いた
+verified Maxwell finite elementsを目指します．
+
+<h4>Research order</h4>
+\[
+  \text{3D Nédélec stability}
+  \longrightarrow
+  \text{low-order anisotropic de Rham}
+  \longrightarrow
+  \text{stable Hodge decomposition}
+  \longrightarrow
+  \text{discrete compactness}
+  \longrightarrow
+  \text{Maxwell certification}
+\]
+です．
+fractional-order quasi-interpolation，外部代数，一般次元化は，
+低次三次元理論を閉じた後のExpansionとします．
+
+関連する Vision:
+<ul>
+  <li>Vision 1：曲面・多様体上の複体構造</li>
+  <li>Vision 10：曲要素上のPiola変換とCR–RT compatibility</li>
+  <li>Vision 14：計量不変の幾何条件</li>
+  <li>Vision 17：可換図式・補間補題の形式化とcertificate</li>
+  <li>Vision 20：CR–RTの単調性・局所保存との接続</li>
+</ul>
+</p>
+</article>
+</div>
+
+
 
 <!--<h3>(仮)</h3>
 <div class="news">
