@@ -112,7 +112,7 @@
 <article class="news-item">
 <p>
 このBlogでは，有限要素法（FEM）の実装・理論・研究メモを，連載形式で整理しています．
-FEniCSx / FreeFEM による実験，異方性メッシュと幾何条件，Exact-curved FEM，外挿法，CIP法，Weak Galerkin法，非圧縮流れ，さらにmemory・delayをもつ非マルコフ型モデルなどを扱いながら，最終的には
+FEniCSx / FreeFEM による実験，異方性メッシュと幾何条件，Exact-curved FEM，外挿法，CIP法，Weak Galerkin法，非圧縮流れ，さらに未解像ダイナミクスから生じるmemory・delayを含む非マルコフ方程式などを扱いながら，最終的には
 <strong>Certified finite element analysis under computable geometric conditions</strong>
 へ接続することを目指しています．
 </p>
@@ -128,11 +128,11 @@ FEniCSx / FreeFEM による実験，異方性メッシュと幾何条件，Exact
   <li>研究テーマから入る場合：Exact-curved FEM，外挿法，CIP法，非圧縮流れの記事</li>
   <li>AI4Math・形式検証から入る場合：Lean 4 と AI4Math の記事</li>
   <li>PINNs・深層学習数値解法から入る場合：PINNs と幾何条件の記事</li>
-  <li>memory・delay・非マルコフ型モデルから入る場合：未解像過程の記憶に関する記事</li>
+  <li>未解像ダイナミクス・memory・非マルコフ方程式から入る場合：記憶をもつシミュレーションの数理に関する記事</li>
 </ul>
 <p>
 This page is updated periodically.<br>
-(25th July 2026 <span class="cat cat001">Update</span>)
+(26th July 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
@@ -440,24 +440,31 @@ Physics-Informed Neural Networks（PINNs）は，有限個の残差点で損失�
 </div>
 
 
-<h2>記憶をもつシミュレーションの数理：モデル化・同定・離散化</h2>
+<h2>記憶をもつシミュレーションの数理：未解像ダイナミクスと非マルコフ方程式</h2>
 <div class="news">
 <article class="news-item">
 <p>
-複雑な多重スケール系では，計算から除かれた未解像自由度の影響が，現在の状態だけでなく過去の履歴に依存することがあります．この連載では，その影響をmeasure-valued delayやVolterra型memoryとして表し，<strong>モデル化・適切性・kernel stability・同定・完全離散化・検証</strong>を一つの流れとして整理します．
+未解像ダイナミクスには，空間的・時間的に細かすぎて直接計算できない自由度だけでなく，直接観測できない内部状態，多数の変数を平均化した効果，計測されていない潜在変数，および過去の履歴によってのみ識別できる状態も含まれます．この連載では，それらの影響をmeasure-valued delay，Volterra型memory，作用素値kernel，確率的forcingとして表し，<strong>モデル化・適切性・kernel stability・同定・完全離散化・検証</strong>を一つの流れとして整理します．
 </p>
 <p>
-中心となる問いは，「記憶を導入した方程式を解けるか」だけではありません．どのkernelが観測から識別できるのか，分布kernelを有限個の遅延で置き換えたときに解がどれだけ変わるのか，遅延が原点へ近づくと何が破綻するのか，正値性や最大値原理を保つ離散法を作れるのか，という問題を段階的に扱います．
+対象は，非フーリエ熱伝導や粘弾性だけではありません．癌細胞集団の潜在状態と薬剤耐性，生体分子の粗視化，未解像渦を含む流体・輸送，大気海洋モデルなども候補になります．ただし，「見えないものを何でも推測する」のではなく，どの潜在状態またはkernelが観測から識別可能か，モデル化誤差と数値誤差をどこまで分離して保証できるかを明らかにすることが中心課題です．
+</p>
+<p>
+中心となる問いは，「記憶を導入した方程式を解けるか」だけではありません．どのkernelが観測から識別できるのか，分布kernelを有限個の遅延で置き換えたときに解がどれだけ変わるのか，遅延が原点へ近づくと何が破綻するのか，正値性や最大値原理を保つ離散法を作れるのか，さらに目的量へ伝播する総誤差をどこまで計算可能なcertificateとして与えられるか，という問題を段階的に扱います．
 </p>
 <p class="news-cont">
 <ul>
-  <li><a href="./posts/unresolved-memory-01.html">第1回：未解像過程の記憶をどう安定にモデル化・同定・離散化するか</a> <div class="news-date"><time datetime="2026-07-25">25th July 2026</time></div></li>
-  <li>第2回：なぜmeasure-valued delayなのか — 分布遅延・離散遅延・混合遅延（準備中）</li>
-  <li>第3回：kernel stabilityと有限原子近似 — 何を誤差として測るか（準備中）</li>
-  <li>第4回：exact delayとTaylor-reduced phase-lag modelは何が違うか（準備中）</li>
-  <li>第5回：観測からmemory kernelを同定できるか — inverse problemへの入口（準備中）</li>
-  <li>第6回：最大値原理・正値性・zero-delay boundary（準備中）</li>
-  <li>第7回：確率的memoryと未解像過程のclosure（準備中）</li>
+  <li><a href="./posts/unresolved-memory-01.html">第1回：未解像ダイナミクスと非マルコフ方程式 — 記憶をどう安定にモデル化・同定・離散化するか</a> <div class="news-date"><time datetime="2026-07-25">25th July 2026</time></div></li>
+  <li>第2回：未解像ダイナミクスとは何か — 微細自由度から観測されない潜在状態まで（準備中）</li>
+  <li>第3回：なぜmeasure-valued delayなのか — 分布遅延・離散遅延・混合遅延（準備中）</li>
+  <li>第4回：kernel stabilityと有限原子近似 — 何を誤差として測るか（準備中）</li>
+  <li>第5回：exact delayとTaylor-reduced phase-lag modelは何が違うか（準備中）</li>
+  <li>第6回：観測からmemory kernelを同定できるか — inverse problemへの入口（準備中）</li>
+  <li>第7回：癌細胞の見えない状態を数理モデルから推定できるか（準備中）</li>
+  <li>第8回：分子粗視化・粘弾性・非フーリエ熱伝導に現れるmemory（準備中）</li>
+  <li>第9回：流体・乱流・輸送・気候モデルのmemory closure（準備中）</li>
+  <li>第10回：最大値原理・正値性・zero-delay boundary（準備中）</li>
+  <li>第11回：確率的memoryと信頼保証付き非マルコフ型計算（準備中）</li>
 </ul>
 </p>
 <p>
