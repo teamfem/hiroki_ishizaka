@@ -840,6 +840,89 @@ My research treats memory kernels not as fixed modelling inputs, but as mathemat
   \text{certified discretisation}
 \]
 という一連の流れを構築します．これにより，空間マルチスケール法と時間非局所モデルを分離せず，upscaling error，memory-model error，kernel approximation error，空間・時間離散化誤差を同じ誤差予算の中で追跡することを目指します．<br><br>
+<h4>正確な縮約，近似的な縮約，model reduction error</h4>
+微視的変数を消去すること自体が，必ずしも誤差を生むわけではありません．未解像変数を厳密に消去し，そこから生じる作用素値memory，初期微視状態に由来する項，必要に応じて確率的forcingをすべて保持できれば，解像変数に関しては元のfine-scale systemと同値な縮約表現が得られます．<br><br>
+
+誤差が生じるのは，実際の計算で，
+<ul>
+  <li>memory項を瞬時的な有効係数へ置き換える，</li>
+  <li>作用素値kernelを有限個の指数関数・原子遅延で近似する，</li>
+  <li>初期微視状態に由来する項を無視する，</li>
+  <li>重要な潜在変数を解像変数から外す，</li>
+  <li>高忠実度モデルそのものが現実を完全には表していない</li>
+</ul>
+といった近似を行うときです．したがって，現実の目的量 \(J_{\mathrm{real}}\)，fine-scale modelの解 \(u_{\mathrm{fine}}\)，縮約モデルの解 \(u_{\mathrm{red}}\)，完全離散解 \(U_{h,\tau,N}\) に対し，
+\[
+\begin{aligned}
+\left|
+J_{\mathrm{real}}
+-
+J(U_{h,\tau,N})
+\right|
+\leq{}&
+\eta_{\mathrm{physical}}
++\eta_{\mathrm{reduction}}
++\eta_{\mathrm{kernel}}\\
+&+\eta_{\mathrm{parameter}}
++\eta_{\mathrm{space}}
++\eta_{\mathrm{time}}
++\eta_{\mathrm{data}}
+\end{aligned}
+\]
+という誤差分解を考えます．ここで，
+\[
+  \eta_{\mathrm{physical}}
+  =
+  \left|J_{\mathrm{real}}-J(u_{\mathrm{fine}})\right|
+\]
+は現実とfine-scale modelとの差，
+\[
+  \eta_{\mathrm{reduction}}
+  =
+  \left|J(u_{\mathrm{fine}})-J(u_{\mathrm{red}})\right|
+\]
+は未解像自由度を縮約したことによるmodel reduction errorです．<br><br>
+
+<h4>目的量志向のmodel adaptivity</h4>
+本Visionでは，縮約モデルを固定して解析するだけでなく，計算可能な縮約誤差指標
+\[
+  \left|
+    J(u_{\mathrm{fine}})
+    -
+    J(u_{\mathrm{red}})
+  \right|
+  \leq
+  \eta_{\mathrm{red}}
+\]
+を構成し，その大きさと内訳に応じてモデルそのものを適応的に精密化することを目指します．例えば，
+\[
+  \eta_{\mathrm{red}}
+  =
+  \eta_{\mathrm{unresolved}}
+  +\eta_{\mathrm{memory}}
+  +\eta_{\mathrm{initial\ fine\ state}}
+\]
+と分解できれば，
+<ul>
+  <li>\(\eta_{\mathrm{unresolved}}\) が大きい場合は，重要な潜在状態を新しい解像変数として追加する，</li>
+  <li>\(\eta_{\mathrm{memory}}\) が大きい場合は，kernelの階数・原子数・時間解像度を増やす，</li>
+  <li>\(\eta_{\mathrm{initial\ fine\ state}}\) が大きい場合は，初期微視状態の同定を改善する，</li>
+  <li>特定の領域・時刻だけ誤差が大きい場合は，局所的にfine-scale modelへ戻る</li>
+</ul>
+という判断が可能になります．これは，空間メッシュを誤差に応じて細分化するadaptive FEMを，近似空間だけでなくモデル階層そのものへ拡張する考え方です．<br><br>
+
+目標は，すべての状態変数を一様に高精度で再現することではなく，指定した目的量に対して必要な微視情報を選択するgoal-oriented model reductionです．すなわち，
+\[
+  \text{error estimation}
+  \longrightarrow
+  \text{missing-state detection}
+  \longrightarrow
+  \text{model enrichment}
+  \longrightarrow
+  \text{recertification}
+\]
+という閉ループを構成し，memory modelを「一度作って固定する近似」から，「誤差に応じて更新されるcertified reduced model」へ発展させます．<br><br>
+
 
 本Visionでは，次の四つの課題を一つの流れとして扱います．
 <ol>
@@ -855,12 +938,17 @@ My research treats memory kernels not as fixed modelling inputs, but as mathemat
   <li><b>離散化と検証（discretisation and verification）</b><br>
   微細モデルから粗視化モデルへのupscaling，memory modelの選択，kernelの有限原子近似，空間Galerkin近似，時間離散化を組み合わせ，
   \[
+  \begin{aligned}
     \text{total error}
-    =\text{upscaling error}
-    +\text{memory-model error}
+    ={}&\text{physical-model discrepancy}
+    +\text{model-reduction error}\\
+    &+\text{memory-model error}
     +\text{kernel error}
-    +\text{space error}
+    +\text{parameter error}\\
+    &+\text{space error}
     +\text{time error}
+    +\text{data error}
+  \end{aligned}
   \]
   という形で誤差を追跡します．さらに，正値性，最大値原理，保存則，確率的不確実性を含むphysical constraintを検査し，計算結果に対するcertificateを構成します．</li>
 </ol>
@@ -1137,7 +1225,65 @@ My research aims to transform longitudinal dental histories into dynamically upd
 \]
 という統合が可能になります．異方性FEM，exact-curved FEM，離散最大値原理，移動境界，verified outputは，この機構層の計算保証を担当します．<br><br>
 
-<h4>7．予測の信頼保証</h4>
+<h4>7．微視情報を削ることによる予測誤差</h4>
+歯科疾患の詳細モデルには，細菌種ごとの動態，バイオフィルム内部構造，局所pH，唾液流，エナメル質微細構造，免疫応答，骨代謝など，多数の微視的・潜在的変数が含まれ得ます．これらをすべて患者別に観測・計算することは困難であるため，実際の予測では少数の臨床変数へ縮約します．しかし，その縮約により，将来の病変進行や予防介入の評価が変わる可能性があります．<br><br>
+
+現実の目的量を \(J_{\mathrm{real}}\)，詳細機構モデルの結果を \(J_{\mathrm{fine}}\)，履歴依存縮約モデルの結果を \(J_{\mathrm{red}}\)，数値予測を \(J_{h}\) とすれば，
+\[
+\begin{aligned}
+\left|
+  J_{\mathrm{real}}-J_h
+\right|
+\leq{}&
+\left|J_{\mathrm{real}}-J_{\mathrm{fine}}\right|
++
+\left|J_{\mathrm{fine}}-J_{\mathrm{red}}\right|\\
+&+
+\left|J_{\mathrm{red}}-J_h\right|
+\end{aligned}
+\]
+と分けられます．第1項は医学・生物学的model discrepancy，第2項は微視情報を削ったmodel reduction error，第3項は同定・データ・数値近似に由来する誤差です．<br><br>
+
+特に重要なのは，
+\[
+  \left|
+  \text{fine-scale prevention effect}
+  -
+  \text{reduced-model prevention effect}
+  \right|
+\]
+です．進行確率だけが近くても，介入Aと介入Bの優劣が逆転するなら，予防判断に用いる縮約モデルとしては不十分です．したがって，本Visionでは状態全体の平均誤差だけでなく，
+<ul>
+  <li>一定期間内の虫歯・歯周病進行確率，</li>
+  <li>病変深さ・骨吸収・歯の喪失などの目的量，</li>
+  <li>介入間のリスク差，</li>
+  <li>推奨する受診間隔・予防方策の順位</li>
+</ul>
+に対するgoal-oriented reduction errorを評価します．<br><br>
+
+<h4>8．誤差に応じた歯科モデルの適応的拡張</h4>
+縮約誤差が大きい場合には，モデルを固定したまま統計手法だけを複雑化するのではなく，何が不足しているかに応じてモデルを拡張します．例えば，
+<ul>
+  <li>病変量だけでは履歴を説明できない場合は，pHや炎症状態を解像変数に追加する，</li>
+  <li>治療効果の短期・長期成分を表せない場合は，memory kernelの原子数や時間スケールを増やす，</li>
+  <li>特定の歯面・歯周部位だけ誤差が大きい場合は，その部位だけ機構PDEまたは高解像度画像モデルへ戻す，</li>
+  <li>患者群間で誤差構造が異なる場合は，階層モデルや患者別random effectを追加する</li>
+</ul>
+ことが考えられます．<br><br>
+
+この流れは，
+\[
+  \text{prediction error}
+  \longrightarrow
+  \text{missing dental state}
+  \longrightarrow
+  \text{model enrichment}
+  \longrightarrow
+  \text{updated prediction}
+\]
+として表されます．Vision 19では，このmodel adaptivityを，受診ごとのデータ更新と組み合わせます．すなわち，観測が増えるたびに予測パラメータを更新するだけでなく，必要に応じて状態変数・kernel・機構モデルの解像度も更新することを目指します．<br><br>
+
+<h4>9．予測の信頼保証</h4>
 最終的に一つのリスク値だけを返すのではなく，
 \[
   \left|
@@ -1146,7 +1292,9 @@ My research aims to transform longitudinal dental histories into dynamically upd
   \lesssim
   \eta_{\mathrm{data}}
   +\eta_{\mathrm{history}}
-  +\eta_{\mathrm{model}}
+  +\eta_{\mathrm{physical}}
+  +\eta_{\mathrm{reduction}}
+  +\eta_{\mathrm{kernel}}
   +\eta_{\mathrm{parameter}}
   +\eta_{\mathrm{numerical}}
 \]
@@ -1154,25 +1302,29 @@ My research aims to transform longitudinal dental histories into dynamically upd
 <ul>
   <li>\(\eta_{\mathrm{data}}\)：観測ノイズ・記録誤り・施設間差，</li>
   <li>\(\eta_{\mathrm{history}}\)：欠測・不規則受診・過去記録の欠落，</li>
-  <li>\(\eta_{\mathrm{model}}\)：状態構造・kernel・因果仮定のずれ，</li>
-  <li>\(\eta_{\mathrm{parameter}}\)：有限データからの推定不確実性，</li>
+  <li>\(\eta_{\mathrm{physical}}\)：詳細機構モデルと現実の疾患進行との差，</li>
+  <li>\(\eta_{\mathrm{reduction}}\)：微視的・潜在的変数を削ったことによる縮約誤差，</li>
+  <li>\(\eta_{\mathrm{kernel}}\)：治療履歴・潜在状態を表すmemory kernelの近似・同定誤差，</li>
+  <li>\(\eta_{\mathrm{parameter}}\)：有限データからの推定不確実性と因果仮定の感度，</li>
   <li>\(\eta_{\mathrm{numerical}}\)：PDE・積分・最適化・近似推論の数値誤差</li>
 </ul>
 を表します．数値解析だけで医学的真実を保証することはできませんが，少なくとも「どの仮定と誤差が予測を支配しているか」を追跡可能にします．これはVision 7bのposterior certification，Vision 17のcertificate，Vision 18のkernel stabilityを歯科予測へ統合するものです．<br><br>
 
-<h4>8．研究ロードマップ</h4>
+<h4>10．研究ロードマップ</h4>
 <ol>
   <li><b>縦断記録の構造化：</b>歯・歯面・歯周部位ごとの状態遷移と治療イベントを抽出する．</li>
   <li><b>動的予測：</b>受診ごとに更新される虫歯・歯周病進行リスクを構築し，calibrationと外部検証を行う．</li>
   <li><b>履歴kernel：</b>治療・予防・再発の時間効果をmeasure-valued memoryとして同定する．</li>
   <li><b>因果的予防：</b>予測と治療効果を区別し，受診間隔や介入選択に対する動的方策を検討する．</li>
   <li><b>機構統合：</b>反応拡散・骨吸収・力学PDEと縦断データをlatent-state modelで結合する．</li>
-  <li><b>信頼保証：</b>データ・モデル・同定・数値誤差を分離し，目的量と予防方策への影響を評価する．</li>
+  <li><b>縮約誤差評価：</b>微視情報の削除が進行予測・介入効果・方策順位へ与える影響を評価する．</li>
+  <li><b>model adaptivity：</b>誤差に応じて，状態変数，kernel，局所fine-scale modelを追加する．</li>
+  <li><b>信頼保証：</b>データ・物理モデル・縮約・同定・数値誤差を分離し，目的量と予防方策への影響を評価する．</li>
 </ol>
 
 近い段階では，実患者への治療提案ではなく，匿名化・利用許可された縦断歯科記録または公開データを用いて，状態遷移の抽出，動的予測，calibration，欠測感度解析までを確立することを目標とします．その後，歯科研究者との共同研究により，外部検証・前向き検証・機構モデルとの接続へ進みます．<br><br>
 
-<h4>9．臨床応用との境界</h4>
+<h4>11．臨床応用との境界</h4>
 本Visionは，虫歯・歯周病の診断や治療を数学だけで置き換えるものではありません．
 <ul>
   <li>モデル内のverificationと，現実の疾患に対するclinical validationを区別すること，</li>
