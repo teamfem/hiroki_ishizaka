@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>治療履歴から虫歯・歯周病の未来を予測できるか — 非マルコフ型モデルと個別化予防 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,longitudinal dental records,dental caries,periodontitis,dynamic prediction,non-Markovian model,memory kernel,causal inference,dynamic treatment regime,certified computation">
+<meta name="description" content="過去の検査・治療履歴から虫歯・歯周病の進行リスクを動的に予測し，予測と因果的予防を区別して信頼保証付き歯科意思決定支援へつなぐ研究構想．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 26th July 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">治療履歴から虫歯・歯周病の未来を予測できるか — 非マルコフ型モデルと個別化予防</h1>
+<div class="news-date"><time datetime="2026-07-26">26th July 2026</time></div>
+<h2>Introduction：一回の検査ではなく，過去から現在までを見る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+虫歯や歯周病のリスク評価では，現在の検査結果だけでなく，過去の病変，修復・再治療，歯周組織の変化，予防処置，治療後の反応，受診間隔などの履歴が重要になります．米国歯科医師会（ADA）の虫歯リスク評価も，臨床所見だけでなく過去の虫歯経験や各種リスク因子を用いて患者のリスクを分類します（<a href="https://www.ada.org/resources/ada-library/oral-health-topics/caries-risk-assessment-and-management" target="_blank" rel="noopener">ADA: Caries Risk Assessment and Management</a>）．
+</p>
+<p>
+しかし，患者を一度だけ「低・中・高リスク」に分類するだけでは，その後の治療反応や新しい検査結果を十分に利用できません．本稿では，
+\[
+  \text{past history}
+  \longrightarrow
+  \text{updated risk}
+  \longrightarrow
+  \text{preventive decision}
+\]
+という動的な流れを考えます．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<strong>中心となる問い</strong><br><br>
+検査・治療・予防処置の履歴を用いて，将来の虫歯・歯周病進行リスクを受診ごとに更新し，予測の不確実性を示しながら個別化予防を支援できるか．
+</div>
+<p>
+ここで目的とするのは，数理モデルが歯科医師に代わって治療を決定することではありません．予測の根拠，仮定，不確実性，代替方針を示す意思決定支援を構築することです．
+</p>
+</article>
+</div>
+
+<h2>1．静的リスク評価から動的予測へ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+時刻 \(t\) までの情報を
+\[
+  \mathcal H_t
+  =
+  \left\{
+    y(s),a(s),m(s)
+    \,;\,
+    0\leq s\leq t
+  \right\}
+\]
+と表します．ここで，\(y(s)\) は検査結果，\(a(s)\) は治療・予防介入，\(m(s)\) は画像・唾液・生活背景などの補助情報です．
+</p>
+<p>
+例えば，次のような履歴が候補になります．
+</p>
+<ul>
+  <li>歯ごとの虫歯，初期病変，修復，抜髄，再治療，二次虫歯，</li>
+  <li>歯周ポケット深さ，出血，付着レベル，動揺度，歯槽骨量の推移，</li>
+  <li>歯石除去，歯周基本治療，外科処置，フッ化物・シーラント等の実施時期，</li>
+  <li>治療前後の改善，再燃，来院間隔，欠測，不規則な観測時点，</li>
+  <li>必要に応じて，唾液，pH，細菌・炎症バイオマーカー，全身的背景．</li>
+</ul>
+<p>
+将来 \(\Delta\) 期間内の進行リスクを
+\[
+  r_{i,\ell}(t,\Delta)
+  =
+  \mathbb P\!\left(
+    T_{i,\ell}\leq t+\Delta
+    \,\middle|\,
+    T_{i,\ell}>t,\mathcal H_t
+  \right)
+\]
+と定義します．\(i\) は患者，\(\ell\) は歯・歯面・歯周部位です．新しい診療情報が加わるたびに \(\mathcal H_t\) と \(r_{i,\ell}\) を更新します．
+</p>
+<p>
+この問題には，生存時間解析，再発イベントモデル，多状態モデル，状態空間モデル，階層Bayesモデル，時系列機械学習などが利用できます．重要なのは，単に正解率を高くすることではなく，予測確率と実際の発生率が一致するcalibrationを確認することです．
+</p>
+</article>
+</div>
+
+<h2>2．治療履歴をmemoryとして表す</h2>
+<div class="news">
+<article class="news-item">
+<p>
+治療や予防処置の影響が一定期間残り，その後徐々に弱まるなら，現在のリスクは直近の状態だけでは決まりません．処置 \(a\) の実施時刻を表す計数過程を \(N_a\) として，
+\[
+  M_a(t)
+  =
+  \int_{[0,t]}K_a(t-s)\,dN_a(s)
+\]
+を治療履歴のmemoryとします．
+</p>
+<p>
+例えば，
+\[
+  K_a(r)=\alpha_a e^{-\gamma_a r}
+\]
+なら，処置直後の影響が大きく，時間とともに減衰します．複数の作用時間がある場合は，
+\[
+  K_a(r)=\sum_{j=1}^{m}\alpha_{a,j}e^{-\gamma_{a,j}r}
+\]
+またはmeasure-valued kernelを用います．
+</p>
+<p>
+将来イベントの強度を
+\[
+  \lambda_{i,\ell}(t)
+  =
+  \lambda_{0,\ell}(t)
+  \exp\!\left[
+    \beta^\top x_{i,\ell}(t)
+    +\sum_a M_{i,\ell,a}(t)
+    +z_{i,\ell}(t)
+  \right]
+\]
+とすれば，現在の検査値 \(x(t)\)，過去の治療効果 \(M_a(t)\)，観測できない潜在状態 \(z(t)\) を同時に扱えます．
+</p>
+<p>
+これは，
+\[
+  \text{treatment history}
+  \longrightarrow
+  \text{memory kernel}
+  \longrightarrow
+  \text{dynamic disease risk}
+\]
+という非マルコフ型モデルです．ただし，kernelを任意に置くだけでは不十分であり，どの履歴情報からkernelを識別できるか，異なるkernelが同じ観測を生まないかを調べる必要があります．
+</p>
+</article>
+</div>
+
+<h2>3．虫歯を多状態過程として追跡する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+虫歯を「ある／ない」の二値だけで表すと，治療後の状態を十分に表現できません．例えば，
+\[
+  \text{sound}
+  \longrightarrow
+  \text{initial lesion}
+  \longrightarrow
+  \text{dentine lesion}
+  \longrightarrow
+  \text{restored}
+  \longrightarrow
+  \text{secondary caries / retreatment}
+\]
+という多状態過程を考えます．
+</p>
+<p>
+修復後の歯は，単純に健全な歯へ戻るのではなく，修復物の材質・大きさ・辺縁，残存歯質，過去の虫歯活動性などを持つ別の状態です．したがって，治療履歴を残した再発イベントモデルが必要です．
+</p>
+<p>
+予測対象は患者全体だけではありません．
+\[
+  \text{patient}
+  \longrightarrow
+  \text{tooth}
+  \longrightarrow
+  \text{surface}
+\]
+という階層構造を使えば，どの歯のどの歯面に新しい病変が生じやすいかを扱えます．
+</p>
+</article>
+</div>
+
+<h2>4．歯周病は治療後の反応を逐次追加する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+歯周病では，各歯周部位の状態を
+\[
+  X_{i,\ell}(t)
+  =
+  \bigl(
+    \mathrm{PPD},
+    \mathrm{CAL},
+    \mathrm{BOP},
+    \mathrm{bone\ level},
+    \mathrm{mobility}
+  \bigr)
+\]
+として追跡できます．
+</p>
+<p>
+治療前だけで一度予測するよりも，治療後3か月，6か月，1年などの反応を順次追加し，進行リスクを更新する方が自然です．歯周病進行に対する機械学習モデルや，治療反応予測の研究は進んでいますが，実際の臨床利用には外部検証・前向き検証が必要です（<a href="https://pubmed.ncbi.nlm.nih.gov/40830987/" target="_blank" rel="noopener">periodontitis progression prediction</a>；<a href="https://pubmed.ncbi.nlm.nih.gov/40254962/" target="_blank" rel="noopener">periodontal treatment-response prediction</a>）．
+</p>
+<p>
+また，長期間の臨床記録とX線画像を用いて，歯槽骨吸収や歯の喪失を追跡したリスク評価研究もあります（<a href="https://pubmed.ncbi.nlm.nih.gov/12956658/" target="_blank" rel="noopener">15-year longitudinal validation</a>）．これらは，履歴に基づく動的予測が現実的な研究対象であることを示します．
+</p>
+</article>
+</div>
+
+<h2>5．予測と予防は同じではない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+治療を受けた患者ほど将来の疾患が多いというデータが得られても，「治療が疾患を増やした」とは限りません．高リスク患者ほど強い治療を受けるためです．これはconfounding by indicationと呼ばれる問題です．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<strong>予測：</strong>この履歴をもつ患者で，将来何が起きやすいか．<br><br>
+<strong>因果推論：</strong>同じ患者に異なる介入を行った場合，将来結果がどのように変わるか．
+</div>
+<p>
+予測は
+\[
+  \mathbb P(Y(t+\Delta)=1\mid\mathcal H_t)
+\]
+を求めます．一方，予防効果は反実仮想結果
+\[
+  \mathbb E\!\left[
+    Y^a(t+\Delta)
+    \mid\mathcal H_t
+  \right]
+\]
+を介入 \(a\) ごとに比較します．
+</p>
+<p>
+最終的には，
+\[
+  a_t^*
+  =
+  \arg\min_{a\in\mathcal A}
+  \left\{
+    \mathbb E[L(Y^a(t+\Delta))\mid\mathcal H_t]
+    +C(a)
+  \right\}
+\]
+という個別化方策を考えられます．\(L\) は疾患進行の損失，\(C(a)\) は治療負担や費用です．
+</p>
+<p>
+患者情報に応じて歯周メンテナンスの次回来院時期を選ぶdynamic treatment regimeは，すでに統計学的研究の対象となっています（<a href="https://pubmed.ncbi.nlm.nih.gov/33012901/" target="_blank" rel="noopener">Bayesian policy search for periodontal recall intervals</a>）．ただし，これは自動治療ではなく，歯科医師が判断するための補助情報です．
+</p>
+</article>
+</div>
+
+<h2>6．データ駆動モデルと機構モデルを結ぶ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+電子歯科記録だけを使った予測は実装しやすい一方，病変がなぜ進行したかを十分に説明できない場合があります．そこで，
+</p>
+<ul>
+  <li>虫歯：酸・pH・脱灰・再石灰化の反応拡散系，</li>
+  <li>歯周病：炎症・骨吸収・歯根膜・咬合力の連成系，</li>
+  <li>口腔バイオフィルム：細菌・栄養・酸・唾液流の多成分系</li>
+</ul>
+<p>
+をmechanistic modelとして接続します．
+</p>
+<p>
+観測変数 \(u\) と未観測状態 \(z\) を
+\[
+\begin{aligned}
+  \partial_tu&=F(u,z,a),\\
+  \partial_tz&=G(u,z,a),\\
+  y&=\mathcal O(u,z)+\varepsilon
+\end{aligned}
+\]
+と表し，\(z\) を消去すると，\(u\) に対するmemory付き縮約モデルが現れ得ます．
+</p>
+<p>
+この機構層では，異方性FEM，exact-curved FEM，離散最大値原理，移動境界，verified outputを利用できます．データ駆動予測とPDEモデルを競合させるのではなく，
+\[
+  \text{records}
+  +
+  \text{images / biomarkers}
+  +
+  \text{mechanistic PDE}
+\]
+を統合することが目標です．
+</p>
+</article>
+</div>
+
+<h2>7．一つの確率ではなく，誤差予算を返す</h2>
+<div class="news">
+<article class="news-item">
+<p>
+予測モデルが「今後1年間の進行確率は35%」と返しても，その数字だけでは信頼性を判断できません．そこで，
+\[
+  \left|
+    r(t,\Delta)-\widehat r_h(t,\Delta)
+  \right|
+  \lesssim
+  \eta_{\mathrm{data}}
+  +\eta_{\mathrm{history}}
+  +\eta_{\mathrm{model}}
+  +\eta_{\mathrm{parameter}}
+  +\eta_{\mathrm{numerical}}
+\]
+という誤差予算を考えます．
+</p>
+<ul>
+  <li>\(\eta_{\mathrm{data}}\)：測定ノイズ，記録誤り，施設間差，</li>
+  <li>\(\eta_{\mathrm{history}}\)：欠測，不規則受診，過去記録の欠落，</li>
+  <li>\(\eta_{\mathrm{model}}\)：状態遷移，kernel，因果仮定のずれ，</li>
+  <li>\(\eta_{\mathrm{parameter}}\)：有限データによる推定不確実性，</li>
+  <li>\(\eta_{\mathrm{numerical}}\)：PDE，積分，最適化，近似推論の数値誤差．</li>
+</ul>
+<p>
+数値解析だけで医学的な正しさを保証することはできません．しかし，どの仮定や誤差が予測を支配しているかを明示することはできます．これはVision 7bの推論安定性，Vision 17のcertificate，Vision 18のkernel stability，Vision 19の個別化予防を接続する部分です．
+</p>
+</article>
+</div>
+
+<h2>8．最初に取り組む現実的な段階</h2>
+<div class="news">
+<article class="news-item">
+<ol>
+  <li><b>状態遷移の定義：</b>虫歯・修復・再治療，歯周検査・治療反応を歯・部位単位で整理する．</li>
+  <li><b>動的予測：</b>受診ごとに更新される進行リスクを構成し，calibrationを検証する．</li>
+  <li><b>履歴kernel：</b>治療・予防処置の時間効果を有限原子または減衰kernelとして同定する．</li>
+  <li><b>欠測感度解析：</b>受診間隔や記録欠落によって予測がどれだけ変わるかを評価する．</li>
+  <li><b>外部検証：</b>別施設・別集団で予測性能と公平性を確認する．</li>
+  <li><b>因果的予防：</b>予測モデルから切り離して，介入効果とdynamic treatment regimeを検討する．</li>
+  <li><b>機構統合：</b>PDE・画像・バイオマーカーと結びつけ，潜在状態とkernelを推定する．</li>
+</ol>
+<p>
+最大の障害は，数学だけではなく縦断データの質と利用許可です．匿名化，倫理審査，記録形式の統一，欠測理由の把握，歯・歯面・部位の対応付けが研究基盤になります．
+</p>
+</article>
+</div>
+
+<h2>9．臨床応用との境界</h2>
+<div class="news">
+<article class="news-item">
+<p>
+本研究構想では，次の区別を維持します．
+</p>
+<ul>
+  <li>予測確率と治療の因果効果，</li>
+  <li>モデル内verificationとclinical validation，</li>
+  <li>統計的関連と生物学的機構，</li>
+  <li>数理的な意思決定支援と歯科医師による臨床判断．</li>
+</ul>
+<p>
+また，患者情報を扱う場合は，匿名化，プライバシー，データ偏り，説明可能性を研究設計の一部とします．本稿は個別の症状に対する診断・予防・治療の助言を目的とするものではありません．
+</p>
+</article>
+</div>
+
+<h2>Conclusion</h2>
+<div class="news">
+<article class="news-item">
+<p>
+過去から現在までの歯科記録は，単なるカルテの蓄積ではありません．それぞれの患者・歯・歯面・歯周部位が，どのような状態を経て現在に至ったかを表す時系列データです．
+</p>
+<p style="text-align:center;">
+\[
+  \text{longitudinal dental history}
+  \longrightarrow
+  \text{dynamic risk prediction}
+  \longrightarrow
+  \text{causal prevention policy}
+  \longrightarrow
+  \text{certified decision support}
+\]
+</p>
+<p>
+この流れを確立できれば，虫歯・歯周病のリスク評価を一度だけの分類から，受診ごとに更新される説明可能な予測へ発展させられます．さらに，予測と因果推論を区別することで，「誰に何を行うべきか」という個別化予防へ慎重に接続できます．
+</p>
+<p>
+関連ページ：
+<a href="../../fem/">Research Visions</a>（Vision 7b, 10, 13, 14, 17, 18, 19），
+<a href="../../research/">Research</a>，
+<a href="../../publications/">Publications</a>
+</p>
+</article>
+</div>
+
+<h2>References</h2>
+<div class="news">
+<article class="news-item">
+<ul>
+  <li><a href="https://www.ada.org/resources/ada-library/oral-health-topics/caries-risk-assessment-and-management" target="_blank" rel="noopener">American Dental Association, Caries Risk Assessment and Management.</a></li>
+  <li><a href="https://pubmed.ncbi.nlm.nih.gov/12956658/" target="_blank" rel="noopener">Page et al., Longitudinal validation of a risk calculator for periodontal disease.</a></li>
+  <li><a href="https://pubmed.ncbi.nlm.nih.gov/33012901/" target="_blank" rel="noopener">Guan et al., Bayesian Nonparametric Policy Search with Application to Periodontal Recall Intervals.</a></li>
+  <li><a href="https://pubmed.ncbi.nlm.nih.gov/40830987/" target="_blank" rel="noopener">Developing Predictive Models for Periodontitis Progression Using Artificial Intelligence: A Longitudinal Cohort Study.</a></li>
+  <li><a href="https://pubmed.ncbi.nlm.nih.gov/40254962/" target="_blank" rel="noopener">Machine learning-assisted prediction of clinical responses to periodontal treatment.</a></li>
+</ul>
+</article>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
