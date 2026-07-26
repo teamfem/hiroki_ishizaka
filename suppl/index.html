@@ -7,8 +7,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,AI4Math,形式推論,保証付き数値解析">
-<meta name="description" content="Learning map for trustworthy, certified and AI4Math-ready numerical analysis">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,anisotropic FEM,Crouzeix-Raviart,Raviart-Thomas,Nedelec,de Rham,discrete maximum principle,maximum norm,memory equation,exact-curved FEM,certified computation">
+<meta name="description" content="Learning maps for anisotropic FEM, CR-RT methods, discrete maximum principles, maximum-norm estimates, de Rham complexes, history-dependent PDEs, exact-curved FEM, and certified computation">
 
 <link rel="stylesheet" href="../css/base.css">
 <link rel="stylesheet" href="../css/rwd.css">
@@ -82,103 +82,125 @@
 		<article class="section-wrap">
 			<div class="section-in">
 
+
 <h1 class="section-title">Supplementary Visions</h1>
-<h2>Visions of Education, Verification &amp; AI4Math Literacy</h2>
+<h2>Learning Maps for Certified FEM and Trustworthy Simulation</h2>
 
 <h3>Introduction</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
-ここでは，Research Visions の主軸テーマから半歩だけ離れたアイディア，論文紹介，学習ルートを取り上げます．同時に，私自身の研究成果や関連分野を「学びの地図」としてシラバス的に整理し，可視化することを目指しています．<br><br>
+このページは，研究テーマを追加で列挙する場所ではなく，
+<a href="../publications/">Publications</a>と
+<a href="../fem/">Research Visions</a>
+で示した中核研究へ到達するための<b>学習地図・講義案・研究準備ルート</b>です．
+Publicationsは完成・投稿・直近の原稿順を示し，Research Visionsは中長期programmeを示します．
+Supplementary Visionsでは，それぞれのprogrammeに必要な前提知識，定理の依存関係，
+演習，実装，出口課題を教育的な順序で整理します．<br><br>
 
-私の基本的な考え方は，研究も教育も「どこから来て，どこへ向かうのか」が見えているほど学びやすくなる，というものです．シラバス形式で道筋を示すと，「研究の最前線」にたどり着くまでに必要な知識や技術の階層がよく見えてきます．異方性有限要素法，混合型有限要素法，Crouzeix–Raviart 要素，圧力ロバストスキーム，半ノルム評価，平衡化フラックス，目的量誤差評価などのテーマも，いきなり最前線から入るのではなく，
+現在の中核研究は，
+\[
+\boxed{
+  \text{異方性幾何}
+  \longrightarrow
+  \text{CR--RT構造}
+  \longrightarrow
+  \text{DMP・}L^\infty
+  \longrightarrow
+  \text{Nédélec・de Rham}
+  \longrightarrow
+  \text{認証}
+}
+\]
+という空間・幾何側の系列と，
+\[
+\boxed{
+  \text{履歴依存型発展方程式}
+  \longrightarrow
+  \text{kernel stability}
+  \longrightarrow
+  \text{構造保存完全離散化}
+  \longrightarrow
+  \text{model adaptivity・認証}
+}
+\]
+という時間・モデル側の系列に整理されています．
+さらにexact-curved FEMは，
+\[
+  \text{曲Lagrange}
+  \longrightarrow
+  \text{曲CR--RT}
+  \longrightarrow
+  \text{形状微分}
+  \longrightarrow
+  \text{ALE・FSI}
+\]
+へ展開します．<br><br>
+
+このページでは，各学習項目を次の三層に分けます．
 <ul>
-  <li>どのあたりのレベルの人を想定しているか，</li>
-  <li>どんな前提知識があれば読み進められるか，</li>
-  <li>学んだ先に，どの Research Vision や論文につながっていくのか，</li>
-  <li>どの段階で「計算結果を保証する」視点に接続するのか，</li>
+  <li><b>Foundation：</b>有限要素法，偏微分方程式，関数解析，数値線形代数．</li>
+  <li><b>Core Curriculum：</b>異方性補間，CR–RT，DMP・maximum norm，Nédélec・de Rham，履歴依存型PDE，exact-curved FEM．</li>
+  <li><b>Supporting / Exploratory：</b>圧力ロバスト性，DG，AI4Math，複素PDE，未解決問題の研究セミナー．</li>
 </ul>
-といった「位置」と「道筋」が見えていると，格段に取り組みやすくなります．テーマを順に学んでいけば，数値解析研究の核心に近づくことができます．しかし，それらを本当に理解し応用できるようになるには，2〜3年ほどの学習と実践が必要になるでしょう．<br><br>
 
-近年は，AI支援型数学，形式推論，Lean / Mathlib に代表される形式化数学，自動証明支援の発展により，数学研究においても「発見すること」だけでなく，「証明・計算・誤差評価をどのように検証可能な形で残すか」が重要になっています．数値解析においても同じです．数値解を得るだけではなく，その解がどの程度信頼できるか，どの幾何条件の下で誤差評価が成立するか，目的量に対してどのような certificate を与えられるかを説明できることが，AI時代の数値解析リテラシーになると考えています．<br><br>
-
-この Supplementary Visions では，各テーマをシラバス形式で整理しつつ，
+Research Lineの略号は次のように用います．
 <ul>
-  <li>【G】【R】【A】【V】タグで，Research Line（幾何・信頼性・自動化・検証）の位置づけを示し，</li>
-  <li>レベル・前提・到達目標・関連論文を明示することで，</li>
-</ul>
-学生や若手研究者が「自分はこの地図のどこにいて，次にどのステップに進めばよいか」を一目で把握できるようにすることを狙っています．このページ全体が，教育と研究のあいだをつなぐ「見える化」になればと思っています．<br><br>
-
-Research Line の略号は次のように使います．
-<ul>
-  <li>【G】Geometry &amp; Anisotropic FEM Theory：メッシュ幾何，flatness parameter，準正則条件，異方性補間誤差評価．</li>
-  <li>【R】Reliable &amp; Goal-Oriented PDE Simulation：誤差評価，目的量評価，平衡化フラックス，verified output．</li>
-  <li>【A】Automation, Learning &amp; New Numerical Methods：適応化，自動化，機械学習，PINNs / Deep Ritz / メッシュレス法との比較．</li>
-  <li>【V】Verification, Formal Reasoning &amp; AI4Math：形式推論，証明の再利用可能性，a posteriori certificate，AI支援型数学への接続．</li>
+  <li>【G】Geometry &amp; Anisotropic FEM Theory：flatness parameter，semi-regularity，方向別補間，DMP，\(L^\infty\)，de Rham．</li>
+  <li>【R】Reliable &amp; Goal-Oriented PDE Simulation：安定性，平衡化フラックス，DWR，履歴依存型PDE，verified output．</li>
+  <li>【A】Automation, Learning &amp; New Numerical Methods：適応化，model adaptivity，データ同化，学習支援．</li>
+  <li>【V】Verification, Formal Reasoning &amp; AI4Math：certificate，証明依存関係，形式化可能な補題列，自動検証．</li>
 </ul>
 
+想定する学習期間は，基礎から研究準備までおよそ2～3年です．
+すべてを同時に学ぶのではなく，研究目的に応じて必要な経路を選択します．
 <br><br>
-This page is updated periodically.<br><br>
-(8th June 2026 <span class="cat cat001">Update</span>)
+This page is updated periodically.<br>
+(26th July 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
 
-<h3>AI4Math時代の保証付き数値解析リテラシー【V】【R】【G】</h3>
+<h2>Learning Roadmap at a Glance</h2>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
-<b>位置づけ（Map）</b><br>
-<ul>
-  <li>Research Line：【V】【R】【G】</li>
-  <li>想定レベル：修士〜博士，および数値解析・AI支援型数学の接点に関心を持つ研究者</li>
-  <li>前提科目：有限要素法入門，偏微分方程式論，関数解析，数値線形代数，誤差評価の基礎</li>
-  <li>推奨ボリューム感：90分×15回（講義＋演習＋ミニ形式化／検証実習）</li>
-  <li>つながる Research Visions：Vision 4（数値計算の自動化），Vision 7b（推論の信頼性），Vision 14（計量幾何），Vision 15（表現・計量・射影），Vision 17（AI4Math時代の保証付き有限要素解析）</li>
-  <li>到達目標：数値解・誤差評価・幾何条件・目的量評価を，検証可能な数学的 certificate として説明できるようになる．</li>
-</ul>
-
-<b>概要</b><br>
-AI支援型数学や形式推論の発展により，数学の学び方・研究の進め方は大きく変わりつつあります．しかし，数値解析において本当に重要なのは，AIに計算を任せることそのものではありません．むしろ，得られた数値解に対して，どの仮定の下で，どの誤差評価が，どの目的量に対して，どの程度の信頼性を与えるのかを明示できることです．<br><br>
-
-この講義・学習ルートでは，有限要素法の基本的な誤差評価を出発点に，a posteriori error estimate，equilibrated flux，DWR，hypercircle 法，計算可能なメッシュ幾何条件を結びつけ，最終的に「保証付き数値解析」を AI4Math 時代の共通言語として理解することを目指します．Lean / Mathlib などによる形式化そのものを直ちに完遂することよりも，まずは形式化・自動検証に向いた数学的構造を見抜く訓練を重視します．<br><br>
-
-15回の骨格：
 <ol>
-  <li>AI4Math と数値解析：発見・証明・計算保証をどうつなぐか</li>
-  <li>有限要素法における「保証」とは何か：a priori，a posteriori，verified output</li>
-  <li>弱形式・安定性・近似性：形式化しやすい定理構造を見抜く</li>
-  <li>Céa 型評価と Strang 型評価：仮定・結論・定数依存性の明示</li>
-  <li>メッシュ幾何条件：最大角条件，shape-regularity，準正則条件，flatness parameter</li>
-  <li>異方性補間誤差評価：二段変換と定数依存性の追跡</li>
-  <li>a posteriori error estimate：残差型評価と計算可能性</li>
-  <li>equilibrated flux：局所保存則と certificate の考え方</li>
-  <li>hypercircle 法：上界・下界・誤差半径の幾何学的理解</li>
-  <li>DWR と目的量誤差：随伴問題を用いた goal-oriented certificate</li>
-  <li>非適合要素・混合要素における検証：CR/RT を例として</li>
-  <li>数値実験の再現性：コード・メッシュ・誤差指標をどう残すか</li>
-  <li>AI支援型証明整理：補題探索，証明スケルトン，反例候補の使い方</li>
-  <li>形式推論への入口：Lean / Mathlib を意識した定義・補題・依存関係の整理</li>
-  <li>最終ミニプロジェクト：一つのFEM誤差評価を certificate として再記述する</li>
+  <li><b>Stage 0 — Foundation：</b>
+  弱形式，Lax–Milgram，Céa，Sobolev空間，参照要素，疎行列，収束実験．</li>
+  <li><b>Stage 1 — Geometry：</b>
+  最大角条件，shape regularity，flatness parameter，semi-regularity，two-step transformation．</li>
+  <li><b>Stage 2 — Structure：</b>
+  CR，RT，Piola変換，局所保存，平衡化フラックス，DMP，maximum-norm stability．</li>
+  <li><b>Stage 3 — Complexes and dynamics：</b>
+  Nédélec，de Rham/Hodge，Maxwell，measure-valued delay，memory kernel，完全離散化．</li>
+  <li><b>Stage 4 — Geometry and certification：</b>
+  exact-curved FEM，shape derivative，ALE/FSI，DWR，verified output，形式推論．</li>
 </ol>
 
-演習・ミニプロジェクト例：
+研究目的別の推奨経路：
 <ul>
-  <li>Poisson 問題の Céa 型評価について，仮定・定数・結論を形式化しやすい形に書き直す．</li>
-  <li>簡単な残差型 a posteriori estimator を実装し，真の誤差との関係を確認する．</li>
-  <li>CR 要素と RT フラックス再構成を用いて，局所保存則と誤差上界の意味を整理する．</li>
-  <li>異方性メッシュ上で flatness parameter と誤差指標を比較し，どの要素が危険かを可視化する．</li>
-  <li>論文中の一つの定理を，Lean / Mathlib で将来形式化することを想定して，依存補題のリストに分解する．</li>
+  <li><b>CR-DMP・\(L^\infty\)研究：</b>
+  FEM入門 → PDE視点 → 異方性補間 → CR–RT → DMP・maximum norm．</li>
+  <li><b>Nédélec・de Rham研究：</b>
+  FEM入門 → ベクトル解析 → RT → \(H(\operatorname{curl})\) → 可換射影 → Hodge・Maxwell．</li>
+  <li><b>memory研究：</b>
+  PDE視点 → 発展方程式 → Volterra作用素・測度 → kernel stability → BDF/CQ → 認証．</li>
+  <li><b>exact-curved研究：</b>
+  異方性補間 → 写像とJacobian → Piola変換 → shape calculus → ALE・FSI．</li>
 </ul>
-
-このテーマの狙いは，「AIで数値解を出す」ことではありません．むしろ，AI支援型数学の時代において，有限要素法の誤差評価・幾何条件・保存則・目的量評価を，検証可能で再利用可能な知識として整理することです．これは，Research Visions における <b>Certified finite element analysis under computable geometric conditions</b> の教育版として位置づけています．
-
-<br><br>
-(8th June 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
 
+<h2>Foundation Curriculum</h2>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+研究テーマに依存せず必要となる弱形式，安定性，近似性，実装，数値線形代数を学びます．
+</p>
+</article>
+</div>
 <h3>有限要素法入門【G】【R】【V】</h3>
 <div class="news">
 <article class="news-item">
@@ -191,7 +213,7 @@ AI支援型数学や形式推論の発展により，数学の学び方・研究
   <li>推奨ボリューム感：90分×15回（講義＋演習＋PC実習）</li>
   <li>使用言語/環境：Python（NumPy）or FreeFem++，FEniCSx etc</li>
   <li>前提設定：Google アカウント（Google Colab 使用のため）</li>
-  <li>つながる：偏微分方程式論を数値解析視点で見直す，非適合・混合型有限要素法，異方性有限要素法，AI4Math時代の保証付き数値解析リテラシー</li>
+  <li>つながる：偏微分方程式論を数値解析視点で見直す，異方性補間誤差評価，CR–RT，離散最大値原理，maximum-norm解析，保証付き数値解析</li>
   <li>参考文献：Brenner &amp; Scott，Ciarlet，Ern &amp; Guermond</li>
 </ul>
 
@@ -226,7 +248,7 @@ AI支援型数学や形式推論の発展により，数学の学び方・研究
 </ul>
 
 <br><br>
-(8th June 2026 <span class="cat cat001">Update</span>)
+(26th July 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
@@ -240,7 +262,7 @@ AI支援型数学や形式推論の発展により，数学の学び方・研究
   <li>Research Line：【R】【V】Reliable &amp; Goal-Oriented PDE Simulation / Verification</li>
   <li>想定レベル：修士〜博士（「解析も計算もやりたい」人向け）</li>
   <li>前提科目：偏微分方程式入門，関数解析入門，線形代数，数値解析</li>
-  <li>つながる：異方性補間誤差評価，非適合・混合 FEM，分数階時間微分方程式，圧力ロバスト Stokes/NS，DWR/Hypercircle</li>
+  <li>つながる：異方性補間誤差評価，CR–RT，DMP・maximum-norm解析，履歴依存型発展方程式，圧力ロバスト Stokes/NS，DWR・hypercircle</li>
 </ul>
 
 <b>概要</b><br>
@@ -261,18 +283,25 @@ AI支援型数学や形式推論の発展により，数学の学び方・研究
 <li>圧力ロバスト性：何を消すとロバストになるか</li>
 <li>事後誤差評価（残差型）と適応の最低限</li>
 <li>目的量誤差（DWR）と随伴の考え方</li>
-<li>分数階時間微分：時間作用素＝畳み込みとして再定式化</li>
+<li>履歴依存型発展方程式：measure-valued delay，Volterra memory，畳み込み作用素</li>
 <li>まとめ：証明・離散化・検証のチートシート</li>
 </ol>
 
 成果物（チートシート）：Model / BC / data，Weak form，Stability estimate，Regularity bottleneck，Discretisation hook，Linear algebra，a posteriori への接続を1枚にまとめる．
 
 <br><br>
-(8th June 2026 <span class="cat cat001">Update</span>)
+(26th July 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
-
+<h2>Core Curriculum I：Geometry, CR–RT, DMP and \(L^\infty\)</h2>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+異方性幾何から非適合・混合構造へ進み，離散最大値原理とmaximum-norm解析へ到達する系列です．
+</p>
+</article>
+</div>
 <h3>異方性補間誤差評価を学ぶ - 基礎から応用まで【G】【V】</h3>
 <div class="news">
 <article class="news-item">
@@ -282,7 +311,7 @@ AI支援型数学や形式推論の発展により，数学の学び方・研究
   <li>Research Line：【G】【V】Geometry &amp; Anisotropic FEM Theory / Verification</li>
   <li>想定レベル：学部4年〜修士1年</li>
   <li>前提科目：解析学，線形代数，偏微分方程式，FEM入門</li>
-  <li>つながる Research Visions：Vision 1，Vision 3，Vision 13，Vision 14，Vision 16，Vision 17</li>
+  <li>つながる Research Visions：Vision 1，Vision 3，Vision 10，Vision 14，Vision 17，Vision 20，Vision 21</li>
   <li>関連する論文（例）：Ishizaka–Kobayashi–Tsuchiya，JJIAM；Ishizaka–Suzuki–Kobayashi–Tsuchiya，CMAM</li>
 </ul>
 
@@ -295,54 +324,15 @@ AI支援型数学や形式推論の発展により，数学の学び方・研究
   <li>flatness parameter と準正則幾何条件</li>
   <li>二段階アフィン変換によるスケーリング議論</li>
   <li>境界層・特異点問題への応用</li>
-  <li>CR, RT, Morley, DG, Nitsche 法への展開</li>
+  <li>CR，RT，Morley，DG，Nitsche法への展開</li>
+  <li>DMP，maximum-norm評価，Nédélec・de Rham理論への接続</li>
   <li>a posteriori error estimate と adaptive refinement への接続</li>
 </ol>
 
 到達目標：古典的幾何条件の役割，shape-regularity の限界，異方性メッシュを扱うための新しい幾何パラメータの意味，補間誤差評価と数値実験の関係を説明できるようになる．
 
 <br><br>
-(8th June 2026 <span class="cat cat001">Update</span>)
-</p>
-</article>
-</div>
-
-<h3>分数階時間微分方程式の数値解析【R】</h3>
-<div class="news">
-<article class="news-item">
-<p class="news-cont">
-<b>位置づけ（Map）</b><br>
-<ul>
-  <li>Research Line：【R】Reliable &amp; Goal-Oriented PDE Simulation</li>
-  <li>想定レベル：修士〜博士</li>
-  <li>前提科目：偏微分方程式入門，関数解析入門，時間離散の安定性，数値線形代数</li>
-  <li>つながる Research Visions：Vision 11，Vision 6，Vision 12，Vision 17</li>
-</ul>
-
-<b>概要</b><br>
-時間発展モデルの中には，過去の状態が将来に影響する記憶効果を持つものが多く現れます．分数階時間微分（主に Caputo 型）は，その記憶効果を自然に表す共通言語です．ここでは，連続問題（弱形式・存在一意性・正則性），時間離散（L1，L2-1σ，graded mesh，補正項），計算量（メモリ項＝畳み込み和）を一本線でつなぎ，「解析⇄数値」の往復を訓練します．<br><br>
-
-15回の骨格：
-<ol>
-<li>記憶効果・異常拡散・時間遅れの地図</li>
-<li>Caputo・Riemann–Liouville・核 \(k(t)\) の直感</li>
-<li>分数拡散の弱形式と存在一意性の見取り図</li>
-<li>正則性と初期特異性</li>
-<li>安定性→誤差方程式→評価の流れ</li>
-<li>L1 スキームの導出</li>
-<li>L1 の安定性</li>
-<li>L1 の誤差と次数低下</li>
-<li>graded time mesh</li>
-<li>補正項・初期補正</li>
-<li>高次スキーム L2-1σ</li>
-<li>空間 FEM との結合</li>
-<li>メモリ項の素朴実装とボトルネック</li>
-<li>高速化と誤差‐計算時間の地図</li>
-<li>分数時間 Stokes・目的量誤差評価への接続</li>
-</ol>
-
-<br><br>
-(8th June 2026 <span class="cat cat001">Update</span>)
+(26th July 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
@@ -359,15 +349,306 @@ AI支援型数学や形式推論の発展により，数学の学び方・研究
   <li>混合 FEM と Raviart–Thomas (RT) 要素</li>
   <li>CR 要素と RT 要素の比較・補完性</li>
   <li>Stokes 問題・鞍点型問題での利用</li>
-  <li>平衡化フラックス，DWR，verified output への接続</li>
+  <li>平衡化フラックス，DWR，verified outputへの接続</li>
+  <li>CR-DMP，conforming companion，maximum-norm評価への接続</li>
+  <li>RT–Nédélec可換性とde Rham complexへの入口</li>
 </ol>
-到達目標：適合 FEM，非適合 FEM，混合 FEM の位置づけを整理し，CR 要素と RT 要素が誤差評価・保存則・安定性・圧力ロバスト性で果たす役割を説明できるようになる．
+到達目標：適合FEM，非適合FEM，混合FEMの位置づけを整理し，CR要素とRT要素が誤差評価，単調性，局所保存，平衡化フラックス，圧力ロバスト性で果たす役割を説明できるようになる．
 
 <br><br>
-(8th June 2026 <span class="cat cat001">Update</span>)
+(26th July 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
+
+
+<h3>離散最大値原理とmaximum-norm誤差評価【G】【R】【V】</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+<b>位置づけ（Map）</b>
+<ul>
+  <li>Research Line：【G】【R】【V】</li>
+  <li>想定レベル：修士後半～博士</li>
+  <li>前提科目：有限要素法，異方性補間，CR–RT，行列解析，楕円型PDEの正則性</li>
+  <li>つながるResearch Visions：Vision 14，17，20</li>
+  <li>到達目標：DMP，\(L^\infty\)安定性，maximum-norm誤差評価の違いを説明し，必要な幾何・接続条件を定式化できるようになる．</li>
+</ul>
+
+<b>概要</b><br>
+離散最大値原理は解の符号・上下界を保つ順序構造の問題であり，
+maximum-norm誤差評価は点ごとの精度を測る定量評価です．
+両者は関連しますが同一ではありません．
+この学習ルートでは，局所剛性行列の符号，M行列，metric acute condition，
+離散Green関数，Ritz射影，パッチ接続を段階的に学びます．
+
+15回の骨格：
+<ol>
+  <li>連続最大値原理と比較原理</li>
+  <li>有限次元の単調性：Z行列，M行列，逆正値性</li>
+  <li>\(P_1\)局所剛性行列と角条件</li>
+  <li>異方性拡散テンソルとmetric-angle条件</li>
+  <li>CR局所基底と自由度レベルDMP</li>
+  <li>右辺離散化と正値性</li>
+  <li>DOF-level boundとpointwise boundの違い</li>
+  <li>二次元のDelaunay型条件と反例</li>
+  <li>三次元四面体の符号条件</li>
+  <li>semi-regularityと単調性条件の独立性</li>
+  <li>Ritz射影と離散Green関数</li>
+  <li>maximum-norm quasi-optimalityと対数因子</li>
+  <li>異方性メッシュのpatch connectivity</li>
+  <li>CR conforming companionとRT再構成</li>
+  <li>ミニ研究：DMP条件と\(L^\infty\)収束の数値分類</li>
+</ol>
+
+演習・出口課題：
+<ul>
+  <li>一般三角形・四面体の局所剛性行列を記号計算し，符号条件を分類する．</li>
+  <li>同じ要素形状でも接続が異なるメッシュ族を作り，maximum-norm収束を比較する．</li>
+  <li>CR解の自由度DMPと要素内部のovershootを比較する．</li>
+  <li>RT局所保存流束またはconforming companionによるbound reconstructionを実装する．</li>
+</ul>
+
+<br><br>
+(26th July 2026 <span class="cat cat001">New</span>)
+</p>
+</article>
+</div>
+
+<h2>Core Curriculum II：Nédélec, de Rham and Maxwell</h2>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+RT理論を\(H(\operatorname{curl})\)へ拡張し，可換射影，Hodge分解，Maxwell認証へ進む系列です．
+</p>
+</article>
+</div>
+
+<h3>\(H(\mathrm{div})\)・\(H(\mathrm{curl})\)・Nédélec・de Rham・Maxwell【G】【R】【V】</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+<b>位置づけ（Map）</b>
+<ul>
+  <li>Research Line：【G】【R】【V】</li>
+  <li>想定レベル：修士後半～博士</li>
+  <li>前提科目：ベクトル解析，Sobolev空間，混合FEM，RT要素，位相・関数解析の基礎</li>
+  <li>つながるResearch Visions：Vision 1，10，14，17，21</li>
+  <li>到達目標：Nédélec・RT補間，可換図式，Hodge分解，discrete compactnessの依存関係を説明できるようになる．</li>
+</ul>
+
+<b>概要</b><br>
+異方性RT補間理論をNédélec要素へ拡張し，
+\[
+  P_1^c
+  \xrightarrow{\nabla}
+  N_0
+  \xrightarrow{\operatorname{curl}}
+  RT_0
+  \xrightarrow{\operatorname{div}}
+  P_0
+\]
+を計算可能な幾何条件の下で理解するための学習ルートです．
+局所補間評価だけでなく，大域可換射影，離散Poincaré不等式，
+Hodge分解，領域位相，Maxwell固有値問題までを見通します．
+
+15回の骨格：
+<ol>
+  <li>\(H^1\)，\(H(\operatorname{curl})\)，\(H(\operatorname{div})\)，\(L^2\)の役割</li>
+  <li>連続de Rham complexとexactness</li>
+  <li>RT要素とcontravariant Piola変換</li>
+  <li>Nédélec第1種要素とcovariant Piola変換</li>
+  <li>edge・face momentと低正則性</li>
+  <li>補間作用素の可換性</li>
+  <li>two-step transformationによる異方性評価</li>
+  <li>最大角退化と安定定数</li>
+  <li>大域可換射影と境界条件</li>
+  <li>離散Poincaré不等式</li>
+  <li>Hodge分解と調和成分</li>
+  <li>領域位相と多重連結性</li>
+  <li>discrete compactness</li>
+  <li>Maxwell固有値問題とspectral correctness</li>
+  <li>verified Maxwellへ向けた幾何certificate</li>
+</ol>
+
+出口課題：
+<ul>
+  <li>基準四面体から一般四面体へのNédélec補間変換を導出する．</li>
+  <li>RTとNédélecの安定定数を同じ幾何量で比較する．</li>
+  <li>可換図式の各矢印について仮定・正則性・境界条件を一覧化する．</li>
+  <li>単連結領域と多重連結領域でHodge分解がどう変わるかを説明する．</li>
+</ul>
+
+<br><br>
+(26th July 2026 <span class="cat cat001">New</span>)
+</p>
+</article>
+</div>
+
+<h2>Core Curriculum III：History Dependence and Moving Geometry</h2>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+時間非局所性と時間依存幾何を別々に整理し，完全離散化，形状感度，ALE・FSIへ進みます．
+</p>
+</article>
+</div>
+
+<h3>履歴依存型発展方程式とmemory kernel【R】【G】【V】</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+<b>位置づけ（Map）</b>
+<ul>
+  <li>Research Line：【R】【G】【V】</li>
+  <li>想定レベル：修士～博士</li>
+  <li>前提科目：関数解析，発展方程式，弱解，時間離散，測度論の基礎</li>
+  <li>つながるResearch Visions：Vision 6，11，17，18，19</li>
+  <li>到達目標：measure-valued delay，Volterra memory，内部変数表示，BDF/CQを一つの構造として理解する．</li>
+</ul>
+
+<b>概要</b><br>
+記憶効果を分数階微分だけに限定せず，有限測度による遅延，
+分布kernel，原子遅延，弱特異Volterra kernelを区別して学びます．
+現在値だけでは将来が決まらない履歴依存型発展方程式を，
+連続理論，kernel摂動，内部変数，完全離散化，誤差予算の順に整理します．
+
+15回の骨格：
+<ol>
+  <li>履歴依存型発展方程式とは何か</li>
+  <li>Gelfand tripleと抽象放物型方程式</li>
+  <li>遅延方程式とhistory space</li>
+  <li>measure-valued delay：分布・原子・混合遅延</li>
+  <li>Volterra convolutionとpositive-type kernel</li>
+  <li>coercivity gapとcritical horizon</li>
+  <li>瞬間的coercivityが退化するgraph-space問題</li>
+  <li>指数重みとcausal structure</li>
+  <li>kernel stabilityとWasserstein型距離</li>
+  <li>zero-delay limitと原点近傍の特異境界</li>
+  <li>完全単調kernelと内部変数表示</li>
+  <li>BDFとconvolution quadrature</li>
+  <li>離散graph energyとcross-term cancellation</li>
+  <li>空間FEM・CR–RTとの結合</li>
+  <li>kernel・space・time・model-reduction errorの分解</li>
+</ol>
+
+補足としてCaputo型分数階微分，L1法，graded mesh，初期補正も扱いますが，
+それらを履歴依存型方程式の唯一の表現とは位置づけません．
+
+<br><br>
+(26th July 2026 <span class="cat cat001">Revised</span>)
+</p>
+</article>
+</div>
+
+
+
+<h3>Exact-curved FEM・形状微分・移動領域【G】【R】【V】</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+<b>位置づけ（Map）</b>
+<ul>
+  <li>Research Line：【G】【R】【V】</li>
+  <li>想定レベル：修士後半～博士</li>
+  <li>前提科目：有限要素写像，異方性補間，CR–RT，微分幾何またはshape calculusの基礎</li>
+  <li>つながるResearch Visions：Vision 10，14，17，20，21</li>
+  <li>到達目標：affine coreとcurved correctionを分離し，形状微分・ALE・FSIで生じる幾何誤差を説明できるようになる．</li>
+</ul>
+
+<b>概要</b><br>
+要素写像
+\[
+  F_K=\Psi_K\circ\Phi_{T_K}
+\]
+を基礎に，異方性を担うaffine coreと曲率を担うcurved correctionを分離します．
+固定曲領域のPoisson問題から始め，曲CR–RT，shape derivative，
+時間依存写像，geometric conservation law，FSI界面へ進みます．
+
+15回の骨格：
+<ol>
+  <li>polygonal，isoparametric，exact-curved geometryの違い</li>
+  <li>affine coreとcurved correction</li>
+  <li>Jacobian，metric，曲率の評価</li>
+  <li>曲要素上のLagrange補間</li>
+  <li>異方性方向別誤差評価</li>
+  <li>曲面上のCR平均自由度</li>
+  <li>非アフィンPiola変換とRT要素</li>
+  <li>curved CR–RT compatibility</li>
+  <li>形状摂動とmaterial derivative</li>
+  <li>補間作用素との交換子</li>
+  <li>状態shape derivativeの誤差</li>
+  <li>目的汎関数のshape derivative</li>
+  <li>ALE速度とJacobianの時間微分</li>
+  <li>geometric conservation lawとmesh quality</li>
+  <li>FSI界面仕事・traction・verified output</li>
+</ol>
+
+出口課題：
+<ul>
+  <li>曲要素と直線要素のgeometry errorを数値的に分離する．</li>
+  <li>曲CR自由度とRT法線流束の変換則を導出する．</li>
+  <li>material derivativeと補間作用素の交換子を最小モデルで計算する．</li>
+</ul>
+
+<br><br>
+(26th July 2026 <span class="cat cat001">New</span>)
+</p>
+</article>
+</div>
+
+<h2>Certification and Supporting Methods</h2>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+誤差保証，圧力ロバスト性，DG，形式推論を，中核研究を支える横断的な道具として学びます．
+</p>
+</article>
+</div>
+
+<h3>保証付き数値解析とAI4Mathリテラシー【V】【R】【G】</h3>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+<b>位置づけ（Map）</b>
+<ul>
+  <li>Research Line：【V】【R】【G】</li>
+  <li>想定レベル：修士～博士，数値解析・形式推論の接点に関心を持つ研究者</li>
+  <li>前提科目：有限要素法，PDE，関数解析，誤差評価，数値線形代数</li>
+  <li>つながるResearch Visions：Vision 7b，10，14，17，18，20，21</li>
+  <li>到達目標：数値解，幾何条件，保存則，目的量誤差をcertificateとして説明し，証明依存関係を再利用可能な形へ分解できるようになる．</li>
+</ul>
+
+<b>概要</b><br>
+AI4Mathは研究の旗印そのものではなく，既存の数値解析を検証可能な形へ整理するための補助手段です．
+この学習ルートでは，a priori／a posteriori評価，equilibrated flux，hypercircle，
+DWR，maximum-norm certificate，形式化可能な補題列をつなぎます．
+
+15回の骨格：
+<ol>
+  <li>数値解析におけるverification・validation・certification</li>
+  <li>Céa・Strang評価の仮定と定数依存性</li>
+  <li>計算可能なメッシュ幾何certificate</li>
+  <li>異方性補間評価と危険要素診断</li>
+  <li>残差型a posteriori評価</li>
+  <li>equilibrated fluxと局所保存</li>
+  <li>hypercircleと誤差半径</li>
+  <li>DWRと目的量誤差</li>
+  <li>CR–RTによるverified output</li>
+  <li>DMP・maximum-norm・pointwise certificate</li>
+  <li>memory kernel・model-reduction errorのcertificate</li>
+  <li>再現可能性：コード，メッシュ，データ，仮定</li>
+  <li>AIによる補題探索と反例候補</li>
+  <li>Lean / Mathlibを意識した定義・補題分解</li>
+  <li>最終課題：一つの誤差評価を依存グラフとcertificateへ再構成する</li>
+</ol>
+
+<br><br>
+(26th July 2026 <span class="cat cat001">Revised</span>)
+</p>
+</article>
+</div>
+
 
 <h3>混合型有限要素法と圧力ロバスト性【R】【G】【V】</h3>
 <div class="news">
@@ -381,12 +662,12 @@ AI支援型数学や形式推論の発展により，数学の学び方・研究
   <li>圧力ロバスト性の考え方</li>
   <li>divergence-free 補間と再構成作用素</li>
   <li>異方性メッシュと混合型要素</li>
-  <li>半ノルム型誤差評価，平衡化フラックス，verified output への接続</li>
+  <li>半ノルム型誤差評価，平衡化フラックス，de Rham構造，verified outputへの接続</li>
 </ol>
 到達目標：圧力誤差が速度誤差に影響する理由，圧力ロバストスキームの設計原理，異方性条件との共存，半ノルム型誤差評価との関係を説明できるようになる．
 
 <br><br>
-(8th June 2026 <span class="cat cat001">Update</span>)
+(26th July 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
@@ -412,18 +693,25 @@ AI支援型数学や形式推論の発展により，数学の学び方・研究
 DG 法を学ぶ際には「誤差評価」と「保存則」という二つの視点を意識することが大切です．誤差評価の理論が安定性と精度の裏付けを与え，保存則の視点が物理現象に忠実な計算を保証します．異方性やペナルティの取り方が行列のスペクトル構造に影響することはまだ十分には解析・実験されておらず，教育的にも研究的にも面白い題材です．
 
 <br><br>
-(8th June 2026 <span class="cat cat001">Update</span>)
+(26th July 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
-
+<h2>Exploratory Seminars</h2>
+<div class="news">
+<article class="news-item">
+<p class="news-cont">
+中核programmeを学んだ後に，複素問題や未解決課題を題材として研究テーマの見つけ方を学びます．
+</p>
+</article>
+</div>
 <h3>複素PDEと有限要素法【R】【V】</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
 複素数を変数に含む偏微分方程式は，量子力学や時間調和波動問題などに現れます．実数 PDE と理論的な構造は似ていますが，エネルギー保存や半ノルム誤差評価など，複素数特有の性質を考慮する必要があります．この違いを調べることは，Céa 補題や安定性の理解を深める教材として有効です．さらに，実 Hilbert 空間と複素 Hilbert 空間の違いを明示することは，形式推論や証明の再利用可能性を考える上でもよい練習になります．
 <br><br>
-(8th June 2026 <span class="cat cat001">Update</span>)
+(26th July 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
@@ -444,7 +732,7 @@ DG 法を学ぶ際には「誤差評価」と「保存則」という二つの�
 こうした未解決問題の存在は，「数学や数値解析は完成された学問ではなく，今も発展し続けている」ことを示しています．大学や大学院で学ぶときに，単に定理や公式を覚えるのではなく，「なぜこれが難しいのか」「どこに改良の余地があるのか」を知ることは，研究への入り口として大きな意義があります．有限要素法の Never Ending Story は，まさに次の世代が続きを書いていく物語なのです．
 
 <br><br>
-(8th June 2026 <span class="cat cat001">Update</span>)
+(26th July 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
