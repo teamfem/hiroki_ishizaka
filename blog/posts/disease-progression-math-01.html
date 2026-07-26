@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>癌と歯周病はなぜ同じ数理構造で考えられるのか | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,latent states,history-dependent model,cancer progression,periodontal disease,model reduction,certified prediction">
+<meta name="description" content="癌と歯周病に共通する潜在状態・治療履歴・局所微小環境を，履歴依存型モデルとmodel reductionの観点から解説します">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 26th July 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">癌と歯周病はなぜ同じ数理構造で考えられるのか</h1>
+<!---->
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+<p style="border:1px solid #999; padding:10px;">
+本記事は数理モデル・数値解析・統計的推論の研究構想を扱うものであり，診断・治療上の助言を提供するものではありません．
+</p>
+<p>
+癌と歯周病は，医学的には異なる疾患です．一方は腫瘍細胞集団の増殖・浸潤・治療抵抗性を扱い，他方は歯周組織の慢性炎症・付着喪失・歯槽骨吸収を扱います．
+それでも，同じ数理研究の中で比較する価値があります．理由は，疾患名ではなく，将来進行を決める状態の構造にあります．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+\[
+  \boxed{
+    \text{潜在状態}
+    +\text{局所微小環境}
+    +\text{治療履歴}
+    +\text{不可逆的進行}
+    +\text{時空間的不均一性}
+  }
+\]
+</div>
+</article>
+</div>
+
+<h2>1．現在観測される病変量は完全な状態ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+癌では，同じ腫瘍体積であっても，治療感受性細胞と耐性細胞の割合，休眠・persister状態，低酸素，免疫応答が異なれば，将来の治療反応や再増大リスクは異なります．
+歯周病でも，同じポケット深さや骨量であっても，炎症活動性，宿主免疫，バイオフィルム，骨代謝，咬合力が異なれば，将来の組織破壊は異なります．
+</p>
+<p>
+したがって，観測される状態をu，直接観測されない潜在状態をz，治療・介入をaとして，
+\[
+\begin{aligned}
+  \partial_tu &= F(u,z,a),\\
+  \partial_tz &= G(u,z,a),\\
+  y &= \mathcal O(u,z)+\varepsilon
+\end{aligned}
+\]
+という共通構造を考えます．観測yだけからuとzを区別できるかという識別可能性が，最初の数学的課題です．
+</p>
+</article></div>
+
+<h2>2．潜在状態を消去すると履歴依存性が現れる</h2>
+<div class="news"><article class="news-item">
+<p>
+簡単な線形系で，解像変数Uと未解像変数zを
+\[
+\begin{aligned}
+  \partial_tU+A_{HH}U+A_{Hf}z &= F,\\
+  \partial_tz+A_{fH}U+A_{ff}z &=0
+\end{aligned}
+\]
+と分けます．zを厳密に消去すると，Uは一般に
+\[
+  \partial_tU+A_{HH}U
+  -\int_0^tA_{Hf}e^{-(t-s)A_{ff}}A_{fH}U(s)\,ds
+  =\widetilde F(t)
+\]
+を満たします．過去のUに作用する積分項がmemoryです．
+</p>
+<p>
+つまり，現在の病変量だけでは将来が決まらないのは，単にデータが少ないからとは限りません．観測していない状態を除いた結果として，過去の治療・病変履歴が有効力学に残る場合があります．
+この意味で履歴依存型発展方程式が現れます．「非マルコフ型」という語も使われますが，ここでは確率性そのものを意味しません．
+</p>
+</article></div>
+
+<h2>3．癌と歯周病で対応する変数</h2>
+<div class="news"><article class="news-item">
+<table border="1" style="border-collapse:collapse; width:100%;">
+<tr><th>数理的役割</th><th>癌</th><th>歯周病</th></tr>
+<tr><td>観測状態</td><td>腫瘍体積，画像，バイオマーカー</td><td>PPD，CAL，BOP，骨量，動揺度</td></tr>
+<tr><td>潜在状態</td><td>耐性細胞，休眠状態，低酸素，免疫状態</td><td>炎症活動性，免疫，骨代謝，局所力学</td></tr>
+<tr><td>履歴</td><td>薬剤，照射，手術，治療反応，再発</td><td>歯周治療，メンテナンス，改善，再燃</td></tr>
+<tr><td>時空間進行</td><td>増殖，浸潤，壊死，再増大</td><td>付着喪失，骨吸収，歯周部位進行</td></tr>
+<tr><td>目的量</td><td>治療反応，再発確率，腫瘍制御期間</td><td>骨吸収，歯の喪失，メンテナンス効果</td></tr>
+</table>
+<p>
+この対応は，癌と歯周病が生物学的に同じだという主張ではありません．異なる機構モデルに，共通する推論・縮約・誤差保証の骨格があるという意味です．
+</p>
+</article></div>
+
+<h2>4．平均的な予測精度だけでは足りない</h2>
+<div class="news"><article class="news-item">
+<p>
+詳細モデルをfine model，潜在状態を減らしたモデルをreduced modelとします．状態の平均誤差が小さくても，治療Aと治療Bの効果の順位が逆転する可能性があります．
+そこで，
+\[
+  \left|
+    \Delta J_{\mathrm{fine}}(a,b)
+    -
+    \Delta J_{\mathrm{red}}(a,b)
+  \right|
+\]
+を評価する必要があります．
+</p>
+<p>
+ここでJは，癌なら再増大確率や腫瘍制御期間，歯周病なら骨吸収や歯の喪失確率です．
+モデル縮約によって介入の順位が変わるなら，そのモデルは意思決定支援には不十分です．これは通常の予測精度とは異なる，goal-oriented model-reduction errorの問題です．
+</p>
+</article></div>
+
+<h2>5．最終的に表示すべきもの</h2>
+<div class="news"><article class="news-item">
+<p>
+目標は，単一の未来画像を断定することではありません．
+\[
+  \widehat u(x,t+\Delta)
+  \pm
+  \mathcal U(x,t+\Delta)
+\]
+として，予測値と不確実性を分けて示します．
+</p>
+<ul>
+  <li>現在推定される病変と潜在状態，</li>
+  <li>将来の代表予測軌道，</li>
+  <li>治療A・Bの反実仮想シナリオ，</li>
+  <li>危険閾値を超える確率，</li>
+  <li>データ不足，model reduction，kernel，同定，数値離散化のどれが不確実性を支配するか，</li>
+  <li>次にどの場所・時刻・変数を観測すべきか</li>
+</ul>
+<p>
+高リスクであることと，情報不足のため不確かなことを同じ色で表示しないことが重要です．
+</p>
+</article></div>
+
+<h2>6．この研究の位置づけ</h2>
+<div class="news"><article class="news-item">
+<p>
+この方向は，医学的主張を数値解析だけで保証するものではありません．モデル内verification，統計的validation，臨床的validationを区別する必要があります．
+私の数値解析研究が直接担うのは，採用したモデルの中で，縮約，kernel近似，空間・時間離散化，目的量評価の誤差を追跡する部分です．
+</p>
+<p>
+研究の流れは，
+\[
+  \text{longitudinal observations}
+  \longrightarrow
+  \text{latent-state and kernel inference}
+  \longrightarrow
+  \text{dynamic prediction}
+\]
+\[
+  \longrightarrow
+  \text{counterfactual scenarios}
+  \longrightarrow
+  \text{uncertainty-aware visualisation}
+\]
+です．
+</p>
+<p>
+次回は，<b>「現在の病変量だけでは将来を予測できない」</b>という点を，有限次元の最小モデルで具体的に考えます．
+</p>
+<p>
+関連ページ：<a href="../../fem/">Research Visions</a>（Vision 18，19），<a href="../../publications/">Publications</a>，<a href="../">Blog</a>
+</p>
+</article></div>
+
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
