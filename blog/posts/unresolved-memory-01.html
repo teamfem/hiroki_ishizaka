@@ -3,12 +3,12 @@
 <head>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-<title>未解像過程の記憶をどう安定にモデル化・同定・離散化するか | ISHIZAKA Hiroki Website</title>
+<title>未解像ダイナミクスと非マルコフ方程式 — 記憶をどう安定にモデル化・同定・離散化するか | ISHIZAKA Hiroki Website</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,measure-valued delay,memory kernel,non-Markovian model,kernel stability,finite element method">
-<meta name="description" content="未解像過程の記憶をmeasure-valued delayやVolterra memoryでモデル化し，同定・安定性・離散化・検証までを一つの研究テーマとして考える．">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,unresolved dynamics,measure-valued delay,memory kernel,non-Markovian equation,kernel stability,finite element method,cancer cell dynamics">
+<meta name="description" content="未解像ダイナミクスから生じる記憶をmeasure-valued delayやVolterra memoryで表し，非マルコフ方程式の導出・同定・安定性・離散化・検証と，癌・材料・分子・流体への応用を考える．">
 
 <link rel="stylesheet" href="../../css/base.css">
 <link rel="stylesheet" href="../../css/rwd.css">
@@ -111,18 +111,25 @@
 <div class="section-in">
 
 
-<h1 class="section-title">未解像過程の記憶をどう安定にモデル化・同定・離散化するか</h1>
-<div class="news-date"><time datetime="2026-07-25">25th July 2026</time></div>
+<h1 class="section-title">未解像ダイナミクスと非マルコフ方程式 — 記憶をどう安定にモデル化・同定・離散化するか</h1>
+<div class="news-date"><time datetime="2026-07-25">25th July 2026</time>（26th July 2026 updated）</div>
 
 <h2>Introduction：計算から消した過程は，本当に消えるのか</h2>
 <div class="news">
 <article class="news-item">
 <p>
-大規模な物理現象を計算するとき，すべての時間・空間スケールを直接解像することはできません．細かな渦，微視的な熱輸送，材料内部の緩和過程，生体システムの反応経路など，計算から除かれる自由度は必ず存在します．
+大規模な物理・生体現象を計算または観測するとき，すべての時間・空間スケールと内部状態を直接解像することはできません．細かな渦，微視的な熱輸送，材料内部の緩和過程，生体分子の高速自由度，癌細胞集団の潜在状態や腫瘍微小環境など，計算から除かれる変数だけでなく，直接測定できない変数も必ず存在します．
+</p>
+<p>
+ここでいう未解像ダイナミクスは，「小さすぎて見えない運動」だけを意味しません．計測していない内部状態，多数の自由度を平均化した効果，短時間スケールの変動，現在の観測値だけでは区別できず過去の履歴によって初めて識別できる潜在状態も含みます．
 </p>
 <p>
 しかし，除かれた過程の影響がゼロになるとは限りません．現在の状態だけでは説明できず，過去の状態が現在へ影響する「記憶」として残ることがあります．このような系は，現在の状態だけで未来を決めるMarkov型モデルとは異なり，非マルコフ型モデルと呼ばれます．
 </p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<strong>未解像とは，未知を自由に想像することではない</strong><br><br>
+観測データと数理モデルから，どの潜在状態またはmemory kernelが識別可能かを明らかにし，推定の非一意性・データ誤差・モデル化誤差・離散化誤差を区別することが必要です．
+</div>
 <div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
 <strong>この研究テーマの中心問題</strong><br><br>
 未解像過程の記憶を，どのようにモデル化し，観測から同定し，安定かつ誤差保証つきで離散化するか．
@@ -280,17 +287,54 @@ exact modelではkernelの情報そのものは方程式に残りますが，有
 <div class="news">
 <article class="news-item">
 <p>
-この研究テーマは特定の応用だけに属するものではありません．共通するのは，粗視化や縮約によって除かれた自由度が，履歴として現在へ戻ってくることです．
+この研究テーマは特定の応用だけに属するものではありません．共通するのは，計算・観測・粗視化によって捨てられた自由度や内部状態が，履歴依存性，確率的forcing，またはmemory kernelとして現在へ戻ってくることです．各応用では，<strong>何を観測するか，何を未解像とするか，kernelが何を表すか，最終的に何を推定・保証するか</strong>を区別する必要があります．
 </p>
-<ul>
-  <li><b>非フーリエ熱伝導：</b>微小時間・空間スケールにおける熱流束の緩和や時間遅れ．</li>
-  <li><b>粘弾性・材料科学：</b>過去の変形履歴に依存する応力応答．</li>
-  <li><b>生体・反応系：</b>複数経路や分布した反応時間をもつフィードバック．</li>
-  <li><b>縮約流体・輸送モデル：</b>未解像渦や微細構造の影響をmemory closureとして表現する問題．</li>
-  <li><b>理想化された大気海洋モデル：</b>複数の応答時間，伝播時間，長期memoryをもつ低次元・縮約モデル．</li>
-</ul>
+
+<h3>6.1 癌細胞集団・薬剤耐性・腫瘍微小環境</h3>
 <p>
-現時点で全球天気予報モデルを直接置き換えるという話ではありません．まずは理想化モデルに対し，kernelの意味，安定性，同定可能性，離散化誤差を明らかにすることが必要です．
+腫瘍体積，画像，血中バイオマーカーなどを解像・観測変数とし，直接観測されない細胞状態の構成比，薬剤耐性を準備する潜在状態，癌幹細胞様状態，低酸素，免疫応答，薬剤曝露履歴などを未解像変数として扱うことが考えられます．
+</p>
+<p>
+同じ大きさの腫瘍でも，未治療，治療中，再発後では将来の反応が異なり得ます．現在の腫瘍量だけでは状態を記述しきれず，治療履歴や細胞状態の可塑性がmemoryとして現れる可能性があります．単一細胞計測，系譜追跡，縦断画像などから，潜在細胞集団の割合，状態遷移率，有効kernelを推定し，治療反応や再発に関係する目的量を不確実性付きで評価することが課題になります．
+</p>
+
+<h3>6.2 生体分子・分子動力学の粗視化</h3>
+<p>
+全原子運動を直接追跡せず，反応座標や分子形状など少数の変数だけを残すと，除去された高速自由度は摩擦memoryやcolored noiseとして現れます．一般化Langevin方程式のkernelを全原子計算や時系列データから同定し，構造遷移時間，相関関数，反応率を再現する縮約モデルを構成します．
+</p>
+
+<h3>6.3 粘弾性材料・軟組織・履歴依存材料</h3>
+<p>
+粘弾性体では，現在の応力が現在のひずみだけでなく過去の変形履歴に依存します．材料内部の緩和機構，微細構造，再配列を未解像過程とみなし，緩和kernel，遅延測度，分数階kernelによって構成則を表します．kernel同定，有限原子・Prony近似，空間FEM，時間離散化の各誤差を同時に追跡することが中心課題です．
+</p>
+
+<h3>6.4 非フーリエ熱伝導・マイクロ／ナノスケール輸送</h3>
+<p>
+超短時間加熱やマイクロ・ナノスケールでは，熱流束が温度勾配へ瞬時に応答するFourier則が十分でない場合があります．未解像なphonon輸送，緩和時間，ballistic成分，微細構造の影響を，時間memoryまたは空間非局所kernelとして表します．kernelの因果性・減衰・符号，正値性，非物理的振動の抑制，異方性メッシュによる局所輸送の解像が問題になります．
+</p>
+
+<h3>6.5 縮約流体・乱流・輸送・大気海洋モデル</h3>
+<p>
+高Reynolds数流れや気候系では，計算格子より小さい渦，波，境界層，化学反応，海洋内部過程などをすべて解像できません．これらを消去したclosureは，瞬時的な渦粘性だけでなく，過去の状態に依存するmemoryや確率的forcingを含み得ます．Mori–Zwanzig型縮約，variational multiscale法，データ駆動kernel同定を接続し，energy transfer，輸送量，長時間統計，極端事象に関する誤差を追跡することが目標です．
+</p>
+
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<strong>計算のverificationと現象のvalidationは別である</strong><br><br>
+数値解析による誤差保証は，採用した数理モデルの内部での計算精度を保証するものです．癌を含む生体応用では，個々の患者に対する診断や治療効果の医学的妥当性まで直接保証するものではありません．臨床・実験データによる独立したvalidationと，医学・生命科学研究者との共同研究が必要です．
+</div>
+
+<p>
+したがって，応用での中心問題は「見えない状態を当てる」ことではなく，
+\[
+  \text{observation}
+  \longrightarrow
+  \text{identifiable latent dynamics or kernel}
+  \longrightarrow
+  \text{non-Markovian equation}
+  \longrightarrow
+  \text{certified quantity of interest}
+\]
+という流れを，どの条件で正当化できるかです．
 </p>
 </article>
 </div>
@@ -304,7 +348,7 @@ exact modelではkernelの情報そのものは方程式に残りますが，有
   <li><b>完全離散化：</b>有限原子kernel，空間Galerkin法，時間離散を統合した誤差評価．</li>
   <li><b>逆問題：</b>有限原子kernelの局所同定，一般kernelの条件付き安定性．</li>
   <li><b>構造保存：</b>最大値原理，正値性，保存則，確率的memoryの安定性．</li>
-  <li><b>応用：</b>非フーリエ熱伝導や理想化された縮約輸送モデルでの検証．</li>
+  <li><b>応用：</b>癌細胞集団，生体分子粗視化，粘弾性・非フーリエ熱伝導，縮約流体・輸送モデルでの検証．</li>
 </ol>
 <p>
 一つの論文へ全てを詰め込むのではなく，forward analysis，fully discrete approximation，inverse problem，stochastic／positivity theoryを段階的に分けて進めます．
@@ -316,7 +360,7 @@ exact modelではkernelの情報そのものは方程式に残りますが，有
 <div class="news">
 <article class="news-item">
 <p>
-未解像過程の記憶を扱う研究は，「memory項を持つ方程式を解く」という一問題にとどまりません．
+未解像ダイナミクスの記憶を扱う研究は，「memory項を持つ方程式を解く」という一問題にとどまりません．直接観測できない潜在状態をどこまで識別できるか，その不確実性をどう表し，最終的な目的量をどこまで保証できるかも含む問題です．
 </p>
 <p style="text-align:center;">
 \[
