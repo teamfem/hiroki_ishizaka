@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
-<meta name="description" content="Mathematics for Trustworthy Simulation">
+<meta name="description" content="Mathematics for Trustworthy Simulation: FEM, unresolved dynamics, AI4Math, and mathematical modelling of dental diseases">
 
 <link rel="stylesheet" href="../css/base.css">
 <link rel="stylesheet" href="../css/rwd.css">
@@ -112,7 +112,7 @@
 <article class="news-item">
 <p>
 このBlogでは，有限要素法（FEM）の実装・理論・研究メモを，連載形式で整理しています．
-FEniCSx / FreeFEM による実験，異方性メッシュと幾何条件，Exact-curved FEM，外挿法，CIP法，Weak Galerkin法，非圧縮流れ，さらに未解像ダイナミクスから生じるmemory・delayを含む非マルコフ方程式などを扱いながら，最終的には
+FEniCSx / FreeFEM による実験，異方性メッシュと幾何条件，Exact-curved FEM，外挿法，CIP法，Weak Galerkin法，非圧縮流れ，未解像ダイナミクスから生じるmemory・delayを含む非マルコフ方程式，さらに虫歯・歯周病の数理モデルなどを扱いながら，最終的には
 <strong>Certified finite element analysis under computable geometric conditions</strong>
 へ接続することを目指しています．
 </p>
@@ -129,6 +129,7 @@ FEniCSx / FreeFEM による実験，異方性メッシュと幾何条件，Exact
   <li>AI4Math・形式検証から入る場合：Lean 4 と AI4Math の記事</li>
   <li>PINNs・深層学習数値解法から入る場合：PINNs と幾何条件の記事</li>
   <li>未解像ダイナミクス・memory・非マルコフ方程式から入る場合：記憶をもつシミュレーションの数理に関する記事</li>
+  <li>虫歯・歯周病・口腔バイオフィルムの数理から入る場合：歯科疾患の数理モデルと信頼保証付き計算の記事</li>
 </ul>
 <p>
 This page is updated periodically.<br>
@@ -470,6 +471,37 @@ Physics-Informed Neural Networks（PINNs）は，有限個の残差点で損失�
 <p>
 関連ページ：
 <a href="../fem/">Research Visions</a>（Vision 11, 18），
+<a href="../research/">Research</a>，
+<a href="../publications/">Publications</a>
+</p>
+</article>
+</div>
+
+
+<h2>数学で歯科疾患に挑む — 虫歯・歯周病の数理モデルと信頼保証付き計算</h2>
+<div class="news">
+<article class="news-item">
+<p>
+虫歯や歯周病は，細菌，酸，唾液，脱灰・再石灰化，炎症，歯槽骨吸収，咬合力などが空間的・時間的に相互作用する複雑な現象です．本連載では，これらを反応拡散方程式，移動境界問題，力学モデル，逆問題，非マルコフ型方程式としてどこまで記述できるかを考えます．
+</p>
+<p>
+目的は，数学だけで診断や治療を置き換えることではありません．異方性有限要素法，exact-curved FEM，離散最大値原理，目的量誤差評価を用いて，歯科疾患の数値シミュレーションが<strong>何を表し，どこまで信頼できるか</strong>を明らかにすることです．モデル化誤差，観測誤差，形状近似誤差，空間・時間離散化誤差を区別し，歯科・生命科学との共同研究へ接続できる数理基盤を目指します．
+</p>
+<p class="news-cont">
+<ul>
+  <li><a href="./posts/dental-math-01.html">第1回：数学で虫歯・歯周病に何ができるか</a> <div class="news-date"><time datetime="2026-07-26">26th July 2026</time></div></li>
+  <li>第2回：虫歯は反応拡散方程式で表せるか — 酸・pH・脱灰・再石灰化（準備中）</li>
+  <li>第3回：歯の曲面と異方性FEM — エナメル質の方向依存性をどう扱うか（準備中）</li>
+  <li>第4回：負の濃度を出さない虫歯シミュレーション — DMPと非負値保存（準備中）</li>
+  <li>第5回：歯周病と歯槽骨吸収の数理モデル — 炎症・骨・力学の連成（準備中）</li>
+  <li>第6回：患者別歯科FEMと逆問題 — 画像・歯の動揺・材料係数（準備中）</li>
+  <li>第7回：口腔バイオフィルムと非マルコフ性 — 糖摂取・pH・治療履歴（準備中）</li>
+  <li>第8回：歯科シミュレーションをどこまで信じられるか — verificationとvalidation（準備中）</li>
+</ul>
+</p>
+<p>
+関連ページ：
+<a href="../fem/">Research Visions</a>（Vision 10, 13, 14, 17, 18），
 <a href="../research/">Research</a>，
 <a href="../publications/">Publications</a>
 </p>
