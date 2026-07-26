@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>数学で虫歯・歯周病に何ができるか | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,dental caries,periodontal disease,reaction-diffusion equation,anisotropic finite element method,discrete maximum principle,certified computation">
+<meta name="description" content="虫歯・歯周病を反応拡散，曲面・異方性FEM，力学連成，逆問題，誤差保証の視点から考える研究構想．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="../../">Home</a>
+				</li>
+			
+				<li><a href="../../publications/">Publications</a></li>
+				
+				<li>
+					<a href="../../research/">Research</a>
+				</li>
+				
+				<li>
+					<a href="../../fem/">Research Visions</a>
+					<!--
+					<ul>
+						<li><a href="../fem/research01/">Research1</a></li>
+						<li><a href="../fem/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="../../suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="../../blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="../../geo/">History of Geometric Conditions in FEM</a>
+				</li>
+								
+				<li>
+					<a href="../../links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li class="bcl-last">
+				Blog post from 26th July 2026
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+
+<h1 class="section-title">数学で虫歯・歯周病に何ができるか</h1>
+<div class="news-date"><time datetime="2026-07-26">26th July 2026</time></div>
+<h2>Introduction：歯科疾患を数理モデルとして見る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+虫歯や歯周病は，単一の原因だけで進む現象ではありません．口腔細菌，糖，酸，唾液，歯のミネラル，炎症反応，歯槽骨，歯根膜，咬合力などが，異なる時間・空間スケールで相互作用します．世界保健機関（WHO）は，口腔の健康を食事，呼吸，発話などの基本的機能と生活の質を支えるものとして位置づけています（<a href="https://www.who.int/health-topics/oral-health" target="_blank" rel="noopener">WHO: Oral health</a>）．
+</p>
+<p>
+本稿の目的は，数学だけで診断や治療を置き換えることではありません．虫歯・歯周病の進行機構を偏微分方程式や力学系として整理し，有限要素法で計算するときに，<strong>何を計算しているのか，どの誤差が残るのか，結果をどこまで信頼してよいのか</strong>を明らかにすることです．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<strong>この連載の中心問題</strong><br><br>
+虫歯・歯周病の進行を表す数理モデルを構築し，曲面・異方性・非負値制約・不確実性を含む数値計算に，計算可能な誤差保証を与えられるか．
+</div>
+</article>
+</div>
+
+<h2>1．数学が担える四つの役割</h2>
+<div class="news">
+<article class="news-item">
+<p>
+歯科疾患への数学的アプローチは，大きく四つの層に分けられます．
+</p>
+<ol>
+  <li><b>モデル化：</b>酸の拡散，脱灰，細菌増殖，炎症，骨吸収，歯の変形を方程式として表す．</li>
+  <li><b>同定・逆問題：</b>画像，pH，歯周ポケット，歯の動揺などから，反応係数，拡散係数，材料係数，潜在状態を推定する．</li>
+  <li><b>数値近似：</b>複雑な歯の形状と薄い組織を，有限要素法などで安定かつ効率的に計算する．</li>
+  <li><b>検証：</b>モデル誤差，データ誤差，幾何誤差，空間・時間離散化誤差を区別し，目的量の誤差上界を与える．</li>
+</ol>
+<p>
+重要なのは，精密な画像を入力すれば自動的に正しい予測が得られるわけではないことです．同じ観測結果を生む異なる内部状態が存在する場合，逆問題は非一意または不安定になります．したがって，計算方法だけでなく，何が観測から識別可能かを数学的に調べる必要があります．
+</p>
+</article>
+</div>
+
+<h2>2．虫歯を反応拡散・脱灰問題として見る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+虫歯の初期進行では，歯垢中で生成された酸がエナメル質へ拡散し，歯のミネラルと反応して脱灰を起こします．古くから，この過程を拡散律速の溶解現象として計算するモデルが提案されています（<a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4927235/" target="_blank" rel="noopener">Gregory et al., A Mathematical Model for Dental Caries</a>）．また，歯垢内の代謝・化学反応・物質移動とpHを統合したモデルも研究されています（<a href="https://pubmed.ncbi.nlm.nih.gov/22683367/" target="_blank" rel="noopener">Ilie et al., 2012</a>）．
+</p>
+<p>
+概念的には，酸濃度 \(c(x,t)\) とミネラル量 \(m(x,t)\) に対し，
+\[
+  \partial_t c-\nabla\cdot\!\left(D(x,m)\nabla c\right)
+  =R_c(c,m,\mathrm{pH}),
+\]
+\[
+  \partial_t m=-R_m(c,m,\mathrm{pH})
+\]
+のような反応拡散系を考えます．
+</p>
+<p>
+ここで重要なのが異方性です．エナメル質の微細構造には方向性があり，拡散係数 \(D\) を単なるスカラーではなくテンソルとして扱う必要が生じます．近年の虫歯進行モデルでは，微視的反応拡散から巨視的方程式を導き，異方性拡散とエナメル質の局所的な形状変化を含めた数値計算が検討されています（<a href="https://arxiv.org/abs/2501.07619" target="_blank" rel="noopener">Fábregas and Rubinstein, 2025, preprint</a>）．
+</p>
+<p>
+この問題は，異方性有限要素法と非常に相性がよい一方で，
+\[
+  c_h\geq0,\qquad 0\leq m_h\leq1
+\]
+という物理的制約を数値解が破らないことも必要です．酸濃度が負になる，あるいはミネラル量が初期量を超える計算結果は，たとえ残差が小さくても物理的には受け入れられません．ここで離散最大値原理，非負値保存，非線形安定化が中心課題になります．
+</p>
+</article>
+</div>
+
+<h2>3．歯周病を炎症・骨吸収・力学の連成問題として見る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+歯周病は，歯を支える歯肉，歯根膜，歯槽骨などに関わる疾患です．NIDCRは，歯周病が進行すると歯を支える骨にまで影響し，咀嚼時の痛み，歯の動揺，歯の喪失につながり得ると説明しています（<a href="https://www.nidcr.nih.gov/health-info/gum-disease" target="_blank" rel="noopener">NIDCR: Periodontal Disease</a>）．
+</p>
+<p>
+数理的には，炎症物質や細胞の反応拡散，歯槽骨量の変化，歯・歯根膜・骨の力学を連成させることが考えられます．例えば，炎症状態 \(q\)，骨密度 \(b\)，変位 \(u\) に対して，
+\[
+  \partial_t q-\nabla\cdot(D_q\nabla q)=F(q,b),
+\]
+\[
+  \partial_t b=-G(q,b,\sigma(u)),
+\]
+\[
+  -\nabla\cdot\sigma(u;b)=f
+\]
+という三層のモデルが候補になります．
+</p>
+<p>
+歯根膜と歯槽骨の応力・ひずみを有限要素法で調べる研究はすでに行われており，荷重条件が両組織のひずみ分布に与える影響が解析されています（<a href="https://pubmed.ncbi.nlm.nih.gov/19419455/" target="_blank" rel="noopener">Cattaneo et al., 2009</a>）．ただし，材料係数，境界条件，歯根膜の非線形性，患者ごとの形状差は大きな不確実性を持ちます．したがって，きれいな応力図を描くだけでなく，その図が仮定の変化に対してどこまで頑健かを評価する必要があります．
+</p>
+</article>
+</div>
+
+<h2>4．有限要素法の研究とどう接続するか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+歯科疾患の数理モデルは，次の研究課題を一つの問題の中に集めます．
+</p>
+<ul>
+  <li><b>異方性FEM：</b>エナメル質の方向依存拡散，薄い歯根膜，病変前線に沿った異方性メッシュ．</li>
+  <li><b>Exact-curved FEM：</b>歯冠・歯根・歯槽骨の曲面を，直線要素だけで粗く置き換えずに扱う．</li>
+  <li><b>離散最大値原理：</b>酸濃度，細菌量，ミネラル量，炎症量の非負性・上限制約を守る．</li>
+  <li><b>移動境界：</b>脱灰や骨吸収によって病変領域・組織境界が変化する問題を扱う．</li>
+  <li><b>逆問題・UQ：</b>画像や測定値から材料係数・反応係数を推定し，不確実性を伝播させる．</li>
+  <li><b>Verified output：</b>病変深さ，総ミネラル損失，歯の変位，歯根膜の最大応力などの目的量を保証する．</li>
+</ul>
+<p>
+例えば，虫歯モデルに対する目標は，
+\[
+  \left|
+  J(u)-J(U_{h,\tau})
+  \right|
+  \leq \eta_{\mathrm{geom}}
+      +\eta_{\mathrm{space}}
+      +\eta_{\mathrm{time}}
+      +\eta_{\mathrm{param}}
+\]
+という形で，病変深さや総脱灰量の誤差を分解することです．
+</p>
+<p>
+これは，「数値解がそれらしく見える」ことから一歩進み，どの誤差が結果を支配しているかを説明する計算です．
+</p>
+</article>
+</div>
+
+<h2>5．最初に取り組める現実的な研究問題</h2>
+<div class="news">
+<article class="news-item">
+<p>
+最初から口腔全体や患者別治療予測を扱うのは現実的ではありません．まずは，理想化された二次元歯断面上の虫歯進行モデルから始めるのがよいと考えられます．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<strong>第一段階の研究テーマ案</strong><br><br>
+曲面歯領域における反応拡散・脱灰系に対する，異方性かつ非負値保存型有限要素法の解析．
+</div>
+<p>
+具体的な課題は次のとおりです．
+</p>
+<ol>
+  <li>酸濃度とミネラル量を含む簡潔な反応拡散系を設定する．</li>
+  <li>連続問題の存在・一意性・非負性を確認する．</li>
+  <li>エナメル質の異方性を反映する拡散テンソルを導入する．</li>
+  <li>離散解の非負性または離散最大値原理を保証する．</li>
+  <li>曲面幾何誤差と異方性空間誤差を分離する．</li>
+  <li>病変深さ・総脱灰量に対する目的量誤差評価を構成する．</li>
+</ol>
+<p>
+この段階では実患者データを必要としません．公開された形状または理想化形状を使い，数理構造と数値手法を確立した後に，歯科研究者との共同研究によってデータ同定・validationへ進むのが安全です．
+</p>
+</article>
+</div>
+
+<h2>6．履歴効果と非マルコフ型モデル</h2>
+<div class="news">
+<article class="news-item">
+<p>
+虫歯・歯周病の進行は，現在のpHや現在の炎症量だけで決まるとは限りません．糖摂取の履歴，酸性環境が続いた時間，バイオフィルムの成熟，治療後の回復，炎症の蓄積などが将来の状態に影響します．
+</p>
+<p>
+未解像な細菌状態や免疫反応を消去したとき，粗視化変数 \(u(t)\) の方程式に
+\[
+  \partial_t u(t)+A(u(t))
+  +\int_0^t K(t-s)B(u(s))\,ds=f(t)
+\]
+というmemory項が現れる可能性があります．
+</p>
+<p>
+ただし，最初から任意のkernelを仮定するだけでは十分ではありません．細菌・酸・組織の詳細モデルから，何を未解像変数として消去するとmemoryが生じるのか，観測からkernelを同定できるのかを確認する必要があります．これは未解像ダイナミクスと非マルコフ方程式を扱う研究Visionとも接続します．
+</p>
+</article>
+</div>
+
+<h2>7．「計算が正しい」と「医学的に正しい」は別である</h2>
+<div class="news">
+<article class="news-item">
+<p>
+歯科数理モデルで最も注意すべき点は，verificationとvalidationの区別です．
+</p>
+<ul>
+  <li><b>Verification：</b>設定した方程式を数値的に正しく解いているか．</li>
+  <li><b>Validation：</b>その方程式が実際の虫歯・歯周病を十分に表しているか．</li>
+</ul>
+<p>
+有限要素法の誤差評価によって，
+\[
+  \|u-U_h\|\leq\eta
+\]
+を示しても，モデル自体が現実を誤って表していれば，臨床的な予測は正しくありません．
+</p>
+<p>
+したがって，総誤差は概念的に
+\[
+  \text{total uncertainty}
+  =
+  \text{model discrepancy}
+  +\text{data uncertainty}
+  +\text{geometry error}
+  +\text{discretisation error}
+\]
+と分解して考える必要があります．数学はこのすべてを自動的に消す魔法ではありませんが，どこに不確実性があり，どこまで結果を信頼できるかを明示する強力な道具になります．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+本連載は数理モデルと数値解析の研究構想を扱うものであり，個別の症状に対する診断・治療の助言を目的とするものではありません．臨床応用には，歯科医師・歯科衛生士・生命科学研究者との共同研究と，独立した実験・臨床データによる検証が必要です．
+</div>
+</article>
+</div>
+
+<h2>8．今後の連載</h2>
+<div class="news">
+<article class="news-item">
+<ol>
+  <li>虫歯は反応拡散方程式で表せるか．</li>
+  <li>歯の曲面と異方性FEMをどう結びつけるか．</li>
+  <li>負の濃度を出さない離散法をどう構成するか．</li>
+  <li>歯周病の炎症・骨吸収・力学をどう連成するか．</li>
+  <li>画像や歯の動揺から係数を推定できるか．</li>
+  <li>口腔内の履歴効果を非マルコフ型モデルで表せるか．</li>
+  <li>目的量誤差と医学的validationをどう区別するか．</li>
+</ol>
+</article>
+</div>
+
+<h2>Conclusion</h2>
+<div class="news">
+<article class="news-item">
+<p>
+虫歯・歯周病は，反応拡散，異方性，曲面，移動境界，力学連成，逆問題，履歴依存性を含む，数値解析にとって非常に豊かな問題です．
+</p>
+<p style="text-align:center;">
+\[
+  \text{oral disease mechanism}
+  \longrightarrow
+  \text{mathematical model}
+  \longrightarrow
+  \text{structure-preserving discretisation}
+  \longrightarrow
+  \text{certified quantity of interest}
+\]
+</p>
+<p>
+数学が直接歯を治療するわけではありません．しかし，疾患の進行機構を整理し，測定から推定できる情報の限界を示し，数値予測に含まれる誤差を明らかにすることはできます．その積み重ねが，歯科シミュレーションを「画像を作る計算」から「根拠と限界を説明できる計算」へ変えると考えています．
+</p>
+<p>
+関連ページ：
+<a href="../../fem/">Research Visions</a>（Vision 10, 13, 14, 17, 18），
+<a href="../../research/">Research</a>，
+<a href="../../publications/">Publications</a>
+</p>
+</article>
+</div>
+
+<h2>References</h2>
+<div class="news">
+<article class="news-item">
+<ul>
+  <li><a href="https://www.who.int/health-topics/oral-health" target="_blank" rel="noopener">World Health Organization, Oral health.</a></li>
+  <li><a href="https://www.nidcr.nih.gov/health-info/gum-disease" target="_blank" rel="noopener">National Institute of Dental and Craniofacial Research, Periodontal (Gum) Disease.</a></li>
+  <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC4927235/" target="_blank" rel="noopener">T. M. Gregory et al., A Mathematical Model for Dental Caries.</a></li>
+  <li><a href="https://pubmed.ncbi.nlm.nih.gov/22683367/" target="_blank" rel="noopener">O. Ilie et al., Mathematical modelling of tooth demineralisation and pH profiles in dental plaque.</a></li>
+  <li><a href="https://arxiv.org/abs/2501.07619" target="_blank" rel="noopener">R. Fábregas and J. Rubinstein, A mathematical model for the progression of dental caries, preprint, 2025.</a></li>
+  <li><a href="https://pubmed.ncbi.nlm.nih.gov/19419455/" target="_blank" rel="noopener">P. M. Cattaneo et al., Strains in periodontal ligament and alveolar bone associated with orthodontic tooth movement analysed by finite element.</a></li>
+</ul>
+</article>
+</div>
+
+
+
+
+<!--section-in-->
+</div>
+</article>
+</div>	
+</main>
+<!--▲メインコンテンツ-->
+
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
