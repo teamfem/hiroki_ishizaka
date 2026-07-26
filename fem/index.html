@@ -924,6 +924,58 @@ J(U_{h,\tau,N})
 という閉ループを構成し，memory modelを「一度作って固定する近似」から，「誤差に応じて更新されるcertified reduced model」へ発展させます．<br><br>
 
 
+
+<h4>最終出力：信頼保証付き時空間予測と不確実性の可視化</h4>
+本Visionの最終的な成果は，kernelや数値解を計算することだけではありません．縦断観測と微視・粗視モデルから得られる将来状態を，
+\[
+  \pi\!\left(
+    u(\cdot,t+\Delta)
+    \,\middle|\,
+    \mathcal H_t
+  \right)
+\]
+という予測分布，または
+\[
+  \widehat u(x,t+\Delta)
+  \pm
+  \mathcal U(x,t+\Delta)
+\]
+という予測値と不確実性として表し，空間・時間上で可視化することを目指します．ここで \(\mathcal H_t\) は時刻 \(t\) までの観測・介入履歴，\(\mathcal U\) はデータ，モデル縮約，kernel，同定，空間・時間離散化に由来する不確実性をまとめた量です．<br><br>
+
+可視化では，単一の予測場だけを表示するのではなく，
+<ul>
+  <li>現在推定される状態，</li>
+  <li>将来の代表予測軌道，</li>
+  <li>信頼区間・信用区間・到達可能領域，</li>
+  <li>目的量が危険閾値を超える確率，</li>
+  <li>複数の介入・境界条件・kernelに対するシナリオ比較，</li>
+  <li>データ不足，model reduction，kernel approximation，数値離散化のうち何が不確実性を支配しているか</li>
+</ul>
+を区別して示します．特に，「予測値が大きい領域」と「情報不足のため不確かな領域」を同じ色で表示しないことが重要です．<br><br>
+
+また，追加観測候補 \(q\) に対して，
+\[
+  q^*
+  =
+  \arg\max_q
+  \left\{
+    \text{expected reduction of prediction uncertainty}
+  \right\}
+\]
+を考え，どの場所・時刻・変数を新たに測定すれば目的量の不確実性が最も減るかを可視化します．これにより，
+\[
+  \text{prediction}
+  \longrightarrow
+  \text{uncertainty localisation}
+  \longrightarrow
+  \text{additional observation}
+  \longrightarrow
+  \text{updated prediction}
+\]
+というdata assimilationとmodel adaptivityの閉ループを構成します．<br><br>
+
+癌進行の応用では，腫瘍領域・潜在的な耐性状態・治療後の再増大確率を，歯科応用では病変深さ・骨吸収・部位別進行確率を，それぞれ不確実性付きの時空間情報として表示することが長期目標です．ただし，これは「正確な未来を一枚の画像として断定する」ものではなく，予測の幅・誤差源・モデル依存性を同時に示すtrustworthy spatio-temporal forecastingとして位置づけます．<br><br>
+
 本Visionでは，次の四つの課題を一つの流れとして扱います．
 <ol>
   <li><b>モデル化（modelling）</b><br>
@@ -1010,7 +1062,9 @@ J(U_{h,\tau,N})
   \longrightarrow
   \text{kernel identification}
   \longrightarrow
-  \text{certified computation}
+  \text{certified prediction}
+  \longrightarrow
+  \text{uncertainty-aware visualisation}
 \]
 です．非マルコフ型モデルを「経験的に導入された項」から，「同定可能で，近似誤差を保証できる計算対象」へ変えることを長期的な目標とします．<br><br>
 
@@ -1310,7 +1364,75 @@ My research aims to transform longitudinal dental histories into dynamically upd
 </ul>
 を表します．数値解析だけで医学的真実を保証することはできませんが，少なくとも「どの仮定と誤差が予測を支配しているか」を追跡可能にします．これはVision 7bのposterior certification，Vision 17のcertificate，Vision 18のkernel stabilityを歯科予測へ統合するものです．<br><br>
 
-<h4>10．研究ロードマップ</h4>
+
+<h4>10．進行予測・予防シナリオ・不確実性の可視化</h4>
+本Visionの最終出力は，患者全体に一つのリスク値を付けることではありません．
+\[
+  \text{patient}
+  \longrightarrow
+  \text{tooth}
+  \longrightarrow
+  \text{surface / periodontal site}
+  \longrightarrow
+  \text{future time}
+\]
+という階層に沿って，虫歯・歯周病の進行を時空間的に可視化します．<br><br>
+
+具体的には，歯列図，歯面図，三次元歯・顎モデル，時間軸を用いて，
+<ul>
+  <li>現在推定される病変・炎症・骨量の状態，</li>
+  <li>6か月後・1年後などの部位別進行確率，</li>
+  <li>病変深さ，歯槽骨吸収，歯の喪失などの予測範囲，</li>
+  <li>フッ化物処置，歯周治療，メンテナンス間隔などを変えた反実仮想シナリオ，</li>
+  <li>介入Aと介入Bの予測差と，その差が不確実性を上回るかどうか，</li>
+  <li>観測不足・履歴欠損・縮約誤差・kernel誤差・数値誤差の空間分布</li>
+</ul>
+を別々の層として表示します．<br><br>
+
+例えば，
+\[
+  p_{i,\ell}(t,\Delta)
+  =
+  \mathbb P\!\left(
+    \text{site }\ell\text{ progresses by }t+\Delta
+    \,\middle|\,
+    \mathcal H_t
+  \right)
+\]
+を部位ごとのrisk mapとして表示すると同時に，
+\[
+  \mathcal U_{i,\ell}(t,\Delta)
+  =
+  \mathcal U_{\mathrm{data}}
+  +\mathcal U_{\mathrm{history}}
+  +\mathcal U_{\mathrm{reduction}}
+  +\mathcal U_{\mathrm{kernel}}
+  +\mathcal U_{\mathrm{numerical}}
+\]
+をuncertainty mapとして併記します．高リスクであることと，不確実性が高いことを視覚的に区別することが不可欠です．<br><br>
+
+さらに，どの追加検査が予測を改善するかを示します．例えば，
+<ul>
+  <li>どの歯周部位を再測定すべきか，</li>
+  <li>どのX線・口腔内画像が必要か，</li>
+  <li>pH・唾液・炎症指標のうち何が予測不確実性を最も減らすか，</li>
+  <li>次回受診をいつ設定すれば進行の見逃しを抑えられるか</li>
+</ul>
+を，expected information gainまたは目的量誤差の減少量に基づいて提示します．<br><br>
+
+したがって，最終的な可視化は，
+\[
+  \text{progression forecast}
+  +
+  \text{counterfactual scenarios}
+  +
+  \text{uncertainty decomposition}
+  +
+  \text{recommended next observation}
+\]
+を一体化したものになります．これは自動診断画面ではなく，予測根拠・限界・追加情報の価値を歯科医師が確認するための説明可能な意思決定支援です．<br><br>
+
+<h4>11．研究ロードマップ</h4>
 <ol>
   <li><b>縦断記録の構造化：</b>歯・歯面・歯周部位ごとの状態遷移と治療イベントを抽出する．</li>
   <li><b>動的予測：</b>受診ごとに更新される虫歯・歯周病進行リスクを構築し，calibrationと外部検証を行う．</li>
@@ -1320,11 +1442,13 @@ My research aims to transform longitudinal dental histories into dynamically upd
   <li><b>縮約誤差評価：</b>微視情報の削除が進行予測・介入効果・方策順位へ与える影響を評価する．</li>
   <li><b>model adaptivity：</b>誤差に応じて，状態変数，kernel，局所fine-scale modelを追加する．</li>
   <li><b>信頼保証：</b>データ・物理モデル・縮約・同定・数値誤差を分離し，目的量と予防方策への影響を評価する．</li>
+  <li><b>可視化：</b>歯・歯面・歯周部位ごとの進行予測，反実仮想シナリオ，不確実性の内訳を時空間的に表示する．</li>
+  <li><b>追加観測設計：</b>どの検査・画像・再測定が予測不確実性を最も減らすかを提示する．</li>
 </ol>
 
 近い段階では，実患者への治療提案ではなく，匿名化・利用許可された縦断歯科記録または公開データを用いて，状態遷移の抽出，動的予測，calibration，欠測感度解析までを確立することを目標とします．その後，歯科研究者との共同研究により，外部検証・前向き検証・機構モデルとの接続へ進みます．<br><br>
 
-<h4>11．臨床応用との境界</h4>
+<h4>12．臨床応用との境界</h4>
 本Visionは，虫歯・歯周病の診断や治療を数学だけで置き換えるものではありません．
 <ul>
   <li>モデル内のverificationと，現実の疾患に対するclinical validationを区別すること，</li>
@@ -1342,6 +1466,8 @@ My research aims to transform longitudinal dental histories into dynamically upd
   \text{dynamic risk prediction}
   \longrightarrow
   \text{causal prevention policy}
+  \longrightarrow
+  \text{uncertainty-aware visualisation}
   \longrightarrow
   \text{certified decision support}
 \]
