@@ -183,90 +183,156 @@ Poisson equation, Ver. 1. [<a href="https://arxiv.org/abs/2403.07899" target="_b
 </article>
 </div>
 
+
 <h2>Ongoing Papers, Next Topics</h2>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
-現在進行中の探索的トピックです．論文化は今後の検証次第ですが，発展性が高いと考えており，最小モデルから体系化を進めています．既存手法との関係（同値性／差別化点）を整理し，論文化の射程を定めています．
-<br><br>
-14th June 2026 <span class="cat cat001">Last Update</span>
+ここでは，現在の研究テーマを単に列挙するのではなく，既発表・投稿中の成果から次の論文へ進む順序を明示します．
+同時に本格執筆する論文は原則として一編とし，別の一編について主要補題・数値実験を準備します．
+研究は，次の二つの系列を相互に接続しながら進めます．
+<ul>
+  <li><b>History-dependent PDEs and certified model reduction：</b>
+  memory・delayをもつ履歴依存型発展方程式の連続理論から，完全離散安定性，kernel近似，model-reduction errorへ進む系列．</li>
+  <li><b>Exact-curved anisotropic FEM and certification：</b>
+  exact-curved Lagrange FEMから，CR–RT構造，形状微分，移動領域，FSI，verified outputへ進む系列．</li>
+</ul>
+26th July 2026 <span class="cat cat001">Last Update</span>
 
-<h3>Flagship (Top priority)</h3>
+<h3>Publication sequence: current priorities</h3>
 
-[O10] <b>H. Ishizaka</b>: (temporary title) Fully discrete, atom-robust certified stability for memory-dominated diffusion on anisotropic meshes: a graph-norm scheme with computable \(\alpha_0\)-uniform constants <br>
-連続版（coercivity-gap 論文および companion [N3]）が同定したグラフノルム安定性を，完全離散レベルで認証する研究です．主結果は，混合測度核（絶対連続部＋原子的遅延）に対する fully discrete なグラフノルム安定性であり，瞬間的 coercivity 定数 \(\alpha_0\) について一様，かつ計算可能な定数と検証可能な下界を備えることを目指します．核心的困難は離散性そのものにあります：連続では \(\mu((0,\delta])\to 0\ (\delta\downarrow 0)\) という脱出路が効きますが，離散時間刻み \(\tau_n\) がこれを塞ぐため，原子成分にロバストな（atom-robust）解析が別途必要になります．構造保存スキームは，主方程式と内部変数族の間の cross-term cancellation（連続版の \(\alpha_0\) 一様性の源）を離散で再現し，\(\alpha_0\) 非依存の離散安定定数を継承します．空間側は CR–RT 補間誤差評価を異方性（準正則）メッシュへ展開し，最大角型の制御を保持しつつ計算可能な flatness 条件で測る計算可能アスペクト比ロバスト定数で閉じます（shape-regular を仮定する既存研究との差別化点）．時間離散は convolution quadrature（弱特異な絶対連続核に有利）と古典スキーム（原子的遅延の自然な扱いに有利）の選択を設計判断として整理します．本論文は certified という研究プログラムの theorem-level の核を担い，連続版が定義した certified-discretisation problem に解を与えることを目標とします．
+[O10-I] <b>H. Ishizaka</b>:
+(temporary title) Structure-preserving fully discrete approximation of history-dependent diffusion with measure-valued memory
+<br>
+投稿中の連続理論 [S3]--[S5] を完全離散化へ進める最優先課題です．
+BDF型時間離散およびconvolution quadratureを，隠れ内部変数系の離散化として表現し，
+主方程式と内部変数のcross-term cancellationを離散レベルで再現します．
+主結果は，瞬間的coercivity定数 \(\alpha_0\) が退化する極限でも一様な離散graph-norm安定性です．
+この段階では空間離散を抽象Galerkin近似または標準的な有限要素空間にとどめ，
+原子的遅延，分布kernel，弱特異kernelを同じ構造保存原理で扱います．
 <br><hr>
 
-[O5] <b>H. Ishizaka</b>: (temporary title) Certified space–time DWR with explicit CR–RT equilibrated fluxes for semilinear parabolic problems on anisotropic meshes <br>
-定常版 [<a href="https://arxiv.org/abs/2602.01636" target="_blank">Arxiv</a>] を時間発展（半線形放物型）へ発展させる研究です．時間連続な検証チューブ上で厳密解の存在・局所一意性を Newton–Kantorovich 型で認証し，2つのスカラー判定 \(p(\rho)\le 0,\ q(\rho)<1\) に帰着させます．残差はエネルギーノルムでは閉じないため，解を \(L^\infty(0,T;V)\) で制御する最大正則性チューブを導入し，安定性・Lipschitz 定数を閉じた式で与えます．残差の空間部は CR-RT 平衡フラックスで評価し，同じフラックスで後ろ向き放物型随伴を認証する DWR を構成して，目標汎関数をチューブ半径について二次オーダーで区間確定（Verified Output）します．離散安定係数は拡散優位域でアスペクト比に依存しないことを示します．本枠組みは PDE 制約付き最適化（PDE-constrained optimisation）や出力フィードバック制御に接続でき，Verified Output は仕様保証（certification）の要になります．
+[O9] <b>H. Ishizaka</b>:
+(temporary title) Exact-curved Crouzeix–Raviart and Raviart–Thomas elements via an affine-core/curved-correction decomposition
+<br>
+exact-curved Lagrange FEM [S2] をCR要素・RT要素へ拡張する空間側の基礎論文です．
+要素写像
+\[
+  F_K=\Psi_K\circ\Phi_{T_K}
+\]
+により，異方性を担うaffine coreと曲率を担うcurved correctionを分離します．
+曲面上のCR平均自由度，非アフィンPiola変換，法線流束の単一価性，発散の可換性，
+curved Marini型CR–RT再構成を整備し，曲領域上のequilibrated fluxを構成します．
+本論文は，後続の形状微分，ALE移動領域，FSI，verified outputに共通する幾何・混合要素基盤を与えます．
 <br><hr>
 
-[O9] <b>H. Ishizaka</b>: (temporary title) Exact-curved Crouzeix–Raviart and Raviart–Thomas elements via an affine-core/curved-correction decomposition <br>
-曲線・曲面領域上の Poisson 問題に対する exact-curved Lagrange 有限要素法を，CR（Crouzeix–Raviart）要素・RT（Raviart–Thomas）要素へ拡張する研究です．要素写像を \(F_K=\Psi_K\circ\Phi_{T_K}\) と分解し，affine core（定数ヤコビアン）と curved correction（摂動）を分離することが鍵になります．affine core 上では RT 要素の Piola 変換と \(H(\mathrm{div})\) 適合性（面フラックスの単一価性）が保たれ，curved correction を発散の摂動として誤差評価に取り込みます．これにより，曲がった境界上でも equilibrated flux の構造を保ったまま CR–RT 再構成（Marini 型）を行えることを目指します．曲単体上の CR の定義，Piola 変換下の曲 RT，CR から RT への再構成を順に整備し，異方性単体と組み合わせます．本研究は，曲線幾何・高次要素・混合型要素を見通しよく扱い，最終的に Stokes 問題・pressure-robustness・移動境界，そして計算可能な幾何条件に基づく保証付き有限要素解析（certified FEM）へ接続することを目指します．
+[O11a] <b>H. Ishizaka</b>:
+(temporary title) Exact-curved finite element approximation of shape derivatives on anisotropic curved meshes
+<br>
+exact-curved FEMの最初の本格的応用として，領域そのものが設計変数となる形状微分問題を扱います．
+形状摂動
+\[
+  \Omega(t)=\mathcal A_t(\Omega_0),
+  \qquad
+  K(t)=F_K(t)(\widehat K)
+\]
+に対し，時間・形状パラメータに一様な補間評価と，
+物質微分との交換子
+\[
+  \partial_t^\bullet I_h(t)u-I_h(t)\partial_t^\bullet u
+\]
+の異方性評価を構成します．
+PoissonまたはStokes問題を対象として，状態shape derivativeと目的汎関数のshape derivativeについて
+\[
+  \left|J'(\Omega)[\boldsymbol V]-J_h'(\Omega)[\boldsymbol V]\right|
+  \leq C h^r\|\boldsymbol V\|_{W^{1,\infty}}
+\]
+型の誤差評価を目指します．
+新規性はexact geometryだけではなく，
+<b>exact curved simplices + anisotropic affine cores + semi-regularity + shape-sensitivity error estimates</b>
+の組合せにあります．
+関連文献：
+<a href="https://arxiv.org/abs/1902.07532" target="_blank" rel="noopener">geometrically perturbed domains</a>，
+<a href="https://www.degruyter.com/document/doi/10.1515/jnma-2024-0113/html" target="_blank" rel="noopener">exact shape derivatives with unfitted FEM</a>．
 <br><hr>
 
-
-<h3>Active (Near-term)</h3>
-
-[O4a] <b>H. Ishizaka</b>: (temporary title) Pressure-robust CR Stokes with symmetric gradient on semi-regular meshes: a discrete Korn with minimal jump control <br>
-準正則（異方性）メッシュ上で，CR要素＋最小ジャンプ制御で離散Kornを確立し，再構成（H(div)への持ち上げ）により圧力ロバストな対称勾配型 Stokes 離散化を与えます．<br>
-離散Korn不等式のジャンプ制御は，正則メッシュ上では実現できます．準正則メッシュ上での議論は挑戦的なテーマです．
+[O10-II] <b>H. Ishizaka</b>:
+(temporary title) Certified anisotropic CR–RT approximation for fully discrete history-dependent diffusion
+<br>
+[O10-I]の時間・履歴構造と[O9]の異方性CR–RT構造を結合します．
+準正則異方性メッシュ上で，
+\[
+  \eta_{\mathrm{kernel}}
+  +\eta_{\mathrm{space}}
+  +\eta_{\mathrm{time}}
+  +\eta_{\mathrm{flux}}
+\]
+という完全離散誤差分解を構成し，flatness parameterで測られる計算可能な幾何certificate，
+RT平衡フラックス，kernel近似誤差を統合します．
+[O10-I]を時間・履歴構造の論文，[O10-II]を異方性FEM・認証の論文として分離することで，
+各論文の主定理と新規性を明確にします．
 <br><hr>
 
-[O4b] <b>H. Ishizaka</b>: (temporary title) Harmonic-aware pressure-robust Stokes on multiply-connected polygonal domains: Helmholtz–Hodge decomposition and discrete projectors <br>
-多重連結領域ではHelmholtz–Hodge分解に有限次元の調和成分が現れるため，圧力ロバスト性は「勾配成分を消す」だけでなく「調和成分を正しく残す」ことまで含めて定式化する必要があります．本研究では，Lipschitz 領域での分解定理を引用し，Stokes 解析の誤差評価を連続/離散Helmholtz射影（または div-free 再構成）で表現する枠組みを整理します．角（re-entrant corners）による正則性低下は独立の問題として切り分け，主結果はエネルギーノルム中心で述べます．
-<br><hr>
- 
-[O3] <b>H. Ishizaka</b>: (temporary title) Pressure-robust time-discretisations for the Stokes problem: from BDF2 to fractional BDF schemes <br>
-圧力ロバスト性を保つ時間発展スキームを体系化します．BDF2から分数階BDF（FBDF）まで拡張し，長時間積分でも安定に動作する理論保証を与えます．
- <br><hr>
- 
-[O2] <b>H. Ishizaka</b>: (temporary title)　Analysis of Nitsche's method for the diffusion-advection equation on semi-regular meshes <br>
-歪対称＋流入寄与付きNitsche＋（準整合）安定化からなるスキームを提示し，CR要素と準正則幾何条件に直結させます．
-<br><hr>
+<h3>Exact-curved geometry programme</h3>
+exact-curved FEMは，固定されたPoisson問題のためだけではなく，
+<b>幾何が変化しても，幾何誤差とPDE誤差を混同しない有限要素法</b>
+へ発展させます．論文化の順序は次の通りです．
+<ol>
+  <li><b>[O9] Curved CR–RT foundation：</b>
+  曲要素上の自由度，Piola変換，発散可換性，平衡フラックスを整備する．</li>
+  <li><b>[O11a] Shape differentiation：</b>
+  形状微分とFEM離散化の可換性，目的量shape derivativeの誤差を解析する．</li>
+  <li><b>[O11b] Geometry-exact ALE on anisotropic moving domains：</b>
+  時間依存写像，ALE速度，
+  \[
+    \boldsymbol w_h=\partial_tF_K(t)\circ F_K(t)^{-1},
+  \]
+  離散geometric conservation law，一様エネルギー安定性を扱う．
+  関連文献：
+  <a href="https://arxiv.org/abs/2404.15624" target="_blank" rel="noopener">high-order unfitted ALE framework</a>，
+  <a href="https://arxiv.org/abs/1709.05660" target="_blank" rel="noopener">geometric conservation law</a>．</li>
+  <li><b>[O11c] Energy-stable exact-curved ALE FSI：</b>
+  流体・固体で共有する曲界面，界面仕事の相殺，divergence preservation，異方性境界層を統一する．
+  exactとは，未知の真の界面を事前に知ることではなく，
+  離散変位が定める曲界面をさらに直線化しないことを意味する．
+  関連文献：
+  <a href="https://arxiv.org/abs/2005.06360" target="_blank" rel="noopener">FSI with H(div)-conforming FEM</a>．</li>
+  <li><b>[O11d] Certified shape sensitivities and interface outputs：</b>
+  shape derivative，界面traction，流量，エネルギー交換などをverified outputとして区間評価する．</li>
+</ol>
 
-<h3>Short papers (1D-first, quick-to-publish)</h3>
+<h3>Selected next directions</h3>
 
-[O7a] <b>H. Ishizaka</b>: (temporary title) Weak-moment CIP finite elements within a unified semi-Lagrangian projection framework <br>
-<!--CIP（Constrained Interpolation Profile）系の「プロファイル（モーメント）を持つDOF」を“弱DOF（weak moments）”として再定式化し，semi-Lagrangian / Lagrange–Galerkin 型の射影フレームワークに統一します．まず，空間1次元で，安定性・誤差評価・（可能なら）高解像度性の理論的説明までまとめます．-->
-<!--CIPにはConstrained Interpolation Profile（プロファイル復元型）とContinuous Interior Penalty（内点ペナルティ型）の2系統があり，どちらも「正則化（regularisation）」に関わります．本研究では前者（プロファイル復元型CIP）を対象とし，点値の導関数DOFに依存せず，弱モーメント（weak moments）でプロファイル情報を保持することで，より弱い正則性仮定の下で semi-Lagrangian / Lagrange–Galerkin 型の射影フレームワークへ統一します．まず空間1次元で安定性・誤差評価・（可能なら）高解像度性の理論的説明までまとめます．-->
-CIPにはConstrained Interpolation Profile（プロファイル復元型）とContinuous Interior Penalty（内点ペナルティ型）の2系統があり，どちらも「正則化（regularisation）」に関わります．本研究では前者（プロファイル復元型CIP）を対象とし，点値の導関数DOFに依存せず，弱モーメント（weak moments）でプロファイル情報を保持することで，より弱い正則性仮定の下でsemi-Lagrangian / Lagrange–Galerkin型の射影フレームワークへ統一します．まず空間1次元で安定性・誤差評価・（可能なら）高解像度性の理論的説明までまとめます．
- <br><hr>
- 
-[O7b] <b>H. Ishizaka</b>: (temporary title) From continuous interior penalty to profile-based transport: CIP-regularised Hermite reconstruction in conservative Lagrange–Galerkin FEM <br>
-<!--CIP as a profile generator：Burman-CIPで“勾配を生成”し，Hermite semi-Lagrangianで“プロファイルを輸送”する．<br>-->
-<!--ここでのCIPはBurman型（Continuous Interior Penalty）です．CIP罰則を「要素間の高周波勾配を抑えるフィルタ／制御項」として解釈し，CIP正則化された勾配回復を用いてHermite再構成を行い，semi-Lagrangian更新に接続します．これにより，従来のsemi-Lagrangian（値補間）とYabe-CIP（値＋勾配のプロファイル）を，CIP正則化という共通言語で橋渡しします．1Dで理論（安定性・誤差評価）と最小数値実験を整備し，移流優勢や粗い解への拡張も視野に入れます．-->
-Burman型CIP（Continuous Interior Penalty）を「要素間の高周波勾配を抑えるフィルタ/制御項」として解釈し，CIP正則化により得た勾配（プロファイル）を用いてHermite型再構成を行い，特性写像上の関数評価の精度と頑健性を高めます．本研究は点値更新型の完全semi-Lagrangianではなく，保存形 \( \frac{\partial u}{\partial t} + \nabla \cdot (b u) = 0 \)に対するconservative Lagrange–Galerkin（characteristic-Galerkin）を背骨とし，質量行列に基づく弱形式（必要に応じてヤコビアン因子を含む）により質量保存を確保します．その上で，従来のsemi-Lagrangian（値補間）とYabe-CIP（値＋勾配のプロファイル輸送）を，“CIP正則化＝プロファイル生成”という共通言語で橋渡しします．まず空間1次元で保存性・安定性（振動抑制）・誤差分解（特性追跡誤差＋再構成誤差）を整理し，2D/3Dや移流優勢・粗い解への拡張も視野に入れます．
-<br><hr>
-
-[O6] <b>H. Ishizaka</b>: (temporary title)　Richardson extrapolation for time-fractional diffusion: a unified analysis for three convolution schemes <br>
-分数時間拡散に対する3種類の畳み込み型時間離散（例：L1，L2-1σ，convolution quadrature 等）を同一の解析枠で扱い，Richardson extrapolation による高次化を理論的に整理します．初期特異性による次数低下に対して，補正・刻み（graded mesh）・外挿の関係を統一的に説明します．
-<br><hr>
-
-
-<h3>Technical backbone (Longer-term)</h3>
-
-[O8a] <b>H. Ishizaka</b>: (temporary title) Certified learning-assisted anisotropic mesh adaptation under a semi-regular mesh condition. <br>
-GNN（グラフニューラルネット）で局所誤差指標や細分化方向を提案し，DWR/残差型の事後誤差評価で信頼性を“検定”して破綻を防ぐ枠組みを構築します．
-<br><hr>
-
-[O8b] <b>H. Ishizaka</b>: (temporary title) Geometry-aware neural operators on anisotropic meshes with a semi-regularity parameter. <br>
-非構造・異方性メッシュでも一般化しやすいように，メッシュ幾何（要素形状・局所スケール・準正則性を表す量など）を特徴量としてニューラル・オペレータに組み込み，解写像（関数→関数）近似の頑健化を狙います．
+[O5] <b>H. Ishizaka</b>:
+(temporary title) Certified space–time DWR with explicit CR–RT equilibrated fluxes for semilinear parabolic problems on anisotropic meshes
+<br>
+定常版[S1]を半線形放物型問題へ拡張します．
+最初の論文では，time-continuous verification tube，厳密解の存在・局所一意性，
+一つの目的量に対する保証区間までに焦点を絞り，PDE制約最適化や制御は後続課題とします．
 <br><hr>
 
-[O8c] <b>H. Ishizaka</b>: (temporary title) PINN–FEM hybrid with computable error auditing on stabilised discretisations. <br>
-PINN（Physics-Informed Neural Networks）を近似器として用いつつ，最終的な精度保証は安定化FEMと計算可能な事後誤差評価で行う「監査付き」ハイブリッド解法を検討します（学習が外しても検出できる設計）．
+[O1a] <b>H. Ishizaka</b>:
+(temporary title) Unified anisotropic interpolation error estimates for \(H(\mathrm{div})/H(\mathrm{curl})\) elements via two-step transformations and weak boundary moments
+<br>
+RT理論を三次元Nédélec要素へ拡張し，two-step transformationsと弱境界momentにより
+\(H(\mathrm{div})\)・\(H(\mathrm{curl})\)補間を統一します．
+まず具体的な三次元評価を閉じ，その後にfractional-order quasi-interpolationとde Rham complexへ進みます．
 <br><hr>
 
-[O1a] <b>H. Ishizaka</b>: (temporary title) Unified anisotropic interpolation error estimates for H(div)/H(curl) elements via two-step transformations and weakly-defined boundary moments <br>
+[O4a] <b>H. Ishizaka</b>:
+(temporary title) Pressure-robust CR Stokes with symmetric gradient on semi-regular meshes: a discrete Korn inequality with minimal jump control
+<br>
+準正則異方性メッシュ上の離散Korn不等式が成立することを主要な出口条件とします．
+主要補題が得られた時点で優先順位を上げ，それまでは本格執筆ではなく補題研究として進めます．
 <br><hr>
 
-[O1b] <b>H. Ishizaka</b>: (temporary title) Average-type quasi-interpolation for H(div)/H(curl) on anisotropic meshes: fractional-order error estimates via two-step transformations <br>
-<br><hr>
-
-[O1c] <b>H. Ishizaka</b>: (temporary title) Coordinate-free anisotropic error estimates via exterior algebra and the de Rham complex <br>
-準正則（異方性）メッシュ上の two-step transformations/Piola 変換に基づく補間理論を，外部代数（Λk）と de Rham complex（微分形式の観点）により座標自由（coordinate-free）に再定式化し，一般次元での拡張可能性とボトルネック（RTのfacet momentsの異方性評価）を整理する．
-<br><hr>
+<h3>Publication policy</h3>
+<ul>
+  <li>新規論文を増やす前に，投稿中の[S1]--[S5]の査読対応と役割分担を固定する．</li>
+  <li>一編に連続理論，完全離散化，異方性FEM，認証，応用を詰め込まず，主定理ごとに分割する．</li>
+  <li>短報を増やすより，[O10-I]，[O9]，[O11a]の順に，既存成果を太い研究系列へ育てる．</li>
+  <li>共同研究・データ・大規模実装を必要とする課題はResearch Blueprintsに置き，基礎定理が揃った段階でOngoingへ昇格する．</li>
+</ul>
 
 </p>
 </article>
@@ -276,25 +342,53 @@ PINN（Physics-Informed Neural Networks）を近似器として用いつつ，�
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
-ここは "今は仕込中，のち本編へ" の “種”置き場です（冷凍にはしません，低温発酵中🌱）
+ここには，重要ではあるものの，現在の優先論文を完成させるまで本格執筆を開始しない研究案を置きます．
+テーマを削除するのではなく，主要補題，差別化点，共同研究基盤が整った時点でOngoing Papersへ移します．
 <br><br>
-6th September 2025 <span class="cat cat001">Last Update</span>
+26th July 2026 <span class="cat cat001">Last Update</span>
 
-<h3>Exploratory research (Longer-term)</h3>
+<h3>Secondary analytical topics</h3>
+<ul>
+  <li><b>[B4] Pressure-robust time discretisation：</b>
+  BDF2からfractional BDFまでの体系化は，一様安定性または新しいpressure-independent estimateが得られた場合に論文化する．</li>
+  <li><b>[B5] Nitsche method for diffusion–advection：</b>
+  semi-regular meshes上で，既存Nitsche解析の単純な移流拡張を超える安定化原理が得られた場合に進める．</li>
+  <li><b>[B6] Harmonic-aware pressure robustness：</b>
+  多重連結領域の調和成分を保持する新しい離散射影定理が得られた場合に昇格する．</li>
+  <li><b>[B7] Richardson extrapolation for fractional diffusion：</b>
+  初期特異性，補正，graded mesh，外挿を結ぶ統一定理が得られた場合に進める．</li>
+  <li><b>[B8] Weak-moment and CIP transport schemes：</b>
+  1Dの短報を先行させず，conservative Lagrange–Galerkin法に対する多次元的な保存・安定化原理が見えた段階で再検討する．</li>
+</ul>
 
-[B3] <b>H. Ishizaka</b>: (temporary title) Geometric mesh conditions for stochastic partial differential equations <br>
-確率偏微分方程式 (SPDE) は解析が難しく，かつ実用分野（気候・金融・材料）に直結します．ここに幾何条件を導入し，異方性メッシュ上でも理論保証を与えることは新しいアプローチになるかもしれません．
-<br><hr>
+<h3>Learning-assisted and AI-audited computation</h3>
+<ul>
+  <li><b>[B9] Certified learning-assisted anisotropic mesh adaptation：</b>
+  機械学習が提案する細分化方向を，DWR・残差型推定子と幾何certificateで監査する．</li>
+  <li><b>[B10] Geometry-aware neural operators：</b>
+  flatness parameter，局所スケール，異方性方向を特徴量として用いる．</li>
+  <li><b>[B11] PINN–FEM hybrid with computable error auditing：</b>
+  PINNを近似器，安定化FEMと事後誤差評価を監査器として組み合わせる．</li>
+</ul>
 
-[B2] <b>H. Ishizaka</b>: (temporary title)  From mesh regularity in finite element methods to sampling geometry: A unified perspective with information geometry <br>
-有限要素法における半正則条件と，深層学習における点配置，情報幾何のFisher計量の間には共通の幾何的構造が存在する．この視点は，異方性誤差解析とサンプリング理論を結びつける可能性を持ちます．<br><hr>
+<h3>Longer-term mathematical extensions</h3>
+<ul>
+  <li><b>[B12] Fractional-order \(H(\mathrm{div})/H(\mathrm{curl})\) quasi-interpolation：</b>
+  [O1a]の整数階理論を確立した後に進める．</li>
+  <li><b>[B13] Coordinate-free anisotropic de Rham theory：</b>
+  三次元RT・Nédélecの具体的評価を完成させた後，外部代数と微分形式で一般次元化する．</li>
+  <li><b>[B14] Geometric conditions for SPDEs：</b>
+  ランダム係数ごとの正則性と空間メッシュ幾何を同時に扱う．</li>
+  <li><b>[B15] Sampling geometry and information geometry：</b>
+  FEMのsemi-regularityと学習点配置の幾何を共通の計量・射影の言葉で比較する．</li>
+  <li><b>[B16] Geometric conditions for PINNs and Deep Ritz methods：</b>
+  点配置の異方性条件と残差・汎関数誤差の関係を解析する．</li>
+</ul>
 
-[B1] <b>H. Ishizaka</b>: (temporary title) Geometric conditions for physics-informed neural networks: Towards anisotropic interpolation error estimates <br>
-有限要素法で培われた幾何条件を，PINNsやDeep Ritz法に適用する試みです．点配置の幾何構造が学習効率や誤差解析にどう影響するかを理論的に明らかにできれば，従来の数値解析とAIベースPDE解法の橋渡しとなります．
-<br><hr>
 </p>
 </article>
 </div>
+
 
 <h2>Presentations</h2>
 <div class="news">
@@ -383,7 +477,7 @@ Presentation: [P1]
 </p>
 </article>
 
-<h3>Mathematical analysis of two-phase flow problems</h2>
+<h3>Mathematical analysis of two-phase flow problems</h3>
 <article class="news-item">
 <p class="news-cont">
 Paper: [Master Thesis] <br><br>
@@ -391,10 +485,19 @@ Presentation:
 </p>
 </article>
 
-<h3>Mathematical analysis of Moving boundary problems</h2>
+<h3>Exact-curved FEM, shape differentiation, moving domains and FSI</h3>
 <article class="news-item">
 <p class="news-cont">
-Paper: <br><br>
+Submitted preprint: [S2]<br><br>
+Ongoing sequence: [O9], [O11a]--[O11d]
+</p>
+</article>
+
+<h3>Mathematical analysis of moving boundary problems</h3>
+<article class="news-item">
+<p class="news-cont">
+Submitted preprint: [S2]<br><br>
+Ongoing sequence: [O11a]--[O11d]<br><br>
 Presentation:
 </p>
 </article>
@@ -415,7 +518,7 @@ Presentation:
 
 <!--▼サイトフッター-->
 <footer class="site-footer">
-	<div class="copyright"><p><small>© 2022 ISHIZAKA Hiroki Website</small></p></div>
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
 </footer>
 <!--▲サイトフッター-->
 
