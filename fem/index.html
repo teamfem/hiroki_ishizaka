@@ -194,7 +194,7 @@ Research LineとVisionの対応（暫定マップ）:
 
 <br><br>
 This page is updated periodically.<br><br>
-(25th July 2026 <span class="cat cat001">Update</span>)
+(26th July 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
@@ -868,7 +868,50 @@ My research treats memory kernels not as fixed modelling inputs, but as mathemat
 
 マルチスケール方向では，まず有限次元またはGalerkin型のcoarse/fine分解から作用素値memory kernelを厳密に導出し，その符号・減衰・coercivity・有限原子近似を調べます．次に，異方性FEM，variational multiscale法，数値homogenisationと接続し，微細スケールの消去とkernel近似，さらに空間・時間離散化の各極限がどの条件で整合するかを明らかにすることを目指します．<br><br>
 
-応用候補として，非フーリエ熱伝導，粘弾性・生体システム，縮約された流体・輸送モデル，理想化された大気海洋モデルなどを想定しています．ただし，これらの応用へ進む際にも，現象名を付けるだけではなく，kernelの物理的意味，観測可能性，安定性，数値誤差を明示することを重視します．<br><br>
+<h4>応用展開：未解像過程は何を表すか</h4>
+未解像ダイナミクスは，単に空間的に細かすぎて計算できない自由度だけを指すものではありません．直接観測できない内部状態，計測していない変数，多数の自由度を平均化した効果，短時間スケールの変動，および過去の履歴によってのみ識別できる潜在状態も含みます．本Visionでは，応用ごとに
+\[
+  \text{resolved variables}
+  \; / \;
+  \text{unresolved variables}
+  \; / \;
+  \text{memory kernel}
+  \; / \;
+  \text{observable data}
+\]
+を明示し，同じ非マルコフ型方程式を安易に当てはめるのではなく，kernelの意味と推定可能性を検証します．具体的には，次の応用を想定しています．<br><br>
+
+<ol>
+  <li><b>癌細胞集団・薬剤耐性・腫瘍微小環境</b><br>
+  腫瘍体積，画像，血中バイオマーカーなどを解像変数とし，直接観測されない細胞状態の構成比，薬剤耐性を準備する潜在状態，癌幹細胞様状態，低酸素・免疫応答・薬剤曝露履歴などを未解像変数として扱います．同じ大きさの腫瘍であっても，未治療，治療中，再発後では将来の反応が異なり得るため，現在の観測値だけでなく治療履歴を表すmemoryが必要になります．単一細胞計測，lineage tracing，縦断画像などから，耐性状態への遷移率や有効kernelを同定し，潜在細胞集団の割合，治療反応，再発リスクに関係する目的量を不確実性付きで推定することが考えられます．癌の不均一性と治療抵抗性，および細胞状態の記憶・可塑性は実験的にも重要な課題です（<a href="https://www.cancer.gov/news-events/cancer-currents-blog/2017/metastatic-breast-cancer-treatment-resistance-evolution" target="_blank" rel="noopener">NCI</a>；<a href="https://www.nature.com/articles/s41467-023-41811-8" target="_blank" rel="noopener">Harmange et al.</a>；<a href="https://www.nature.com/articles/s41467-024-45478-7" target="_blank" rel="noopener">Dai et al.</a>）．ただし，ここで保証できるのは，採用した数理モデル内での同定・計算誤差であり，個々の患者に対する臨床診断の正しさは，独立した医学的validationを必要とします．
+  </li><br>
+
+  <li><b>生体分子・分子動力学の粗視化</b><br>
+  全原子運動を直接追跡せず，反応座標，分子の形状，集団変数など少数の変数だけを解像すると，除去された自由度は摩擦memoryとcolored noiseとして残ります．一般化Langevin方程式のmemory kernelを全原子計算や時系列データから同定し，構造遷移時間，相関関数，反応率を再現する縮約モデルを構成します．この分野では，memoryを無視したMarkov近似が平衡分布を再現しても，動力学を誤る場合があるため，kernel近似と時間離散化の誤差を分離して評価することが重要です（<a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8154603/" target="_blank" rel="noopener">Review on memory in coarse-grained molecular simulation</a>）．
+  </li><br>
+
+  <li><b>粘弾性材料・軟組織・履歴依存材料</b><br>
+  粘弾性体では，現在の応力が現在のひずみだけでなく，過去の変形履歴に依存します．材料内部の緩和機構，微細構造，再配列を未解像過程とみなし，緩和kernel，遅延測度，分数階kernelによって構成則を表現します．実験データからkernelを同定し，有限原子近似やProny近似を用いて計算可能な内部変数系へ変換したうえで，空間FEM誤差，時間離散誤差，kernel近似誤差を同時に制御することを目指します．生体組織への応用では，材料モデルの個体差や実験条件も不確実性として分離して扱う必要があります．
+  </li><br>
+
+  <li><b>非フーリエ熱伝導・マイクロ／ナノスケール輸送</b><br>
+  超短時間加熱やマイクロ・ナノスケールでは，熱流束が温度勾配へ瞬時に応答するというFourier則が十分でない場合があります．未解像なphonon輸送，緩和時間，ballistic成分，微細構造の影響を，時間memoryまたは空間非局所kernelとして表現します．kernelの符号・減衰・因果性を解析し，非物理的な温度振動や負値を避ける構造保存離散化，異方性メッシュによる局所熱輸送の解像，および熱流束などの目的量に対するcertificateを構成します（<a href="https://www.nature.com/articles/s42254-021-00334-1" target="_blank" rel="noopener">Nature Reviews Physics</a>）．これは，私が過去に扱った時間遅れを伴う微視的熱伝導モデルとも直接接続します．
+  </li><br>
+
+  <li><b>縮約流体・乱流・輸送・大気海洋モデル</b><br>
+  高Reynolds数流れや気候系では，計算格子より小さい渦，波，境界層，化学反応，海洋内部過程などをすべて解像できません．これらを消去すると，粗視化変数に対するclosureは一般に瞬時的な渦粘性だけでなく，過去の状態に依存するmemoryと確率的forcingを含みます．Mori–Zwanzig型縮約，variational multiscale法，データ駆動kernel同定を接続し，energy transfer，輸送量，長時間統計，極端事象に関する誤差を追跡します．気候モデルでは，未解像波動からdelayやmemoryを導出する研究もあり（<a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6694309/" target="_blank" rel="noopener">ENSO delay model derived by Mori–Zwanzig reduction</a>），Vision 12の気象・災害応用と接続します．
+  </li>
+</ol>
+
+これらの応用に共通する中心課題は，見えない変数を自由に想像することではなく，観測可能量からどの潜在状態またはkernelが識別可能かを明らかにすることです．そのため，
+<ul>
+  <li>モデル縮約による誤差，</li>
+  <li>kernelの同定誤差と非一意性，</li>
+  <li>観測ノイズとデータ不足，</li>
+  <li>kernel近似，空間・時間離散化誤差，</li>
+  <li>モデル内verificationと現象に対するvalidationの区別</li>
+</ul>
+を明示します．現象名を付けただけの応用ではなく，「何を消去した結果としてmemoryが生じるのか」「そのmemoryをデータから回収できるのか」「最終的な目的量をどこまで保証できるのか」を，各分野に共通する研究課題として扱います．<br><br>
 
 この研究が目指す流れは，
 \[
