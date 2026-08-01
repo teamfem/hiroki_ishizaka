@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>三次元layer-adapted meshを四面体分割すると何が起こるか | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,3D layer-adapted mesh,tetrahedron,Kuhn triangulation,Freudenthal triangulation,anisotropic mesh,shape regularity,semi-regularity,maximum angle condition,sliver,H_T,R_T,Q_T">
+<meta name="description" content="三次元の直方体型layer-adapted cellを四面体分割し，構造化Kuhn型分割では準正則性が保たれること，sliver型四面体では失われることをQ_T，R_T/h_T，H_T/h_Tで調べます．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li><a href="../../">Home</a></li>
+				<li><a href="../../publications/">Publications</a></li>
+				<li><a href="../../research/">Research</a></li>
+				<li><a href="../../fem/">Research Visions</a></li>
+				<li><a href="../../suppl/">Supplementary Visions</a></li>
+				<li><a href="../../blog/">Blog</a></li>
+				<li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+				<li><a href="../../links/">Links</a></li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../" itemprop="item">
+				<span itemprop="name">Blog</span>
+				</a>
+				<meta itemprop="position" content="2">
+			</li>
+			<li class="bcl-last">
+				異方性有限要素法の幾何学的基礎 第11回
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">三次元layer-adapted meshを四面体分割すると何が起こるか</h1>
+
+<p>
+<b>異方性有限要素法の幾何学的基礎 第11回</b><br>
+<time datetime="2026-08-01">1st August 2026</time> <span class="cat cat001">New</span>
+</p>
+
+<h2>はじめに</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第6回から第10回では，二次元の長方形型layer-adapted cellを対角線で二分しました．
+その場合，辺長がどれほど異なっても，各直角三角形で
+\[
+  \frac{H_T}{h_T}=2
+\]
+となります．したがって，Shishkin，Bakhvalov系，S-type meshは，
+層パラメータに一様には非正則であっても準正則でした．
+</p>
+<p>
+三次元では，直方体を四面体へ分ける方法が複数あります．
+しかも四面体には，三角形にはない<b>sliver型の扁平化</b>があります．
+したがって，「直方体の辺が座標軸に沿っている」だけでは，
+分割後の四面体が準正則であるとは限りません．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<b>今回の結論</b>
+<ul>
+  <li>直方体を座標順序に従って6個に分けるKuhn型分割では，アスペクト比が発散しても準正則性を一様に保てます．</li>
+  <li>一方向だけが薄いface layerでは，典型的に \(Q_T\asymp\varepsilon^{-1}\) です．</li>
+  <li>二方向が薄いedge layerでは，典型的に \(Q_T\asymp\varepsilon^{-2}\) です．</li>
+  <li>三方向が同程度に細かいcorner layerは，小さくても形状は正則になり得ます．</li>
+  <li>任意の四面体分割ではsliverが混入し得るため，\(H_T/h_T\) またはそれと同値な量を要素ごとに確認する必要があります．</li>
+</ul>
+</div>
+</article>
+</div>
+
+<h2>1．三次元ではなぜ頂点の接続関係が必要なのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+四面体には六本の辺があります．準正則性を調べるとき，
+単に「短い三本の辺を取る」ことはできません．
+短い辺どうしがどの頂点で接続しているかによって，体積を生み出す三方向を
+正しく捉えられるかが変わるからです．
+</p>
+<p>
+筆者らの標準的な分類では，まず最短辺を \(e_2\)，
+\(e_2\) に接続する辺のうち最長のものを \(e_1\) とします．
+\(e_1\) の端点を \(P_1,P_2\) とし，\(e_2\) が
+\(F_4=\triangle P_1P_2P_3\) の辺となるように頂点を付けます．
+さらに，\(e_1\) の中点を通り \(e_1\) に垂直な平面を考えます．
+</p>
+<ul>
+  <li>\(P_3,P_4\) が同じ半空間にあるとき，Type 1，</li>
+  <li>\(P_3,P_4\) が異なる半空間にあるとき，Type 2</li>
+</ul>
+<p>
+と分類します．そして
+\[
+  \alpha_1:=|P_1P_2|,
+  \qquad
+  \alpha_3:=|P_1P_4|
+\]
+とし，\(\alpha_2\) はType 1では \(|P_1P_3|\)，
+Type 2では \(|P_2P_3|\) とします．このとき
+\[
+  H_T
+  :=\frac{\alpha_1\alpha_2\alpha_3}{|T|_3}\,h_T,
+  \qquad
+  \frac{H_T}{h_T}
+  =\frac{\alpha_1\alpha_2\alpha_3}{|T|_3}
+\]
+です <a href="#ref2">[2]</a>．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 1px solid #999999;">
+<b>三次元での要点</b>
+<p>
+\(\alpha_1,\alpha_2,\alpha_3\) は，単なる辺長の昇順ではありません．
+Type 1／Type 2の分類を通じて，異方的な三方向と四面体の接続構造を同時に記録します．
+</p>
+</div>
+</article>
+</div>
+
+<h2>2．計算には二本の最短辺を使う量も便利</h2>
+<div class="news">
+<article class="news-item">
+<p>
+四面体の六本の辺長を
+\[
+  \ell_{T,1}\le \ell_{T,2}\le\cdots\le\ell_{T,6}=h_T
+\]
+と並べ，次の量を考えます．
+\[
+  \frac{R_T}{h_T}
+  :=\frac{\ell_{T,1}\ell_{T,2}h_T}{|T|_3}.
+\]
+筆者らの結果によれば，任意の四面体について
+\[
+  \frac12 H_T\le R_T\le 2H_T
+\]
+です．したがって
+\[
+  \sup_T\frac{R_T}{h_T}\lt\infty
+  \quad\Longleftrightarrow\quad
+  \sup_T\frac{H_T}{h_T}\lt\infty.
+\]
+さらに，この有界性は四面体のmaximum-angle conditionと同値です
+<a href="#ref2">[2]</a>．
+</p>
+<p>
+\(H_T/h_T\) はtwo-step affine mappingと方向別補間評価に自然な量です．
+一方，\(R_T/h_T\) は二本の最短辺，直径，体積だけで計算できるため，
+メッシュファイルを検査するcertificateとして便利です．
+</p>
+</article>
+</div>
+
+<h2>3．直方体型layer cellのKuhn型分割</h2>
+<div class="news">
+<article class="news-item">
+<p>
+辺長が \(a,b,c\) の直方体
+\[
+  K=[0,a]\times[0,b]\times[0,c]
+\]
+を考えます．座標の順序に従って6個の四面体へ分割する方法を，
+ここではKuhn型分割と呼びます．そのうちの一つは
+\[
+  T=\operatorname{conv}\{p_0,p_1,p_2,p_3\}
+\]
+であり，
+\[
+\begin{aligned}
+  p_0&=(0,0,0)^{\top},\\
+  p_1&=(a,0,0)^{\top},\\
+  p_2&=(a,b,0)^{\top},\\
+  p_3&=(a,b,c)^{\top}
+\end{aligned}
+\]
+です．残りの五つは，\(a,b,c\) に対応する座標の順序を入れ替えて得られます．
+</p>
+<p>
+この四面体では
+\[
+  |T|_3=\frac{abc}{6},
+  \qquad
+  h_T=\sqrt{a^2+b^2+c^2}.
+\]
+以下では
+\[
+  0\lt a\le b\le c
+\]
+とします．四面体の辺には長さ \(a,b,c\) の三本が含まれ，
+その他は座標方向を二つまたは三つ組み合わせた対角辺です．したがって，
+二本の最短辺は \(a,b\)，最長辺は直方体のbody diagonalである \(h_T\) です．
+</p>
+</article>
+</div>
+
+<h2>4．構造化分割の準正則性を計算する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+前節の公式を \(R_T/h_T\) へ代入すると，
+\[
+\begin{aligned}
+  \frac{R_T}{h_T}
+  &=\frac{ab\sqrt{a^2+b^2+c^2}}{abc/6}\\
+  &=6\frac{\sqrt{a^2+b^2+c^2}}{c}.
+\end{aligned}
+\]
+\(a\le b\le c\) より
+\[
+  1\le
+  \frac{\sqrt{a^2+b^2+c^2}}{c}
+  \le\sqrt3
+\]
+なので，
+\[
+  6\le\frac{R_T}{h_T}\le6\sqrt3.
+\]
+したがって，\(a:b:c\) がどれほど極端でも，この量は一様有界です．
+\(R_T\) と \(H_T\) の同値性から，例えば
+\[
+  \frac{H_T}{h_T}
+  \le 2\frac{R_T}{h_T}
+  \le12\sqrt3
+\]
+を得ます．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+\[
+  \boxed{
+  \text{Kuhn型6四面体分割は，直方体のアスペクト比に一様に準正則}
+  }
+\]
+</div>
+<p>
+同じ計算は，座標順序を入れ替えた残り五つの四面体にも適用できます．
+各四面体は体積 \(abc/6\) をもち，辺長 \(a,b,c\) とbody diagonalを含むためです．
+</p>
+</article>
+</div>
+
+<h2>5．shape regularityは層の種類を区別する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+一方，shape regularityの指標は
+\[
+  Q_T
+  =\frac{h_T^3}{|T|_3}
+  =6\frac{(a^2+b^2+c^2)^{3/2}}{abc}
+\]
+です．この量は三方向の比に強く依存します．
+代表的な層構造を，基準幅 \(h\) と小さいパラメータ \(\varepsilon\) で表します．
+</p>
+<div style="overflow-x:auto;">
+<table border="1" cellpadding="6" style="border-collapse: collapse; width: 100%; min-width: 850px;">
+  <thead>
+    <tr>
+      <th>局所構造</th>
+      <th>代表的な辺長</th>
+      <th>\(Q_T\) の大きさ</th>
+      <th>分類</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>face layer</td>
+      <td>\(a\asymp\varepsilon h\)，\(b\asymp c\asymp h\)</td>
+      <td>\(Q_T\asymp\varepsilon^{-1}\)</td>
+      <td>準正則だがparameter-uniformには非正則</td>
+    </tr>
+    <tr>
+      <td>edge layer</td>
+      <td>\(a\asymp b\asymp\varepsilon h\)，\(c\asymp h\)</td>
+      <td>\(Q_T\asymp\varepsilon^{-2}\)</td>
+      <td>準正則だがさらに強く非正則</td>
+    </tr>
+    <tr>
+      <td>corner layer</td>
+      <td>\(a\asymp b\asymp c\asymp\varepsilon h\)</td>
+      <td>\(Q_T\asymp1\)</td>
+      <td>形状は正則</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<p>
+ここで重要なのは，corner layerの要素が非常に小さくても，
+三方向が同じ割合で縮小すればshape regularityは悪化しないことです．
+正則性は絶対的な要素サイズではなく，方向間の比を測ります．
+</p>
+</article>
+</div>
+
+<h2>6．二次元との違いは分割パターンにある</h2>
+<div class="news">
+<article class="news-item">
+<p>
+二次元の長方形では，どちらの対角線を選んでも，二つの三角形は合同であり，
+局所的には \(H_T/h_T=2\) でした．三次元の直方体では，
+四面体分割の選択肢が多く，次を別々に確認する必要があります．
+</p>
+<ul>
+  <li>各直方体内の四面体が固定された参照パターンの異方的伸縮として得られるか，</li>
+  <li>隣接直方体が共有面上で同じ対角線を使い，適合的に接続しているか，</li>
+  <li>局所的な再分割や節点移動によって，体積だけが極端に小さい四面体が生じていないか，</li>
+  <li>Type 1／Type 2のどちらについても \(H_T/h_T\) が一様に制御されているか．</li>
+</ul>
+<p>
+Kuhn型分割は最初の条件を明確に満たします．ただし，
+隣接セルで座標順序を無関係に選ぶと，共有面の対角線が一致しない可能性があります．
+したがって，局所的な準正則性と，大域的な適合性・接続規則は別問題です．
+</p>
+</article>
+</div>
+
+<h2>7．sliver型四面体では何が壊れるか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+次の四面体を考えます．
+\[
+  S_\eta
+  =\operatorname{conv}\left\{
+  (0,0,0)^{\top},
+  (1,0,0)^{\top},
+  (0,1,0)^{\top},
+  \left(\frac12,\frac12,\eta\right)^{\top}
+  \right\},
+  \qquad 0\lt\eta\le\frac12.
+\]
+四本の頂点はほぼ同一平面上にあり，
+\[
+  |S_\eta|_3=\frac{\eta}{6},
+  \qquad
+  h_{S_\eta}=\sqrt2.
+\]
+一方，辺長はすべて \(O(1)\) であり，二本の最短辺は
+\[
+  \ell_{1}=\ell_{2}
+  =\sqrt{\frac12+\eta^2}
+\]
+です．したがって
+\[
+  Q_{S_\eta}
+  =\frac{(\sqrt2)^3}{\eta/6}
+  =\frac{12\sqrt2}{\eta}
+  \longrightarrow\infty,
+\]
+さらに
+\[
+  \frac{R_{S_\eta}}{h_{S_\eta}}
+  =\frac{6\sqrt2\left(\frac12+\eta^2\right)}{\eta}
+  \longrightarrow\infty.
+\]
+\(H_T\) と \(R_T\) は同値なので，\(H_{S_\eta}/h_{S_\eta}\) も発散します．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<b>細長さだけを見てもsliverは検出できない</b>
+<p>
+この例では，すべての辺長が互いに同程度であるにもかかわらず，
+体積だけが0へ近づきます．したがって，三次元では辺の最大最小比だけでなく，
+体積を含む \(Q_T\)，\(R_T/h_T\)，\(H_T/h_T\) を確認する必要があります．
+</p>
+</div>
+</article>
+</div>
+
+<h2>8．三次元layer-adapted meshから何が保証されるか</h2>
+<div class="news">
+<article class="news-item">
+<h3>8.1 構造化Kuhn型分割から分かること</h3>
+<ul>
+  <li>face layerやedge layerでshape regularityが失われても，maximum-angle conditionは一様に保てること，</li>
+  <li>\(H_T/h_T\) に依存する方向別補間評価を適用できる幾何学的基盤があること，</li>
+  <li>異方性Raviart–Thomas補間などへ接続する際，層パラメータに依存しない幾何定数を期待できること．</li>
+</ul>
+<h3>8.2 この条件だけでは分からないこと</h3>
+<ul>
+  <li>三次元layer problemに対するparameter-uniformな最終誤差次数，</li>
+  <li>四面体の向きと拡散テンソルから決まるDMP・M-matrix条件，</li>
+  <li>maximum-norm解析に必要な離散Green関数とpatch connectivity，</li>
+  <li>Nédélec要素に必要なedge orientation，可換性，discrete compactness，</li>
+  <li>線形方程式のcondition numberと前処理の性能．</li>
+</ul>
+<p>
+したがって
+\[
+  \boxed{
+  \text{準正則な四面体分割}
+  \neq
+  \text{すべての離散的性質が良好な分割}
+  }
+\]
+です．
+</p>
+</article>
+</div>
+
+<h2>9．実際のメッシュで確認する量</h2>
+<div class="news">
+<article class="news-item">
+<p>
+三次元layer-adapted meshを生成したら，各四面体 \(T\) について少なくとも
+次を記録するとよいでしょう．
+</p>
+<ol>
+  <li>六本の辺長と直径 \(h_T\)，</li>
+  <li>体積 \(|T|_3\)，</li>
+  <li>shape indicator \(Q_T=h_T^3/|T|_3\)，</li>
+  <li>semi-regularity certificate \(R_T/h_T=\ell_{T,1}\ell_{T,2}h_T/|T|_3\)，</li>
+  <li>必要に応じてType 1／Type 2の分類と \(H_T/h_T\)，</li>
+  <li>face layer，edge layer，corner layer，遷移領域ごとの最大値，</li>
+  <li>隣接セル間の面対角線と四面体orientationの整合性．</li>
+</ol>
+<p>
+特に，メッシュ族 \(\mathcal T_{N,\varepsilon}\) では
+\[
+  \max_{T\in\mathcal T_{N,\varepsilon}}Q_T,
+  \qquad
+  \max_{T\in\mathcal T_{N,\varepsilon}}\frac{R_T}{h_T}
+\]
+を，\(N\) と \(\varepsilon\) の両方に対して追跡する必要があります．
+</p>
+</article>
+</div>
+
+<h2>まとめ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+辺長 \(a\le b\le c\) の直方体をKuhn型に6四面体分割すると，各四面体で
+\[
+  \frac{R_T}{h_T}
+  =6\frac{\sqrt{a^2+b^2+c^2}}{c}
+  \le6\sqrt3
+\]
+です．したがって \(H_T/h_T\) も一様有界であり，
+直方体のアスペクト比に依存せず準正則です．
+</p>
+<p>
+一方，
+\[
+  Q_T
+  =6\frac{(a^2+b^2+c^2)^{3/2}}{abc}
+\]
+は，face layerで \(O(\varepsilon^{-1})\)，edge layerで
+\(O(\varepsilon^{-2})\) となり得ます．これに対し，三方向が同程度に縮小する
+corner layerでは正則性を保てます．
+</p>
+<p>
+ただし，この結論は構造化された四面体分割に対するものです．
+sliver型四面体が混入すると，辺長比が穏やかでも体積が消失し，
+\(H_T/h_T\) が発散します．三次元では，直方体の格子幅だけでなく，
+<b>実際に生成された各四面体の接続と体積</b>を検査しなければなりません．
+</p>
+<p>
+次回は，<a href="./anisotropic-geometry-12.html">本連載で調べた幾何条件から，補間誤差評価，Raviart–Thomas補間，
+離散Sobolev不等式，DMP，\(L^\infty\)解析へ何が引き継げ，
+どこから別の仮定が必要になるのか</a>を整理します．
+</p>
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<h3>本記事の基礎資料</h3>
+<ol>
+  <li id="ref1">
+    H. Ishizaka,
+    <i>Interpolation error analysis using a new geometric parameter</i>,
+    research note, 23 May 2026．特に四面体の標準位置，two-step affine mapping，
+    semi-regularity，good／bad elementsを参照．
+  </li>
+  <li id="ref2">
+    H. Ishizaka, K. Kobayashi, R. Suzuki and T. Tsuchiya,
+    “A new geometric condition equivalent to the maximum angle condition for tetrahedrons,”
+    <i>Computers &amp; Mathematics with Applications</i>, 99, 323–328 (2021).
+    <a href="https://doi.org/10.1016/j.camwa.2021.08.017">DOI</a>.
+  </li>
+</ol>
+
+<h3>異方性補間理論</h3>
+<ol start="3">
+  <li id="ref3">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “General theory of interpolation error estimates on anisotropic meshes,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 38, 163–191 (2021).
+    <a href="https://doi.org/10.1007/s13160-020-00433-z">DOI</a>.
+  </li>
+  <li id="ref4">
+    H. Ishizaka,
+    “Anisotropic Raviart–Thomas interpolation error estimates using a new geometric parameter,”
+    <i>Calcolo</i>, 59:50 (2022).
+    <a href="https://doi.org/10.1007/s10092-022-00494-1">DOI</a>.
+  </li>
+  <li id="ref5">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “Anisotropic interpolation error estimates using a new geometric parameter,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 40, 475–512 (2023).
+    <a href="https://doi.org/10.1007/s13160-022-00535-w">DOI</a>.
+  </li>
+  <li id="ref6">
+    T. Apel,
+    <i>Anisotropic Finite Elements: Local Estimates and Applications</i>,
+    Advances in Numerical Mathematics, B. G. Teubner, 1999.
+  </li>
+</ol>
+<p>
+関連ページ：
+<a href="./anisotropic-geometry-02.html">第2回：正則性と準正則性を角度を使わずに表す</a>，
+<a href="./anisotropic-geometry-10.html">第10回：代表的なlayer-adapted meshの幾何条件を比較する</a>，
+<a href="../../publications/">Publications</a>，
+<a href="../../geo/">History of Geometric Conditions in FEM</a>，
+<a href="../">Blog一覧</a>
+</p>
+</article>
+</div>
+
+<div style="padding: 10px; margin-top: 20px; border: 1px solid #999999;">
+<p>
+<b>前回：</b><a href="./anisotropic-geometry-10.html">代表的なlayer-adapted meshの幾何条件を比較する</a>
+</p>
+<p>
+<b>次回：</b><a href="./anisotropic-geometry-12.html">幾何条件から補間・DMP・\(L^\infty\)解析へ何が引き継げるか</a>
+</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>
+</main>
+<!--▲メインコンテンツ-->
+
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
