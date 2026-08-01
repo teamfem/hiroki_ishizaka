@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Bakhvalov–Shishkin meshとS-type mesh：最適性と幾何条件 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,Bakhvalov-Shishkin mesh,S-type mesh,Shishkin mesh,Bakhvalov mesh,layer-adapted mesh,mesh-generating function,mesh-characterizing function,semi-regularity,H_T,Q_T,境界層">
+<meta name="description" content="Bakhvalov–Shishkin meshをS-type meshの枠組みで定義し，生成関数phiとmesh-characterizing function psi，局所メッシュ幅，S-typeとしての最適性，およびQ_TとH_T/h_Tによる幾何条件を整理します．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li><a href="../../">Home</a></li>
+				<li><a href="../../publications/">Publications</a></li>
+				<li><a href="../../research/">Research</a></li>
+				<li><a href="../../fem/">Research Visions</a></li>
+				<li><a href="../../suppl/">Supplementary Visions</a></li>
+				<li><a href="../../blog/">Blog</a></li>
+				<li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+				<li><a href="../../links/">Links</a></li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../" itemprop="item">
+				<span itemprop="name">Blog</span>
+				</a>
+				<meta itemprop="position" content="2">
+			</li>
+			<li class="bcl-last">
+				異方性有限要素法の幾何学的基礎 第9回
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">Bakhvalov–Shishkin meshとS-type mesh：最適性と幾何条件</h1>
+
+<p>
+<b>異方性有限要素法の幾何学的基礎 第9回</b><br>
+<time datetime="2026-08-01">1st August 2026</time> <span class="cat cat001">New</span>
+</p>
+
+<h2>はじめに</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第7回ではpiecewise-uniformなShishkin meshを，第8回では
+
+discrete layerに合わせて幅を徐々に増加させるBakhvalov-type meshを扱いました．
+今回は，この二つの考え方を結び付けるBakhvalov–Shishkin meshと，
+それを含むS-type meshの一般的な枠組みを整理します．
+</p>
+<p>
+S-type meshでは，遷移点をShishkin型の
+\(O(\varepsilon\ln N)\) に保ちながら，層領域内部の格子点を
+一般のmesh-generating functionで配置します．したがって，Shishkin meshも
+Bakhvalov–Shishkin meshも，同じS-type meshの構成に含められます
+<a href="#ref3">[3]</a>–<a href="#ref6">[6]</a>．
+</p>
+<p>
+一方，本連載で用いている
+\[
+  Q_T=\frac{h_T^2}{|T|_2},
+  \qquad
+  \frac{H_T}{h_T}
+\]
+は，要素形状とsemi-regularityを測る指標です
+<a href="#ref1">[1]</a>，<a href="#ref2">[2]</a>．
+S-type meshの「最適性」と，この幾何学的な正則性・準正則性は別概念です．
+今回は，この違いを明確にします．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<b>今回の結論</b>
+<ul>
+  <li>S-type meshは，一つのメッシュではなく，生成関数によって定義されるlayer-adapted meshのクラスです．</li>
+  <li>mesh-characterizing function \(\psi=e^{-\varphi}\) を使うと，多くの誤差評価に \(\max|\psi'|\) が現れます．</li>
+  <li>Shishkin meshでは \(\max|\psi'|=O(\ln N)\) ですが，Bakhvalov–Shishkin meshでは一様有界です．</li>
+  <li>この意味でBakhvalov–Shishkin meshは「optimal S-type mesh」と呼ばれます．</li>
+  <li>しかし二次元の直角三角形分割では，両者ともparameter-uniformには準正則だが非正則です．</li>
+</ul>
+</div>
+</article>
+</div>
+
+<h2>1．Bakhvalov-type meshとの違い</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第8回で扱った代表的なBakhvalov-type meshでは，層領域の終端が
+\[
+  O\!\left(\varepsilon\ln\frac1\varepsilon\right)
+\]
+に置かれます．生成関数は主として \(\varepsilon\) に依存し，境界付近の
+\(O(\varepsilon/N)\) の幅から外側の幅へgradingします．
+</p>
+<p>
+これに対してBakhvalov–Shishkin meshでは，Shishkin meshと同様に遷移点を
+\[
+  O(\varepsilon\ln N)
+\]
+に置きます．ただし，層領域を一様分割する代わりに，Bakhvalov型の対数関数で
+格子点を配置します．したがって名称にある
+</p>
+<ul>
+  <li><b>Bakhvalov：</b>層領域内部を指数層に合わせてgradingする，</li>
+  <li><b>Shishkin：</b>遷移点を \(\varepsilon\ln N\) 型にする，</li>
+</ul>
+<p>
+という二つの特徴を併せ持ちます．Bakhvalov–Shishkin meshはBakhvalov-type mesh一般と
+同じものではなく，S-type meshの代表例です．
+</p>
+</article>
+</div>
+
+<h2>2．一次元S-type meshの定義</h2>
+<div class="news">
+<article class="news-item">
+<p>
+区間 \([0,1]\) の左端 \(x=0\) に指数境界層があり，その減衰率を
+\(\beta>0\) とします．分割数 \(N\) は偶数とし，多項式次数などに応じた定数を
+\(\sigma>0\) とします．遷移点を
+\[
+  \lambda
+  :=\min\left\{
+      \frac12,
+      \frac{\sigma\varepsilon}{\beta}\ln N
+    \right\}
+\]
+と定義します．以下では層が十分薄く，
+\[
+  \lambda=\frac{\sigma\varepsilon}{\beta}\ln N
+  \lt\frac12
+\]
+となる場合を中心に考えます．
+</p>
+<p>
+層領域の生成関数を
+\[
+  \varphi:[0,1/2]\longrightarrow[0,\ln N]
+\]
+とし，\(\varphi\) は単調増加で
+\[
+  \varphi(0)=0,
+  \qquad
+  \varphi(1/2)=\ln N
+\]
+を満たすとします．細かい領域の格子点を
+\[
+  x_i
+  =\frac{\sigma\varepsilon}{\beta}
+   \varphi\!\left(\frac{i}{N}\right),
+  \qquad
+  0\le i\le\frac N2
+\]
+で定めます．外側の領域は一様に
+\[
+  x_i
+  =1-\frac{2(1-\lambda)}{N}(N-i),
+  \qquad
+  \frac N2\le i\le N
+\]
+と分割します．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 1px solid #999999;">
+<b>遷移点の係数</b>
+<p>
+\(\sigma\) は飾りではありません．多項式次数，層の減衰率，対象とするノルムに応じて
+選ぶ必要があります．代表的には次数 \(k\) に対して \(\sigma\ge k+1\) が現れます．
+一次要素なら基準値は \(\sigma=2\) です．
+</p>
+</div>
+</article>
+</div>
+
+<h2>3．mesh-characterizing function \(\psi\)</h2>
+<div class="news">
+<article class="news-item">
+<p>
+S-type meshでは，生成関数 \(\varphi\) そのものに加えて
+\[
+  \boxed{
+  \psi(t):=e^{-\varphi(t)}
+  }
+\]
+を導入します．これをmesh-characterizing functionと呼びます．端点では
+\[
+  \psi(0)=1,
+  \qquad
+  \psi(1/2)=\frac1N
+\]
+です．
+</p>
+<p>
+S-type mesh上の有限要素法では，多くの場合，誤差評価が模式的に
+\[
+  \|u-u_h\|
+  \le
+  C\left(
+    N^{-1}
+    \max_{0\le t\le1/2}|\psi'(t)|
+  \right)^k
+\]
+という形になります．ここでノルム，次数，追加因子は問題と数値手法によって異なりますが，
+\(N^{-1}\max|\psi'|\) がメッシュの精度を特徴付けるという点が重要です
+<a href="#ref3">[3]</a>，<a href="#ref6">[6]</a>．
+</p>
+<p>
+この枠組みでは
+\[
+  \max_{0\le t\le1/2}|\psi'(t)|\le C
+\]
+を \(N\) と \(\varepsilon\) に一様な定数で満たすメッシュを，
+<b>optimal S-type mesh</b>と呼びます．ここでのoptimalは，
+shape regularityやsemi-regularityの意味ではありません．
+</p>
+</article>
+</div>
+
+<h2>4．Shishkin meshをS-type meshとして書く</h2>
+<div class="news">
+<article class="news-item">
+<p>
+層領域を一様分割するShishkin meshでは
+\[
+  \varphi_{\mathrm S}(t)=2t\ln N
+\]
+です．したがって
+\[
+  \psi_{\mathrm S}(t)
+  =e^{-2t\ln N}
+  =N^{-2t}
+\]
+であり，
+\[
+  \psi_{\mathrm S}'(t)
+  =-2\ln N\,N^{-2t}.
+\]
+よって
+\[
+  \boxed{
+  \max_{0\le t\le1/2}
+  |\psi_{\mathrm S}'(t)|
+  =2\ln N
+  }
+\]
+となります．
+</p>
+<p>
+このため，Shishkin mesh上の高次法の誤差評価には，しばしば
+\((\ln N)^k\) 型の因子が現れます．Shishkin meshはS-type meshですが，
+上の意味でoptimal S-type meshではありません．
+</p>
+</article>
+</div>
+
+<h2>5．Bakhvalov–Shishkin mesh</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Bakhvalov–Shishkin meshでは，mesh-characterizing functionを
+\[
+  \boxed{
+  \psi_{\mathrm{BS}}(t)
+  =1-2\left(1-\frac1N\right)t
+  }
+  \qquad
+  \left(0\le t\le\frac12\right)
+\]
+とします．したがって生成関数は
+\[
+  \varphi_{\mathrm{BS}}(t)
+  =-\ln\!\left[
+    1-2\left(1-\frac1N\right)t
+  \right].
+\]
+端点では
+\[
+  \varphi_{\mathrm{BS}}(0)=0,
+  \qquad
+  \varphi_{\mathrm{BS}}(1/2)=\ln N
+\]
+となり，S-type meshの条件を満たします．
+</p>
+<p>
+細かい領域の格子点は
+\[
+  \boxed{
+  x_i
+  =-\frac{\sigma\varepsilon}{\beta}
+   \ln\!\left[
+      1-2\left(1-\frac1N\right)\frac{i}{N}
+   \right]
+  }
+  \qquad
+  \left(0\le i\le\frac N2\right)
+\]
+です．一方，
+\[
+  \psi_{\mathrm{BS}}'(t)
+  =-2\left(1-\frac1N\right)
+\]
+なので
+\[
+  \boxed{
+  \max_{0\le t\le1/2}
+  |\psi_{\mathrm{BS}}'(t)|
+  =2\left(1-\frac1N\right)
+  \le2
+  }
+\]
+です．したがってBakhvalov–Shishkin meshはoptimal S-type meshです
+<a href="#ref4">[4]</a>–<a href="#ref6">[6]</a>．
+</p>
+</article>
+</div>
+
+<h2>6．局所メッシュ幅を計算する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+細かい領域の幅を
+\[
+  h_i:=x_{i+1}-x_i,
+  \qquad
+  0\le i\le\frac N2-1
+\]
+とします．一般のS-type meshでは
+\[
+  h_i
+  =\frac{\sigma\varepsilon}{\beta}
+   \left[
+    \varphi\!\left(\frac{i+1}{N}\right)
+    -\varphi\!\left(\frac{i}{N}\right)
+   \right]
+\]
+です．\(\psi=e^{-\varphi}\) を用いれば
+\[
+  h_i
+  =\frac{\sigma\varepsilon}{\beta}
+   \ln\!\left(
+     \frac{\psi(i/N)}{\psi((i+1)/N)}
+   \right)
+\]
+とも書けます．
+</p>
+<p>
+Bakhvalov–Shishkin meshでは
+\[
+  h_i
+  =\frac{\sigma\varepsilon}{\beta}
+   \ln\!\left(
+   \frac{
+     1-2(1-N^{-1})i/N
+   }{
+     1-2(1-N^{-1})(i+1)/N
+   }
+   \right).
+\]
+境界に最も近い幅は
+\[
+  h_0\asymp\frac{\varepsilon}{N}
+\]
+ですが，遷移点直前では
+\[
+  h_{N/2-1}
+  =\frac{\sigma\varepsilon}{\beta}
+    \ln\!\left(3-\frac2N\right)
+  \asymp\varepsilon.
+\]
+したがって，層領域内の幅は \(O(\varepsilon/N)\) から
+\(O(\varepsilon)\) へ増加します．
+</p>
+<p>
+粗い領域の幅は
+\[
+  h_{\mathrm c}=\frac{2(1-\lambda)}{N}
+  \asymp\frac1N
+\]
+です．遷移点の隣接幅比を一様に保つには，例えば
+\(\varepsilon N=O(1)\) のような追加関係が有効です．実際，
+Bakhvalov–Shishkin mesh上の解析では \(\varepsilon\lesssim N^{-1}\) を仮定する場合があります
+<a href="#ref5">[5]</a>．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 1px solid #999999;">
+<b>重要</b>
+<p>
+\(\max|\psi'|\) が一様有界であることと，すべての隣接要素幅比が一様有界であることは
+同じ条件ではありません．S-typeとしてのoptimalityだけからlocal quasi-uniformityは従いません．
+</p>
+</div>
+</article>
+</div>
+
+<h2>7．二次元tensor-product meshの幾何条件</h2>
+<div class="news">
+<article class="news-item">
+<p>
+単位正方形で，\(x\) 方向に上のS-type格子点 \(x_i\) を使い，
+\(y\) 方向は一様に
+\[
+  y_j=\frac{j}{N}
+\]
+とします．各長方形セルの幅を
+\[
+  h_x=x_{i+1}-x_i,
+  \qquad
+  h_y=\frac1N
+\]
+とし，対角線で二つの直角三角形に分割します．例えば頂点は
+\[
+  (x_i,y_j)^{\top},
+  \qquad
+  (x_{i+1},y_j)^{\top},
+  \qquad
+  (x_i,y_{j+1})^{\top}
+\]
+です．
+</p>
+<p>
+第6回の計算から，すべての要素で
+\[
+  \boxed{
+  Q_T
+  =2\left(
+     \frac{h_x}{h_y}
+     +\frac{h_y}{h_x}
+   \right)
+  }
+\]
+および
+\[
+  \boxed{
+  \frac{H_T}{h_T}=2
+  }
+\]
+となります．これは生成関数 \(\varphi\) の選び方に依存しません．
+</p>
+<p>
+Bakhvalov–Shishkin meshの境界付近では
+\[
+  h_x\asymp\frac{\varepsilon}{N},
+  \qquad
+  h_y=\frac1N
+\]
+なので
+\[
+  Q_T\asymp\frac1\varepsilon
+  \longrightarrow\infty
+  \qquad(\varepsilon\to0).
+\]
+一方で \(H_T/h_T=2\) は保たれます．したがって
+\[
+  \boxed{
+  \text{parameter-uniformには準正則だが非正則}
+  }
+\]
+です．これはShishkin meshと同じ幾何学的分類です．
+</p>
+</article>
+</div>
+
+<h2>8．三つの「最適」を混同しない</h2>
+<div class="news">
+<article class="news-item">
+<table border="1" cellpadding="6" style="border-collapse: collapse; width: 100%;">
+  <thead>
+    <tr>
+      <th>用語</th>
+      <th>判定量</th>
+      <th>意味</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>shape regular</td>
+      <td>\(\sup Q_T&lt;\infty\)</td>
+      <td>要素の面積・体積が直径に対して退化しない</td>
+    </tr>
+    <tr>
+      <td>semi-regular</td>
+      <td>\(\sup H_T/h_T&lt;\infty\)</td>
+      <td>maximum-angle conditionと同値な形状制御</td>
+    </tr>
+    <tr>
+      <td>optimal S-type</td>
+      <td>\(\max|\psi'|\le C\)</td>
+      <td>S-type誤差評価に現れるmesh factorが対数的に増大しない</td>
+    </tr>
+    <tr>
+      <td>最適次数の数値法</td>
+      <td>問題・方法ごとの誤差評価</td>
+      <td>近似次数に対応するparameter-uniform収束率を達成する</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+Bakhvalov–Shishkin meshはoptimal S-type meshですが，\(\varepsilon\to0\) に一様な
+shape regularityは満たしません．逆に，shape-regularなメッシュであっても，
+境界層に格子点を適切に配分しなければparameter-uniformな精度は得られません．
+</p>
+<p>
+したがって
+\[
+  \boxed{
+  \text{S-typeとしてのoptimality}
+  \neq
+  \text{要素形状のregularity}
+  }
+\]
+です．
+</p>
+</article>
+</div>
+
+<h2>9．Shishkin，Bakhvalov–Shishkin，Bakhvalov-typeの比較</h2>
+<div class="news">
+<article class="news-item">
+<table border="1" cellpadding="6" style="border-collapse: collapse; width: 100%;">
+  <thead>
+    <tr>
+      <th>観点</th>
+      <th>Shishkin</th>
+      <th>Bakhvalov–Shishkin</th>
+      <th>Bakhvalov-type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>遷移点</td>
+      <td>\(O(\varepsilon\ln N)\)</td>
+      <td>\(O(\varepsilon\ln N)\)</td>
+      <td>代表的に \(O(\varepsilon\ln(1/\varepsilon))\)</td>
+    </tr>
+    <tr>
+      <td>層領域</td>
+      <td>一様分割</td>
+      <td>対数型grading</td>
+      <td>対数型grading</td>
+    </tr>
+    <tr>
+      <td>S-type meshか</td>
+      <td>はい</td>
+      <td>はい</td>
+      <td>一般には別クラス</td>
+    </tr>
+    <tr>
+      <td>\(\max|\psi'|\)</td>
+      <td>\(O(\ln N)\)</td>
+      <td>\(O(1)\)</td>
+      <td>S-typeの量としては通常評価しない</td>
+    </tr>
+    <tr>
+      <td>直角三角形分割の \(H_T/h_T\)</td>
+      <td>2</td>
+      <td>2</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>parameter-uniformなshape regularity</td>
+      <td>一般に満たさない</td>
+      <td>一般に満たさない</td>
+      <td>一般に満たさない</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+この比較から，layer-adapted meshの違いを理解するには，少なくとも
+</p>
+<ul>
+  <li>遷移点，</li>
+  <li>生成関数と局所幅，</li>
+  <li>S-typeのmesh factor，</li>
+  <li>単体要素の幾何条件，</li>
+</ul>
+<p>
+を別々に確認する必要があることが分かります．
+</p>
+</article>
+</div>
+
+<h2>10．幾何条件から分かること・分からないこと</h2>
+<div class="news">
+<article class="news-item">
+<h3>10.1 分かること</h3>
+<ul>
+  <li>tensor-product rectangleを直角三角形に分割すれば，S-type生成関数によらず準正則であること，</li>
+  <li>境界付近の最小幅によってparameter-uniformなshape regularityが失われること，</li>
+  <li>筆者のsemi-regularityに基づく異方性補間・安定性理論へ接続できること．</li>
+</ul>
+<h3>10.2 この二指標だけでは分からないこと</h3>
+<ul>
+  <li>\(\max|\psi'|\) が有界か，</li>
+  <li>誤差評価から \(\ln N\) 因子を除けるか，</li>
+  <li>遷移点でlocal quasi-uniformityが成立するか，</li>
+  <li>DMP，M-matrix性，無振動性，maximum-norm評価が成立するか．</li>
+</ul>
+<p>
+特に，\(H_T/h_T=2\) という結果だけでは，Shishkin meshと
+Bakhvalov–Shishkin meshの精度差を説明できません．その差は生成関数と
+mesh-characterizing functionに現れます．
+</p>
+</article>
+</div>
+
+<h2>まとめ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+S-type meshは，Shishkin型の遷移点
+\[
+  \lambda
+  =\frac{\sigma\varepsilon}{\beta}\ln N
+\]
+と，一般のmesh-generating function \(\varphi\) によって定義される
+layer-adapted meshのクラスです．mesh-characterizing function
+\(\psi=e^{-\varphi}\) を使うと，Shishkin meshでは
+\(\max|\psi'|=O(\ln N)\)，Bakhvalov–Shishkin meshでは
+\(\max|\psi'|=O(1)\) となります．
+</p>
+<p>
+したがってBakhvalov–Shishkin meshはoptimal S-type meshです．しかし，
+二次元tensor-product meshを直角三角形に分割した場合，境界付近のアスペクト比は
+\(O(1/\varepsilon)\) となります．よってparameter-uniformには非正則ですが，
+\(H_T/h_T=2\) により準正則です．
+</p>
+<p>
+次回は，Shishkin，Bakhvalov，Bakhvalov–Shishkin，S-type meshを同じ表にまとめ，
+遷移点，局所幅，quasi-uniformity，\(Q_T\)，\(H_T/h_T\)，誤差解析上の特徴を比較します．
+</p>
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<h3>筆者の幾何条件</h3>
+<ol>
+  <li id="ref1">
+    H. Ishizaka,
+    <i>Interpolation error analysis using a new geometric parameter</i>,
+    research note, 23 May 2026.
+    本記事では，\(Q_T\)，\(H_T/h_T\)とメッシュ族の分類に関する枠組みを参照．
+  </li>
+  <li id="ref2">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “Anisotropic interpolation error estimates using a new geometric parameter,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 40, 475–512 (2023).
+    <a href="https://doi.org/10.1007/s13160-022-00535-w">DOI</a>.
+  </li>
+</ol>
+
+<h3>S-type meshとBakhvalov–Shishkin mesh</h3>
+<ol start="3">
+  <li id="ref3">
+    T. Linß,
+    <i>Layer-Adapted Meshes for Reaction-Convection-Diffusion Problems</i>,
+    Lecture Notes in Mathematics 1985, Springer, 2010.
+    <a href="https://doi.org/10.1007/978-3-642-05134-0">DOI</a>.
+  </li>
+  <li id="ref4">
+    H.-G. Roos and T. Linß,
+    “Sufficient conditions for uniform convergence on layer-adapted grids,”
+    <i>Computing</i>, 63, 27–45 (1999).
+    <a href="https://doi.org/10.1007/s006070050049">DOI</a>.
+  </li>
+  <li id="ref5">
+    T. Linß,
+    “Analysis of a Galerkin finite element method on a Bakhvalov–Shishkin mesh for a linear convection–diffusion problem,”
+    <i>IMA Journal of Numerical Analysis</i>, 20(4), 621–632 (2000).
+    <a href="https://doi.org/10.1093/imanum/20.4.621">DOI</a>.
+  </li>
+  <li id="ref6">
+    H.-G. Roos,
+    “Layer-adapted meshes: milestones in 50 years of history,”
+    arXiv:1909.08273 (2019).
+    <a href="https://arxiv.org/abs/1909.08273">arXiv</a>.
+  </li>
+  <li id="ref7">
+    S. Franz and C. Xenophontos,
+    “On a connection between layer-adapted exponentially graded and S-type meshes,”
+    arXiv:1611.07213, revised 2018.
+    <a href="https://arxiv.org/abs/1611.07213">arXiv</a>.
+  </li>
+</ol>
+<p>
+関連ページ：
+<a href="./anisotropic-geometry-07.html">第7回：Shishkin meshは正則か，準正則か</a>，
+<a href="./anisotropic-geometry-08.html">第8回：Bakhvalov meshの滑らかなgradingと幾何条件</a>，
+<a href="../../publications/">Publications</a>，
+<a href="../../geo/">History of Geometric Conditions in FEM</a>，
+<a href="../">Blog一覧</a>
+</p>
+</article>
+</div>
+
+<div style="padding: 10px; margin-top: 20px; border: 1px solid #999999;">
+<p>
+<b>前回：</b><a href="./anisotropic-geometry-08.html">Bakhvalov meshの滑らかなgradingと幾何条件</a>
+</p>
+<p>
+<b>次回：</b>代表的なlayer-adapted meshの幾何条件を比較する（構想中）
+</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>
+</main>
+<!--▲メインコンテンツ-->
+
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
