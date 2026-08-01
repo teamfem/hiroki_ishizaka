@@ -208,7 +208,7 @@ shape-regularity，semi-regularity，幾何パラメータ，maximum-angle condi
 <p>
 例えば，二次元で
 \[
-  T_h=\operatorname{conv}\{(0,0),(h,0),(0,h^{1+\alpha})\},
+  T_h=\operatorname{conv}\{(0,0)^{\top},(h,0)^{\top},(0,h^{1+\alpha})^{\top}\},
   \qquad \alpha>0,
 \]
 という三角形を考えます．このとき \(h_T\) は \(h\) と同程度でゼロに近づきますが，
@@ -246,7 +246,7 @@ shape-regularity，semi-regularity，幾何パラメータ，maximum-angle condi
 で対応させると，勾配は
 \[
   \nabla v
-  =B_T^{-\mathsf T}\widehat\nabla\widehat v
+  =B_T^{-\top}\widehat\nabla\widehat v
 \]
 と変換されます．また，積分では
 \[
