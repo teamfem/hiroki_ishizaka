@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>graded mesh，quasi-uniformity，shape regularityの違い | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,graded mesh,quasi-uniformity,shape regularity,local quasi-uniformity,anisotropic mesh,異方性メッシュ,mesh grading,Q_T,H_T,radical mesh">
+<meta name="description" content="graded mesh，quasi-uniformity，shape regularityを区別し，局所サイズの非一様性と要素形状の異方性が独立した概念であることを，power gradingとQ_T，H_T/h_Tを用いて説明します．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li><a href="../../">Home</a></li>
+				<li><a href="../../publications/">Publications</a></li>
+				<li><a href="../../research/">Research</a></li>
+				<li><a href="../../fem/">Research Visions</a></li>
+				<li><a href="../../suppl/">Supplementary Visions</a></li>
+				<li><a href="../../blog/">Blog</a></li>
+				<li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+				<li><a href="../../links/">Links</a></li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../" itemprop="item">
+				<span itemprop="name">Blog</span>
+				</a>
+				<meta itemprop="position" content="2">
+			</li>
+			<li class="bcl-last">
+				異方性有限要素法の幾何学的基礎 第5回
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">graded mesh，quasi-uniformity，shape regularityの違い</h1>
+
+<p>
+<b>異方性有限要素法の幾何学的基礎 第5回</b><br>
+<time datetime="2026-08-01">1st August 2026</time> <span class="cat cat001">New</span>
+</p>
+
+<h2>はじめに</h2>
+<div class="news">
+<article class="news-item">
+<p>
+graded meshという言葉を聞くと，「要素サイズが不均一だから非正則である」，
+あるいは「細かい要素と粗い要素が混在するから異方性メッシュである」と考えたくなります．
+しかし，これらは同じ概念ではありません．
+</p>
+<p>
+<b>grading</b>は，領域内で局所メッシュサイズをどのように変化させるかを表します．
+<b>quasi-uniformity</b>は，最大要素と最小要素の大きさがメッシュ全体で一様に比較できるかを表します．
+<b>shape regularity</b>は，各要素の形状がつぶれないかを表します．
+したがって，graded meshはquasi-uniformでない場合が多い一方，shape regularであることは十分に可能です．
+</p>
+<p>
+筆者らの補間論では，一次元のgraded meshをgrading functionによって定義し，
+要素ごとに尺度が異なっていても，適切な指数の範囲では局所補間評価を組み立てられることを確認しています
+<a href="#ref1">[1]</a>，<a href="#ref2">[2]</a>．
+今回は，この最も単純な例を使って三つの用語を切り分けます．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<b>今回の結論</b>
+<ul>
+  <li>graded meshは，局所要素サイズが場所によって変化するメッシュです．</li>
+  <li>quasi-uniformityは要素サイズの比較であり，shape regularityは要素形状の条件です．</li>
+  <li>shape-regularだが非quasi-uniformなgraded meshは存在します．</li>
+  <li>graded meshは，等方的にも異方的にも構成できます．</li>
+  <li>局所quasi-uniformityと大域quasi-uniformityも区別する必要があります．</li>
+</ul>
+</div>
+</article>
+</div>
+
+<h2>1．三つの概念を別々に定義する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+
+各細分化レベルのメッシュを \(\mathcal T_\ell\) とし，各要素 \(T\in\mathcal T_\ell\) の直径を
+\[
+  h_T:=\operatorname{diam}(T)
+\]
+とします．さらに
+\[
+  h_\ell:=\max_{T\in\mathcal T_\ell}h_T,
+  \qquad
+  \underline h_\ell:=\min_{T\in\mathcal T_\ell}h_T
+\]
+と置きます．
+</p>
+
+<h3>1.1 grading</h3>
+<p>
+メッシュがgradedであるとは，特異点，境界層，界面などに近づくにつれて，
+局所サイズ \(h_T\) を意図的に変化させることです．
+これはメッシュの<b>サイズ分布</b>を表す概念であり，要素形状そのものを指定しません．
+</p>
+
+<h3>1.2 大域的なsize-quasi-uniformity</h3>
+<p>
+本記事では，要素サイズだけの条件を明確にするため，
+\[
+  U_\ell
+  :=\frac{h_\ell}{\underline h_\ell}
+\]
+と置き，
+\[
+  \sup_{\ell\ge0}U_\ell<\infty
+\]
+を<b>size-quasi-uniformity</b>と呼びます．同値に，ある \(C_{\mathrm{qu}}>0\) が存在して
+\[
+  h_\ell\le C_{\mathrm{qu}}h_T
+  \qquad
+  \text{for all }T\in\mathcal T_\ell
+\]
+となることです．
+</p>
+
+<h3>1.3 shape regularity</h3>
+<p>
+第2回で導入した
+\[
+  Q_T:=\frac{h_T^d}{|T|_d},
+  \qquad
+  Q_\ell:=\max_{T\in\mathcal T_\ell}Q_T
+\]
+を使うと，shape regularityは
+\[
+  \sup_{\ell\ge0}Q_\ell<\infty
+\]
+です．こちらは各要素の<b>形状</b>を制御します．最大要素と最小要素のサイズ差は直接制御しません．
+</p>
+
+<div style="padding: 10px; margin-bottom: 10px; border: 1px solid #999999;">
+<b>用語上の注意</b>
+<p>
+文献によっては，quasi-uniform meshという語にshape regularityまで含めます．
+一方，shape regularityとquasi-uniformityを別条件として並べる文献もあります
+<a href="#ref3">[3]</a>．本連載では混乱を避けるため，サイズ比較だけを
+<b>size-quasi-uniformity</b>と呼び，shape regularityとは分けて記述します．
+</p>
+</div>
+</article>
+</div>
+
+<h2>2．一次元のgraded mesh</h2>
+<div class="news">
+<article class="news-item">
+<p>
+区間 \(\Omega=(0,1)\) を考えます．\(N\in\mathbb N\) に対して
+\[
+  0=x_0<x_1<\cdots<x_N=1
+\]
+とし，要素を
+\[
+  I_j=[x_j,x_{j+1}],
+  \qquad
+  h_j:=x_{j+1}-x_j,
+  \qquad
+  j=0,\ldots,N-1
+\]
+とします．
+</p>
+<p>
+一様メッシュでは
+\[
+  x_j=\frac{j}{N}
+\]
+です．一方，grading function \(g:[0,1]\to[0,1]\) を用いて
+\[
+  x_j=g\!\left(\frac{j}{N}\right)
+\]
+と置くと，\(x=0\) に関するgraded meshが得られます．
+筆者らの論文と研究ノートでも，この形でgraded meshを導入しています
+<a href="#ref1">[1]</a>，<a href="#ref2">[2]</a>．
+</p>
+<p>
+代表例として
+\[
+  g(y)=y^r,
+  \qquad r>1
+\]
+を選びます．すると
+\[
+  x_j=\left(\frac{j}{N}\right)^r,
+  \qquad
+  h_j=\frac{(j+1)^r-j^r}{N^r}
+\]
+です．\(x=0\) の近くでは要素が細かく，\(x=1\) に近づくにつれて粗くなります．
+</p>
+
+<figure style="margin: 20px auto; max-width: 760px;">
+<svg viewBox="0 0 760 190" role="img" aria-labelledby="power-title power-desc" style="width:100%; height:auto; border:1px solid #999999; background:#ffffff;">
+  <title id="power-title">power gradingによる一次元メッシュ</title>
+  <desc id="power-desc">左端に近いほど節点間隔が狭く，右端へ向かって広くなる区間メッシュ</desc>
+  <line x1="55" y1="95" x2="705" y2="95" stroke="#333" stroke-width="3"/>
+  <line x1="55" y1="75" x2="55" y2="115" stroke="#333" stroke-width="3"/>
+  <line x1="61" y1="77" x2="61" y2="113" stroke="#333" stroke-width="2"/>
+  <line x1="74" y1="77" x2="74" y2="113" stroke="#333" stroke-width="2"/>
+  <line x1="98" y1="77" x2="98" y2="113" stroke="#333" stroke-width="2"/>
+  <line x1="137" y1="77" x2="137" y2="113" stroke="#333" stroke-width="2"/>
+  <line x1="195" y1="77" x2="195" y2="113" stroke="#333" stroke-width="2"/>
+  <line x1="277" y1="77" x2="277" y2="113" stroke="#333" stroke-width="2"/>
+  <line x1="387" y1="77" x2="387" y2="113" stroke="#333" stroke-width="2"/>
+  <line x1="529" y1="77" x2="529" y2="113" stroke="#333" stroke-width="2"/>
+  <line x1="705" y1="75" x2="705" y2="115" stroke="#333" stroke-width="3"/>
+  <text x="47" y="145" font-size="18">0</text>
+  <text x="697" y="145" font-size="18">1</text>
+  <text x="270" y="45" font-size="18">\(x_j=(j/N)^r\)，\(r&gt;1\)</text>
+  <text x="63" y="172" font-size="16">細かい</text>
+  <text x="623" y="172" font-size="16">粗い</text>
+</svg>
+<figcaption style="text-align:center;">図1　power gradingでは，左端に近いほど局所メッシュ幅が小さくなる．</figcaption>
+</figure>
+</article>
+</div>
+
+<h2>3．power-graded meshはなぜ非quasi-uniformなのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+最小要素は左端の
+\[
+  h_0=\frac{1}{N^r}
+\]
+です．最大要素は右端付近にあり，平均値の定理から
+\[
+  h_{N-1}
+  =1-\left(1-\frac1N\right)^r
+  \sim\frac{r}{N}
+  \qquad (N\to\infty)
+\]
+となります．したがって
+\[
+  U_N
+  :=\frac{\max_jh_j}{\min_jh_j}
+  \sim rN^{r-1}\to\infty
+\]
+です．つまり，\(r>1\) のpower-graded meshは大域的にはsize-quasi-uniformではありません．
+</p>
+<p>
+しかし，一次元では各要素が区間であり，\(Q_{I_j}=h_j/|I_j|_1=1\) なので，形状の退化はありません．
+したがってこの例は，
+\[
+  \boxed{
+  \text{shape regularityとquasi-uniformityは別の条件である}
+  }
+\]
+ことを最も単純に示します．
+</p>
+<p>
+筆者らの一次元補間評価では，\(p=q\) の場合，要素ごとに尺度が異なっていても
+最適次数の局所評価が可能です <a href="#ref1">[1]</a>，<a href="#ref2">[2]</a>．
+これは，補間解析に大域的quasi-uniformityが常に必要なわけではないことを示しています．
+</p>
+</article>
+</div>
+
+<h2>4．局所quasi-uniformityと大域quasi-uniformity</h2>
+<div class="news">
+<article class="news-item">
+<p>
+graded meshでは，領域全体の最大要素と最小要素は大きく異なっていても，
+隣接要素どうしのサイズ比は制御されている場合があります．
+一次元では
+\[
+  U_N^{\mathrm{loc}}
+  :=\max_{0\le j\le N-2}
+  \max\left\{
+    \frac{h_{j+1}}{h_j},
+    \frac{h_j}{h_{j+1}}
+  \right\}
+\]
+を局所サイズ比とします．
+</p>
+<p>
+power gradingでは，固定した \(r>1\) に対して隣接比は \(N\) に依存せず有界です．
+特に左端の最も大きな比は
+\[
+  \frac{h_1}{h_0}=2^r-1
+\]
+です．したがって，
+\[
+  U_N\to\infty,
+  \qquad
+  \sup_N U_N^{\mathrm{loc}}<\infty
+\]
+が同時に起こり得ます．
+</p>
+<p>
+これは，<b>大域的には強くgradedであっても，局所的には滑らかにサイズが変化する</b>ことを意味します．
+離散不等式やpatch解析では，大域quasi-uniformityではなく局所quasi-uniformityが使われる場合があります．
+一方，筆者の異方性離散Sobolev解析では，shape-regularityやquasi-uniformityに依存しない形へ
+議論を組み替えることが主要な課題の一つです <a href="#ref3">[3]</a>．
+</p>
+</article>
+</div>
+
+<h2>5．graded meshは異方性メッシュとは限らない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+gradingは局所サイズの分布を指定しますが，要素の方向別形状までは指定しません．
+多次元では，少なくとも次の二種類を区別できます．
+</p>
+
+<h3>5.1 等方的grading</h3>
+<p>
+特異点に近づくにつれて要素直径を小さくしても，各要素を有限個の相似形状から作れば，
+\[
+  \sup_\ell Q_\ell<\infty
+\]
+を保てます．この場合，メッシュは非quasi-uniformでもshape regularです．
+局所サイズは強く変化しますが，要素のアスペクト比は一様に制御されています．
+</p>
+
+<h3>5.2 異方的grading</h3>
+<p>
+一方向のメッシュ幅を他方向より速く小さくすると，細分化とともにアスペクト比が増大します．
+この場合には
+\[
+  Q_\ell\to\infty
+\]
+となり得ます．ただし，第2回から第4回で見た直角三角形型の分割では
+\[
+  \sup_\ell\frac{H_T}{h_T}<\infty
+\]
+を保つことができ，準正則だが非正則なgraded meshになります．
+</p>
+<p>
+したがって，
+\[
+  \boxed{
+  \text{graded}\not\Rightarrow\text{anisotropic},
+  \qquad
+  \text{anisotropic}\not\Rightarrow\text{graded}
+  }
+\]
+です．固定された細長い要素を相似縮小すれば，異方的でもgradingを伴わない場合があります．
+</p>
+</article>
+</div>
+
+<h2>6．四つの条件は独立に確認する</h2>
+<div class="news">
+<article class="news-item">
+<table border="1" cellpadding="6" style="border-collapse: collapse; width: 100%;">
+  <thead>
+    <tr>
+      <th>確認する性質</th>
+      <th>代表的な量</th>
+      <th>何を測るか</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>大域size-quasi-uniformity</td>
+      <td>\(U_\ell=h_\ell/\underline h_\ell\)</td>
+      <td>領域全体の最大・最小要素サイズの比</td>
+    </tr>
+    <tr>
+      <td>局所quasi-uniformity</td>
+      <td>隣接要素のサイズ比</td>
+      <td>サイズ変化が局所的に急激でないか</td>
+    </tr>
+    <tr>
+      <td>shape regularity</td>
+      <td>\(Q_T=h_T^d/|T|_d\)</td>
+      <td>要素形状が等方的に退化しないか</td>
+    </tr>
+    <tr>
+      <td>semi-regularity</td>
+      <td>\(H_T/h_T\)</td>
+      <td>最大角型の退化を避けつつ異方性を許せるか</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+この四つは，目的に応じて別々に確認する必要があります．
+特に，非quasi-uniformであるという事実だけから，shape regularityやsemi-regularityの失敗を結論してはいけません．
+</p>
+</article>
+</div>
+
+<h2>7．代表的なメッシュ族の位置づけ</h2>
+<div class="news">
+<article class="news-item">
+<table border="1" cellpadding="6" style="border-collapse: collapse; width: 100%;">
+  <thead>
+    <tr>
+      <th>メッシュ族</th>
+      <th>size-quasi-uniform</th>
+      <th>shape regular</th>
+      <th>semi-regular</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>固定形状の一様相似分割</td>
+      <td>通常は満たす</td>
+      <td>満たす</td>
+      <td>満たす</td>
+    </tr>
+    <tr>
+      <td>等方的graded mesh</td>
+      <td>一般には満たさない</td>
+      <td>満たし得る</td>
+      <td>満たす</td>
+    </tr>
+    <tr>
+      <td>直角三角形型の異方的graded mesh</td>
+      <td>一般には満たさない</td>
+      <td>一般には満たさない</td>
+      <td>満たし得る</td>
+    </tr>
+    <tr>
+      <td>最大角が退化するgraded mesh</td>
+      <td>場合による</td>
+      <td>満たさない</td>
+      <td>満たさない</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+「graded mesh」という名前だけでは，この表のどこに属するかは決まりません．
+実際の要素構成から \(U_\ell\)，\(Q_T\)，\(H_T/h_T\) を計算する必要があります．
+筆者の研究ノートに掲載したstandard，Shishkin，anisotropic，graded meshの数値例でも，
+shape-regularityを表す量とmaximum-angle型の量は異なる挙動を示します
+<a href="#ref1">[1]</a>．
+</p>
+</article>
+</div>
+
+<h2>8．解析でquasi-uniformityはいつ必要になるか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+局所補間誤差評価は，要素ごとに記述できるため，大域quasi-uniformityを必要としないことが多くあります．
+実際，一次元では要素サイズ \(h_j\) をそのまま残して局所評価を足し合わせられます
+<a href="#ref1">[1]</a>，<a href="#ref2">[2]</a>．
+</p>
+<p>
+一方，逆不等式，条件数評価，離散Green関数，局所patchを使う議論などでは，
+最小要素サイズや隣接要素比が現れ，quasi-uniformityまたは局所quasi-uniformityが必要になる場合があります．
+したがって，ある定理がshape regularityだけを仮定しているのか，
+さらにquasi-uniformityまで仮定しているのかを確認しなければなりません．
+</p>
+<p>
+筆者の離散Sobolev不等式では，定数がメッシュ幅だけでなく，
+アスペクト比や内角にもロバストになることを目標とし，semi-regularityを基礎条件として用いています
+<a href="#ref3">[3]</a>．これは，古典的なshape-regularかつquasi-uniformな設定より広いメッシュ族を扱うためです．
+</p>
+</article>
+</div>
+
+<h2>9．本記事の判定手順</h2>
+<div class="news">
+<article class="news-item">
+<p>
+graded meshを見たときには，次の順で確認します．
+</p>
+<ol>
+  <li>grading functionまたは局所メッシュ幅を明示する．</li>
+  <li>最大要素サイズ \(h_\ell\) と最小要素サイズ \(\underline h_\ell\) を計算する．</li>
+  <li>大域サイズ比 \(U_\ell\) が一様有界か調べる．</li>
+  <li>隣接要素のサイズ比が一様有界か調べる．</li>
+  <li>各要素の \(Q_T\) を計算し，shape regularityを判定する．</li>
+  <li>必要なら \(H_T/h_T\) を計算し，semi-regularityを判定する．</li>
+  <li>どのパラメータに関して定数の一様性を要求するかを明記する．</li>
+</ol>
+<p>
+特にlayer-adapted meshでは，分割数 \(N\) だけでなく特異摂動パラメータ \(\varepsilon\) に関する
+一様性も問題になります．固定 \(\varepsilon\) に対する性質と，\(\varepsilon\to0\) に対するロバスト性は分けて述べます．
+</p>
+</article>
+</div>
+
+<h2>まとめ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+graded meshは，局所メッシュサイズを場所に応じて変えるメッシュです．
+そのため大域的なsize-quasi-uniformityを満たさないことが多いですが，
+これは要素形状が悪いことを意味しません．
+</p>
+<p>
+一次元のpower grading
+\[
+  x_j=\left(\frac{j}{N}\right)^r,
+  \qquad r>1
+\]
+では，最大・最小要素比が \(N^{r-1}\) のオーダーで増大するため非quasi-uniformです．
+一方，隣接要素比は固定した \(r\) に対して一様有界であり，局所的には滑らかなgradingです．
+</p>
+<p>
+多次元では，gradingと要素形状をさらに分ける必要があります．
+等方的graded meshはshape regularであり得ますが，異方的graded meshではshape regularityが破れ，
+semi-regularityだけが残る場合があります．
+</p>
+<p>
+次回は，長方形を対角線で三角形分割した最小モデルを使い，
+辺長 \(h_x,h_y\) から \(Q_T\) と \(H_T/h_T\) を直接計算します．
+</p>
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<h3>本連載の基礎資料</h3>
+<ol>
+  <li id="ref1">
+    H. Ishizaka,
+    <i>Interpolation error analysis using a new geometric parameter</i>,
+    research note, 23 May 2026.
+    特に第9節の数値メッシュ例と第16.1節の一次元graded meshを参照．
+  </li>
+</ol>
+
+<h3>筆者の関連原著論文</h3>
+<ol start="2">
+  <li id="ref2">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “Anisotropic interpolation error estimates using a new geometric parameter,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 40, 475–512 (2023).
+    <a href="https://doi.org/10.1007/s13160-022-00535-w">DOI</a>.
+  </li>
+  <li id="ref3">
+    H. Ishizaka,
+    “On discrete Sobolev inequalities for nonconforming finite elements under a semiregular mesh condition,”
+    <i>IMA Journal of Numerical Analysis</i> (2026).
+    <a href="https://doi.org/10.1093/imanum/drag006">DOI</a>.
+  </li>
+  <li id="ref4">
+    H. Ishizaka,
+    “Anisotropic weakly over-penalised symmetric interior penalty method for the Stokes equation,”
+    <i>Journal of Scientific Computing</i>, 100:53 (2024).
+    <a href="https://doi.org/10.1007/s10915-024-02598-y">DOI</a>.
+  </li>
+</ol>
+
+<h3>一般的背景</h3>
+<ol start="5">
+  <li id="ref5">
+    P. G. Ciarlet,
+    <i>The Finite Element Method for Elliptic Problems</i>,
+    North-Holland, 1978.
+  </li>
+  <li id="ref6">
+    T. Apel,
+    <i>Anisotropic Finite Elements: Local Estimates and Applications</i>,
+    Advances in Numerical Mathematics, B. G. Teubner, Stuttgart, 1999.
+  </li>
+  <li id="ref7">
+    T. Linß,
+    <i>Layer-Adapted Meshes for Reaction-Convection-Diffusion Problems</i>,
+    Lecture Notes in Mathematics 1985, Springer, 2010.
+    <a href="https://doi.org/10.1007/978-3-642-05134-0">DOI</a>.
+  </li>
+</ol>
+<p>
+関連ページ：
+<a href="./anisotropic-geometry-01.html">第1回：有限要素法ではなぜメッシュの幾何条件が必要なのか</a>，
+<a href="./anisotropic-geometry-02.html">第2回：正則性と準正則性を角度を使わずに表す</a>，
+<a href="./anisotropic-geometry-03.html">第3回：異方性メッシュの二つの現れ方</a>，
+<a href="./anisotropic-geometry-04.html">第4回：相似縮小された細長い要素は非正則なのか</a>，
+<a href="../../publications/">Publications</a>，
+<a href="../../geo/">History of Geometric Conditions in FEM</a>，
+<a href="../">Blog一覧</a>
+</p>
+</article>
+</div>
+
+<div style="padding: 10px; margin-top: 20px; border: 1px solid #999999;">
+<p>
+<b>前回：</b><a href="./anisotropic-geometry-04.html">相似縮小された細長い要素は非正則なのか</a>
+</p>
+<p>
+<b>次回：</b><a href="./anisotropic-geometry-06.html">長方形の三角形分割を\(Q_T\)と\(H_T/h_T\)で調べる</a>
+</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>
+</main>
+<!--▲メインコンテンツ-->
+
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
