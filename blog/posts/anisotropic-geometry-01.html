@@ -7,8 +7,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,mesh geometry,mesh regularity,shape regularity,anisotropic mesh,異方性メッシュ,affine mapping,interpolation error">
-<meta name="description" content="有限要素法の誤差評価と安定性にメッシュの幾何条件が必要となる理由を，参照要素から実要素への写像，メッシュ幅，形状，メッシュ族の一様性の観点から説明します．">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,mesh geometry,mesh regularity,shape regularity,semi-regularity,anisotropic mesh,異方性メッシュ,affine mapping,two-step affine mapping,interpolation error,H_T,maximum-angle condition">
+<meta name="description" content="有限要素法の誤差評価と安定性にメッシュの幾何条件が必要となる理由を，石坂宏樹の異方性補間・CR–RT・semi-regularity研究を基礎に，参照要素写像，メッシュ族の一様性，幾何パラメータの観点から説明します．">
 
 <link rel="stylesheet" href="../../css/base.css">
 <link rel="stylesheet" href="../../css/rwd.css">
@@ -93,7 +93,7 @@
 
 <p>
 <b>異方性有限要素法の幾何学的基礎 第1回</b><br>
-<time datetime="2026-08-01">1st August 2026</time>
+<time datetime="2026-08-01">1st August 2026</time> <span class="cat cat001">Revised</span>
 </p>
 
 <h2>はじめに</h2>
@@ -112,6 +112,14 @@ Shishkin mesh，Bakhvalov meshなどを，共通の幾何指標を使って順�
 第1回では，具体的な条件を導入する前に，
 <b>なぜ有限要素法の誤差評価と安定性に要素の幾何が現れるのか</b>を整理します．
 </p>
+<p>
+本連載の直接の基礎資料は，筆者の研究ノート
+<i>Interpolation error analysis using a new geometric parameter</i>（2026年5月23日版）です
+<a href="#ref1">[1]</a>．このノートは，等方・異方要素，古典的幾何条件，semi-regularity，
+two-step affine mapping，新しい幾何パラメータ，good/bad elements，数値計算で用いられる
+異方性メッシュ例を一つの流れにまとめ，関連する原著論文の訂正事項も反映することを目的としています．
+本ブログでは，その内容を短い記事に分解し，幾何条件の意味と有限要素解析への接続を丁寧に説明します．
+</p>
 <div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
 <b>今回の結論</b>
 <ul>
@@ -120,6 +128,38 @@ Shishkin mesh，Bakhvalov meshなどを，共通の幾何指標を使って順�
   <li>一個の細長い要素を見るだけでなく，細分化に伴うメッシュ族全体を調べる必要があります．</li>
   <li>補間に十分な幾何条件が，DMPやmaximum-norm評価にも十分とは限りません．</li>
 </ul>
+</div>
+</article>
+</div>
+
+<h2>本記事と筆者の研究との関係</h2>
+<div class="news">
+<article class="news-item">
+<p>
+本記事は一般的な有限要素法の入門解説であると同時に，筆者が進めてきた
+異方性有限要素解析の入口でもあります．研究の出発点では，単体の直径だけでなく，
+その扁平さを表す幾何パラメータを補間誤差評価に組み込む一般理論を構成しました
+<a href="#ref2">[2]</a>．その後，Crouzeix–Raviart（CR）要素とRaviart–Thomas（RT）要素の
+誤差解析 <a href="#ref3">[3]</a>，四面体に対する新しい幾何条件とmaximum-angle conditionとの同値性
+<a href="#ref4">[4]</a>，RT補間 <a href="#ref5">[5]</a>，より精密な異方性補間・逆不等式
+<a href="#ref6">[6]</a>へと展開しました．
+</p>
+<p>
+さらに，この幾何条件とCR–RT構造は，Morley要素 <a href="#ref7">[7]</a>，
+Stokes方程式に対するWOPSIP法 <a href="#ref8">[8]</a>，hybrid WOPSIP法
+<a href="#ref9">[9]</a>，Nitsche法 <a href="#ref10">[10]</a>，
+Navier–Stokes方程式に対するmodified CR法 <a href="#ref11">[11]</a>，
+非適合要素の離散Sobolev不等式 <a href="#ref12">[12]</a>へ応用されています．
+したがって，本連載で扱う幾何条件は一つの補間定理だけのための仮定ではなく，
+筆者の異方性FEM研究を横断する共通基盤です．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 1px solid #999999;">
+<b>この連載の読み方</b>
+<p>
+第1回では「なぜ幾何が必要か」を説明し，第2回以降で
+shape-regularity，semi-regularity，幾何パラメータ，maximum-angle conditionとの関係を定義します．
+その後に相似縮小，graded mesh，Shishkin mesh，Bakhvalov meshなどを，同じ条件で実際に確認します．
+</p>
 </div>
 </article>
 </div>
@@ -162,6 +202,8 @@ Shishkin mesh，Bakhvalov meshなどを，共通の幾何指標を使って順�
 \]
 とします．通常，収束解析では \(h\to0\) となるメッシュ族を考えます．
 しかし，\(h\to0\) は要素の大きさについての条件であり，形状については何も述べていません．
+直径 \(h_T\) と要素の扁平さを表す量を分離して評価することが，
+筆者らの異方性補間理論の出発点です <a href="#ref2">[2]</a>，<a href="#ref6">[6]</a>．
 </p>
 <p>
 例えば，二次元で
@@ -223,10 +265,15 @@ Shishkin mesh，Bakhvalov meshなどを，共通の幾何指標を使って順�
 \]
 に依存する係数が現れます．要素が一方向につぶれると，\(B_T^{-1}\) の大きさが増大し，
 参照要素上の一様な評価をそのまま実要素へ移せなくなる可能性があります．
+古典的な一段の写像では，この依存性は行列のEuclidean condition numberや
+\(h_T/\rho_T\) に現れます <a href="#ref5">[5]</a>．
 </p>
 <p>
 つまり，幾何条件は解析に後から付け足される技術的仮定ではありません．
 <b>座標変換を通じて，有限要素空間の微分と積分そのものに組み込まれています．</b>
+筆者の異方性補間理論では，異方的な方向別伸縮と，形状を制御する残りの変形を分離する
+中間単体とtwo-step affine mappingを用いて，この依存性を追跡します
+<a href="#ref1">[1]</a>，<a href="#ref5">[5]</a>，<a href="#ref6">[6]</a>．
 </p>
 </article>
 </div>
@@ -304,8 +351,10 @@ Shishkin mesh，Bakhvalov meshなどを，共通の幾何指標を使って順�
   <li>対象とする有限要素と微分作用素に適した条件か，</li>
 </ul>
 <p>
-という点です．通常の等方的なshape regularityを満たさなくても，
-方向別補間評価に必要な準正則性を満たすメッシュがあります．
+という点です．通常の等方的なshape-regularityを満たさなくても，
+方向別補間評価に必要なsemi-regularityを満たすメッシュがあります．
+二次元・三次元におけるこの条件は，maximum-angle conditionと結びつきます
+<a href="#ref4">[4]</a>，<a href="#ref5">[5]</a>．
 この違いが，本連載の中心課題です．
 </p>
 </article>
@@ -317,7 +366,10 @@ Shishkin mesh，Bakhvalov meshなどを，共通の幾何指標を使って順�
 <h3>7.1 幾何条件から期待できること</h3>
 <p>
 適切な幾何条件は，局所補間誤差，逆不等式，有限要素空間の安定性などの定数を制御するために使われます．
-異方性解析では，単一の直径だけでなく，方向別の辺長や要素写像の構造を使って評価します．
+異方性解析では，単一の直径だけでなく，方向別の辺長や要素写像の構造を使って評価します
+<a href="#ref2">[2]</a>，<a href="#ref5">[5]</a>，<a href="#ref6">[6]</a>．
+また，semi-regularityに依存する定数を用いることで，aspect ratioや内角の変化に対して
+ロバストな離散Sobolev評価を得られることも示されています <a href="#ref12">[12]</a>．
 </p>
 <h3>7.2 同じ条件だけでは保証されないこと</h3>
 <p>
@@ -344,6 +396,9 @@ Shishkin mesh，Bakhvalov meshなどを，共通の幾何指標を使って順�
 <p>
 次回以降は，三角形と四面体に対して角度を直接使わず，
 辺長，直径，面積・体積から構成される幾何指標を導入します．
+これは研究ノート <a href="#ref1">[1]</a> の第2節から第9節，および原著論文
+<a href="#ref2">[2]</a>，<a href="#ref4">[4]</a>，<a href="#ref6">[6]</a>を
+ブログ向けに再構成する部分です．
 その後，次のメッシュを同じ手順で調べます．
 </p>
 <ol>
@@ -393,28 +448,108 @@ Shishkin mesh，Bakhvalov meshなどを，共通の幾何指標を使って順�
 <h2>参考文献</h2>
 <div class="news">
 <article class="news-item">
+<h3>本連載の基礎資料</h3>
 <ol>
-  <li>
+  <li id="ref1">
+    H. Ishizaka,
+    <i>Interpolation error analysis using a new geometric parameter</i>,
+    research note, 23 May 2026.
+    本ノートは，筆者の博士論文と下記の原著論文を横断的に整理し，判明した訂正事項を反映するための継続更新資料です．
+  </li>
+</ol>
+
+<h3>筆者の関連原著論文</h3>
+<ol start="2">
+  <li id="ref2">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “General theory of interpolation error estimates on anisotropic meshes,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 38, 163–191 (2021).
+    <a href="https://doi.org/10.1007/s13160-020-00433-z">DOI</a>.
+  </li>
+  <li id="ref3">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “Crouzeix–Raviart and Raviart–Thomas finite-element error analysis on anisotropic meshes violating the maximum-angle condition,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 38, 645–675 (2021).
+    <a href="https://doi.org/10.1007/s13160-020-00455-7">DOI</a>.
+  </li>
+  <li id="ref4">
+    H. Ishizaka, K. Kobayashi, R. Suzuki and T. Tsuchiya,
+    “A new geometric condition equivalent to the maximum angle condition for tetrahedrons,”
+    <i>Computers &amp; Mathematics with Applications</i>, 99, 323–328 (2021).
+    <a href="https://doi.org/10.1016/j.camwa.2021.08.017">DOI</a>.
+  </li>
+  <li id="ref5">
+    H. Ishizaka,
+    “Anisotropic Raviart–Thomas interpolation error estimates using a new geometric parameter,”
+    <i>Calcolo</i>, 59:50 (2022).
+    <a href="https://doi.org/10.1007/s10092-022-00494-1">DOI</a>.
+  </li>
+  <li id="ref6">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “Anisotropic interpolation error estimates using a new geometric parameter,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 40, 475–512 (2023).
+    <a href="https://doi.org/10.1007/s13160-022-00535-w">DOI</a>.
+  </li>
+  <li id="ref7">
+    H. Ishizaka,
+    “Morley finite element analysis for fourth-order elliptic equations under a semi-regular mesh condition,”
+    <i>Applications of Mathematics</i>, 69(6), 769–805 (2024).
+    <a href="https://doi.org/10.21136/AM.2024.0103-24">DOI</a>.
+  </li>
+  <li id="ref8">
+    H. Ishizaka,
+    “Anisotropic weakly over-penalised symmetric interior penalty method for the Stokes equation,”
+    <i>Journal of Scientific Computing</i>, 100:53 (2024).
+    <a href="https://doi.org/10.1007/s10915-024-02598-y">DOI</a>.
+  </li>
+  <li id="ref9">
+    H. Ishizaka,
+    “Hybrid weakly over-penalised symmetric interior penalty method on anisotropic meshes,”
+    <i>Calcolo</i>, 61:45 (2024).
+    <a href="https://doi.org/10.1007/s10092-024-00600-5">DOI</a>.
+  </li>
+  <li id="ref10">
+    H. Ishizaka,
+    “Nitsche’s method under a semi-regular mesh condition,”
+    <i>Numerical Algorithms</i> (2025).
+    <a href="https://doi.org/10.1007/s11075-025-02131-8">DOI</a>.
+  </li>
+  <li id="ref11">
+    H. Ishizaka,
+    “Anisotropic modified Crouzeix–Raviart finite element method for the stationary Navier–Stokes equation,”
+    <i>Numerische Mathematik</i>, 157, 855–895 (2025).
+    <a href="https://doi.org/10.1007/s00211-025-01460-z">DOI</a>.
+  </li>
+  <li id="ref12">
+    H. Ishizaka,
+    “On discrete Sobolev inequalities for nonconforming finite elements under a semiregular mesh condition,”
+    <i>IMA Journal of Numerical Analysis</i> (2026).
+    <a href="https://doi.org/10.1093/imanum/drag006">DOI</a>.
+  </li>
+</ol>
+
+<h3>一般的背景とlayer-adapted mesh</h3>
+<ol start="13">
+  <li id="ref13">
     P. G. Ciarlet,
     <i>The Finite Element Method for Elliptic Problems</i>,
     North-Holland, 1978.
-    <a href="https://shop.elsevier.com/books/the-finite-element-method-for-elliptic-problems/ciarlet/978-0-444-85028-7">Publisher page</a>.
   </li>
-  <li>
+  <li id="ref14">
     T. Apel,
     <i>Anisotropic Finite Elements: Local Estimates and Applications</i>,
     Advances in Numerical Mathematics, B. G. Teubner, Stuttgart, 1999.
-    <a href="https://www.unibw.de/imcs/publikationen/publikationen-thomas-apel">Author's publication page</a>.
   </li>
-  <li>
+  <li id="ref15">
     T. Linß,
     <i>Layer-Adapted Meshes for Reaction-Convection-Diffusion Problems</i>,
     Lecture Notes in Mathematics 1985, Springer, 2010.
-    <a href="https://link.springer.com/book/10.1007/978-3-642-05134-0">Publisher page</a>.
+    <a href="https://doi.org/10.1007/978-3-642-05134-0">DOI</a>.
   </li>
 </ol>
 <p>
 関連ページ：
+<a href="../../publications/">Publications</a>，
 <a href="../../geo/">History of Geometric Conditions in FEM</a>，
 <a href="../">Blog一覧</a>，
 <a href="./article16apr26.html">FEniCSxで学ぶメッシュ分割入門</a>，
