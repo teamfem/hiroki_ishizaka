@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>相似縮小された細長い要素は非正則なのか | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,anisotropic mesh,異方性メッシュ,similarity refinement,相似縮小,shape regularity,semi-regularity,aspect ratio,Q_T,H_T,uniform constant,mesh family">
+<meta name="description" content="固定された細長い三角形を相似縮小したメッシュ族が正則かを，Q_TとH_T/h_Tの尺度不変性から判定します．細長い一要素，メッシュ族の正則性，異方性パラメータに関する一様性を区別します．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li><a href="../../">Home</a></li>
+				<li><a href="../../publications/">Publications</a></li>
+				<li><a href="../../research/">Research</a></li>
+				<li><a href="../../fem/">Research Visions</a></li>
+				<li><a href="../../suppl/">Supplementary Visions</a></li>
+				<li><a href="../../blog/">Blog</a></li>
+				<li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+				<li><a href="../../links/">Links</a></li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../" itemprop="item">
+				<span itemprop="name">Blog</span>
+				</a>
+				<meta itemprop="position" content="2">
+			</li>
+			<li class="bcl-last">
+				異方性有限要素法の幾何学的基礎 第4回
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">相似縮小された細長い要素は非正則なのか</h1>
+
+<p>
+<b>異方性有限要素法の幾何学的基礎 第4回</b><br>
+<time datetime="2026-08-01">1st August 2026</time> <span class="cat cat001">New</span>
+</p>
+
+<h2>はじめに</h2>
+<div class="news">
+<article class="news-item">
+<p>
+「細長い三角形はshape regularではない」と説明されることがあります．
+しかし，この表現は，単独の要素について述べているのか，
+細分化されるメッシュ族について述べているのかによって意味が変わります．
+</p>
+<p>
+固定された一つの細長い三角形を，同じ形のまま縮小し続けるとします．
+各要素のアスペクト比は大きいままですが，細分化レベルとともにさらに悪化するわけではありません．
+このとき，正則性を測る
+\[
+  Q_T:=\frac{h_T^d}{|T|_d}
+\]
+は大きな値を取っても，細分化レベルには依存しません．したがって，
+<b>固定された細長い形状の相似縮小からなるメッシュ族は，正則になり得ます</b>．
+</p>
+<p>
+一方，細分化のたびに短辺が長辺よりも速く縮み，アスペクト比そのものが増大するなら，
+もはや相似縮小ではありません．その場合，\(Q_T\) は発散し得ます．
+本記事では，この違いを量化し，正則性に現れる定数が何に依存するかを整理します．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<b>今回の結論</b>
+<ul>
+  <li>相似縮小では，\(Q_T\) と \(H_T/h_T\) は変化しません．</li>
+  <li>固定された細長い三角形の相似縮小系列は，細分化レベルに関して正則です．</li>
+  <li>ただし，正則定数は元の三角形の細長さに依存し，非常に大きくなり得ます．</li>
+  <li>異方性パラメータもゼロへ動かすと，一様なshape regularityは失われます．</li>
+  <li>「正則である」と「異方性に対してロバストである」は同じではありません．</li>
+</ul>
+</div>
+</article>
+</div>
+
+<h2>1．三つの異なる問いを分ける</h2>
+<div class="news">
+<article class="news-item">
+<p>
+細長い要素を評価するときには，次の三つを区別する必要があります．
+</p>
+<ol>
+  <li><b>一個の要素は細長いか：</b>アスペクト比が大きいかという局所的な形状の問題．</li>
+  <li><b>メッシュ族は正則か：</b>細分化レベルに依存しない正則定数が存在するかという問題．</li>
+  <li><b>異方性パラメータに関して一様か：</b>細長さを表す別のパラメータを変えても，同じ定数を使えるかというロバスト性の問題．</li>
+</ol>
+<p>
+一個の三角形が非常に細長くても，その形を固定して縮小するだけなら，
+第2の意味では正則です．しかし，正則定数はその細長さに依存するため，
+第3の意味で一様とは限りません．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 1px solid #999999;">
+<b>量化記号が重要である</b>
+<p>
+固定された形状パラメータ \(\delta>0\) に対して
+\[
+  \sup_{\ell\ge0}Q_{T_{\ell,\delta}}<\infty
+\]
+が成り立つことと，
+\[
+  \sup_{0<\delta\le1}\sup_{\ell\ge0}Q_{T_{\ell,\delta}}<\infty
+\]
+が成り立つことは別です．後者は，異方性の強さに関しても一様な評価を要求しています．
+</p>
+</div>
+</article>
+</div>
+
+<h2>2．相似縮小で保存される幾何量</h2>
+<div class="news">
+<article class="news-item">
+<p>
+固定された \(d\) 次元単体 \(\widehat T\subset\mathbb R^d\) を考えます．
+\(s_\ell>0\)，\(s_\ell\to0\) とし，\(R_\ell\) を直交行列，\(b_\ell\in\mathbb R^d\) として
+\[
+  T_\ell
+  :=\left\{
+       b_\ell+s_\ell R_\ell\widehat x
+       \; ;\;
+       \widehat x\in\widehat T
+     \right\}
+\]
+と定めます．これは，\(\widehat T\) を回転・鏡映・平行移動した後，すべての方向に同じ倍率
+\(s_\ell\) を掛ける相似変換です．
+</p>
+<p>
+このとき，要素直径，体積，標準辺長は
+\[
+  h_{T_\ell}=s_\ell h_{\widehat T},
+  \qquad
+  |T_\ell|_d=s_\ell^d|\widehat T|_d,
+  \qquad
+  h_{i,\ell}=s_\ell\widehat h_i
+\]
+と変換されます．したがって
+\[
+  Q_{T_\ell}
+  =\frac{(s_\ell h_{\widehat T})^d}
+         {s_\ell^d|\widehat T|_d}
+  =Q_{\widehat T}
+\]
+です．また，
+\[
+  \frac{H_{T_\ell}}{h_{T_\ell}}
+  =\frac{\prod_{i=1}^d(s_\ell\widehat h_i)}
+         {s_\ell^d|\widehat T|_d}
+  =\frac{H_{\widehat T}}{h_{\widehat T}}
+\]
+となります．さらに，\(H_T\) 自体は長さの次元を持つので
+\[
+  H_{T_\ell}=s_\ell H_{\widehat T}
+\]
+です．
+</p>
+<p>
+つまり，相似縮小では，長さを持つ量は縮小しますが，
+形状だけを測る無次元量 \(Q_T\) と \(H_T/h_T\) は完全に保存されます．
+正則性・準正則性の分類は，縮小率ではなく元の単体 \(\widehat T\) の形だけで決まります．
+</p>
+</article>
+</div>
+
+<h2>3．固定された細長い直角三角形</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(0<\delta\le1\) を固定し，基準三角形を
+\[
+  \widehat T_\delta
+  :=\operatorname{conv}\left\{
+       (0,0)^{\top},
+       (1,0)^{\top},
+       (0,\delta)^{\top}
+     \right\}
+\]
+とします．\(\delta\ll1\) なら，非常に細長い直角三角形です．
+</p>
+<p>
+この三角形では，直角を挟む二辺を標準辺として
+\[
+  \widehat h_1=1,
+  \qquad
+  \widehat h_2=\delta,
+  \qquad
+  h_{\widehat T_\delta}=\sqrt{1+\delta^2},
+  \qquad
+  |\widehat T_\delta|_2=\frac{\delta}{2}
+\]
+です．したがって
+\[
+  Q_{\widehat T_\delta}
+  =\frac{1+\delta^2}{\delta/2}
+  =2\left(\delta+\frac1\delta\right)
+\]
+であり，
+\[
+  \frac{H_{\widehat T_\delta}}{h_{\widehat T_\delta}}
+  =\frac{1\cdot\delta}{\delta/2}
+  =2
+\]
+です．
+</p>
+<p>
+次に，\(s_\ell\to0\) として
+\[
+  T_{\ell,\delta}:=s_\ell\widehat T_\delta
+\]
+と相似縮小します．前節の計算から
+\[
+  Q_{T_{\ell,\delta}}
+  =2\left(\delta+\frac1\delta\right),
+  \qquad
+  \frac{H_{T_{\ell,\delta}}}{h_{T_{\ell,\delta}}}=2
+\]
+であり，どちらも \(\ell\) に依存しません．
+</p>
+<p>
+したがって，\(\delta>0\) を固定すれば，この要素系列は
+\[
+  \boxed{\text{正則，したがって準正則}}
+\]
+です．\(\delta=10^{-6}\) のような極端に小さい値でも結論は変わりません．
+ただし，そのとき正則性指標はおよそ \(2\times10^6\) であり，定数は非常に大きくなります．
+</p>
+</article>
+</div>
+
+<h2>4．「正則」と「良好な定数」は同じではない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+shape regularityが要求するのは，メッシュ族に対して有限な一様上界が存在することです．
+上界が小さいことまでは要求していません．したがって，固定された \(\delta\) に対して
+\[
+  C_\delta
+  :=2\left(\delta+\frac1\delta\right)
+\]
+を取れば，
+\[
+  Q_{T_{\ell,\delta}}\le C_\delta
+  \qquad\text{for all }\ell
+\]
+が成り立ちます．
+</p>
+<p>
+しかし，\(\delta\to0\) では
+\[
+  C_\delta\sim\frac{2}{\delta}\to\infty
+\]
+です．このため，古典的なshape-regularityに基づく誤差評価や逆不等式の定数は，
+固定した \(\delta\) に対しては一様でも，異方性を強くする極限に対してはロバストではありません．
+</p>
+<table border="1" cellpadding="6" style="border-collapse: collapse; width: 100%;">
+  <thead>
+    <tr>
+      <th>調べる範囲</th>
+      <th>結論</th>
+      <th>定数</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>\(\delta\) を固定し，\(\ell\to\infty\)</td>
+      <td>正則</td>
+      <td>\(C_\delta&lt;\infty\)</td>
+    </tr>
+    <tr>
+      <td>\(0&lt;\delta\le1\) 全体と全レベル</td>
+      <td>一様正則ではない</td>
+      <td>\(\sup_\delta C_\delta=\infty\)</td>
+    </tr>
+    <tr>
+      <td>準正則性</td>
+      <td>\(\delta\) に関しても一様</td>
+      <td>\(H_T/h_T=2\)</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+この例は，shape regularityよりsemi-regularityが異方性解析に適した理由を最も単純に示しています．
+\(Q_T\) は細長さに反応しますが，\(H_T/h_T\) は直角三角形の最大角が退化していないことを正しく捉えます．
+</p>
+</article>
+</div>
+
+<h2>5．細長さも細分化とともに変えるとどうなるか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+今度は，形状パラメータを固定せず，\(\delta=\delta_\ell\to0\) とします．
+\[
+  T_\ell=s_\ell\widehat T_{\delta_\ell}
+\]
+なら，
+\[
+  Q_{T_\ell}
+  =2\left(\delta_\ell+\frac1{\delta_\ell}\right)
+  \longrightarrow\infty,
+  \qquad
+  \frac{H_{T_\ell}}{h_{T_\ell}}=2
+\]
+です．したがって，この系列は
+\[
+  \boxed{\text{準正則だが非正則}}
+\]
+となります．
+</p>
+<p>
+筆者の研究ノートにあるright-angled triangleの例では，\(0<s\ll1\)，\(\varepsilon>1\) として
+\[
+  T_s
+  :=\operatorname{conv}\left\{
+       (0,0)^{\top},
+       (s,0)^{\top},
+       (0,s^\varepsilon)^{\top}
+     \right\}
+\]
+を考えています <a href="#ref1">[1]</a>．ここでは
+\[
+  \delta_s=s^{\varepsilon-1}\to0
+\]
+なので，固定形状の相似縮小ではありません．実際，
+\[
+  Q_{T_s}
+  =2\left(s^{1-\varepsilon}+s^{\varepsilon-1}\right)
+  \longrightarrow\infty,
+  \qquad
+  \frac{H_{T_s}}{h_{T_s}}=2
+\]
+です．
+</p>
+<p>
+見かけ上は「小さな直角三角形を並べた系列」でも，
+二辺が同じ倍率で縮むか，異なる倍率で縮むかによって，正則性の結論は反対になります．
+</p>
+</article>
+</div>
+
+<h2>6．同じ図形名でもメッシュ族が違えば分類が変わる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+次の二系列を比較します．
+</p>
+<h3>6.1 固定された細長さ</h3>
+<p>
+\[
+  T_\ell^{(A)}
+  =\operatorname{conv}\left\{
+       (0,0)^{\top},
+       (2^{-\ell},0)^{\top},
+       (0,\delta 2^{-\ell})^{\top}
+     \right\},
+  \qquad \delta>0\text{ fixed}
+\]
+では，すべての要素が互いに相似です．したがって
+\[
+  \sup_\ell Q_{T_\ell^{(A)}}
+  =2\left(\delta+\frac1\delta\right)<\infty．
+\]
+</p>
+<h3>6.2 増大する細長さ</h3>
+<p>
+\[
+  T_\ell^{(B)}
+  =\operatorname{conv}\left\{
+       (0,0)^{\top},
+       (2^{-\ell},0)^{\top},
+       (0,2^{-2\ell})^{\top}
+     \right\}
+\]
+では，長辺は \(2^{-\ell}\)，短辺は \(2^{-2\ell}\) なので，アスペクト比は \(2^\ell\) です．
+そのため
+\[
+  Q_{T_\ell^{(B)}}
+  =2\left(2^\ell+2^{-\ell}\right)\to\infty,
+  \qquad
+  \frac{H_{T_\ell^{(B)}}}{h_{T_\ell^{(B)}}}=2
+\]
+</p>
+<p>
+系列(A)は正則，系列(B)は準正則だが非正則です．
+一枚の図だけでは両者を区別できません．細分化規則を明示し，無次元幾何量のレベル依存性を調べる必要があります．
+</p>
+</article>
+</div>
+
+<h2>7．一般の有限個の相似形からなるメッシュ族</h2>
+<div class="news">
+<article class="news-item">
+<p>
+一つの形だけでなく，有限個の基準単体
+\[
+  \widehat T^{(1)},\ldots,\widehat T^{(M)}
+\]
+を固定し，各要素がそのいずれかの相似像である場合を考えます．このとき
+\[
+  \sup_{T\in\mathcal T_\ell}Q_T
+  \le
+  \max_{1\le m\le M}Q_{\widehat T^{(m)}}
+\]
+なので，メッシュ族は正則です．同様に，\(H_T/h_T\) も有限個の基準形上の最大値で制御されます．
+</p>
+<p>
+これは，通常の一様細分化や，有限個の参照パターンを反復する細分化がshape regularityを保つ基本的な理由です．
+一方，新しいレベルでこれまでより扁平な形状が次々に現れるなら，有限個の基準形による制御は失われます．
+</p>
+</article>
+</div>
+
+<h2>8．有限要素誤差評価では何を意味するか</h2>
+<div class="news">
+<article class="news-item">
+<h3>8.1 固定された \(\delta\) に対する収束</h3>
+<p>
+固定した \(\delta>0\) のもとでは，古典的なshape-regularityに基づく有限要素誤差評価を適用できます．
+細分化により \(h\to0\) となれば，正則定数はレベルに依存しません．
+</p>
+<h3>8.2 \(\delta\to0\) に対するロバスト性</h3>
+<p>
+同じ評価を \(\delta\) に関して一様に使おうとすると，定数が \(1/\delta\) 程度で増大し得ます．
+そのため，境界層幅や異方性パラメータがゼロへ近づく問題では，
+shape-regularityだけを用いる解析はロバストでない可能性があります．
+</p>
+<h3>8.3 方向別誤差評価</h3>
+<p>
+筆者らの異方性補間理論では，方向別辺長と \(H_T/h_T\) を用いて，
+アスペクト比をすべて隠れた定数へ押し込めない評価を構成します
+<a href="#ref2">[2]</a>，<a href="#ref3">[3]</a>．
+直角三角形では \(H_T/h_T=2\) が保たれるため，長辺方向と短辺方向の微分を分ければ，
+異方性の強さに適合した評価が可能になります．
+</p>
+</article>
+</div>
+
+<h2>9．正則であっても自動的には分からないこと</h2>
+<div class="news">
+<article class="news-item">
+<p>
+固定形状の相似縮小系列が正則であることから，すべての数値的性質が良好だと結論することはできません．
+</p>
+<ul>
+  <li>正則定数が非常に大きければ，誤差評価の上界も大きくなり得ます．</li>
+  <li>解の急変方向と要素の長軸・短軸が合っているかは，正則性だけでは分かりません．</li>
+  <li>剛性行列の条件数は，メッシュ幅，アスペクト比，スケーリング，接続にも依存します．</li>
+  <li>DMPやM-matrix性には，角度の符号やmetric-angle型条件が別に必要です．</li>
+  <li>maximum-norm評価には，大域的なpatch構造や離散Green関数の解析が必要になり得ます．</li>
+</ul>
+<p>
+shape regularityは重要な基礎条件ですが，メッシュの目的適合性をすべて表す品質スコアではありません．
+</p>
+</article>
+</div>
+
+<h2>10．本記事の判定手順</h2>
+<div class="news">
+<article class="news-item">
+<p>
+細長い要素の相似縮小を見たときには，次の順で確認できます．
+</p>
+<ol>
+  <li>基準要素の形状パラメータを固定しているか．</li>
+  <li>すべての方向に同じ縮小率を掛けているか．</li>
+  <li>\(Q_T\) と \(H_T/h_T\) がレベルに依存しないか．</li>
+  <li>正則定数がどの固定パラメータに依存するか．</li>
+  <li>そのパラメータも動かしたときに，一様性が残るか．</li>
+</ol>
+<p>
+「相似縮小だから正則」と述べるだけでなく，
+<b>何を固定し，何に関して一様な正則性を主張しているのか</b>を明記することが重要です．
+</p>
+</article>
+</div>
+
+<h2>まとめ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+固定された細長い単体を相似縮小すると，\(Q_T\) と \(H_T/h_T\) は保存されます．
+したがって，元の単体が非退化である限り，その相似像からなるメッシュ族は細分化レベルに関して正則です．
+</p>
+<p>
+ただし，正則定数は元の形状に依存します．細長さを表す \(\delta\) が小さければ
+\(Q_T\sim2/\delta\) は大きく，\(\delta\to0\) まで含めた一様なshape regularityは成立しません．
+一方，直角三角形では \(H_T/h_T=2\) が保たれるため，semi-regularityは異方性パラメータに関しても一様です．
+</p>
+<p>
+結局，「細長いから非正則」なのではありません．
+<b>細長さが固定されているのか，細分化とともに増大するのか，どのパラメータに関して同じ定数を要求するのか</b>
+によって結論が変わります．
+</p>
+<p>
+次回は，graded mesh，quasi-uniformity，shape regularityを区別し，
+要素サイズの非一様性と要素形状の異方性が別の概念であることを整理します．
+</p>
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<h3>本連載の基礎資料</h3>
+<ol>
+  <li id="ref1">
+    H. Ishizaka,
+    <i>Interpolation error analysis using a new geometric parameter</i>,
+    research note, 23 May 2026.
+    特に第6節から第9節の幾何条件，good elements，right-angled triangleの例を参照．
+  </li>
+</ol>
+
+<h3>筆者の関連原著論文</h3>
+<ol start="2">
+  <li id="ref2">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “General theory of interpolation error estimates on anisotropic meshes,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 38, 163–191 (2021).
+    <a href="https://doi.org/10.1007/s13160-020-00433-z">DOI</a>.
+  </li>
+  <li id="ref3">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “Anisotropic interpolation error estimates using a new geometric parameter,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 40, 475–512 (2023).
+    <a href="https://doi.org/10.1007/s13160-022-00535-w">DOI</a>.
+  </li>
+  <li id="ref4">
+    H. Ishizaka,
+    “Anisotropic Raviart–Thomas interpolation error estimates using a new geometric parameter,”
+    <i>Calcolo</i>, 59:50 (2022).
+    <a href="https://doi.org/10.1007/s10092-022-00494-1">DOI</a>.
+  </li>
+</ol>
+
+<h3>一般的背景</h3>
+<ol start="5">
+  <li id="ref5">
+    P. G. Ciarlet,
+    <i>The Finite Element Method for Elliptic Problems</i>,
+    North-Holland, 1978.
+  </li>
+  <li id="ref6">
+    T. Apel,
+    <i>Anisotropic Finite Elements: Local Estimates and Applications</i>,
+    Advances in Numerical Mathematics, B. G. Teubner, Stuttgart, 1999.
+  </li>
+</ol>
+<p>
+関連ページ：
+<a href="./anisotropic-geometry-01.html">第1回：有限要素法ではなぜメッシュの幾何条件が必要なのか</a>，
+<a href="./anisotropic-geometry-02.html">第2回：正則性と準正則性を角度を使わずに表す</a>，
+<a href="./anisotropic-geometry-03.html">第3回：異方性メッシュの二つの現れ方</a>，
+<a href="../../publications/">Publications</a>，
+<a href="../../geo/">History of Geometric Conditions in FEM</a>，
+<a href="../">Blog一覧</a>
+</p>
+</article>
+</div>
+
+<div style="padding: 10px; margin-top: 20px; border: 1px solid #999999;">
+<p>
+<b>前回：</b><a href="./anisotropic-geometry-03.html">異方性メッシュの二つの現れ方：相似縮小とgraded mesh</a>
+</p>
+<p>
+<b>次回：</b>graded mesh，quasi-uniformity，shape regularityの違い（構想中）
+</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>
+</main>
+<!--▲メインコンテンツ-->
+
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
