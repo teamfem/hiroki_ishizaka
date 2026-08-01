@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>幾何条件から補間・DMP・L∞解析へ何が引き継げるか | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,anisotropic FEM,semi-regularity,interpolation,Raviart-Thomas,discrete Sobolev inequality,discrete maximum principle,DMP,maximum norm,L infinity,Green function,mesh grading">
+<meta name="description" content="準正則性から補間，Raviart–Thomas補間，離散Sobolev不等式へ何が引き継げるかを整理し，DMPとL∞解析には行列符号・metric angle・Green関数・mesh gradingなど別の条件が必要であることを説明します．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li><a href="../../">Home</a></li>
+				<li><a href="../../publications/">Publications</a></li>
+				<li><a href="../../research/">Research</a></li>
+				<li><a href="../../fem/">Research Visions</a></li>
+				<li><a href="../../suppl/">Supplementary Visions</a></li>
+				<li><a href="../../blog/">Blog</a></li>
+				<li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+				<li><a href="../../links/">Links</a></li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../" itemprop="item">
+				<span itemprop="name">Blog</span>
+				</a>
+				<meta itemprop="position" content="2">
+			</li>
+			<li class="bcl-last">
+				異方性有限要素法の幾何学的基礎 第12回
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">幾何条件から補間・DMP・\(L^\infty\)解析へ何が引き継げるか</h1>
+
+<p>
+<b>異方性有限要素法の幾何学的基礎 第12回</b><br>
+<time datetime="2026-08-01">1st August 2026</time> <span class="cat cat001">New</span>
+</p>
+
+<h2>はじめに</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第1回から第11回まで，単体要素とlayer-adapted meshを
+\[
+  Q_T:=\frac{h_T^d}{|T|_d},
+  \qquad
+  A_T:=\frac{H_T}{h_T}
+\]
+によって調べてきました．この二つの量は，形状の異なる側面を測ります．
+\(Q_T\)は要素直径に対して面積・体積がどれほど小さいかを測り，
+\(A_T\)は異方的な方向尺度と面積・体積の整合性を測ります．
+</p>
+<p>
+しかし，幾何量を計算した後に本当に知りたいのは，
+「その条件から有限要素解析のどこまでが保証されるのか」です．
+準正則性が保たれているからといって，補間誤差，離散Sobolev不等式，
+離散最大値原理（DMP），最大ノルム誤差評価がすべて同時に成立するわけではありません．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<b>この回の中心的な区別</b>
+<ol>
+  <li><b>要素単位の幾何</b>：写像，補間，trace評価，Raviart–Thomas補間を支配します．</li>
+  <li><b>要素の接続と離散行列の符号</b>：DMPや正値性を支配します．</li>
+  <li><b>大域的なサイズ分布とpatch構造</b>：離散Green関数や\(L^\infty\)誤差解析に影響します．</li>
+</ol>
+<p>
+準正則性は主として第1層を制御します．第2層と第3層には，別の情報が必要です．
+</p>
+</div>
+</article>
+</div>
+
+<h2>1．正則性と準正則性が制御するもの</h2>
+<div class="news">
+<article class="news-item">
+<p>
+メッシュ族 \(\{\mathcal T_h\}_h\) に対して
+\[
+  \sup_h\max_{T\in\mathcal T_h}Q_T\lt\infty
+\]
+なら正則，
+\[
+  \sup_h\max_{T\in\mathcal T_h}A_T\lt\infty
+\]
+なら準正則と呼びます．ここで重要なのは，これらが
+<b>要素ごとの局所写像を一様に制御する条件</b>だということです．
+</p>
+<p>
+異方性補間評価は，すべての方向を一つの直径 \(h_T\) に押し込めるのではなく，
+要素が持つ方向別尺度 \(h_1,\ldots,h_d\) を残した形で書かれます．模式的には
+\[
+  \|v-I_Tv\|_{X(T)}
+  \le
+  C(A_T)\,\mathcal E_T
+  \bigl(v;h_1,\ldots,h_d\bigr)
+\]
+です．右辺の \(\mathcal E_T\) には方向微分と方向別尺度が現れ，
+\(A_T\) が一様有界なら定数 \(C(A_T)\) もアスペクト比に対して一様に保てます
+<a href="#ref1">[1]</a>–<a href="#ref3">[3]</a>．
+</p>
+<p>
+一方，正則性を仮定して方向別尺度をすべて \(h_T\) と同程度に扱えば，
+古典的な等方的評価へ戻ります．したがって，準正則性は正則性の単なる弱い代用品ではなく，
+<b>異方的な方向情報を保持した解析を可能にする条件</b>です．
+</p>
+</article>
+</div>
+
+<h2>2．補間誤差評価へは何が引き継げるか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+準正則性から最も直接的に引き継げるのは，局所補間誤差評価です．
+筆者らの研究では，Lagrange型補間だけでなく，Crouzeix–Raviart，Morley，
+Raviart–Thomasなど，異なる自由度を持つ要素へ同じ幾何学的枠組みを展開してきました
+<a href="#ref1">[1]</a>–<a href="#ref5">[5]</a>．
+</p>
+<ul>
+  <li><b>Lagrange型補間</b>：関数値と方向微分の異方的スケーリングを扱います．</li>
+  <li><b>CR補間</b>：面平均自由度と異方的trace評価を扱います．</li>
+  <li><b>Morley補間</b>：頂点値と辺・面上の法線微分自由度を扱います．</li>
+  <li><b>RT補間</b>：Piola変換と面上の法線flux自由度を扱います．</li>
+</ul>
+<p>
+ただし，「準正則なら任意の有限要素補間が自動的に安定」という意味ではありません．
+自由度が点値なのか，面平均なのか，接線・法線成分なのかによって，
+必要なtrace評価と写像則は変わります．各要素について，
+<b>自由度が異方的写像の下でどのように変換されるか</b>を確認する必要があります．
+</p>
+</article>
+</div>
+
+<h2>3．Raviart–Thomas補間とcommuting property</h2>
+<div class="news">
+<article class="news-item">
+<p>
+最低次Raviart–Thomas補間 \(I_T^{\mathrm{RT}}\) では，
+\[
+  \operatorname{div} I_T^{\mathrm{RT}}\boldsymbol v
+  =
+  \Pi_T^0\operatorname{div}\boldsymbol v
+\]
+というcommuting propertyが重要です．ここで \(\Pi_T^0\) は要素ごとの定数への
+\(L^2\)射影です．この関係は，fluxの保存性と離散積分公式を結びます．
+</p>
+<p>
+しかし，commuting property自体は代数的な関係であり，補間作用素のノルムが
+異方性に対して一様に安定であることまでは保証しません．そこでtwo-step affine mappingと
+Piola変換を用い，準正則性の下でRT補間の異方的安定性・誤差評価を証明する必要があります
+<a href="#ref3">[3]</a>．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 1px solid #999999;">
+<b>役割の分担</b>
+<p>
+commuting propertyは微分作用素との整合性を与え，準正則性はその作用素を
+異方性に対して一様に評価するための幾何学的基盤を与えます．
+どちらか一方だけでは，mesh-robustな解析には足りません．
+</p>
+</div>
+</article>
+</div>
+
+<h2>4．離散Sobolev不等式へはどこまで引き継げるか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+CR空間とその不連続版については，準正則性の下で，アスペクト比と内角に依存しない
+離散 \(L^q\)–\(W^{1,p}\) 型Sobolev評価を得られます．証明には，
+異方性を考慮したtrace評価，RT補間，離散積分公式，面jumpの重み付き評価が使われます
+<a href="#ref7">[7]</a>．
+</p>
+<p>
+同論文の主要な範囲では，局所Sobolev埋め込みと整合する指数，特に
+\(q\le p\) を含む場合に，定数を準正則パラメータと領域だけで制御できます．
+この結果は，非線形項の評価やCR・DG型手法の安定性へ引き継げます．
+</p>
+<p>
+一方，\(q\gt p\) の側，とりわけ \(q=\infty\) を目指すと事情が変わります．
+弱い楕円正則性，大域的な要素サイズ分布，あるいは追加のmesh-dependent factorが
+必要になり得ます．したがって，
+\[
+  \text{準正則性}
+  \quad\Longrightarrow\quad
+  \text{すべての指数に対する離散Sobolev埋め込み}
+\]
+ではありません．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<b>特に注意すべき点</b>
+<p>
+有限の \(L^q\)評価がアスペクト比に一様であることと，
+\(L^\infty\)評価がmesh gradingにも一様であることは別問題です．
+ここで要素形状だけでなく，大域的なサイズ分布が解析へ入り始めます．
+</p>
+</div>
+</article>
+</div>
+
+<h2>5．DMPにはなぜ別の角度条件が必要なのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+離散最大値原理（DMP）は，有限要素解が連続問題の符号・上下界・比較原理を
+離散的に保つ性質です．標準的な線形有限要素法では，DMPの証明はしばしば
+離散行列がM-matrix型の符号構造を持つことに帰着します．
+</p>
+<p>
+二次元Poisson問題の三角形要素で，頂点基底を \(\phi_i\) とすると，
+異なる二頂点 \(i,j\) に対応する局所剛性行列成分は
+\[
+  \int_T \nabla\phi_i\cdot\nabla\phi_j\,dx
+  =-\frac12\cot\theta_k
+\]
+と書けます．ここで \(\theta_k\) は残りの頂点の角です．
+</p>
+<p>
+たとえば \(\theta_k=120^\circ\) なら
+\[
+  -\frac12\cot120^\circ
+  =\frac{1}{2\sqrt3}\gt0.
+\]
+この三角形は退化しておらず，固定形状の相似縮小族なら正則かつ準正則です．
+それでも局所剛性行列の非対角成分は正になります．したがって，
+準正則性だけから標準的なM-matrix条件は導けません．
+</p>
+<p>
+拡散テンソル \(D(x)\) がある場合には，Euclideanな角度ではなく，
+\(D^{-1}\) が定めるmetricにおける非鈍角条件などが現れます．
+さらに，局所行列を大域行列へ組み立てたときの接続関係，境界条件，
+反応・移流項，mass lumpingの有無も符号構造に影響します．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<b>結論</b>
+<p>
+準正則性は「要素が写像の意味で悪く潰れていない」ことを保証しますが，
+DMPに必要な「離散行列の非対角成分が適切な符号を持つ」ことは保証しません．
+maximum-angle型条件とnonobtuse／metric-angle型条件は，目的が異なります．
+</p>
+</div>
+</article>
+</div>
+
+<h2>6．\(L^\infty\)誤差解析では何が追加で必要か</h2>
+<div class="news">
+<article class="news-item">
+<p>
+最大ノルム誤差評価は，単なる局所補間誤差の最大値ではありません．模式的には
+\[
+  \|u-u_h\|_{L^\infty(\Omega)}
+  \le
+  \text{best approximation}
+  +\text{discrete Green function term}
+  +\text{consistency term}
+\]
+という構造を持ちます．
+</p>
+<p>
+このため，次のような追加情報が問題になります．
+</p>
+<ul>
+  <li>連続解と双対問題の正則性，</li>
+  <li>離散Green関数の安定性と局所化，</li>
+  <li>要素サイズの大域的・局所的な変化率，</li>
+  <li>頂点・辺・面patchの接続と重なり，</li>
+  <li>逆不等式に現れる最小方向尺度，</li>
+  <li>境界近傍や特異点近傍でのgradingの強さ．</li>
+</ul>
+<p>
+準正則性は，個々の要素について方向別補間とtrace評価を支えます．
+しかし，離散Green関数が多数の要素を横切るとき，
+要素サイズがどのように変化するかまでは \(A_T\) だけでは分かりません．
+この段階では，局所quasi-uniformity，隣接要素比，patch regularity，
+または問題に応じたmesh-dependent factorが追加され得ます．
+</p>
+<p>
+特に，相似縮小だけで得られるメッシュ族では形状とサイズ比が各levelで揃いやすい一方，
+graded meshでは要素ごとの局所評価が良好でも，大域的なfactorが細分化とともに増大し得ます．
+したがって，
+\[
+  \text{局所補間がrobust}
+  \quad\not\Longrightarrow\quad
+  \text{大域的な}\ L^\infty\text{評価もrobust}
+\]
+です．
+</p>
+</article>
+</div>
+
+<h2>7．DMPと\(L^\infty\)評価は同じではない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+DMPが成立すれば，離散解の符号や上界を制御しやすくなります．
+しかし，それだけで最適次数の \(L^\infty\)誤差評価が得られるわけではありません．
+逆に，ある問題で最大ノルム誤差評価が証明できても，離散行列がM-matrixでなければ，
+有限のメッシュ上でovershootやundershootが生じる可能性は残ります．
+</p>
+<table style="width:100%; border-collapse:collapse;" border="1" cellpadding="6">
+<thead>
+<tr>
+  <th>問題</th>
+  <th>主に必要な情報</th>
+  <th>準正則性だけで十分か</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>方向別補間誤差</td>
+  <td>要素写像，方向尺度，自由度の変換</td>
+  <td>多くの基本要素で基盤になる</td>
+</tr>
+<tr>
+  <td>RT補間の安定性</td>
+  <td>Piola変換，面flux，体積，準正則性</td>
+  <td>対応する理論の下で可能</td>
+</tr>
+<tr>
+  <td>CR型離散Sobolev評価</td>
+  <td>RT補間，trace，jump，指数条件</td>
+  <td>主要な指数範囲では可能</td>
+</tr>
+<tr>
+  <td>DMP・正値性</td>
+  <td>行列符号，metric angle，接続，係数</td>
+  <td><b>不十分</b></td>
+</tr>
+<tr>
+  <td>\(L^\infty\)誤差評価</td>
+  <td>Green関数，正則性，grading，patch構造</td>
+  <td><b>一般には不十分</b></td>
+</tr>
+</tbody>
+</table>
+</article>
+</div>
+
+<h2>8．layer-adapted meshへ戻る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第7回から第10回で見たShishkin，Bakhvalov系，S-type meshでは，
+直角三角形分割に対して
+\[
+  \frac{H_T}{h_T}=2
+\]
+が保たれました．したがって，局所補間やRT補間に必要な準正則性の側から見ると，
+非常に扱いやすい構造です．
+</p>
+<p>
+しかし，層方向と横方向の比によって \(Q_T\) は
+\(\varepsilon^{-1}\) などの大きさになり，大域的なサイズ分布もmeshの種類によって異なります．
+さらにDMPを考えるなら，長方形をどちらの対角線で分けるか，拡散テンソルの向き，
+隣接セルとの整合性が問題になります．
+</p>
+<p>
+つまり，layer-adapted meshを評価するときは，
+</p>
+<ol>
+  <li>層を解像する生成関数，</li>
+  <li>要素単位の準正則性，</li>
+  <li>離散行列の単調性，</li>
+  <li>大域的なGreen関数・maximum-norm構造</li>
+</ol>
+<p>
+を別々に確認しなければなりません．一つの「良いmesh」という言葉で
+すべてを済ませることはできません．
+</p>
+</article>
+</div>
+
+<h2>9．この12回で得られた判定手順</h2>
+<div class="news">
+<article class="news-item">
+<ol>
+  <li>各要素の座標，辺長，面積・体積を計算する．</li>
+  <li>\(Q_T=h_T^d/|T|_d\) によりshape regularityを調べる．</li>
+  <li>\(A_T=H_T/h_T\) によりsemi-regularityを調べる．</li>
+  <li>方向別尺度と自由度の写像から補間評価の適用可能性を確認する．</li>
+  <li>DMPが必要なら，局所・大域剛性行列の符号とmetric-angle条件を別に調べる．</li>
+  <li>\(L^\infty\)評価が必要なら，grading，patch，Green関数，解の正則性を追加で調べる．</li>
+</ol>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<b>本連載の最終結論</b>
+<p>
+\[
+  \boxed{
+  \text{幾何条件は解析の出発点であって，すべての性質を一つで保証する万能条件ではない}
+  }
+\]
+</p>
+<p>
+準正則性は，異方性を許しながら補間・trace・RT・離散Sobolev解析を支える強力な基盤です．
+一方，DMPには代数的単調性，\(L^\infty\)解析には大域的なmesh分布とGreen関数構造が必要です．
+この役割分担を明確にすることが，異方性有限要素法の次の研究課題を見つける鍵になります．
+</p>
+</div>
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<h3>本連載の基礎資料と異方性補間</h3>
+<ol>
+  <li id="ref1">
+    H. Ishizaka,
+    <i>Interpolation error analysis using a new geometric parameter</i>,
+    research note, 23 May 2026．
+  </li>
+  <li id="ref2">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “General theory of interpolation error estimates on anisotropic meshes,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 38, 163–191 (2021).
+    <a href="https://doi.org/10.1007/s13160-020-00433-z">DOI</a>.
+  </li>
+  <li id="ref3">
+    H. Ishizaka,
+    “Anisotropic Raviart–Thomas interpolation error estimates using a new geometric parameter,”
+    <i>Calcolo</i>, 59:50 (2022).
+    <a href="https://doi.org/10.1007/s10092-022-00494-1">DOI</a>.
+  </li>
+  <li id="ref4">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “Anisotropic interpolation error estimates using a new geometric parameter,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 40, 475–512 (2023).
+    <a href="https://doi.org/10.1007/s13160-022-00535-w">DOI</a>.
+  </li>
+  <li id="ref5">
+    H. Ishizaka,
+    “Morley finite element analysis for fourth-order elliptic equations under a semi-regular mesh condition,”
+    <i>Applications of Mathematics</i>, 69(6), 769–805 (2024).
+    <a href="https://doi.org/10.21136/AM.2024.0103-24">DOI</a>.
+  </li>
+  <li id="ref6">
+    H. Ishizaka,
+    “Nitsche’s method under a semi-regular mesh condition,”
+    <i>Numerical Algorithms</i> (2025).
+    <a href="https://doi.org/10.1007/s11075-025-02131-8">DOI</a>.
+  </li>
+  <li id="ref7">
+    H. Ishizaka,
+    “On discrete Sobolev inequalities for nonconforming finite elements under a semiregular mesh condition,”
+    <i>IMA Journal of Numerical Analysis</i> (2026).
+    <a href="https://doi.org/10.1093/imanum/drag006">DOI</a>.
+  </li>
+</ol>
+
+<h3>DMPの古典的背景</h3>
+<ol start="8">
+  <li id="ref8">
+    P. G. Ciarlet and P.-A. Raviart,
+    “Maximum principle and uniform convergence for the finite element method,”
+    <i>Computer Methods in Applied Mechanics and Engineering</i>, 2, 17–31 (1973).
+  </li>
+</ol>
+<p>
+関連ページ：
+<a href="./anisotropic-geometry-01.html">第1回：有限要素法ではなぜメッシュの幾何条件が必要なのか</a>，
+<a href="./anisotropic-geometry-11.html">第11回：三次元layer-adapted meshを四面体分割すると何が起こるか</a>，
+<a href="../../publications/">Publications</a>，
+<a href="../../geo/">History of Geometric Conditions in FEM</a>，
+<a href="../">Blog一覧</a>
+</p>
+</article>
+</div>
+
+<div style="padding: 10px; margin-top: 20px; border: 1px solid #999999;">
+<p>
+<b>前回：</b><a href="./anisotropic-geometry-11.html">三次元layer-adapted meshを四面体分割すると何が起こるか</a>
+</p>
+<p>
+<b>次の系列：</b>異方性CR–RT：離散最大値原理とは何か（構想中）
+</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>
+</main>
+<!--▲メインコンテンツ-->
+
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
