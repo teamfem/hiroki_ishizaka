@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Shishkin meshは正則か，準正則か | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,Shishkin mesh,layer-adapted mesh,anisotropic mesh,異方性メッシュ,shape regularity,semi-regularity,Q_T,H_T,transition point,singular perturbation">
+<meta name="description" content="Shishkin meshの遷移点と二種類の局所メッシュ幅を明示し，長方形セルの三角形分割についてQ_TとH_T/h_Tを計算します．固定した摂動パラメータに対する正則性と，パラメータ一様な準正則性を区別します．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li><a href="../../">Home</a></li>
+				<li><a href="../../publications/">Publications</a></li>
+				<li><a href="../../research/">Research</a></li>
+				<li><a href="../../fem/">Research Visions</a></li>
+				<li><a href="../../suppl/">Supplementary Visions</a></li>
+				<li><a href="../../blog/">Blog</a></li>
+				<li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+				<li><a href="../../links/">Links</a></li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../" itemprop="item">
+				<span itemprop="name">Blog</span>
+				</a>
+				<meta itemprop="position" content="2">
+			</li>
+			<li class="bcl-last">
+				異方性有限要素法の幾何学的基礎 第7回
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">Shishkin meshは正則か，準正則か</h1>
+
+<p>
+<b>異方性有限要素法の幾何学的基礎 第7回</b><br>
+<time datetime="2026-08-01">1st August 2026</time> <span class="cat cat001">New</span>
+</p>
+
+<h2>はじめに</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第6回では，辺長 \(h_x,h_y\) の長方形を対角線で二分した直角三角形について，
+\[
+  Q_T
+  =2\left(\frac{h_x}{h_y}+\frac{h_y}{h_x}\right),
+  \qquad
+  \frac{H_T}{h_T}=2
+\]
+となることを示しました．今回は，この局所公式をShishkin meshへ適用します．
+</p>
+<p>
+Shishkin meshは，境界層の近くとその外側でメッシュ幅を切り替える
+piecewise-uniformなlayer-adapted meshです．見た目には細長い要素を含みますが，
+「正則か，非正則か」という答えは，何を固定し，どのパラメータに関して
+一様性を要求するかによって変わります．
+</p>
+<p>
+本記事では，筆者の研究ノート第9節で用いられている二次元Shishkin mesh
+<a href="#ref1">[1]</a>を直接の出発点とします．そこでは
+\(\delta=1/128\) を固定し，\(N=32,64,128\) に対して幾何量が計算され，
+この数値系列がshape-regularであることが確認されています．
+本記事では，その表の値を第6回の公式から再現した後，
+\(\delta\) も変化させる二重パラメータ族では何が起こるかを区別します．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<b>今回の結論</b>
+<ul>
+  <li>各長方形セルを対角線で二分する限り，すべての要素で \(H_T/h_T=2\) です．</li>
+  <li>固定した \(\delta>0\) に対しては，通常の上限制御を含むShishkin mesh族は \(N\) に関して正則です．</li>
+  <li>正則性定数は \(\delta\) に依存し，\(\delta\to0\) に対して一様ではありません．</li>
+  <li>したがって二重パラメータ族 \(\{\mathcal T_{N,\delta}\}\) は，一般に「準正則だが，\(\delta\) に一様な意味では非正則」です．</li>
+  <li>「Shishkin meshは正則である」とだけ述べるのではなく，固定 \(\delta\) かparameter-uniformかを明記する必要があります．</li>
+</ul>
+</div>
+</article>
+</div>
+
+<h2>1．添付資料のShishkin mesh</h2>
+<div class="news">
+<article class="news-item">
+<p>
+計算領域を単位正方形
+\[
+  \Omega=(0,1)^2
+\]
+とし，\(N\in\mathbb N\) を偶数とします．研究ノートでは，格子点を
+\[
+  (x_i,y_j)^{\top},
+  \qquad 0\le i,j\le N
+\]
+として，\(x\) 方向を一様に
+\[
+  x_i=\frac{i}{N}
+\]
+と分割します <a href="#ref1">[1]</a>．
+</p>
+<p>
+\(y\) 方向には遷移点
+\[
+  \tau=2\delta |\ln N|
+\]
+を置き，研究ノートの数値例では
+\[
+  \delta=\frac1{128}
+\]
+としています．格子点は
+\[
+  y_j=
+  \begin{cases}
+    \displaystyle \frac{2\tau}{N}j,
+      &0\le j\le N/2,\\[6pt]
+    \displaystyle \tau+rac{2(1-\tau)}{N}
+      \left(j-\frac N2\right),
+      &N/2<j\le N
+  \end{cases}
+\]
+です．したがって，\([0,\tau]\) と \([\tau,1]\) をそれぞれ \(N/2\) 等分します．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 1px solid #999999;">
+<b>遷移点の上限について</b>
+<p>
+添付資料の計算範囲では \(\tau<1/2\) なので，上の式をそのまま用いることができます．
+無限の \(N\)-系列を一般に定義するときには，通常，
+\[
+  \tau_{N,\delta}
+  =\min\left\{\frac12,\,2\delta\ln N\right\}
+\]
+のように遷移点へ上限を設けます．以下では，まず添付資料の \(\tau<1/2\) の場合を計算し，
+その後に上限を含む族の一様性を説明します．
+</p>
+</div>
+</article>
+</div>
+
+<h2>2．二種類の局所メッシュ幅</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(x\) 方向の幅は全領域で
+\[
+  h_x=\frac1N
+\]
+です．一方，\(y\) 方向の幅は二種類あります．境界層側の細分領域では
+\[
+  h_y^{\mathrm{f}}
+  =\frac{2\tau}{N},
+\]
+外側の粗い領域では
+\[
+  h_y^{\mathrm{c}}
+  =\frac{2(1-\tau)}{N}
+\]
+です．ここで上付きの \(\mathrm f\) と \(\mathrm c\) はfine regionとcoarse regionを表します．
+</p>
+<p>
+遷移点の上下で幅は不連続に切り替わります．これがShishkin meshの
+piecewise-uniformな構造です．Bakhvalov meshでは，次回見るように，
+この切替をより滑らかなgradingで置き換えます．
+</p>
+<div style="text-align:center; margin:18px 0; overflow-x:auto;">
+<svg viewBox="0 0 700 390" width="100%" style="max-width:700px; border:1px solid #bbbbbb; background:#ffffff;" role="img" aria-label="単位正方形上のShishkin meshの模式図">
+  <rect x="85" y="40" width="530" height="300" fill="none" stroke="#222" stroke-width="3"/>
+  <line x1="85" y1="285" x2="615" y2="285" stroke="#222" stroke-width="3"/>
+  <line x1="85" y1="255" x2="615" y2="255" stroke="#999" stroke-width="1.5"/>
+  <line x1="85" y1="225" x2="615" y2="225" stroke="#999" stroke-width="1.5"/>
+  <line x1="85" y1="195" x2="615" y2="195" stroke="#999" stroke-width="1.5"/>
+  <line x1="85" y1="165" x2="615" y2="165" stroke="#999" stroke-width="1.5"/>
+  <line x1="85" y1="135" x2="615" y2="135" stroke="#999" stroke-width="1.5"/>
+  <line x1="85" y1="105" x2="615" y2="105" stroke="#999" stroke-width="1.5"/>
+  <line x1="85" y1="75" x2="615" y2="75" stroke="#999" stroke-width="1.5"/>
+  <line x1="85" y1="326" x2="615" y2="326" stroke="#777" stroke-width="1.2"/>
+  <line x1="85" y1="312" x2="615" y2="312" stroke="#777" stroke-width="1.2"/>
+  <line x1="85" y1="299" x2="615" y2="299" stroke="#777" stroke-width="1.2"/>
+  <line x1="151" y1="40" x2="151" y2="340" stroke="#999" stroke-width="1.5"/>
+  <line x1="217" y1="40" x2="217" y2="340" stroke="#999" stroke-width="1.5"/>
+  <line x1="283" y1="40" x2="283" y2="340" stroke="#999" stroke-width="1.5"/>
+  <line x1="349" y1="40" x2="349" y2="340" stroke="#999" stroke-width="1.5"/>
+  <line x1="415" y1="40" x2="415" y2="340" stroke="#999" stroke-width="1.5"/>
+  <line x1="481" y1="40" x2="481" y2="340" stroke="#999" stroke-width="1.5"/>
+  <line x1="547" y1="40" x2="547" y2="340" stroke="#999" stroke-width="1.5"/>
+  <text x="625" y="291" font-size="18">\(y=\tau\)</text>
+  <text x="625" y="318" font-size="17">fine region</text>
+  <text x="625" y="165" font-size="17">coarse region</text>
+  <text x="64" y="363" font-size="16">\((0,0)^{\top}\)</text>
+  <text x="575" y="363" font-size="16">\((1,0)^{\top}\)</text>
+  <text x="570" y="31" font-size="16">\((1,1)^{\top}\)</text>
+</svg>
+</div>
+<p>
+図では分かりやすさのため格子線の本数を減らしています．実際には，各長方形セルを
+いずれかの対角線で二分して三角形メッシュを作ります．
+</p>
+</article>
+</div>
+
+<h2>3．fine regionの幾何量</h2>
+<div class="news">
+<article class="news-item">
+<p>
+fine regionの長方形セルは
+\[
+  h_x=\frac1N,
+  \qquad
+  h_y^{\mathrm f}=\frac{2\tau}{N}
+\]
+を持ちます．第6回の公式を使うと，各三角形について
+\[
+  \frac{H_T}{h_T}=2
+\]
+です．正則性指標は
+\[
+  Q_T^{\mathrm f}
+  =2\left(
+    \frac{h_x}{h_y^{\mathrm f}}
+    +\frac{h_y^{\mathrm f}}{h_x}
+  \right)
+\]
+なので，
+\[
+  \boxed{
+  Q_T^{\mathrm f}
+  =\frac1\tau+4\tau
+  }
+\]
+となります．
+</p>
+<p>
+特に \(\tau\ll1\) では
+\[
+  Q_T^{\mathrm f}\sim\frac1\tau
+\]
+です．細い層領域の厚さが小さくなるほど，fine regionの三角形は
+shape regularityの観点では悪化します．一方，\(H_T/h_T=2\) は全く変化しません．
+</p>
+</article>
+</div>
+
+<h2>4．coarse regionの幾何量</h2>
+<div class="news">
+<article class="news-item">
+<p>
+coarse regionでは
+\[
+  h_x=\frac1N,
+  \qquad
+  h_y^{\mathrm c}=\frac{2(1-\tau)}{N}
+\]
+なので，
+\[
+  \frac{H_T}{h_T}=2
+\]
+かつ
+\[
+  \boxed{
+  Q_T^{\mathrm c}
+  =\frac1{1-\tau}+4(1-\tau)
+  }
+\]
+です．
+</p>
+<p>
+\(0<\tau\le1/2\) なら \(1-\tau\in[1/2,1)\) であるため，
+\(Q_T^{\mathrm c}\) は一様に有界です．したがって，
+Shishkin meshのshape regularityを悪化させる可能性があるのは，
+主にfine regionの細長い要素です．
+</p>
+</article>
+</div>
+
+<h2>5．メッシュ全体の判定式</h2>
+<div class="news">
+<article class="news-item">
+<p>
+メッシュ全体の最悪値は
+\[
+  Q_{N,\delta}
+  =\max\left\{
+    \frac1\tau+4\tau,
+    \frac1{1-\tau}+4(1-\tau)
+  \right\}
+\]
+です．一方，すべての要素で
+\[
+  A_{N,\delta}
+  :=\max_{T\in\mathcal T_{N,\delta}}\frac{H_T}{h_T}
+  =2
+\]
+となります．
+</p>
+<p>
+したがって，この三角形分割では
+\[
+  \boxed{
+  \text{semi-regularityは }N,\delta\text{ に依存せず成立する}
+  }
+\]
+ことが直ちに分かります．これはmaximum-angle conditionが
+parameter-uniformに保たれることを意味します．
+</p>
+<p>
+これに対してshape regularityは，\(Q_{N,\delta}\) が
+どのパラメータに関して一様有界かを調べなければなりません．
+</p>
+</article>
+</div>
+
+<h2>6．添付資料の数値を再現する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+研究ノートでは
+\[
+  \delta=\frac1{128},
+  \qquad
+  \tau=\frac{\ln N}{64}
+\]
+として，\(N=32,64,128\) を計算しています <a href="#ref1">[1]</a>．
+この範囲ではfine regionの値が最大となるため，
+\[
+  Q_{N,\delta}=\frac1\tau+4\tau
+\]
+です．
+</p>
+<table border="1" cellpadding="6" style="border-collapse: collapse; width: 100%;">
+  <thead>
+    <tr>
+      <th>\(N\)</th>
+      <th>\(\tau=\ln(N)/64\)</th>
+      <th>\(Q_{N,\delta}\)</th>
+      <th>\(A_{N,\delta}\)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>32</td>
+      <td>約 \(5.415\times10^{-2}\)</td>
+      <td>約 \(1.868\times10^{1}\)</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>64</td>
+      <td>約 \(6.498\times10^{-2}\)</td>
+      <td>約 \(1.565\times10^{1}\)</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <td>128</td>
+      <td>約 \(7.581\times10^{-2}\)</td>
+      <td>約 \(1.349\times10^{1}\)</td>
+      <td>2</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+これらは研究ノートのTable 10に示された値と一致します．
+同表ではstandard meshとこのShishkin meshがshape-regular，
+別のanisotropic meshとgraded meshが非shape-regularと判定されています
+<a href="#ref1">[1]</a>．
+</p>
+<p>
+ここで重要なのは，\(Q_{N,\delta}\) が約13から19という比較的大きな値でも，
+\(N\) に対する一様上界が存在すれば，固定した \(\delta\) のメッシュ族としては正則だという点です．
+shape regularityは「正三角形に近いこと」ではなく，メッシュ族の最悪形状が
+細分化とともに無限に悪化しないことを要求します．
+</p>
+</article>
+</div>
+
+<h2>7．固定した \(\delta\) では正則</h2>
+<div class="news">
+<article class="news-item">
+<p>
+一般的な上限制御
+\[
+  \tau_{N,\delta}
+  =\min\left\{\frac12,2\delta\ln N\right\}
+\]
+を用いるとします．\(\delta>0\) を固定すれば，\(N\) が大きくなった後は
+\(\tau_{N,\delta}=1/2\) となり，\(y\) 方向も一様幅 \(1/N\) になります．
+</p>
+<p>
+それ以前でも，固定した \(\delta\) に対して
+\[
+  \tau_{N,\delta}\ge 2\delta\ln 2>0
+\]
+なので，\(N\ge2\) の範囲で
+\[
+  Q_{N,\delta}
+  \le C(\delta)<\infty
+\]
+とできます．したがって
+\[
+  \boxed{
+  \delta>0\text{ を固定すれば，Shishkin mesh族は }N\text{ に関して正則}
+  }
+\]
+です．もちろん，正則性定数 \(C(\delta)\) は \(\delta\) に依存します．
+</p>
+</article>
+</div>
+
+<h2>8．\(\delta\to0\) に対しては正則でない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+特異摂動問題で本当に重要なのは，\(N\) だけでなく，
+層厚を表す \(\delta\) がゼロへ近づいても評価定数が悪化しないかという問題です．
+\(2\delta\ln N<1/2\) の領域では
+\[
+  \tau=2\delta\ln N
+\]
+なので，fine regionの正則性指標は
+\[
+  Q_T^{\mathrm f}
+  =\frac{1}{2\delta\ln N}+8\delta\ln N
+\]
+です．固定した \(N\) に対して \(\delta\to0\) とすれば
+\[
+  Q_T^{\mathrm f}\to\infty
+\]
+となります．
+</p>
+<p>
+したがって，二重パラメータ族
+\[
+  \left\{\mathcal T_{N,\delta}
+ight\}_{N,\delta}
+\]
+を考え，\(N\) と \(\delta\) の双方に独立なshape-regularity定数を要求すると，
+その条件は成立しません．一方で
+\[
+  \frac{H_T}{h_T}=2
+\]
+は保たれるため，
+\[
+  \boxed{
+  \text{Shishkin meshはparameter-uniformには準正則だが非正則}
+  }
+\]
+と分類できます．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 1px solid #999999;">
+<b>二つの正しい言い方</b>
+<ul>
+  <li>「固定した \(\delta\) に対して，Shishkin meshはshape regularである」．</li>
+  <li>「\(\delta\to0\) まで一様に見ると，shape regularityは失われるがsemi-regularityは保たれる」．</li>
+</ul>
+<p>
+両者は矛盾しません．一様性を要求するパラメータが異なります．
+</p>
+</div>
+</article>
+</div>
+
+<h2>9．quasi-uniformityとの関係</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第5回で導入したsize-quasi-uniformityも確認しておきます．
+fine regionとcoarse regionの三角形直径は，それぞれ
+\[
+  h_T^{\mathrm f}
+  =\frac1N\sqrt{1+4\tau^2},
+  \qquad
+  h_T^{\mathrm c}
+  =\frac1N\sqrt{1+4(1-\tau)^2}
+\]
+です．\(0<\tau\le1/2\) なら
+\[
+  1\le
+  \frac{h_T^{\mathrm c}}{h_T^{\mathrm f}}
+  \le\sqrt5
+\]
+なので，要素直径だけを比較する意味では，メッシュは \(N,\delta\) に一様に
+size-quasi-uniformです．
+</p>
+<p>
+しかし，\(\delta\to0\) ではfine regionの縦横比が発散し，shape regularityは失われます．
+したがってこの例は，
+\[
+  \boxed{
+  \text{要素直径がほぼ一様でも，要素形状はparameter-uniformに正則とは限らない}
+  }
+\]
+ことを示します．quasi-uniformityとshape regularityを分ける必要がある理由が，
+Shishkin meshには明確に現れます．
+</p>
+</article>
+</div>
+
+<h2>10．補間解析では何が得られるか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+筆者らの異方性補間理論では，方向別長さを残した評価を用いることで，
+大きなアスペクト比をshape-regularity定数へ押し込めずに扱います
+<a href="#ref2">[2]</a>–<a href="#ref4">[4]</a>．
+Shishkin meshのfine regionでは，\(x\) 方向と \(y\) 方向の幅を
+\[
+  h_x=\frac1N,
+  \qquad
+  h_y^{\mathrm f}=\frac{4\delta\ln N}{N}
+\]
+として，解の方向別微分と組み合わせることが重要です．
+</p>
+<p>
+また，\(H_T/h_T=2\) がparameter-uniformに保たれるため，
+semi-regularityを仮定するCR，RT，Morley，WOPSIP，Nitsche，
+離散Sobolev型の解析へ接続できます．筆者のWOPSIPおよびhybrid WOPSIP論文では，
+Shishkin meshを含む異方性メッシュ上の数値実験が行われています
+<a href="#ref5">[5]</a>，<a href="#ref6">[6]</a>．
+</p>
+<p>
+ただし，semi-regularityだけで境界層問題のparameter-uniformな誤差評価が完成するわけではありません．
+解の層構造，方向別微分の大きさ，遷移点の選択，局所補間誤差の総和を組み合わせる必要があります．
+幾何条件は必要な基盤ですが，問題依存の層解析を置き換えるものではありません．
+</p>
+</article>
+</div>
+
+<h2>11．DMPや数値振動までは保証しない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Shishkin meshが準正則であることは，maximum-angle conditionと
+異方性補間・安定性の幾何条件を満たすことを意味します．しかし，
+次の性質は自動的には保証されません．
+</p>
+<ul>
+  <li>離散最大値原理，</li>
+  <li>移流支配問題における無振動性，</li>
+  <li>拡散テンソルに対するmetric-angle条件，</li>
+  <li>maximum-norm誤差評価，</li>
+  <li>対角線方向やpatch connectivityに依存する大域的性質．</li>
+</ul>
+<p>
+実際，筆者のStokes計算ではShishkin meshを用いても数値振動が完全には消えない例が報告されています
+<a href="#ref5">[5]</a>．これは，layer resolutionと単調性・安定化が別問題であることを示します．
+</p>
+</article>
+</div>
+
+<h2>12．Shishkin meshという名前だけでは判定できない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+「Shishkin meshは正則か」という問いに答えるには，少なくとも次を明記する必要があります．
+</p>
+<ol>
+  <li>遷移点 \(\tau\) の式と上限，</li>
+  <li>分割数 \(N\) を各領域へどう配分するか，</li>
+  <li>どの座標方向に層を置くか，</li>
+  <li>長方形セルをどのように三角形分割するか，</li>
+  <li>固定するパラメータと，一様性を要求するパラメータ，</li>
+  <li>shape regularity，semi-regularity，quasi-uniformityのどれを判定するか．</li>
+</ol>
+<p>
+同じ「Shishkin mesh」という名称でも，三角形の接続方法を変えれば
+\(H_T/h_T\) が2ではない構成もあり得ます．したがって，メッシュ名ではなく，
+座標式と単体分割から幾何量を計算することが必要です．
+</p>
+</article>
+</div>
+
+<h2>まとめ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+添付資料のShishkin meshでは，\(x\) 方向幅が \(1/N\)，
+\(y\) 方向幅が
+\[
+  \frac{2\tau}{N},
+  \qquad
+  \frac{2(1-\tau)}{N}
+\]
+の二種類です．長方形を対角線で二分すると，すべての三角形で
+\[
+  \frac{H_T}{h_T}=2
+\]
+となります．
+</p>
+<p>
+正則性指標は
+\[
+  Q_T^{\mathrm f}=\frac1\tau+4\tau,
+  \qquad
+  Q_T^{\mathrm c}=\frac1{1-\tau}+4(1-\tau)
+\]
+です．固定した \(\delta\) に対しては \(N\) に関する一様上界が得られるため，
+Shishkin meshはshape regularです．一方，\(\delta\to0\) まで一様に考えると
+\(Q_T^{\mathrm f}\to\infty\) となり，shape regularityは失われます．
+</p>
+<p>
+したがって最も正確な結論は，
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+\[
+  \boxed{
+  \begin{aligned}
+  &\text{固定した層パラメータに対しては正則，}\\
+  &\text{層パラメータに一様には準正則だが非正則．}
+  \end{aligned}
+  }
+\]
+</div>
+<p>
+次回は，区分的一様なShishkin meshと対照的に，
+遷移領域を滑らかな写像で生成するBakhvalov meshを取り上げます．
+</p>
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<h3>本記事の直接の基礎資料</h3>
+<ol>
+  <li id="ref1">
+    H. Ishizaka,
+    <i>Interpolation error analysis using a new geometric parameter</i>,
+    research note, 23 May 2026.
+    特に第9.1節のShishkin格子点，第9.2節のTable 10と幾何条件の判定を参照．
+  </li>
+</ol>
+
+<h3>筆者の異方性補間理論</h3>
+<ol start="2">
+  <li id="ref2">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “General theory of interpolation error estimates on anisotropic meshes,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 38, 163–191 (2021).
+    <a href="https://doi.org/10.1007/s13160-020-00433-z">DOI</a>.
+  </li>
+  <li id="ref3">
+    H. Ishizaka,
+    “Anisotropic Raviart–Thomas interpolation error estimates using a new geometric parameter,”
+    <i>Calcolo</i>, 59:50 (2022).
+    <a href="https://doi.org/10.1007/s10092-022-00494-1">DOI</a>.
+  </li>
+  <li id="ref4">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “Anisotropic interpolation error estimates using a new geometric parameter,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 40, 475–512 (2023).
+    <a href="https://doi.org/10.1007/s13160-022-00535-w">DOI</a>.
+  </li>
+</ol>
+
+<h3>筆者のShishkin meshを用いた数値計算</h3>
+<ol start="5">
+  <li id="ref5">
+    H. Ishizaka,
+    “Anisotropic weakly over-penalised symmetric interior penalty method for the Stokes equation,”
+    <i>Journal of Scientific Computing</i>, 100:53 (2024).
+    <a href="https://doi.org/10.1007/s10915-024-02598-y">DOI</a>.
+  </li>
+  <li id="ref6">
+    H. Ishizaka,
+    “Hybrid weakly over-penalised symmetric interior penalty method on anisotropic meshes,”
+    <i>Calcolo</i>, 61:45 (2024).
+    <a href="https://doi.org/10.1007/s10092-024-00600-5">DOI</a>.
+  </li>
+</ol>
+
+<h3>layer-adapted meshの一般的背景</h3>
+<ol start="7">
+  <li id="ref7">
+    T. Linß,
+    <i>Layer-Adapted Meshes for Reaction-Convection-Diffusion Problems</i>,
+    Lecture Notes in Mathematics 1985, Springer, 2010.
+    <a href="https://doi.org/10.1007/978-3-642-05134-0">DOI</a>.
+  </li>
+</ol>
+<p>
+関連ページ：
+<a href="./anisotropic-geometry-01.html">第1回：有限要素法ではなぜメッシュの幾何条件が必要なのか</a>，
+<a href="./anisotropic-geometry-02.html">第2回：正則性と準正則性を角度を使わずに表す</a>，
+<a href="./anisotropic-geometry-03.html">第3回：異方性メッシュの二つの現れ方</a>，
+<a href="./anisotropic-geometry-04.html">第4回：相似縮小された細長い要素は非正則なのか</a>，
+<a href="./anisotropic-geometry-05.html">第5回：graded mesh，quasi-uniformity，shape regularityの違い</a>，
+<a href="./anisotropic-geometry-06.html">第6回：長方形の三角形分割を\(Q_T\)と\(H_T/h_T\)で調べる</a>，
+<a href="../../publications/">Publications</a>，
+<a href="../../geo/">History of Geometric Conditions in FEM</a>，
+<a href="../">Blog一覧</a>
+</p>
+</article>
+</div>
+
+<div style="padding: 10px; margin-top: 20px; border: 1px solid #999999;">
+<p>
+<b>前回：</b><a href="./anisotropic-geometry-06.html">長方形の三角形分割を\(Q_T\)と\(H_T/h_T\)で調べる</a>
+</p>
+<p>
+<b>次回：</b>Bakhvalov meshの滑らかなgradingと幾何条件（構想中）
+</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>
+</main>
+<!--▲メインコンテンツ-->
+
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
