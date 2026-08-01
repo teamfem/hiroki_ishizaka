@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>異方性メッシュの二つの現れ方：相似縮小とgraded mesh | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,anisotropic mesh,異方性メッシュ,similarity refinement,相似縮小,graded mesh,shape regularity,semi-regularity,quasi-uniformity,H_T,Q_T,layer-adapted mesh">
+<meta name="description" content="異方性メッシュにおける二つの典型的な現れ方，固定された細長い形状の相似縮小と，位置・細分化レベル・特異摂動パラメータに応じて局所幅を変えるgraded meshを区別します．Q_TとH_T/h_Tを用いて，形状の固定，サイズの非一様性，異方性の増大を整理します．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li><a href="../../">Home</a></li>
+				<li><a href="../../publications/">Publications</a></li>
+				<li><a href="../../research/">Research</a></li>
+				<li><a href="../../fem/">Research Visions</a></li>
+				<li><a href="../../suppl/">Supplementary Visions</a></li>
+				<li><a href="../../blog/">Blog</a></li>
+				<li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+				<li><a href="../../links/">Links</a></li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../" itemprop="item">
+				<span itemprop="name">Blog</span>
+				</a>
+				<meta itemprop="position" content="2">
+			</li>
+			<li class="bcl-last">
+				異方性有限要素法の幾何学的基礎 第3回
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">異方性メッシュの二つの現れ方：相似縮小とgraded mesh</h1>
+
+<p>
+<b>異方性有限要素法の幾何学的基礎 第3回</b><br>
+<time datetime="2026-08-01">1st August 2026</time> <span class="cat cat001">New</span>
+</p>
+
+<h2>はじめに</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第2回では，正則性を測る
+\[
+  Q_T:=\frac{h_T^d}{|T|_d}
+\]
+と，準正則性を測る
+\[
+  A_T:=\frac{H_T}{h_T}
+      =\frac{\prod_{i=1}^{d}h_i}{|T|_d}
+\]
+を導入しました．今回は，これらの量がメッシュ細分化の中でどのように変化するかを考えます．
+</p>
+<p>
+異方性メッシュでは，「要素が細長い」という一時点の形だけでなく，
+<b>細長さが細分化後も固定されるのか，それとも細分化や位置に応じて強くなるのか</b>を
+区別する必要があります．本連載では，その典型的な現れ方を次の二つに分けます．
+</p>
+<ol>
+  <li>固定された異方的形状を縮小する<b>相似縮小型</b>，</li>
+  <li>場所，細分化レベル，または問題の小さいパラメータに応じて局所幅を変える<b>graded mesh型</b>．</li>
+</ol>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<b>今回の結論</b>
+<ul>
+  <li>相似縮小では，アスペクト比だけでなく，無次元量 \(Q_T\) と \(H_T/h_T\) も変化しません．</li>
+  <li>固定された非常に細長い要素でも，一つの固定メッシュ族としては正則になり得ます．</li>
+  <li>graded meshは「要素サイズが場所によって異なる」という概念であり，必ずしも異方的ではありません．</li>
+  <li>方向別細分化率が異なるgraded meshでは，\(Q_T\) が増大しても \(H_T/h_T\) が有界に保たれる場合があります．</li>
+  <li>正則性を論じるときは，細分化レベルだけでなく，特異摂動パラメータなど，どの変数に関する一様性かを明示する必要があります．</li>
+</ul>
+</div>
+</article>
+</div>
+
+<h2>1．「二種類」は排他的なメッシュ分類ではない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+最初に注意しておきたいのは，相似縮小とgraded meshが，すべてのメッシュを二分する
+排他的な分類ではないことです．ここで区別するのは，<b>異方性がメッシュ族の中でどう変化するか</b>です．
+</p>
+<p>
+相似縮小は，要素の形状変化に注目した概念です．一方，gradingは，領域内の位置や問題の特徴に応じて
+局所メッシュ幅を変える概念です．したがって，相似な要素だけで構成されたgraded meshも作れますし，
+graded meshの一部に，細分化とともにますます細長くなる要素を入れることもできます．
+</p>
+<p>
+この違いを明確にするため，本記事では次の三つを別々に観察します．
+</p>
+<ul>
+  <li><b>縮尺：</b>要素全体がどれだけ小さいか，</li>
+  <li><b>形状：</b>方向別辺長の比がどの程度か，</li>
+  <li><b>空間分布：</b>要素サイズが領域内でどのように変化するか．</li>
+</ul>
+<p>
+「細かい」「非一様」「細長い」は，似た言葉に見えますが，同じ性質ではありません．
+</p>
+</article>
+</div>
+
+<h2>2．相似縮小では無次元幾何量が保存される</h2>
+<div class="news">
+<article class="news-item">
+<p>
+固定された非退化単体 \(\widehat T\subset\mathbb R^d\) を取り，
+\[
+  T_\ell=x_\ell+s_\ell R_\ell\widehat T,
+  \qquad s_\ell>0,
+  \qquad s_\ell\to0
+\]
+とします．ここで \(x_\ell\) は平行移動，\(R_\ell\) は回転または鏡映です．
+このとき \(T_\ell\) は，\(\widehat T\) と同じ形を保ったまま縮小されます．
+</p>
+<p>
+相似変換によって，直径，標準辺長，面積・体積はそれぞれ
+\[
+  h_{T_\ell}=s_\ell h_{\widehat T},
+  \qquad
+  h_{i,\ell}=s_\ell\widehat h_i,
+  \qquad
+  |T_\ell|_d=s_\ell^d|\widehat T|_d
+\]
+と変化します．したがって，
+\[
+  Q_{T_\ell}
+  =\frac{(s_\ell h_{\widehat T})^d}{s_\ell^d|\widehat T|_d}
+  =Q_{\widehat T}
+\]
+であり，さらに
+\[
+  \frac{H_{T_\ell}}{h_{T_\ell}}
+  =\frac{\prod_{i=1}^d(s_\ell\widehat h_i)}{s_\ell^d|\widehat T|_d}
+  =\frac{H_{\widehat T}}{h_{\widehat T}}
+\]
+です．
+</p>
+<p>
+つまり，相似縮小では要素直径はゼロへ近づきますが，アスペクト比，\(Q_T\)，
+\(H_T/h_T\) はすべて固定されます．幾何学的には，縮尺だけが変化し，形状は変化しません．
+</p>
+
+<figure style="margin: 20px auto; max-width: 760px;">
+<svg viewBox="0 0 760 250" role="img" aria-labelledby="similarity-title similarity-desc" style="width:100%; height:auto; border:1px solid #999999; background:#ffffff;">
+  <title id="similarity-title">細長い三角形の相似縮小</title>
+  <desc id="similarity-desc">同じ形の細長い三角形が二分の一，四分の一へ相似縮小される模式図</desc>
+  <line x1="50" y1="205" x2="285" y2="205" stroke="#333" stroke-width="3"/>
+  <line x1="50" y1="205" x2="70" y2="70" stroke="#333" stroke-width="3"/>
+  <line x1="70" y1="70" x2="285" y2="205" stroke="#333" stroke-width="3"/>
+  <text x="125" y="235" font-size="18">T₀</text>
+
+  <line x1="345" y1="205" x2="465" y2="205" stroke="#333" stroke-width="3"/>
+  <line x1="345" y1="205" x2="355" y2="137" stroke="#333" stroke-width="3"/>
+  <line x1="355" y1="137" x2="465" y2="205" stroke="#333" stroke-width="3"/>
+  <text x="380" y="235" font-size="18">T₁</text>
+
+  <line x1="545" y1="205" x2="605" y2="205" stroke="#333" stroke-width="3"/>
+  <line x1="545" y1="205" x2="550" y2="171" stroke="#333" stroke-width="3"/>
+  <line x1="550" y1="171" x2="605" y2="205" stroke="#333" stroke-width="3"/>
+  <text x="555" y="235" font-size="18">T₂</text>
+
+  <path d="M295 138 L330 138" stroke="#333" stroke-width="2" marker-end="url(#arrow1)"/>
+  <path d="M475 172 L530 172" stroke="#333" stroke-width="2" marker-end="url(#arrow1)"/>
+  <defs>
+    <marker id="arrow1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/>
+    </marker>
+  </defs>
+  <text x="285" y="112" font-size="16">同じ形のまま縮小</text>
+</svg>
+<figcaption style="text-align:center;">図1　相似縮小では形状比と無次元幾何量が変化しない．</figcaption>
+</figure>
+</article>
+</div>
+
+<h2>3．細長い相似要素は正則か</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(\widehat T\) が非常に細長い三角形であっても，固定された一個の非退化要素である限り，
+\(Q_{\widehat T}\) は大きいものの有限です．したがって，相似縮小族
+\(\{T_\ell\}_{\ell\ge0}\) に対しては
+\[
+  \sup_{\ell\ge0}Q_{T_\ell}=Q_{\widehat T}<\infty
+\]
+となり，この族は正則です．
+</p>
+<p>
+これは，「細長い要素はすべて非正則である」という理解が正しくないことを示します．
+正則性が要求するのは，すべての要素が正三角形や正四面体に近いことではなく，
+<b>一つのメッシュ族の中で形状劣化が際限なく進まないこと</b>です．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 1px solid #999999;">
+<b>定数依存性に関する注意</b>
+<p>
+辺長比が \(1:\delta\) の細長い要素を固定して \(s_\ell\to0\) とするなら，
+各固定 \(\delta>0\) に対するメッシュ族は正則です．しかし，さらに \(\delta\to0\) に対しても
+同じ正則定数を要求すれば，\(Q_T\) は一般に発散します．
+したがって，「何に関して一様か」を必ず明記しなければなりません．
+</p>
+</div>
+<p>
+この点は，特異摂動問題のメッシュを扱う際に特に重要です．細分化数 \(N\) だけでなく，
+境界層の厚さを決めるパラメータ \(\varepsilon\) に関する一様性も問題になるからです．
+</p>
+</article>
+</div>
+
+<h2>4．graded meshとは何か</h2>
+<div class="news">
+<article class="news-item">
+<p>
+graded meshでは，領域内の位置に応じて局所メッシュ幅を変えます．例えば，特異点，角，界面，
+境界層の近くを細かくし，解が滑らかな領域では粗い分割を用います．
+筆者らの異方性補間論文でも，一次元メッシュを生成関数によって非一様化するgraded meshが
+導入例として説明されています <a href="#ref4">[4]</a>．
+</p>
+<p>
+重要なのは，gradingがまず<b>サイズ分布の非一様性</b>を表す概念だということです．
+要素サイズが場所によって異なっても，各要素の形が一様に良ければ，そのメッシュは異方的とは限りません．
+このため，graded meshを次の二つに分けて考える必要があります．
+</p>
+
+<h3>4.1 等方的graded mesh</h3>
+<p>
+特異点に近づくにつれて要素を小さくする一方で，各要素をほぼ相似な形に保つ場合です．
+領域内で
+\[
+  \min_{T\in\mathcal T_\ell}h_T
+  \ll
+  \max_{T\in\mathcal T_\ell}h_T
+\]
+となるためquasi-uniformではありませんが，形状比が一様に制御されていれば
+\[
+  \sup_{\ell,T}Q_T<\infty
+\]
+を満たし，shape regularityは保たれます．
+</p>
+<p>
+したがって，<b>gradedであることと非正則であることは同じではありません</b>．
+</p>
+
+<h3>4.2 異方的graded mesh</h3>
+<p>
+境界層に垂直な方向だけを強く細分化する場合や，方向ごとに異なるgrading指数を使う場合です．
+このとき，方向別メッシュ幅の比が細分化とともに変化し，要素がますます細長くなることがあります．
+</p>
+<p>
+例えば，直角三角形の二方向の辺長を
+\[
+  h_{1,\ell}=2^{-\ell},
+  \qquad
+  h_{2,\ell}=2^{-2\ell}
+\]
+とすると，
+\[
+  \frac{h_{1,\ell}}{h_{2,\ell}}=2^\ell\to\infty
+\]
+です．第2回の計算から
+\[
+  Q_{T_\ell}
+  =2\left(2^\ell+2^{-\ell}\right)\to\infty,
+  \qquad
+  \frac{H_{T_\ell}}{h_{T_\ell}}=2
+\]
+となります．したがって，この要素族は正則ではありませんが，準正則です．
+</p>
+
+<figure style="margin: 20px auto; max-width: 760px;">
+<svg viewBox="0 0 760 270" role="img" aria-labelledby="graded-title graded-desc" style="width:100%; height:auto; border:1px solid #999999; background:#ffffff;">
+  <title id="graded-title">方向別細分化率が異なるgraded mesh</title>
+  <desc id="graded-desc">細分化レベルが上がるにつれて高さが底辺より速く縮み，三角形が細長くなる模式図</desc>
+  <line x1="50" y1="210" x2="255" y2="210" stroke="#333" stroke-width="3"/>
+  <line x1="50" y1="210" x2="50" y2="85" stroke="#333" stroke-width="3"/>
+  <line x1="50" y1="85" x2="255" y2="210" stroke="#333" stroke-width="3"/>
+  <text x="115" y="242" font-size="18">ℓ = 0</text>
+
+  <line x1="310" y1="210" x2="460" y2="210" stroke="#333" stroke-width="3"/>
+  <line x1="310" y1="210" x2="310" y2="165" stroke="#333" stroke-width="3"/>
+  <line x1="310" y1="165" x2="460" y2="210" stroke="#333" stroke-width="3"/>
+  <text x="350" y="242" font-size="18">ℓ = 1</text>
+
+  <line x1="520" y1="210" x2="650" y2="210" stroke="#333" stroke-width="3"/>
+  <line x1="520" y1="210" x2="520" y2="196" stroke="#333" stroke-width="3"/>
+  <line x1="520" y1="196" x2="650" y2="210" stroke="#333" stroke-width="3"/>
+  <text x="555" y="242" font-size="18">ℓ = 2</text>
+
+  <path d="M265 150 L295 150" stroke="#333" stroke-width="2" marker-end="url(#arrow2)"/>
+  <path d="M470 185 L505 185" stroke="#333" stroke-width="2" marker-end="url(#arrow2)"/>
+  <defs>
+    <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/>
+    </marker>
+  </defs>
+  <text x="215" y="55" font-size="16">高さが底辺より速く縮む</text>
+</svg>
+<figcaption style="text-align:center;">図2　異方的gradingでは形状比そのものが細分化とともに変化し得る．</figcaption>
+</figure>
+</article>
+</div>
+
+<h2>5．相似縮小とgraded meshを同じ表で比べる</h2>
+<div class="news">
+<article class="news-item">
+<table border="1" cellpadding="6" style="border-collapse: collapse; width: 100%;">
+  <thead>
+    <tr>
+      <th>メッシュの現れ方</th>
+      <th>局所サイズの分布</th>
+      <th>形状比</th>
+      <th>典型的な幾何判定</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>固定形状の相似縮小</td>
+      <td>一様でも非一様でもよい</td>
+      <td>細分化レベルに依存しない</td>
+      <td>固定された族では \(Q_T,A_T\) とも有界</td>
+    </tr>
+    <tr>
+      <td>等方的graded mesh</td>
+      <td>位置により大きく変化</td>
+      <td>一様に有界</td>
+      <td>正則だがquasi-uniformとは限らない</td>
+    </tr>
+    <tr>
+      <td>異方的graded mesh</td>
+      <td>位置・方向により変化</td>
+      <td>増大し得る</td>
+      <td>非正則でも準正則になり得る</td>
+    </tr>
+    <tr>
+      <td>最大角も退化するgrading</td>
+      <td>位置・方向により変化</td>
+      <td>増大し，形状も崩れる</td>
+      <td>\(A_T\) も非有界となり得る</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+この表から分かるように，mesh grading，quasi-uniformity，shape regularity，semi-regularityは
+それぞれ異なる情報を表します．一つの用語だけでメッシュの性質を言い尽くすことはできません．
+</p>
+</article>
+</div>
+
+<h2>6．どのパラメータに関して一様なのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+通常のメッシュ族は，細分化レベル \(\ell\) または要素数 \(N\) で添字付けされます．
+しかし，layer-adapted meshでは，特異摂動パラメータ \(\varepsilon\) も含めて
+\[
+  \mathcal T_{N,\varepsilon}
+\]
+と考える必要があります．
+</p>
+<p>
+固定した \(\varepsilon>0\) に対して
+\[
+  \sup_N Q_{N,\varepsilon}<\infty
+\]
+であっても，その上界が \(\varepsilon^{-1}\) などに依存していれば，
+\[
+  \sup_{N,\varepsilon}Q_{N,\varepsilon}<\infty
+\]
+とは限りません．特異摂動問題で求めるparameter-robustな解析では，通常，
+\(N\) と \(\varepsilon\) の双方に関する一様性が重要です．
+</p>
+<p>
+あるいは，\(\varepsilon=\varepsilon_N\to0\) と関係付けた一つの系列
+\[
+  \{\mathcal T_{N,\varepsilon_N}\}_{N\ge1}
+\]
+を定め，その上で \(Q_N\) と \(A_N\) の増大率を調べることもできます．
+いずれの場合も，「有限個の計算値が小さい」ことと「メッシュ族で一様有界である」ことを
+混同してはいけません．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 1px solid #999999;">
+<b>筆者の研究ノートにある具体例</b>
+<p>
+研究ノート第9節では，standard mesh，Shishkin mesh，別の異方性メッシュ，graded meshを
+同じ幾何量で比較しています <a href="#ref1">[1]</a>．そこで固定された \(\delta=1/128\) を用いる
+Shishkin meshの系列はshape regularと判定される一方，別の異方性メッシュとgraded meshは
+shape regularityを満たさず，semi-regularityは保つ例として計算されています．
+この例も，メッシュ名だけでなく，具体的な生成則と固定・変動させるパラメータを確認する必要を示しています．
+</p>
+</div>
+</article>
+</div>
+
+<h2>7．筆者の異方性補間理論との関係</h2>
+<div class="news">
+<article class="news-item">
+<p>
+筆者らの一般補間理論では，異方的な単体を，方向別伸縮を担う対角行列と，
+残りの形状変形を担う正則な行列に分けて扱います
+<a href="#ref2">[2]</a>，<a href="#ref3">[3]</a>，<a href="#ref4">[4]</a>．
+このtwo-step affine mappingの考え方は，今回の区別とよく対応します．
+</p>
+<ul>
+  <li>相似縮小では，すべての方向別長さに同じ倍率が掛かります．</li>
+  <li>異方的gradingでは，方向ごとの倍率が異なり，その比もレベルや位置によって変化します．</li>
+  <li>残りの形状変形を \(H_T/h_T\) で制御することで，大きなアスペクト比と最大角の退化を区別できます．</li>
+</ul>
+<p>
+新しい幾何パラメータを用いる局所評価では，形状劣化を隠れた定数へ押し込めず，
+\(h_T\) と \(H_T\) の依存性として明示できます <a href="#ref1">[1]</a>，<a href="#ref2">[2]</a>．
+そのため，相似縮小，等方的grading，異方的gradingを同じ評価式の中で比較できます．
+</p>
+<p>
+筆者のHWOPSIP論文でも，graded meshesとShishkin meshesが，解析で現れる異方性メッシュの
+代表例として挙げられています <a href="#ref5">[5]</a>．ただし，Shishkin meshなどの
+layer-adapted meshを幾何条件で正確に分類するには，\(N\)，\(\varepsilon\)，方向別メッシュ幅を
+具体的に代入して確認する必要があります．これは第7回以降で行います．
+</p>
+</article>
+</div>
+
+<h2>8．有限要素誤差評価で何が変わるか</h2>
+<div class="news">
+<article class="news-item">
+<h3>8.1 相似縮小型</h3>
+<p>
+形状が固定されているため，古典的なスケーリングで現れる幾何定数は，細分化レベルには依存しません．
+ただし，もとの要素が非常に細長ければ，その定数自体は大きくなり得ます．
+</p>
+
+<h3>8.2 等方的graded mesh</h3>
+<p>
+局所メッシュ幅 \(h_T\) は大きく変化しますが，shape regularityが保たれていれば，
+局所評価を要素ごとに足し合わせる標準理論を適用できます．このとき問題となるのは主に
+局所サイズの分布であり，要素形状の退化ではありません．
+</p>
+
+<h3>8.3 異方的graded mesh</h3>
+<p>
+一つの直径 \(h_T\) だけでは，細かくした方向と粗く残した方向を区別できません．そのため，
+\[
+  h_1,\ldots,h_d
+\]
+と方向微分を組み合わせた異方性補間評価が必要になります．
+さらに，\(H_T/h_T\) の有界性を確認することで，方向別伸縮を許しながら，
+補間・RT安定性・非適合解析に必要なsemi-regularityを保てるかを判定します．
+</p>
+<p>
+この区別は，Lagrange補間だけでなく，CR，RT，Morley，WOPSIP，Nitsche法，
+離散Sobolev不等式へ異方性理論を展開するときの共通の出発点です
+<a href="#ref3">[3]</a>，<a href="#ref7">[7]</a>．
+</p>
+</article>
+</div>
+
+<h2>9．今後の記事で用いる確認手順</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第4回以降では，個々の代表的メッシュを次の同じ手順で調べます．
+</p>
+<ol>
+  <li><b>メッシュ族を定義する：</b>節点列，生成関数，遷移点，分割規則を明示する．</li>
+  <li><b>変化するパラメータを特定する：</b>細分化レベル，\(N\)，\(\varepsilon\)，grading指数など．</li>
+  <li><b>標準辺長を選ぶ：</b>三角形・四面体の標準ラベルから \(h_1,\ldots,h_d\) を定める．</li>
+  <li><b>幾何量を計算する：</b>\(h_T\)，\(|T|_d\)，\(Q_T\)，\(H_T/h_T\) を求める．</li>
+  <li><b>最悪要素を調べる：</b>メッシュ全体の最大値 \(Q_\ell\)，\(A_\ell\) を求める．</li>
+  <li><b>一様性を判定する：</b>どのパラメータに関して有界かを明記する．</li>
+  <li><b>解析上の意味を分ける：</b>補間・安定性に使えることと，DMPや \(L^\infty\) 解析には追加条件が必要なことを区別する．</li>
+</ol>
+<p>
+この手順により，メッシュ名だけから性質を推測するのではなく，幾何量を直接計算して分類できます．
+</p>
+</article>
+</div>
+
+<h2>10．この区別から分かること・分からないこと</h2>
+<div class="news">
+<article class="news-item">
+<h3>10.1 分かること</h3>
+<ul>
+  <li>細分化によって縮尺だけが変わるのか，形状比も変わるのか，</li>
+  <li>非一様性が要素サイズの分布によるのか，方向別伸縮によるのか，</li>
+  <li>shape regularityとsemi-regularityのどちらが一様に保たれるか，</li>
+  <li>異方性補間評価を導入する必要があるか．</li>
+</ul>
+<h3>10.2 この区別だけでは分からないこと</h3>
+<ul>
+  <li>どのgradingが特定の特異解に対して最適か，</li>
+  <li>Shishkin，Bakhvalov，S-type meshの収束率の違い，</li>
+  <li>隣接要素幅の急変が安定性や条件数へ与える影響，</li>
+  <li>DMP，M-matrix性，maximum-norm評価を満たすか．</li>
+</ul>
+<p>
+これらは，メッシュ生成関数，方程式の層構造，大域的な接続条件まで含めて調べる必要があります．
+</p>
+</article>
+</div>
+
+<h2>まとめ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+相似縮小型では，固定形状を同じ倍率で縮小するため，\(Q_T\) と \(H_T/h_T\) は細分化レベルに
+依存しません．したがって，非常に細長い要素でも，形状が固定されている限り，一つの固定メッシュ族としては
+正則になり得ます．
+</p>
+<p>
+一方，graded meshでは局所メッシュ幅が位置によって変化します．各要素の形状を保つ等方的gradingなら
+shape regularityは維持できますが，方向別細分化率を変える異方的gradingでは，アスペクト比が増大し，
+\(Q_T\) が非有界になることがあります．それでも \(H_T/h_T\) が有界なら，準正則性は保たれます．
+</p>
+<p>
+したがって，異方性メッシュを説明するときは，「細長いか」だけでなく，
+<b>形状が固定されているか，位置に応じてサイズが変わるか，異方性がどのパラメータとともに強くなるか</b>を
+明記する必要があります．
+</p>
+<p>
+次回は，固定された細長い三角形を具体的に相似縮小し，正則定数が何に依存するかを詳しく調べます．
+</p>
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<h3>本連載の基礎資料</h3>
+<ol>
+  <li id="ref1">
+    H. Ishizaka,
+    <i>Interpolation error analysis using a new geometric parameter</i>,
+    research note, 23 May 2026.
+    特に第2節，第3節，第5節から第9節の等方・異方要素，幾何条件，two-step affine mapping，具体的メッシュ例を参照．
+  </li>
+</ol>
+
+<h3>筆者の関連原著論文</h3>
+<ol start="2">
+  <li id="ref2">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “General theory of interpolation error estimates on anisotropic meshes,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 38, 163–191 (2021).
+    <a href="https://doi.org/10.1007/s13160-020-00433-z">DOI</a>.
+  </li>
+  <li id="ref3">
+    H. Ishizaka,
+    “Anisotropic Raviart–Thomas interpolation error estimates using a new geometric parameter,”
+    <i>Calcolo</i>, 59:50 (2022).
+    <a href="https://doi.org/10.1007/s10092-022-00494-1">DOI</a>.
+  </li>
+  <li id="ref4">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “Anisotropic interpolation error estimates using a new geometric parameter,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 40, 475–512 (2023).
+    <a href="https://doi.org/10.1007/s13160-022-00535-w">DOI</a>.
+  </li>
+  <li id="ref5">
+    H. Ishizaka,
+    “Hybrid weakly over-penalised symmetric interior penalty method on anisotropic meshes,”
+    <i>Calcolo</i>, 61:45 (2024).
+    <a href="https://doi.org/10.1007/s10092-024-00600-5">DOI</a>.
+  </li>
+  <li id="ref6">
+    H. Ishizaka,
+    “Morley finite element analysis for fourth-order elliptic equations under a semi-regular mesh condition,”
+    <i>Applications of Mathematics</i>, 69(6), 769–805 (2024).
+    <a href="https://doi.org/10.21136/AM.2024.0103-24">DOI</a>.
+  </li>
+  <li id="ref7">
+    H. Ishizaka,
+    “On discrete Sobolev inequalities for nonconforming finite elements under a semiregular mesh condition,”
+    <i>IMA Journal of Numerical Analysis</i> (2026).
+    <a href="https://doi.org/10.1093/imanum/drag006">DOI</a>.
+  </li>
+</ol>
+
+<h3>layer-adapted meshの背景</h3>
+<ol start="8">
+  <li id="ref8">
+    T. Linß,
+    <i>Layer-Adapted Meshes for Reaction-Convection-Diffusion Problems</i>,
+    Lecture Notes in Mathematics 1985, Springer, Berlin, 2010.
+    <a href="https://doi.org/10.1007/978-3-642-05134-0">DOI</a>.
+  </li>
+  <li id="ref9">
+    T. Apel,
+    <i>Anisotropic Finite Elements: Local Estimates and Applications</i>,
+    Advances in Numerical Mathematics, B. G. Teubner, Stuttgart, 1999.
+  </li>
+</ol>
+<p>
+関連ページ：
+<a href="./anisotropic-geometry-01.html">第1回：有限要素法ではなぜメッシュの幾何条件が必要なのか</a>，
+<a href="./anisotropic-geometry-02.html">第2回：正則性と準正則性を角度を使わずに表す</a>，
+<a href="../../publications/">Publications</a>，
+<a href="../../geo/">History of Geometric Conditions in FEM</a>，
+<a href="../">Blog一覧</a>
+</p>
+</article>
+</div>
+
+<div style="padding: 10px; margin-top: 20px; border: 1px solid #999999;">
+<p>
+<b>前回：</b><a href="./anisotropic-geometry-02.html">正則性と準正則性を角度を使わずに表す</a>
+</p>
+<p>
+<b>次回：</b>相似縮小された細長い要素は非正則なのか（構想中）
+</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>
+</main>
+<!--▲メインコンテンツ-->
+
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
