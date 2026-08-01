@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>長方形の三角形分割をQ_TとH_T/h_Tで調べる | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,anisotropic mesh,異方性メッシュ,rectangular grid,triangular subdivision,shape regularity,semi-regularity,Q_T,H_T,aspect ratio,Shishkin mesh">
+<meta name="description" content="辺長h_x，h_yの長方形を対角線で二分して得られる直角三角形について，Q_T=h_T^2/|T|_2とH_T/h_Tを厳密に計算します．アスペクト比が発散すると正則性は失われる一方，準正則性は保たれることを示します．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li><a href="../../">Home</a></li>
+				<li><a href="../../publications/">Publications</a></li>
+				<li><a href="../../research/">Research</a></li>
+				<li><a href="../../fem/">Research Visions</a></li>
+				<li><a href="../../suppl/">Supplementary Visions</a></li>
+				<li><a href="../../blog/">Blog</a></li>
+				<li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+				<li><a href="../../links/">Links</a></li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../" itemprop="item">
+				<span itemprop="name">Blog</span>
+				</a>
+				<meta itemprop="position" content="2">
+			</li>
+			<li class="bcl-last">
+				異方性有限要素法の幾何学的基礎 第6回
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">長方形の三角形分割を\(Q_T\)と\(H_T/h_T\)で調べる</h1>
+
+<p>
+<b>異方性有限要素法の幾何学的基礎 第6回</b><br>
+<time datetime="2026-08-01">1st August 2026</time> <span class="cat cat001">New</span>
+</p>
+
+<h2>はじめに</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第5回では，graded mesh，quasi-uniformity，shape regularityが別の概念であることを説明しました．
+今回は，二次元のlayer-adapted meshで最も基本的な局所構造を取り上げます．
+それは，辺長の異なる長方形を対角線で二分して得られる二つの直角三角形です．
+</p>
+<p>
+この分割は，tensor-product型の座標線から三角形メッシュを作る際に自然に現れます．
+長方形の縦横比が大きければ，得られる三角形も細長くなります．
+しかし，そのことだけから「悪い要素」と判断することはできません．
+正則性と準正則性を別々に計算する必要があります．
+</p>
+<p>
+本記事の計算は，筆者の研究ノートに整理された幾何パラメータと標準辺長の定義
+<a href="#ref1">[1]</a>，および異方性補間理論
+<a href="#ref2">[2]</a>–<a href="#ref4">[4]</a>に基づく直接計算です．
+研究ノート第9節では，standard mesh，Shishkin mesh，異方性メッシュ，graded meshを
+同じ幾何量で比較しています．本記事は，そこで用いられる長方形セルの三角形分割を
+一般の局所幅に対して計算し直すものです．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<b>今回の結論</b>
+<ul>
+  <li>辺長 \(h_x,h_y\) の長方形を対角線で二分すると，各三角形で \(H_T/h_T=2\) です．</li>
+  <li>正則性の指標は
+  \[
+    Q_T=2\left(\frac{h_x}{h_y}+\frac{h_y}{h_x}\right)
+  \]
+  です．</li>
+  <li>縦横比が一様有界なら正則，発散するなら準正則だが非正則です．</li>
+  <li>長方形の大きさや場所は \(H_T/h_T\) に影響せず，縦横比だけが \(Q_T\) を決めます．</li>
+  <li>対角線の向きは局所的な \(Q_T\) と \(H_T/h_T\) を変えませんが，大域的な接続やDMPには別途注意が必要です．</li>
+</ul>
+</div>
+</article>
+</div>
+
+<h2>1．一つの長方形セルを定義する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(h_x>0\)，\(h_y>0\) とし，長方形
+\[
+  R
+  =\operatorname{conv}\left\{
+  (0,0)^{\top},
+  (h_x,0)^{\top},
+  (h_x,h_y)^{\top},
+  (0,h_y)^{\top}
+  \right\}
+\]
+を考えます．以下では説明を簡単にするため
+\[
+  h_x\ge h_y
+\]
+とします．逆の場合は \(x\) と \(y\) を入れ替えれば同じです．
+</p>
+<p>
+左下から右上への対角線で分割すると，二つの三角形
+\[
+  T_1
+  =\operatorname{conv}\left\{
+  (0,0)^{\top},
+  (h_x,0)^{\top},
+  (h_x,h_y)^{\top}
+  \right\},
+\]
+\[
+  T_2
+  =\operatorname{conv}\left\{
+  (0,0)^{\top},
+  (h_x,h_y)^{\top},
+  (0,h_y)^{\top}
+  \right\}
+\]
+が得られます．両者は合同な直角三角形なので，一方だけを計算すれば十分です．
+</p>
+<div style="text-align:center; margin:18px 0; overflow-x:auto;">
+<svg viewBox="0 0 620 280" width="100%" style="max-width:620px; border:1px solid #bbbbbb; background:#ffffff;" role="img" aria-label="辺長h_xとh_yの長方形を対角線で二分した図">
+  <line x1="90" y1="220" x2="530" y2="220" stroke="#222" stroke-width="3"/>
+  <line x1="530" y1="220" x2="530" y2="55" stroke="#222" stroke-width="3"/>
+  <line x1="530" y1="55" x2="90" y2="55" stroke="#222" stroke-width="3"/>
+  <line x1="90" y1="55" x2="90" y2="220" stroke="#222" stroke-width="3"/>
+  <line x1="90" y1="220" x2="530" y2="55" stroke="#222" stroke-width="3"/>
+  <text x="250" y="253" font-size="20">\(h_x\)</text>
+  <text x="548" y="145" font-size="20">\(h_y\)</text>
+  <text x="62" y="244" font-size="16">\((0,0)^{\top}\)</text>
+  <text x="484" y="244" font-size="16">\((h_x,0)^{\top}\)</text>
+  <text x="468" y="42" font-size="16">\((h_x,h_y)^{\top}\)</text>
+  <text x="48" y="42" font-size="16">\((0,h_y)^{\top}\)</text>
+  <text x="285" y="165" font-size="18">対角線</text>
+</svg>
+</div>
+<p>
+上の図は局所計算の模式図です．実際のtensor-product meshでは，各セルごとに
+\(h_x\) と \(h_y\) が異なっていても，同じ計算を適用できます．
+</p>
+</article>
+</div>
+
+<h2>2．標準辺長と要素直径</h2>
+<div class="news">
+<article class="news-item">
+<p>
+三角形では，最長辺を \(p_2p_3\) とし，残りの頂点を \(p_1\) として
+\[
+  h_1=|p_1-p_2|,
+  \qquad
+  h_2=|p_1-p_3|,
+  \qquad
+  h_2\le h_1
+\]
+となるように頂点を並べます．これは第2回で導入した標準ラベルです．
+</p>
+<p>
+長方形から得られる直角三角形では，対角線が最長辺です．したがって
+\[
+  h_T=\sqrt{h_x^2+h_y^2}
+\]
+です．最長辺の反対側の頂点から出る二辺は長方形の二辺なので，\(h_x\ge h_y\) の下では
+\[
+  h_1=h_x,
+  \qquad
+  h_2=h_y
+\]
+と取れます．また，各三角形の面積は
+\[
+  |T|_2=\frac12h_xh_y
+\]
+です．
+</p>
+<p>
+ここまでで，\(Q_T\) と \(H_T/h_T\) の計算に必要な量がすべてそろいました．
+</p>
+</article>
+</div>
+
+<h2>3．正則性の指標 \(Q_T\) を計算する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+二次元では
+\[
+  Q_T:=\frac{h_T^2}{|T|_2}
+\]
+です．上の式を代入すると
+\[
+\begin{aligned}
+  Q_T
+  &=\frac{h_x^2+h_y^2}{\frac12h_xh_y}\\
+  &=2\frac{h_x^2+h_y^2}{h_xh_y}\\
+  &=2\left(\frac{h_x}{h_y}+\frac{h_y}{h_x}\right).
+\end{aligned}
+\]
+</p>
+<p>
+縦横比を
+\[
+  r:=\frac{h_x}{h_y}\ge1
+\]
+と置けば
+\[
+  \boxed{Q_T=2\left(r+\frac1r\right)}
+\]
+です．したがって，\(Q_T\) はセルの絶対的な大きさではなく，縦横比 \(r\) だけで決まります．
+</p>
+<p>
+特に，\(r=1\) の正方形では
+\[
+  Q_T=4
+\]
+です．一方，\(r\to\infty\) なら
+\[
+  Q_T\sim2r\to\infty
+\]
+です．つまり，長方形が細長くなるにつれてshape regularityの定数は悪化します．
+</p>
+</article>
+</div>
+
+<h2>4．準正則性の指標 \(H_T/h_T\) を計算する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+二次元の新しい幾何パラメータは
+\[
+  H_T:=\frac{h_1h_2}{|T|_2}h_T
+\]
+なので，準正則性を表す無次元量は
+\[
+  \frac{H_T}{h_T}=\frac{h_1h_2}{|T|_2}
+\]
+です <a href="#ref1">[1]</a>–<a href="#ref4">[4]</a>．
+</p>
+<p>
+今回の三角形では \(h_1=h_x\)，\(h_2=h_y\)，\(|T|_2=h_xh_y/2\) なので
+\[
+  \frac{H_T}{h_T}
+  =\frac{h_xh_y}{\frac12h_xh_y}
+  =2.
+\]
+したがって
+\[
+  \boxed{\frac{H_T}{h_T}=2}
+\]
+です．これは \(h_x\)，\(h_y\)，縦横比 \(r\) のいずれにも依存しません．
+</p>
+<p>
+この結果は，細長い直角三角形では最小角がゼロに近づいても，最大角は常に \(\pi/2\) であることに対応します．
+準正則性はmaximum-angle conditionと同値なので，アスペクト比がどれほど大きくても，
+この標準的な長方形二分割は準正則です．
+</p>
+</article>
+</div>
+
+<h2>5．三つのメッシュ族を区別する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+同じ局所公式から，異なるメッシュ族を分類できます．
+</p>
+
+<h3>5.1 正方形を一様に細分化する場合</h3>
+<p>
+各セルで \(h_x=h_y=s_\ell\to0\) とすると
+\[
+  Q_T=4,
+  \qquad
+  \frac{H_T}{h_T}=2.
+\]
+したがって，この族は正則であり，準正則でもあります．
+</p>
+
+<h3>5.2 固定した縦横比の細長い長方形を相似縮小する場合</h3>
+<p>
+ある固定値 \(r_0\ge1\) に対して
+\[
+  \frac{h_{x,\ell}}{h_{y,\ell}}=r_0
+\]
+を保ちながら両辺を縮小すると
+\[
+  Q_T=2\left(r_0+\frac1{r_0}\right),
+  \qquad
+  \frac{H_T}{h_T}=2.
+\]
+\(r_0\) が大きくても，固定されたメッシュ族としては両者が一様有界なので正則です．
+正則性定数が大きいことと，正則性を失うことは同じではありません．
+</p>
+
+<h3>5.3 縦横比が細分化とともに増大する場合</h3>
+<p>
+\[
+  r_\ell:=\frac{h_{x,\ell}}{h_{y,\ell}}\to\infty
+\]
+なら
+\[
+  Q_T=2\left(r_\ell+\frac1{r_\ell}\right)\to\infty,
+  \qquad
+  \frac{H_T}{h_T}=2.
+\]
+したがって，この族は
+\[
+  \boxed{\text{準正則だが非正則}}
+\]
+です．layer-adapted meshの細長いセルで典型的に現れるのは，この状況です．
+</p>
+
+<table border="1" cellpadding="6" style="border-collapse: collapse; width: 100%;">
+  <thead>
+    <tr>
+      <th>長方形セルの系列</th>
+      <th>縦横比 \(r_\ell\)</th>
+      <th>\(Q_T\)</th>
+      <th>\(H_T/h_T\)</th>
+      <th>分類</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>正方形の細分化</td>
+      <td>\(1\)</td>
+      <td>\(4\)</td>
+      <td>\(2\)</td>
+      <td>正則</td>
+    </tr>
+    <tr>
+      <td>固定縦横比の相似縮小</td>
+      <td>\(r_0\)</td>
+      <td>\(2(r_0+r_0^{-1})\)</td>
+      <td>\(2\)</td>
+      <td>正則</td>
+    </tr>
+    <tr>
+      <td>異方性が強くなる系列</td>
+      <td>\(r_\ell\to\infty\)</td>
+      <td>発散</td>
+      <td>\(2\)</td>
+      <td>準正則だが非正則</td>
+    </tr>
+  </tbody>
+</table>
+</article>
+</div>
+
+<h2>6．一般のtensor-product gridへの適用</h2>
+<div class="news">
+<article class="news-item">
+<p>
+区間分割
+\[
+  0=x_0<x_1<\cdots<x_M=1,
+  \qquad
+  0=y_0<y_1<\cdots<y_N=1
+\]
+から長方形セル
+\[
+  R_{ij}
+  =[x_i,x_{i+1}]\times[y_j,y_{j+1}]
+\]
+を作ります．局所幅を
+\[
+  \Delta x_i:=x_{i+1}-x_i,
+  \qquad
+  \Delta y_j:=y_{j+1}-y_j
+\]
+とします．各長方形を一本の対角線で二分すれば，各三角形について
+\[
+  \boxed{
+  Q_{ij}
+  =2\left(
+  \frac{\Delta x_i}{\Delta y_j}
+  +\frac{\Delta y_j}{\Delta x_i}
+  \right),
+  \qquad
+  \frac{H_{ij}}{h_{ij}}=2
+  }
+\]
+です．
+</p>
+<p>
+したがって，この種の三角形分割では，セル幅が位置によってどれほど変化しても
+準正則定数は一様に2です．一方，shape regularityは
+\[
+  \sup_{i,j}
+  \max\left\{
+  \frac{\Delta x_i}{\Delta y_j},
+  \frac{\Delta y_j}{\Delta x_i}
+  \right\}<\infty
+\]
+と同値です．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 1px solid #999999;">
+<b>重要な区別</b>
+<p>
+\(\Delta x_i\) や \(\Delta y_j\) が場所によって大きく変化することは，gradingまたは非quasi-uniformityの問題です．
+同じセル内で \(\Delta x_i/\Delta y_j\) が大きいことは，要素形状の異方性の問題です．
+長方形二分割では，前者と後者を局所幅の式から別々に追跡できます．
+</p>
+</div>
+</article>
+</div>
+
+<h2>7．対角線の向きは何を変えるか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+長方形には二本の対角線があります．どちらで二分しても，得られる三角形の辺長は
+\[
+  h_x,
+  \qquad
+  h_y,
+  \qquad
+  \sqrt{h_x^2+h_y^2}
+\]
+なので，局所的な \(Q_T\) と \(H_T/h_T\) は同じです．
+したがって，正則性・準正則性の分類だけを見る限り，対角線の向きは影響しません．
+</p>
+<p>
+しかし，大域メッシュで対角線の向きをそろえるか，交互に変えるかによって，
+頂点や辺の接続，patchの形，離散作用素の係数配置は変わります．
+そのため，次の性質は \(Q_T\) と \(H_T/h_T\) だけでは判定できません．
+</p>
+<ul>
+  <li>離散最大値原理とM-matrix性，</li>
+  <li>異方性拡散に対するmetric-angle条件，</li>
+  <li>離散Green関数やmaximum-norm評価，</li>
+  <li>特定方向の数値拡散や解像度．</li>
+</ul>
+<p>
+今回の計算は局所的な補間・安定性のための幾何診断です．
+大域的な単調性や点wise評価には，対角線の配置を含む追加条件が必要です．
+</p>
+</article>
+</div>
+
+<h2>8．筆者の異方性FEM研究との関係</h2>
+<div class="news">
+<article class="news-item">
+<p>
+筆者らの一般補間理論では，異方的な方向別長さを標準辺長 \(h_i\) として取り出し，
+残りの形状劣化を \(H_T/h_T\) によって測ります
+<a href="#ref2">[2]</a>，<a href="#ref4">[4]</a>．
+長方形の対角分割は，この分離が最も明瞭に見える例です．
+</p>
+<ul>
+  <li>\(h_x/h_y\) の増大は方向別スケールの異方性を表します．</li>
+  <li>\(H_T/h_T=2\) は，残りの形状変形が退化していないことを表します．</li>
+  <li>shape-regularityだけを使うと，\(h_x/h_y\to\infty\) の時点で一様評価を失います．</li>
+  <li>semi-regularityを使えば，大きなアスペクト比を許しながら補間・RT・CR関連の解析を進められます．</li>
+</ul>
+<p>
+この考え方は，異方性RT補間 <a href="#ref3">[3]</a>，CR–RT誤差解析
+<a href="#ref5">[5]</a>，Morley，WOPSIP，Nitsche，modified CR，離散Sobolev不等式へ展開されています．
+WOPSIP論文の数値実験でも，standard mesh，Shishkin mesh，異方性メッシュなどが
+tensor-product型の格子点から作られ，比較されています <a href="#ref6">[6]</a>．
+</p>
+</article>
+</div>
+
+<h2>9．次回のShishkin meshにどう使うか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Shishkin meshでは，境界層領域とその外側で座標方向のメッシュ幅を切り替えます．
+二次元でtensor-product gridを作り，各長方形を対角線で二分するなら，
+各セルで必要なのは
+\[
+  \Delta x_i,
+  \qquad
+  \Delta y_j
+\]
+だけです．今回の公式を代入すれば
+\[
+  Q_{ij}
+  =2\left(
+  \frac{\Delta x_i}{\Delta y_j}
+  +\frac{\Delta y_j}{\Delta x_i}
+  \right),
+  \qquad
+  \frac{H_{ij}}{h_{ij}}=2
+\]
+となります．
+</p>
+<p>
+したがって，Shishkin meshの幾何分類では次の順に確認できます．
+</p>
+<ol>
+  <li>遷移点と各領域の局所幅を求める．</li>
+  <li>各長方形セルの縦横比を求める．</li>
+  <li>その縦横比が \(N\) と特異摂動パラメータに関して一様かを調べる．</li>
+  <li>\(H_T/h_T=2\) により準正則性を確認する．</li>
+  <li>固定パラメータの場合とparameter-robustな場合を分ける．</li>
+</ol>
+<p>
+研究ノート第9節のShishkin例では，固定された \(\delta=1/128\) と
+\(N\) に依存する遷移点を用いた系列が数値的に調べられています <a href="#ref1">[1]</a>．
+次回は，その生成式を明示して，どのパラメータに関して正則または準正則なのかを詳しく検討します．
+</p>
+</article>
+</div>
+
+<h2>まとめ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+辺長 \(h_x,h_y\) の長方形を対角線で二分して得られる直角三角形では
+\[
+  |T|_2=\frac12h_xh_y,
+  \qquad
+  h_T=\sqrt{h_x^2+h_y^2}
+\]
+であり，
+\[
+  Q_T
+  =2\left(\frac{h_x}{h_y}+\frac{h_y}{h_x}\right),
+  \qquad
+  \frac{H_T}{h_T}=2
+\]
+となります．
+</p>
+<p>
+したがって，shape regularityは長方形セルの縦横比が一様有界かどうかで決まり，
+semi-regularityは縦横比に依存せず常に保たれます．
+これは，layer-adapted meshで細長い直角三角形を用いる異方性FEM解析の基本計算です．
+</p>
+<p>
+次回は，この局所公式をShishkin meshの二つの領域に適用し，
+固定した特異摂動パラメータに対する正則性と，パラメータに一様な正則性を区別します．
+</p>
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<h3>本連載の基礎資料</h3>
+<ol>
+  <li id="ref1">
+    H. Ishizaka,
+    <i>Interpolation error analysis using a new geometric parameter</i>,
+    research note, 23 May 2026.
+    特に第6節の幾何パラメータ，第8節のgood elements，第9節の数値計算用異方性メッシュ例を参照．
+  </li>
+</ol>
+
+<h3>筆者の関連原著論文</h3>
+<ol start="2">
+  <li id="ref2">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “General theory of interpolation error estimates on anisotropic meshes,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 38, 163–191 (2021).
+    <a href="https://doi.org/10.1007/s13160-020-00433-z">DOI</a>.
+  </li>
+  <li id="ref3">
+    H. Ishizaka,
+    “Anisotropic Raviart–Thomas interpolation error estimates using a new geometric parameter,”
+    <i>Calcolo</i>, 59:50 (2022).
+    <a href="https://doi.org/10.1007/s10092-022-00494-1">DOI</a>.
+  </li>
+  <li id="ref4">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “Anisotropic interpolation error estimates using a new geometric parameter,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 40, 475–512 (2023).
+    <a href="https://doi.org/10.1007/s13160-022-00535-w">DOI</a>.
+  </li>
+  <li id="ref5">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “Crouzeix–Raviart and Raviart–Thomas finite-element error analysis on anisotropic meshes violating the maximum-angle condition,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 38, 645–675 (2021).
+    <a href="https://doi.org/10.1007/s13160-020-00455-7">DOI</a>.
+  </li>
+  <li id="ref6">
+    H. Ishizaka,
+    “Anisotropic weakly over-penalised symmetric interior penalty method for the Stokes equation,”
+    <i>Journal of Scientific Computing</i>, 100:53 (2024).
+    <a href="https://doi.org/10.1007/s10915-024-02598-y">DOI</a>.
+  </li>
+</ol>
+
+<h3>layer-adapted meshの一般的背景</h3>
+<ol start="7">
+  <li id="ref7">
+    T. Apel,
+    <i>Anisotropic Finite Elements: Local Estimates and Applications</i>,
+    Advances in Numerical Mathematics, B. G. Teubner, Stuttgart, 1999.
+  </li>
+  <li id="ref8">
+    T. Linß,
+    <i>Layer-Adapted Meshes for Reaction-Convection-Diffusion Problems</i>,
+    Lecture Notes in Mathematics 1985, Springer, 2010.
+    <a href="https://doi.org/10.1007/978-3-642-05134-0">DOI</a>.
+  </li>
+</ol>
+<p>
+関連ページ：
+<a href="./anisotropic-geometry-01.html">第1回：有限要素法ではなぜメッシュの幾何条件が必要なのか</a>，
+<a href="./anisotropic-geometry-02.html">第2回：正則性と準正則性を角度を使わずに表す</a>，
+<a href="./anisotropic-geometry-03.html">第3回：異方性メッシュの二つの現れ方</a>，
+<a href="./anisotropic-geometry-04.html">第4回：相似縮小された細長い要素は非正則なのか</a>，
+<a href="./anisotropic-geometry-05.html">第5回：graded mesh，quasi-uniformity，shape regularityの違い</a>，
+<a href="../../publications/">Publications</a>，
+<a href="../../geo/">History of Geometric Conditions in FEM</a>，
+<a href="../">Blog一覧</a>
+</p>
+</article>
+</div>
+
+<div style="padding: 10px; margin-top: 20px; border: 1px solid #999999;">
+<p>
+<b>前回：</b><a href="./anisotropic-geometry-05.html">graded mesh，quasi-uniformity，shape regularityの違い</a>
+</p>
+<p>
+<b>次回：</b>Shishkin meshは正則か，準正則か（構想中）
+</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>
+</main>
+<!--▲メインコンテンツ-->
+
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
