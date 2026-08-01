@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Bakhvalov meshの滑らかなgradingと幾何条件 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,Bakhvalov mesh,Bakhvalov-type mesh,layer-adapted mesh,graded mesh,Shishkin mesh,anisotropic mesh,semi-regularity,H_T,Q_T,境界層">
+<meta name="description" content="Bakhvalov meshとBakhvalov-type meshを区別し，対数型の格子生成関数から局所幅を計算して，二次元三角形分割の正則性と準正則性をQ_TとH_T/h_Tで判定します．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li><a href="../../">Home</a></li>
+				<li><a href="../../publications/">Publications</a></li>
+				<li><a href="../../research/">Research</a></li>
+				<li><a href="../../fem/">Research Visions</a></li>
+				<li><a href="../../suppl/">Supplementary Visions</a></li>
+				<li><a href="../../blog/">Blog</a></li>
+				<li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+				<li><a href="../../links/">Links</a></li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../" itemprop="item">
+				<span itemprop="name">Blog</span>
+				</a>
+				<meta itemprop="position" content="2">
+			</li>
+			<li class="bcl-last">
+				異方性有限要素法の幾何学的基礎 第8回
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">Bakhvalov meshの滑らかなgradingと幾何条件</h1>
+
+<p>
+<b>異方性有限要素法の幾何学的基礎 第8回</b><br>
+<time datetime="2026-08-01">1st August 2026</time> <span class="cat cat001">New</span>
+</p>
+
+<h2>はじめに</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第7回では，Shishkin meshを扱いました．Shishkin meshは，層領域と外側の領域を
+それぞれ一様分割し，遷移点でメッシュ幅を切り替えるpiecewise-uniform meshです．
+構成が単純で解析しやすい一方，遷移点では局所メッシュ幅が急に変わります．
+</p>
+<p>
+Bakhvalov meshは，指数境界層の減衰に合わせて格子点を滑らかに配置し，
+境界から離れるにつれて局所メッシュ幅を徐々に大きくするという別の考え方を取ります．
+ただし，「Bakhvalov mesh」という名称は，古典的な原型と，その後に導入された
+Bakhvalov-type meshの双方に使われることがあります．本記事では，最初にこの違いを整理します．
+</p>
+<p>
+第7回までの幾何指標
+\[
+  Q_T=\frac{h_T^2}{|T|_2},
+  \qquad
+  \frac{H_T}{h_T}
+\]
+は，筆者の異方性補間理論と研究ノートに基づきます
+<a href="#ref1">[1]</a>，<a href="#ref2">[2]</a>．
+一方，本記事で使うBakhvalov型の格子生成関数は，layer-adapted meshの文献
+<a href="#ref3">[3]</a>–<a href="#ref6">[6]</a>を基礎にしています．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<b>今回の結論</b>
+<ul>
+  <li>古典的Bakhvalov meshは，生成関数を接続点で \(C^1\) にするよう遷移点を決めます．</li>
+  <li>明示的なBakhvalov-type meshでは，境界層側の幅が概ね \(\varepsilon/N\) から \(1/N\) へ増加します．</li>
+  <li>長方形セルを対角線で二分すれば，局所幅が変化しても常に \(H_T/h_T=2\) です．</li>
+  <li>固定した \(\varepsilon\) に対しては正則ですが，\(\varepsilon\to0\) に一様な意味では準正則だが非正則です．</li>
+  <li>Shishkin meshとの主な違いは準正則性ではなく，格子幅の分布と誤差解析の構造です．</li>
+</ul>
+</div>
+</article>
+</div>
+
+<h2>1．古典的Bakhvalov meshとBakhvalov-type mesh</h2>
+<div class="news">
+<article class="news-item">
+<h3>1.1 古典的Bakhvalov mesh</h3>
+<p>
+古典的Bakhvalov meshでは，境界層側の非線形な生成関数と，外側の線形な生成関数を接続し，
+関数値だけでなく一階微分も連続になるように遷移点を選びます．
+したがって生成関数はpiecewise-definedですが，接続後は \(C^1\) です．
+その代わり，遷移点は一般に非線形方程式から決まり，明示式では与えにくくなります
+<a href="#ref4">[4]</a>．
+</p>
+<h3>1.2 Bakhvalov-type mesh</h3>
+<p>
+その後，遷移点を明示しやすくした複数のBakhvalov-type meshが提案されました．
+これらは境界層側で対数型のgradingを用い，外側では一様または線形な生成関数へ接続します．
+実装と解析は簡単になりますが，生成関数が接続点で \(C^1\) とは限りません
+<a href="#ref4">[4]</a>，<a href="#ref6">[6]</a>．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 1px solid #999999;">
+<b>本記事での用語</b>
+<p>
+記事名では広く知られた「Bakhvalov mesh」を使いますが，具体計算には明示式を持つ
+代表的な<b>Bakhvalov-type mesh</b>を用います．古典的な \(C^1\) Bakhvalov meshと
+同一視しないことが重要です．
+</p>
+</div>
+</article>
+</div>
+
+<h2>2．指数境界層に合わせて格子点を置く</h2>
+<div class="news">
+<article class="news-item">
+<p>
+境界 \(y=0\) の近くに，代表的に
+\[
+  E(y)\approx \exp\!\left(-\frac{y}{\varepsilon}\right)
+\]
+という指数境界層があるとします．\(\varepsilon\) が小さいほど，解は境界近くで急激に変化します．
+したがって境界付近では \(O(\varepsilon/N)\) 程度の細かい幅を使い，
+層が減衰するにつれて幅を \(O(1/N)\) へ増やすことが自然です．
+</p>
+<p>
+Shishkin meshでは，この役割を二種類の一定幅で実現しました．
+Bakhvalov型では，計算用座標 \(t\in[0,1]\) から物理座標 \(y\in[0,1]\) への
+非線形写像
+\[
+  y=\psi_\varepsilon(t)
+\]
+を使い，等間隔な \(t_j=j/N\) を写して
+\[
+  y_j=\psi_\varepsilon\!\left(\frac{j}{N}\right)
+\]
+とします．
+</p>
+</article>
+</div>
+
+<h2>3．代表的な明示的Bakhvalov-type生成関数</h2>
+<div class="news">
+<article class="news-item">
+<p>
+偶数 \(N\) とし，\(0\lt\varepsilon\lt1\) とします．
+多項式次数を \(k\) とするとき，層を十分に捕捉するための係数として
+\[
+  \sigma\ge k+1
+\]
+を取る代表例があります <a href="#ref6">[6]</a>．
+境界層側を
+\[
+  \psi_\varepsilon(t)
+  =-\sigma\varepsilon
+   \ln\!\bigl(1-2(1-\varepsilon)t\bigr),
+  \qquad 0\le t\le\frac12
+\]
+と定義します．このとき
+\[
+  \psi_\varepsilon\!\left(\frac12\right)
+  =\sigma\varepsilon\ln\!\frac1\varepsilon.
+\]
+</p>
+<p>
+外側は線形に接続して
+\[
+  \psi_\varepsilon(t)
+  =1-d_\varepsilon(1-t),
+  \qquad \frac12\lt t\le1
+\]
+とします．連続性から
+\[
+  d_\varepsilon
+  =2\left(1-\sigma\varepsilon\ln\!\frac1\varepsilon\right)
+\]
+です．ここでは
+\[
+  \sigma\varepsilon\ln\!\frac1\varepsilon\le\frac12
+\]
+となる層状の場合を考えます．\(\varepsilon\) がメッシュ幅に比べて大きく，
+強い層分解が不要な場合には，一様メッシュへ切り替える定義も用いられます
+<a href="#ref6">[6]</a>．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 1px solid #999999;">
+<b>Shishkin meshとの遷移幅の違い</b>
+<p>
+Shishkin meshの代表的な遷移点は \(\sigma\varepsilon\ln N\) に比例します．
+上のBakhvalov-type meshでは，中央点の位置が
+\(\sigma\varepsilon\ln(1/\varepsilon)\) に比例します．
+したがって，\(N\) と \(\varepsilon\) のどちらが遷移幅を支配するかが異なります．
+</p>
+</div>
+</article>
+</div>
+
+<h2>4．局所メッシュ幅を計算する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+局所幅を
+\[
+  h_{y,j}:=y_{j+1}-y_j
+\]
+とします．境界層側 \(0\le j\le N/2-1\) では
+\[
+  h_{y,j}
+  =\sigma\varepsilon
+   \ln\!\left(
+   \frac{1-2(1-\varepsilon)j/N}
+        {1-2(1-\varepsilon)(j+1)/N}
+   \right).
+\]
+また，平均値の定理により，ある
+\[
+  \xi_j\in\left(\frac{j}{N},\frac{j+1}{N}\right)
+\]
+が存在して
+\[
+  h_{y,j}
+  =\frac{2\sigma\varepsilon(1-\varepsilon)}
+         {N\bigl(1-2(1-\varepsilon)\xi_j\bigr)}
+\]
+となります．
+</p>
+<p>
+分母は境界 \(t=0\) では \(O(1)\)，遷移側 \(t=1/2\) では \(O(\varepsilon)\) です．
+したがって局所幅は，概念的に
+\[
+  \frac{\varepsilon}{N}
+  \quad\text{から}\quad
+  \frac1N
+\]
+へ増加します．外側 \(j\ge N/2\) では
+\[
+  h_{y,j}=\frac{d_\varepsilon}{N}
+\]
+で一定です．
+</p>
+<p>
+このように，Bakhvalov-type meshでは層領域の内部で幅が徐々に増加します．
+ただし，古典的Bakhvalov meshと違って，上の明示的生成関数は接続点で必ずしも \(C^1\) ではありません．
+「滑らかなgrading」とは，主として層領域内での連続的な幅の変化を指します．
+</p>
+</article>
+</div>
+
+<h2>5．二次元tensor-product meshへ拡張する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+単位正方形 \(\Omega=(0,1)^2\) を考え，\(x\) 方向は一様に
+\[
+  x_i=\frac{i}{N},
+  \qquad h_x=\frac1N
+\]
+とします．\(y\) 方向には上のBakhvalov-type格子点 \(y_j\) を使います．
+各長方形
+\[
+  R_{ij}=[x_i,x_{i+1}]\times[y_j,y_{j+1}]
+\]
+の幅は
+\[
+  h_x=\frac1N,
+  \qquad h_y=h_{y,j}
+\]
+です．これを一つの対角線で二分します．
+</p>
+<p>
+例えば一方の三角形の頂点は
+\[
+  (x_i,y_j)^{\top},
+  \qquad
+  (x_{i+1},y_j)^{\top},
+  \qquad
+  (x_i,y_{j+1})^{\top}
+\]
+です．第6回の公式から
+\[
+  |T|_2=\frac12h_xh_y,
+  \qquad
+  h_T^2=h_x^2+h_y^2
+\]
+であり，
+\[
+  \boxed{
+  Q_T
+  =2\left(\frac{h_x}{h_y}+\frac{h_y}{h_x}\right)
+  }
+\]
+および
+\[
+  \boxed{
+  \frac{H_T}{h_T}=2
+  }
+\]
+を得ます．
+</p>
+</article>
+</div>
+
+<h2>6．Bakhvalov-type meshの正則性を判定する</h2>
+<div class="news">
+<article class="news-item">
+<h3>6.1 \(\varepsilon\) を固定する場合</h3>
+<p>
+固定した \(\varepsilon>0\) に対して，\(h_y/h_x\) は \(N\) に依存しない定数の範囲にあります．
+したがって
+\[
+  \sup_N Q_T\lt\infty
+\]
+となり，\(N\to\infty\) に関してshape regularです．
+</p>
+<h3>6.2 \(\varepsilon\to0\) に一様な場合</h3>
+<p>
+境界に最も近い要素では
+\[
+  h_y\asymp\frac{\varepsilon}{N},
+  \qquad
+  h_x=\frac1N
+\]
+なので
+\[
+  \frac{h_x}{h_y}\asymp\frac1\varepsilon.
+\]
+したがって
+\[
+  Q_T\asymp\frac1\varepsilon
+  \longrightarrow\infty
+  \qquad(\varepsilon\to0).
+\]
+一方，すべての長方形セルで
+\[
+  \frac{H_T}{h_T}=2
+\]
+です．よって二重パラメータ族 \(\{\mathcal T_{N,\varepsilon}\}\) は
+\[
+  \boxed{
+  \text{parameter-uniformには準正則だが非正則}
+  }
+\]
+となります．
+</p>
+</article>
+</div>
+
+<h2>7．Shishkin meshと何が違うのか</h2>
+<div class="news">
+<article class="news-item">
+<table border="1" cellpadding="6" style="border-collapse: collapse; width: 100%;">
+  <thead>
+    <tr>
+      <th>観点</th>
+      <th>Shishkin mesh</th>
+      <th>Bakhvalov-type mesh</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>層領域の幅</td>
+      <td>代表的に \(\sigma\varepsilon\ln N\)</td>
+      <td>代表的に \(\sigma\varepsilon\ln(1/\varepsilon)\)</td>
+    </tr>
+    <tr>
+      <td>層領域内の幅</td>
+      <td>一定</td>
+      <td>境界から離れるにつれて増加</td>
+    </tr>
+    <tr>
+      <td>遷移</td>
+      <td>幅が区分的に切り替わる</td>
+      <td>層領域内はgraded．明示型は接続点で非 \(C^1\) のことがある</td>
+    </tr>
+    <tr>
+      <td>\(H_T/h_T\)</td>
+      <td>直角三角形分割なら2</td>
+      <td>直角三角形分割なら2</td>
+    </tr>
+    <tr>
+      <td>parameter-uniformな \(Q_T\)</td>
+      <td>一般に非有界</td>
+      <td>一般に非有界</td>
+    </tr>
+    <tr>
+      <td>誤差評価</td>
+      <td>しばしば \(\ln N\) が現れる</td>
+      <td>問題・方法によっては対数因子を避けた最適評価が可能</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+したがって，今回の二つの幾何指標だけを見ると，Shishkin meshとBakhvalov-type meshは
+同じ分類になります．違いは，局所幅の配分，層関数との適合性，遷移点近傍の解析，
+そして誤差評価に現れる対数因子です．
+</p>
+<p>
+Bakhvalov型は幅を滑らかに変化させますが，古典的Bakhvalov meshや単純なBakhvalov-type meshが
+\(\varepsilon\) に一様な意味でlocal quasi-uniformになるとは限りません
+<a href="#ref4">[4]</a>．したがって「滑らかに見える」ことと，隣接幅比が一様有界であることは別です．
+</p>
+</article>
+</div>
+
+<h2>8．係数 \(\sigma\) は単なる飾りではない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第7回のShishkin meshと同様，Bakhvalov型でも係数 \(\sigma\) は重要です．
+高次有限要素に関する代表的な解析では
+\[
+  \sigma\ge k+1
+\]
+が用いられます <a href="#ref6">[6]</a>．一次要素なら基準となる値は \(\sigma=2\) です．
+</p>
+<p>
+\(\sigma\) を大きくすると，層に割り当てる領域が広がり，層関数の補間誤差を抑えやすくなります．
+一方で，粗い領域が狭くなり，格子配分も変化します．したがって，係数を変更するときは
+</p>
+<ul>
+  <li>多項式次数，</li>
+  <li>層の減衰率，</li>
+  <li>対象とするノルム，</li>
+  <li>必要なparameter-uniform誤差評価，</li>
+</ul>
+<p>
+との関係を明記する必要があります．
+</p>
+</article>
+</div>
+
+<h2>9．幾何条件から分かること・分からないこと</h2>
+<div class="news">
+<article class="news-item">
+<h3>9.1 分かること</h3>
+<ul>
+  <li>tensor-product rectangleを直角三角形に分割した族は準正則であること，</li>
+  <li>固定 \(\varepsilon\) ではshape regularであること，</li>
+  <li>\(\varepsilon\to0\) ではshape-regular定数が劣化すること，</li>
+  <li>筆者のsemi-regularityに基づく異方性補間・安定性理論を適用できる可能性があること．</li>
+</ul>
+<h3>9.2 この二指標だけでは分からないこと</h3>
+<ul>
+  <li>Bakhvalov型がShishkin型より実際に高精度か，</li>
+  <li>隣接要素幅比や行列条件数が一様に制御されるか，</li>
+  <li>DMP，M-matrix性，無振動性が成立するか，</li>
+  <li>遷移点近傍で最適な補間・supercloseness評価が成立するか．</li>
+</ul>
+<p>
+これらには，格子生成関数の微分，局所幅列，方程式の層分解，有限要素空間，
+離散作用素の符号構造まで含めた別の解析が必要です．
+</p>
+</article>
+</div>
+
+<h2>まとめ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Bakhvalov meshの基本思想は，指数境界層に合わせて局所メッシュ幅を連続的に増加させることです．
+古典的Bakhvalov meshでは生成関数を \(C^1\) に接続しますが，実装しやすい明示的な
+Bakhvalov-type meshでは，接続点で一階微分が連続とは限りません．
+</p>
+<p>
+二次元tensor-product meshを直角三角形に分割すると，局所幅の変化によらず
+\[
+  \frac{H_T}{h_T}=2
+\]
+です．一方，境界に近い要素ではアスペクト比が \(O(1/\varepsilon)\) となるため，
+\(Q_T\) はparameter-uniformには有界ではありません．したがって，Shishkin meshと同様に
+準正則だが非正則と分類されます．
+</p>
+<p>
+次回は，BakhvalovのgradingとShishkinの明示的な遷移点を組み合わせた
+Bakhvalov–Shishkin mesh，およびそれを含むS-type meshを扱います．
+</p>
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<h3>筆者の幾何条件</h3>
+<ol>
+  <li id="ref1">
+    H. Ishizaka,
+    <i>Interpolation error analysis using a new geometric parameter</i>,
+    research note, 23 May 2026.
+    本記事では，\(Q_T\)，\(H_T/h_T\)とメッシュ族の分類に関する枠組みを参照．
+  </li>
+  <li id="ref2">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “Anisotropic interpolation error estimates using a new geometric parameter,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 40, 475–512 (2023).
+    <a href="https://doi.org/10.1007/s13160-022-00535-w">DOI</a>.
+  </li>
+</ol>
+
+<h3>Bakhvalov meshとlayer-adapted mesh</h3>
+<ol start="3">
+  <li id="ref3">
+    T. Linß,
+    <i>Layer-Adapted Meshes for Reaction-Convection-Diffusion Problems</i>,
+    Lecture Notes in Mathematics 1985, Springer, 2010.
+    <a href="https://doi.org/10.1007/978-3-642-05134-0">DOI</a>.
+  </li>
+  <li id="ref4">
+    H.-G. Roos,
+    “Layer-adapted meshes: milestones in 50 years of history,”
+    arXiv:1909.08273 (2019).
+    <a href="https://arxiv.org/abs/1909.08273">arXiv</a>.
+  </li>
+  <li id="ref5">
+    H.-G. Roos,
+    “Error estimates for linear finite elements on Bakhvalov-type meshes,”
+    <i>Applications of Mathematics</i>, 51(1), 63–72 (2006).
+    <a href="https://doi.org/10.1007/s10492-006-0005-y">DOI</a>.
+  </li>
+  <li id="ref6">
+    J. Zhang and X. Liu,
+    “Optimal order of uniform convergence for finite element method on Bakhvalov-type meshes,”
+    <i>Journal of Scientific Computing</i>, 85:2 (2020).
+    <a href="https://doi.org/10.1007/s10915-020-01312-y">DOI</a>.
+  </li>
+</ol>
+<p>
+関連ページ：
+<a href="./anisotropic-geometry-06.html">第6回：長方形の三角形分割を\(Q_T\)と\(H_T/h_T\)で調べる</a>，
+<a href="./anisotropic-geometry-07.html">第7回：Shishkin meshは正則か，準正則か</a>，
+<a href="../../publications/">Publications</a>，
+<a href="../../geo/">History of Geometric Conditions in FEM</a>，
+<a href="../">Blog一覧</a>
+</p>
+</article>
+</div>
+
+<div style="padding: 10px; margin-top: 20px; border: 1px solid #999999;">
+<p>
+<b>前回：</b><a href="./anisotropic-geometry-07.html">Shishkin meshは正則か，準正則か</a>
+</p>
+<p>
+<b>次回：</b>Bakhvalov–Shishkin meshとS-type mesh（構想中）
+</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>
+</main>
+<!--▲メインコンテンツ-->
+
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
