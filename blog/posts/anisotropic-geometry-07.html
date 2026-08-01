@@ -93,7 +93,7 @@
 
 <p>
 <b>異方性有限要素法の幾何学的基礎 第7回</b><br>
-<time datetime="2026-08-01">1st August 2026</time> <span class="cat cat001">New</span>
+<time datetime="2026-08-01">1st August 2026</time> <span class="cat cat001">Revised</span>
 </p>
 
 <h2>はじめに</h2>
@@ -131,6 +131,7 @@ piecewise-uniformなlayer-adapted meshです．見た目には細長い要素を
   <li>正則性定数は \(\delta\) に依存し，\(\delta\to0\) に対して一様ではありません．</li>
   <li>したがって二重パラメータ族 \(\{\mathcal T_{N,\delta}\}\) は，一般に「準正則だが，\(\delta\) に一様な意味では非正則」です．</li>
   <li>「Shishkin meshは正則である」とだけ述べるのではなく，固定 \(\delta\) かparameter-uniformかを明記する必要があります．</li>
+  <li>遷移点の係数は普遍定数ではなく，有限要素次数と目標とする層誤差評価に応じて選ぶ必要があります．</li>
 </ul>
 </div>
 </article>
@@ -177,16 +178,54 @@ piecewise-uniformなlayer-adapted meshです．見た目には細長い要素を
 \]
 です．したがって，\([0,\tau]\) と \([\tau,1]\) をそれぞれ \(N/2\) 等分します．
 </p>
+<div style="padding: 12px; margin-bottom: 14px; border: 5px double #333333;">
+<b>重要：遷移点の係数2は普遍定数ではない</b>
+<p>
+本記事の
+\[
+  \tau=2\delta |\ln N|
+\]
+という係数2は，一次有限要素を想定した代表的な選択です．
+より一般には，遷移点を
+\[
+  \tau_{N,\delta}
+  =\min\left\{\frac12,\,\sigma\delta\ln N\right\}
+\]
+と書き，係数 \(\sigma\) を有限要素の多項式次数，層の減衰率，
+および証明したい誤差評価に応じて定めます．
+よく用いられる次数依存の選択の一つは
+\[
+  \sigma=k+1
+\]
+です．ここで \(k\) は有限要素の多項式次数です．したがって，一次要素では
+\(k=1\) なので \(\sigma=2\) となります．
+</p>
+<p>
+この係数は単なる記号上の違いではありません．係数を大きくするとfine regionが広がり，
+層をより広い範囲で細かく解像する一方，自由度の配分と局所アスペクト比が変わります．
+逆に係数が小さすぎると，層の外側への減衰を十分に捉えられず，
+parameter-uniformな誤差評価の前提を満たさない可能性があります．
+したがって，例えば一次要素に係数4を採用する場合には，
+標準的な \(k+1\) という選択とは異なるため，その理由を明記すべきです．
+</p>
+<p>
+以下の幾何計算自体は，係数2に固有ではありません．
+一般の \(\sigma\) に対して \(\tau=\sigma\delta\ln N\) と置き換えれば，
+同じ公式がそのまま使えます．本記事では，添付研究ノートの一次要素の数値例に合わせて
+\(\sigma=2\) を用います．
+</p>
+</div>
+
 <div style="padding: 10px; margin-bottom: 10px; border: 1px solid #999999;">
 <b>遷移点の上限について</b>
 <p>
-添付資料の計算範囲では \(\tau<1/2\) なので，上の式をそのまま用いることができます．
+添付資料の計算範囲では \(\tau\lt 1/2\) なので，上の式をそのまま用いることができます．
 無限の \(N\)-系列を一般に定義するときには，通常，
 \[
   \tau_{N,\delta}
   =\min\left\{\frac12,\,2\delta\ln N\right\}
 \]
-のように遷移点へ上限を設けます．以下では，まず添付資料の \(\tau<1/2\) の場合を計算し，
+のように遷移点へ上限を設けます．以下では，まず添付資料の \(\tau\lt 1/2\) の場合を計算し，
 その後に上限を含む族の一様性を説明します．
 </p>
 </div>
@@ -320,7 +359,7 @@ coarse regionでは
 です．
 </p>
 <p>
-\(0<\tau\le1/2\) なら \(1-\tau\in[1/2,1)\) であるため，
+\(0\lt\tau\le1/2\) なら \(1-\tau\in[1/2,1)\) であるため，
 \(Q_T^{\mathrm c}\) は一様に有界です．したがって，
 Shishkin meshのshape regularityを悪化させる可能性があるのは，
 主にfine regionの細長い要素です．
@@ -447,7 +486,7 @@ shape regularityは「正三角形に近いこと」ではなく，メッシュ�
 なので，\(N\ge2\) の範囲で
 \[
   Q_{N,\delta}
-  \le C(\delta)<\infty
+  \le C(\delta)\lt\infty
 \]
 とできます．したがって
 \[
@@ -466,7 +505,7 @@ shape regularityは「正三角形に近いこと」ではなく，メッシュ�
 <p>
 特異摂動問題で本当に重要なのは，\(N\) だけでなく，
 層厚を表す \(\delta\) がゼロへ近づいても評価定数が悪化しないかという問題です．
-\(2\delta\ln N<1/2\) の領域では
+\(2\delta\ln N\lt1/2\) の領域では
 \[
   \tau=2\delta\ln N
 \]
@@ -526,7 +565,7 @@ fine regionとcoarse regionの三角形直径は，それぞれ
   h_T^{\mathrm c}
   =\frac1N\sqrt{1+4(1-\tau)^2}
 \]
-です．\(0<\tau\le1/2\) なら
+です．\(0\lt\tau\le1/2\) なら
 \[
   1\le
   \frac{h_T^{\mathrm c}}{h_T^{\mathrm f}}
