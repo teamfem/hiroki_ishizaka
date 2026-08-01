@@ -7,8 +7,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,anisotropic FEM,Crouzeix-Raviart,Raviart-Thomas,Nedelec,de Rham,discrete maximum principle,maximum norm,history-dependent PDE,exact-curved FEM,certified computation,AI4Math">
-<meta name="description" content="Research notes on anisotropic FEM, CR-RT methods, discrete maximum principles, maximum-norm estimates, Nedelec and de Rham complexes, history-dependent PDEs, exact-curved geometry, and certified computation">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,anisotropic FEM,anisotropic mesh,mesh regularity,semi-regularity,Shishkin mesh,Bakhvalov mesh,Crouzeix-Raviart,Raviart-Thomas,Nedelec,de Rham,discrete maximum principle,maximum norm,history-dependent PDE,exact-curved FEM,certified computation,AI4Math">
+<meta name="description" content="Research notes on anisotropic finite element geometry, mesh regularity and semi-regularity, layer-adapted meshes, CR-RT methods, discrete maximum principles, maximum-norm estimates, Nedelec and de Rham complexes, history-dependent PDEs, exact-curved geometry, and certified computation">
 
 <link rel="stylesheet" href="../css/base.css">
 <link rel="stylesheet" href="../css/rwd.css">
@@ -123,9 +123,10 @@
   <li><b>Blog：</b>理論の背景，試行錯誤，最小計算，実装，研究途中の問題整理．</li>
 </ul>
 <p>
-現在のCore研究に直結する主要連載は，次の五つです．
+現在のCore研究に直結する主要連載は，次の六つです．
 </p>
 <ol>
+  <li><b>異方性有限要素法の幾何学的基礎</b></li>
   <li><b>異方性CR–RT，DMP，maximum-norm解析</b></li>
   <li><b>3D Nédélec，異方性de Rham・Hodge・Maxwell</b></li>
   <li><b>履歴依存型発展方程式と構造保存完全離散化</b></li>
@@ -138,12 +139,65 @@ Applications and Research Expansionsとして分けて掲載します．
 準備中の記事には架空の日付や仮リンクを付けず，「構想中」と表示します．
 <br>
 This page is updated periodically.<br>
-(26th July 2026 <span class="cat cat001">Update</span>)
+(1st August 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
 
 <h2>Current Core Research Series</h2>
+
+<h3>異方性有限要素法の幾何学的基礎</h3>
+<div class="news">
+<article class="news-item">
+<p>
+異方性有限要素法の解析では，要素が単に「細長い」かどうかだけでなく，
+その形状が細分化に対して固定されているのか，
+特異点や境界層に近づくにつれて異方性が強くなるのかを区別する必要があります．
+この系列では，相似縮小，等方的graded mesh，Shishkin mesh，
+Bakhvalov mesh，Bakhvalov–Shishkin mesh，S-type meshなどを取り上げ，
+すべてを共通の幾何指標
+\[
+  Q_T:=\frac{h_T^d}{|T|_d},
+  \qquad
+  A_T:=\frac{H_T}{h_T}
+      =\frac{\prod_{i=1}^{d}h_i}{|T|_d}
+\]
+によって調べます．
+</p>
+<p>
+各記事では，対象メッシュの構成を示した後，
+要素ごとの辺長，面積・体積，\(Q_T\)，\(A_T\)を計算し，
+メッシュ族が正則，準正則だが非正則，非準正則のいずれに属するかを確認します．
+さらに，その幾何条件から保証される補間・安定性と，
+DMP，maximum-norm評価，離散Sobolev不等式など，
+別の条件を必要とする問題を区別して整理します．
+</p>
+<p class="news-cont">
+<b>構想中の記事</b>
+<ol>
+  <li>有限要素法ではなぜメッシュの幾何条件が必要なのか</li>
+  <li>正則性と準正則性を角度を使わずに表す</li>
+  <li>異方性メッシュの二つの現れ方：相似縮小とgraded mesh</li>
+  <li>相似縮小された細長い要素は非正則なのか</li>
+  <li>graded mesh，quasi-uniformity，shape regularityの違い</li>
+  <li>長方形の三角形分割を\(Q_T\)と\(H_T/h_T\)で調べる</li>
+  <li>Shishkin meshは正則か，準正則か</li>
+  <li>Bakhvalov meshの滑らかなgradingと幾何条件</li>
+  <li>Bakhvalov–Shishkin meshとS-type mesh</li>
+  <li>代表的なlayer-adapted meshの幾何条件を比較する</li>
+  <li>三次元layer-adapted meshを四面体分割すると何が起こるか</li>
+  <li>幾何条件から補間・DMP・\(L^\infty\)解析へ何が引き継げるか</li>
+</ol>
+</p>
+<p>
+関連ページ：
+<a href="../geo/">History of Geometric Conditions in FEM</a>，
+<a href="../publications/">Publications</a>（異方性補間・semi-regularity関連），
+<a href="../fem/">Research Visions</a>，
+下記の<a href="#published-geometry-mesh">有限要素法における幾何とメッシュ</a>
+</p>
+</article>
+</div>
 
 <h3>異方性CR–RT：離散最大値原理とmaximum-norm解析</h3>
 <div class="news">
@@ -401,7 +455,7 @@ PINNsやDeep RitzをFEMの代替として無条件に推奨するのではなく
 
 <h2>Published Foundational and Computational Series</h2>
 
-<h3>有限要素法における幾何とメッシュ</h3>
+<h3 id="published-geometry-mesh">有限要素法における幾何とメッシュ</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
