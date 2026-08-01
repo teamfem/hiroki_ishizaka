@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>正則性と準正則性を角度を使わずに表す | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,shape regularity,semi-regularity,maximum angle condition,anisotropic mesh,異方性メッシュ,H_T,Q_T,mesh geometry,triangle,tetrahedron">
+<meta name="description" content="正則性と準正則性を，最小角・最大角を直接測らず，単体の直径，面積・体積，標準辺長から作るQ_TとH_T/h_Tによって表します．石坂宏樹の異方性補間理論とmaximum-angle conditionとの同値性を基礎に解説します．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li><a href="../../">Home</a></li>
+				<li><a href="../../publications/">Publications</a></li>
+				<li><a href="../../research/">Research</a></li>
+				<li><a href="../../fem/">Research Visions</a></li>
+				<li><a href="../../suppl/">Supplementary Visions</a></li>
+				<li><a href="../../blog/">Blog</a></li>
+				<li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+				<li><a href="../../links/">Links</a></li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item">
+				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+				</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../" itemprop="item">
+				<span itemprop="name">Blog</span>
+				</a>
+				<meta itemprop="position" content="2">
+			</li>
+			<li class="bcl-last">
+				異方性有限要素法の幾何学的基礎 第2回
+			</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">正則性と準正則性を角度を使わずに表す</h1>
+
+<p>
+<b>異方性有限要素法の幾何学的基礎 第2回</b><br>
+<time datetime="2026-08-01">1st August 2026</time> <span class="cat cat001">New</span>
+</p>
+
+<h2>はじめに</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第1回では，有限要素法の誤差評価にメッシュの幾何が現れる理由を，
+参照要素から実要素への変換とメッシュ族の一様性から説明しました．
+今回は，その幾何を実際に測るための二つの無次元量を導入します．
+</p>
+<p>
+一つ目は，単体の直径に比べて面積・体積がどれだけ小さいかを測る量です．
+これは通常のshape regularity（正則性）を表します．
+二つ目は，標準的に選んだ方向別辺長の積と面積・体積の比です．
+これはsemi-regularity（準正則性）を表し，三角形と四面体のmaximum-angle conditionと同値です
+<a href="#ref1">[1]</a>–<a href="#ref4">[4]</a>．
+</p>
+<p>
+本記事では角度を直接計算しません．しかし，角度を無視するわけではありません．
+辺長と面積・体積から作る量によって，従来の角度条件を等価な形に書き換えます．
+これにより，理論上の仮定を数値計算で確認しやすい幾何certificateへ変換できます．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
+<b>今回の結論</b>
+<ul>
+  <li>正則性は，\(Q_T:=h_T^d/|T|_d\) の一様有界性で表せます．</li>
+  <li>準正則性は，\(A_T:=H_T/h_T\) の一様有界性で表せます．</li>
+  <li>正則なメッシュ族は準正則ですが，逆は成立しません．</li>
+  <li>細長い直角三角形は非正則になり得ますが，\(A_T=2\) なので準正則です．</li>
+  <li>局所評価は任意の単体上で書けても，メッシュ一様な最適評価には幾何量の制御が必要です．</li>
+</ul>
+</div>
+</article>
+</div>
+
+<h2>1．条件は一個の要素ではなくメッシュ族に課す</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(\Omega\subset\mathbb R^d\)，\(d\in\{2,3\}\) を多角形または多面体領域とし，
+\(\mathcal T_\ell\) を三角形または四面体からなるメッシュとします．
+各要素 \(T\in\mathcal T_\ell\) に対して，
+\[
+  h_T:=\operatorname{diam}(T)
+\]
+を要素直径，\(|T|_d\) を \(d\) 次元の面積または体積とします．
+</p>
+<p>
+有限個の非退化要素だけを見れば，以下で定義する幾何量はすべて有限です．
+問題は，細分化レベル \(\ell\) を進めても同じ上界を使えるかどうかです．
+したがって，幾何条件は
+\[
+  \{\mathcal T_\ell\}_{\ell\ge0}
+\]
+というメッシュ族に対して課します．
+</p>
+<p>
+本記事では，各レベルの最悪値を
+\[
+  Q_\ell:=\max_{T\in\mathcal T_\ell}Q_T,
+  \qquad
+  A_\ell:=\max_{T\in\mathcal T_\ell}A_T
+\]
+と書きます．一個の要素の値ではなく，\(Q_\ell\) と \(A_\ell\) が
+\(\ell\) に依存せず有界かを調べることが本質です．
+</p>
+</article>
+</div>
+
+<h2>2．正則性を表す量 \(Q_T\)</h2>
+<div class="news">
+<article class="news-item">
+<p>
+shape-regularityの代表的な書き方は，最大内接球の直径を \(\rho_T\) として
+\[
+  \frac{h_T}{\rho_T}\le C
+\]
+とするinscribed-ball conditionです．筆者の研究ノートでは，これと同値な体積型条件として，
+ある \(\gamma_{\mathrm{reg}}>0\) が存在して
+\[
+  |T|_d\ge \gamma_{\mathrm{reg}}h_T^d
+  \qquad
+  \text{for all }T\in\mathcal T_\ell,\ \ell\ge0
+\]
+を用いています <a href="#ref1">[1]</a>．
+</p>
+<p>
+本連載では，この条件を見やすくするために
+\[
+  \boxed{
+  Q_T:=\frac{h_T^d}{|T|_d}
+  }
+\]
+と置きます．すると正則性は
+\[
+  \sup_{\ell\ge0}Q_\ell<\infty
+\]
+と同値です．
+</p>
+<p>
+\(Q_T\) は，直径 \(h_T\) を持つ単体が，その大きさに見合った面積・体積を保っているかを測ります．
+要素がほぼ一直線またはほぼ同一平面上につぶれると，\(|T|_d\) が急速に小さくなり，
+\(Q_T\) は大きくなります．したがって \(Q_T\) は，通常の等方的shape regularityを判定する
+角度なしの指標です．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 1px solid #999999;">
+<b>注意</b>
+<p>
+\(Q_T\) が大きいことは，要素が異方的である可能性を示しますが，
+その要素が有限要素解析に使えないことを直ちに意味しません．
+方向別の伸縮を許すには，正則性より弱い別の条件が必要です．
+</p>
+</div>
+</article>
+</div>
+
+<h2>3．準正則性に必要な標準辺長</h2>
+<div class="news">
+<article class="news-item">
+<p>
+準正則性を表す幾何パラメータでは，単にすべての辺長を短い順に並べるのではなく，
+単体の頂点を標準的にラベル付けして方向別辺長 \(h_1,\ldots,h_d\) を選びます．
+この標準位置とtwo-step affine mappingは，筆者らの異方性補間理論の基本構造です
+<a href="#ref2">[2]</a>，<a href="#ref4">[4]</a>，<a href="#ref5">[5]</a>．
+</p>
+
+<h3>3.1 三角形</h3>
+<p>
+三角形 \(T\) の頂点を \(p_1,p_2,p_3\) とします．最長辺を \(p_2p_3\) とし，
+残りの頂点を \(p_1\) とします．さらに
+\[
+  h_1:=|p_1-p_2|,
+  \qquad
+  h_2:=|p_1-p_3|,
+  \qquad
+  h_2\le h_1
+\]
+となるように \(p_2,p_3\) を並べます．このとき
+\[
+  h_T=|p_2-p_3|
+\]
+です．
+</p>
+
+<h3>3.2 四面体</h3>
+<p>
+四面体では，六本の辺を長さ順に並べ，そのうち三本を取ればよいわけではありません．
+筆者らの標準位置では，最短辺と，その最短辺に接続する辺の中で選ばれる最長辺との
+<b>接続関係</b>を用い，四面体をType (i)とType (ii)に分けて
+\(p_1,p_2,p_3,p_4\) と \(h_1,h_2,h_3\) を定めます
+<a href="#ref1">[1]</a>，<a href="#ref3">[3]</a>，<a href="#ref4">[4]</a>．
+</p>
+<p>
+重要なのは，\(h_1,h_2,h_3\) が単なる「三本の短い辺」ではなく，
+異方的な方向別伸縮と残りの形状変形を分離するために選ばれた辺長だという点です．
+三次元の完全なラベル付けとType (i)/(ii)の違いは，後の四面体メッシュの記事で詳しく扱います．
+</p>
+</article>
+</div>
+
+<h2>4．新しい幾何パラメータ \(H_T\) と準正則性</h2>
+<div class="news">
+<article class="news-item">
+<p>
+標準辺長を用いて，筆者らが導入した幾何パラメータを
+\[
+  \boxed{
+  H_T:=\frac{\prod_{i=1}^{d}h_i}{|T|_d}\,h_T
+  }
+\]
+と定義します <a href="#ref2">[2]</a>，<a href="#ref4">[4]</a>，<a href="#ref5">[5]</a>．
+\(H_T\) は長さの次元を持ち，単体の扁平さを補間誤差に取り込む量です．
+</p>
+<p>
+準正則性そのものを表すのは無次元比
+\[
+  \boxed{
+  A_T:=\frac{H_T}{h_T}
+      =\frac{\prod_{i=1}^{d}h_i}{|T|_d}
+  }
+\]
+です．ここで \(A_T\) は，本連載で \(Q_T\) と比較しやすくするために導入した記号です．
+筆者の論文では主に \(H_T/h_T\) と書かれています．
+</p>
+<p>
+メッシュ族が準正則（semi-regular）であるとは，ある \(\gamma_{\mathrm{semi}}>0\) が存在して
+\[
+  \frac{H_T}{h_T}\le\gamma_{\mathrm{semi}}
+  \qquad
+  \text{for all }T\in\mathcal T_\ell,\ \ell\ge0
+\]
+となることです．すなわち
+\[
+  \sup_{\ell\ge0}A_\ell<\infty
+\]
+です <a href="#ref1">[1]</a>，<a href="#ref4">[4]</a>．
+</p>
+</article>
+</div>
+
+<h2>5．なぜ \(H_T/h_T\) がmaximum-angle conditionを表すのか</h2>
+<div class="news">
+<article class="news-item">
+<h3>5.1 二次元</h3>
+<p>
+三角形の標準ラベルでは，最長辺 \(p_2p_3\) の対角
+\[
+  \theta_{T,\max}:=\angle p_2p_1p_3
+\]
+が最大角です．面積は
+\[
+  |T|_2=\frac12h_1h_2\sin\theta_{T,\max}
+\]
+なので，
+\[
+  A_T
+  =\frac{h_1h_2}{|T|_2}
+  =\frac{2}{\sin\theta_{T,\max}}
+\]
+したがって，最大角が \(\pi\) に近づくと \(A_T\to\infty\) となります．
+逆に \(A_T\) が一様有界なら，最大角は \(\pi\) から一様に離れます．
+これは二次元のmaximum-angle conditionそのものです．
+</p>
+<p>
+また，外接円半径を \(R_T\) とすると正弦定理から
+\[
+  \frac{R_T}{h_T}=\frac{1}{2\sin\theta_{T,\max}}
+\]
+なので，\(H_T/h_T\) は \(R_T/h_T\) と定数倍の関係にあります．
+</p>
+
+<h3>5.2 三次元</h3>
+<p>
+四面体のmaximum-angle conditionでは，すべての三角形面の内角と，
+すべての二面角がある \(\gamma_{\max}<\pi\) 以下であることを要求します．
+筆者らは，標準位置から定まる \(H_T/h_T\) の一様有界性が，
+この三次元maximum-angle conditionと同値であることを示しました
+<a href="#ref3">[3]</a>．
+</p>
+<p>
+したがって，二次元でも三次元でも
+\[
+  \boxed{
+  \text{semi-regularity}
+  \quad\Longleftrightarrow\quad
+  \text{maximum-angle condition}
+  }
+\]
+が成り立ちます．角度をすべて測らなくても，辺長と面積・体積から
+\(H_T/h_T\) を計算すれば，同じ幾何条件を確認できます
+<a href="#ref4">[4]</a>．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 1px solid #999999;">
+<b>「角度を使わない」の意味</b>
+<p>
+maximum-angle conditionを捨てるのではなく，それと同値な代数的条件へ置き換えています．
+そのため，理論的な意味を保ったまま，実装・メッシュ診断・a posteriori解析に使いやすくなります．
+</p>
+</div>
+</article>
+</div>
+
+<h2>6．正則なら準正則である</h2>
+<div class="news">
+<article class="news-item">
+<p>
+選ばれた辺長はすべて単体の直径以下なので
+\[
+  h_i\le h_T
+  \qquad (i=1,\ldots,d)
+\]
+です．したがって
+\[
+  A_T
+  =\frac{\prod_{i=1}^{d}h_i}{|T|_d}
+  \le
+  \frac{h_T^d}{|T|_d}
+  =Q_T
+\]
+よって
+\[
+  \sup_\ell Q_\ell<\infty
+  \quad\Longrightarrow\quad
+  \sup_\ell A_\ell<\infty
+\]
+つまり，
+\[
+  \boxed{\text{正則} \Longrightarrow \text{準正則}}
+\]
+です．
+</p>
+<p>
+しかし逆は成立しません．準正則性は最大角が \(\pi\) に近づくことを防ぎますが，
+最小角がゼロに近づくことは許します．この余地によって，細長い異方性要素を利用できます．
+</p>
+</article>
+</div>
+
+<h2>7．三つの三角形族で違いを見る</h2>
+<div class="news">
+<article class="news-item">
+<h3>7.1 形状が固定された直角二等辺三角形</h3>
+<p>
+辺長 \(h_x=h_y=s\) の長方形を対角線で二分した三角形を考えます．
+\[
+  |T|_2=\frac12s^2,
+  \qquad
+  h_T=\sqrt{2}\,s
+\]
+したがって
+\[
+  Q_T=\frac{2s^2}{s^2/2}=4,
+  \qquad
+  A_T=\frac{s^2}{s^2/2}=2
+\]
+相似縮小しても両者は変わらないので，このメッシュ族は正則，したがって準正則です．
+</p>
+
+<h3>7.2 細長い直角三角形</h3>
+<p>
+辺長を \(h_x\ge h_y>0\) とすると
+\[
+  |T|_2=\frac12h_xh_y,
+  \qquad
+  h_T^2=h_x^2+h_y^2
+\]
+よって
+\[
+  Q_T
+  =2\left(\frac{h_x}{h_y}+\frac{h_y}{h_x}\right),
+  \qquad
+  A_T=2
+\]
+アスペクト比 \(h_x/h_y\to\infty\) なら \(Q_T\to\infty\) ですが，
+\(A_T\) は常に2です．したがってこの族は
+\[
+  \boxed{\text{準正則だが非正則}}
+\]
+です．これは，layer-adapted meshで現れる細長い直角三角形を理解する基本計算になります．
+</p>
+
+<h3>7.3 最大角が \(\pi\) に近づく三角形</h3>
+<p>
+\[
+  p_1=(0,0),
+  \qquad
+  p_2=(-1,\varepsilon),
+  \qquad
+  p_3=(1,0),
+  \qquad
+  \varepsilon>0
+\]
+とします．\(\varepsilon\to0\) で三点はほぼ一直線に並び，\(p_1\) の角は \(\pi\) に近づきます．
+このとき
+\[
+  |T|_2=\frac{\varepsilon}{2},
+  \qquad
+  h_1=\sqrt{1+\varepsilon^2},
+  \qquad
+  h_2=1,
+  \qquad
+  h_T^2=4+\varepsilon^2
+\]
+したがって
+\[
+  A_T=\frac{2\sqrt{1+\varepsilon^2}}{\varepsilon}\to\infty,
+  \qquad
+  Q_T=\frac{2(4+\varepsilon^2)}{\varepsilon}\to\infty
+\]
+この族は非準正則です．
+</p>
+</article>
+</div>
+
+<h2>8．三つのメッシュ族を分類する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+以上をまとめると，本連載ではメッシュ族を次の順で分類します．
+</p>
+<table border="1" cellpadding="6" style="border-collapse: collapse; width: 100%;">
+  <thead>
+    <tr>
+      <th>分類</th>
+      <th>角度なしの判定</th>
+      <th>幾何学的意味</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>正則</td>
+      <td>\(\sup_\ell Q_\ell&lt;\infty\)</td>
+      <td>面積・体積が直径の \(d\) 乗に一様に比較可能</td>
+    </tr>
+    <tr>
+      <td>準正則だが非正則</td>
+      <td>\(Q_\ell\) は非有界，\(\sup_\ell A_\ell&lt;\infty\)</td>
+      <td>大きなアスペクト比を許すが，最大角は \(\pi\) から離れる</td>
+    </tr>
+    <tr>
+      <td>非準正則</td>
+      <td>\(A_\ell\) が非有界</td>
+      <td>最大角または三次元の対応する面角・二面角が退化</td>
+    </tr>
+  </tbody>
+</table>
+<p>
+判定の順序も重要です．まず正則性を調べ，正則でなければ準正則性を調べます．
+正則メッシュ族はすでに準正則なので，「準正則」という語だけでは異方性の強さを表しません．
+</p>
+</article>
+</div>
+
+<h2>9．補間誤差評価では何が変わるのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+筆者らの一般補間理論では，局所誤差評価を任意の単体に対して
+\(h_T\) と \(H_T\) を明示した形で記述できます <a href="#ref2">[2]</a>，<a href="#ref5">[5]</a>．
+この段階では，shape regularityやmaximum-angle conditionを先に仮定する必要はありません．
+要素が悪化すれば，その影響が \(H_T/h_T\) などの係数として評価式に現れます．
+</p>
+<p>
+一方，古典的な形の最適次数評価をメッシュ族全体で得るには，
+その係数を一様に制御しなければなりません．準正則条件
+\[
+  \sup_{\ell,T}\frac{H_T}{h_T}<\infty
+\]
+は，そのための自然な仮定です．この考え方は，異方性RT補間
+<a href="#ref4">[4]</a>，Morley要素 <a href="#ref6">[6]</a>，Nitsche法
+<a href="#ref7">[7]</a>，非適合要素の離散Sobolev不等式 <a href="#ref8">[8]</a>などに用いられています．
+</p>
+<p>
+ただし，準正則性に違反したら解析がすべて不可能になるわけではありません．
+\(H_T\) やメッシュ全体の \(H\) の増大を誤差式に残し，
+メッシュ幅との積がゼロへ行くかを直接調べる，より緩い解析も可能です
+<a href="#ref2">[2]</a>．
+ここでは，条件を満たすか否かと，評価式自体が成立するか否かを区別する必要があります．
+</p>
+</article>
+</div>
+
+<h2>10．この条件から分かること・分からないこと</h2>
+<div class="news">
+<article class="news-item">
+<h3>10.1 分かること</h3>
+<ul>
+  <li>通常のshape regularityを満たすか，</li>
+  <li>maximum-angle conditionと同値なsemi-regularityを満たすか，</li>
+  <li>方向別補間評価の定数がメッシュ族で一様か，</li>
+  <li>異方性RT補間や関連する安定性評価を適用できるか．</li>
+</ul>
+<h3>10.2 この条件だけでは分からないこと</h3>
+<ul>
+  <li>離散最大値原理やM-matrix性，</li>
+  <li>metric-angle型の単調性条件，</li>
+  <li>maximum-norm誤差評価に必要な離散Green関数の性質，</li>
+  <li>メッシュpatchの接続や向きに依存する大域的性質．</li>
+</ul>
+<p>
+したがって，\(Q_T\) と \(H_T/h_T\) は異方性メッシュ解析の共通基盤ですが，
+すべての数値的性質を一つで判定する万能スコアではありません．
+</p>
+</article>
+</div>
+
+<h2>まとめ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+正則性は
+\[
+  Q_T=\frac{h_T^d}{|T|_d}
+\]
+の一様有界性によって，準正則性は
+\[
+  \frac{H_T}{h_T}
+  =\frac{\prod_{i=1}^{d}h_i}{|T|_d}
+\]
+の一様有界性によって表せます．前者はshape regularity，後者はmaximum-angle conditionに対応します．
+</p>
+<p>
+両者の違いは，細長い直角三角形に最も明確に現れます．
+アスペクト比が発散すると \(Q_T\) は発散しますが，\(H_T/h_T=2\) は保たれます．
+したがって，異方性メッシュを扱うには「非正則だから悪い」と結論するのではなく，
+準正則性まで残っているかを確認する必要があります．
+</p>
+<p>
+次回は，この二つの指標を用いて，異方性メッシュの二つの現れ方，
+すなわち固定形状の相似縮小と，細分化に伴って形状比が変化するgraded meshを区別します．
+</p>
+</article>
+</div>
+
+<h2>参考文献</h2>
+<div class="news">
+<article class="news-item">
+<h3>本連載の基礎資料</h3>
+<ol>
+  <li id="ref1">
+    H. Ishizaka,
+    <i>Interpolation error analysis using a new geometric parameter</i>,
+    research note, 23 May 2026.
+    特に第3節から第9節の古典的幾何条件，semi-regularity，新しい幾何パラメータ，good/bad elementsを参照．
+  </li>
+</ol>
+
+<h3>筆者の関連原著論文</h3>
+<ol start="2">
+  <li id="ref2">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “General theory of interpolation error estimates on anisotropic meshes,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 38, 163–191 (2021).
+    <a href="https://doi.org/10.1007/s13160-020-00433-z">DOI</a>.
+  </li>
+  <li id="ref3">
+    H. Ishizaka, K. Kobayashi, R. Suzuki and T. Tsuchiya,
+    “A new geometric condition equivalent to the maximum angle condition for tetrahedrons,”
+    <i>Computers &amp; Mathematics with Applications</i>, 99, 323–328 (2021).
+    <a href="https://doi.org/10.1016/j.camwa.2021.08.017">DOI</a>.
+  </li>
+  <li id="ref4">
+    H. Ishizaka,
+    “Anisotropic Raviart–Thomas interpolation error estimates using a new geometric parameter,”
+    <i>Calcolo</i>, 59:50 (2022).
+    <a href="https://doi.org/10.1007/s10092-022-00494-1">DOI</a>.
+  </li>
+  <li id="ref5">
+    H. Ishizaka, K. Kobayashi and T. Tsuchiya,
+    “Anisotropic interpolation error estimates using a new geometric parameter,”
+    <i>Japan Journal of Industrial and Applied Mathematics</i>, 40, 475–512 (2023).
+    <a href="https://doi.org/10.1007/s13160-022-00535-w">DOI</a>.
+  </li>
+  <li id="ref6">
+    H. Ishizaka,
+    “Morley finite element analysis for fourth-order elliptic equations under a semi-regular mesh condition,”
+    <i>Applications of Mathematics</i>, 69(6), 769–805 (2024).
+    <a href="https://doi.org/10.21136/AM.2024.0103-24">DOI</a>.
+  </li>
+  <li id="ref7">
+    H. Ishizaka,
+    “Nitsche’s method under a semi-regular mesh condition,”
+    <i>Numerical Algorithms</i> (2025).
+    <a href="https://doi.org/10.1007/s11075-025-02131-8">DOI</a>.
+  </li>
+  <li id="ref8">
+    H. Ishizaka,
+    “On discrete Sobolev inequalities for nonconforming finite elements under a semiregular mesh condition,”
+    <i>IMA Journal of Numerical Analysis</i> (2026).
+    <a href="https://doi.org/10.1093/imanum/drag006">DOI</a>.
+  </li>
+</ol>
+
+<h3>一般的背景</h3>
+<ol start="9">
+  <li id="ref9">
+    P. G. Ciarlet,
+    <i>The Finite Element Method for Elliptic Problems</i>,
+    North-Holland, 1978.
+  </li>
+  <li id="ref10">
+    T. Apel,
+    <i>Anisotropic Finite Elements: Local Estimates and Applications</i>,
+    Advances in Numerical Mathematics, B. G. Teubner, Stuttgart, 1999.
+  </li>
+</ol>
+<p>
+関連ページ：
+<a href="./anisotropic-geometry-01.html">第1回：有限要素法ではなぜメッシュの幾何条件が必要なのか</a>，
+<a href="../../publications/">Publications</a>，
+<a href="../../geo/">History of Geometric Conditions in FEM</a>，
+<a href="../">Blog一覧</a>
+</p>
+</article>
+</div>
+
+<div style="padding: 10px; margin-top: 20px; border: 1px solid #999999;">
+<p>
+<b>前回：</b><a href="./anisotropic-geometry-01.html">有限要素法ではなぜメッシュの幾何条件が必要なのか</a>
+</p>
+<p>
+<b>次回：</b>異方性メッシュの二つの現れ方：相似縮小とgraded mesh（構想中）
+</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>
+</main>
+<!--▲メインコンテンツ-->
+
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
