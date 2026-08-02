@@ -163,25 +163,35 @@ DMPやmaximum-norm quasi-optimalityには追加の単調性・接続条件が必
 
 <h4>Core M：Stable reduction theory for unresolved dynamics</h4>
 未解像ダイナミクス系列では，微細自由度・潜在状態・未観測変数を消去したときに生じる
-memory，delay，history forcingを，導出・安定性・近似・離散化の対象として扱います．
-Vision 11では，与えられたmemory kernelやmeasure-valued delayをもつ履歴依存型発展方程式そのものの
-連続理論と構造保存離散化を扱います．Vision 18では一段上流に戻り，
+memory，delay，history forcingを，生成・安定性・近似・離散化・同定の対象として扱います．
+Vision 11では，与えられたpositive-type Volterra memoryおよびmeasure-valued delayをもつ
+履歴依存型発展方程式の連続理論と構造保存数値解析を扱います．
+Vision 18では一段上流に戻り，
 \[
-  \text{resolved/unresolved decomposition}
+  \text{unresolved dynamics}
   \longrightarrow
-  \text{operator-valued memory}
+  \text{type of history operator}
   \longrightarrow
   \text{stable reduced dynamics}
 \]
-という縮約原理を扱います．近い順序は，
+という縮約原理を扱うとともに，両系列の橋渡し，data-driven identification，
+model-reduction certificateまでを研究programmeとして整理します．<br><br>
+
+近い研究順序は，
 \[
-  \text{continuous memory theory}
+  \text{continuous foundations}
   \longrightarrow
-  \text{stable realisation of reduced dynamics}
+  \text{BDF--CQ graph-energy analysis}
   \longrightarrow
-  \text{structure-preserving discretisation}
+  \text{anisotropic CR--RT full discretisation}
+\]
+\[
   \longrightarrow
-  \text{certified model reduction}
+  \text{stable approximation of unresolved dynamics}
+  \longrightarrow
+  \text{memory--delay bridge}
+  \longrightarrow
+  \text{data-driven and certified reduction}
 \]
 です．この系列は異方性FEMの主系列と分離して管理し，同時に本格執筆するmemory論文は一編までとします．
 詳細はVision 11・18にまとめます．
@@ -222,11 +232,20 @@ AIや形式推論は研究の主目的ではなく，証明構造・幾何条件
 memory・未解像ダイナミクス系列は別レーンとして，
 \[
 \boxed{
-  \text{continuous kernel theory}
+  \text{continuous foundations}
   \longrightarrow
-  \text{stable reduction and realisation}
+  \text{numerical I: BDF--CQ}
   \longrightarrow
-  \text{structure-preserving full discretisation}
+  \text{numerical II: anisotropic CR--RT}
+}
+\]
+\[
+\boxed{
+  \text{stable reduction}
+  \longrightarrow
+  \text{memory--delay bridge}
+  \longrightarrow
+  \text{data-driven identification}
   \longrightarrow
   \text{certified model reduction}
 }
@@ -999,231 +1018,437 @@ AI支援型数学，形式推論，自動証明支援の発展により，数学
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
-<b>位置づけ：〖Core〗（履歴作用の生成・分類・graph-space安定性・安定近似・memory–delay橋渡し）／〖Expansion〗（kernel同定・確率的closure・応用）</b><br><br>
+<b>位置づけ：
+〖Foundation〗既存の連続memory・delay理論／
+〖Core〗安定縮約・graph-space安定性・構造保存数値解析／
+〖Bridge〗Volterra memoryとmeasure-valued delayの接続／
+〖Expansion〗データ駆動同定・model adaptivity・認証・応用
+</b><br><br>
 
 <h4>Programme statement</h4>
 本Visionの目的は，未解像自由度を消去して得られる履歴依存系について，
 単なる形式的なmemory representationではなく，
-<b>安定な縮約，正しい状態空間，近似誤差，構造保存離散化</b>
-を統一的に扱う数理理論を構築することです．<br><br>
+<b>履歴作用の生成機構，正しい状態空間，安定な縮約，構造保存離散化，
+データ駆動同定，誤差認証</b>を階層的に扱う数理理論を構築することです．<br><br>
 
-解像変数を \(u\)，未解像変数を \(z\) とする拡張系から \(z\) を消去すると，
-一般に作用素値memory kernel，未解像初期状態に由来するhistory forcing，
-場合によっては確率的forcingが現れます．本研究では，
+本programmeの全体像は，
 \[
-  \text{full dynamics}
-  \longrightarrow
-  \text{exact reduction}
-  \longrightarrow
-  \text{memory representation}
-  \longrightarrow
-  \text{stable approximation}
-  \longrightarrow
-  \text{certified computation}
+\boxed{
+\begin{array}{c}
+\text{Layer 0: continuous foundations for memory and delay}\\
+\downarrow\\
+\text{Layer 1: generation and classification of history operators}\\
+\downarrow\\
+\text{Layer 2: stable reduction and graph-space approximation}\\
+\downarrow\\
+\text{Layer 3: structure-preserving numerical analysis}\\
+\downarrow\\
+\text{Layer 4: data-driven identification and model adaptivity}\\
+\downarrow\\
+\text{Layer 5: certification and applications}
+\end{array}}
 \]
-を一つの流れとして扱います．<br><br>
+です．各Layerは独立した論文課題を持ちますが，依存する定理を下層から順に積み上げます．<br><br>
 
-<p><b>Research statement:</b><br>
+<b>Vision 11との役割分担：</b><br>
+Vision 11は，memory kernelまたはdelay measureが<b>与えられた後</b>の方程式について，
+連続理論と完全離散解析を構築します．
+Vision 18は，それらの履歴作用が<b>どの未解像ダイナミクスから生じるか</b>，
+未解像系やkernelを近似したとき縮約解がどの程度安定か，
+さらにデータから何を同定し，どの誤差を認証できるかを扱います．<br><br>
+
+<b>Research statement:</b><br>
 My research develops a stable reduction theory for unresolved dynamics by connecting
 the type of unresolved generator with operator-valued memory or delay, graph-space energy,
-stable approximation, and structure-preserving discretisation.</p>
+structure-preserving numerical approximation, data-driven identification, and certified prediction.
+<br><br>
 
-<h4>18a．Generation and realisation of memory</h4>
-解像変数 \(u\) と未解像変数 \(z\) の線形発展系
+<h4>18a．Layer 0：Current analytical foundation — 二つの連続理論</h4>
+現在の履歴依存型発展方程式の連続理論は，主に次の二系列から成ります．
+<ul>
+  <li><b>Branch A：positive-type Volterra memory＋退化し得る瞬時拡散</b><br>
+  [S3]ではpositive-type memoryのcoercivity structure，exact gap，critical horizon，
+  singular limitを解析し，[S4]では瞬時coercivityが退化する場合の
+  graph-space well-posednessとvanishing-coercivity stabilityを構築します．</li>
+  <li><b>Branch B：measure-valued delay＋coerciveな瞬時発展</b><br>
+  [S5]ではweighted well-posednessとkernel stabilityを構築し，
+  [S6]ではkernel concentration，atomic approximation，zero-delay limit，
+  sharp stability boundaryを定量化します．</li>
+</ul>
+
+したがって，
+\[
+\boxed{
+\begin{array}{ll}
+\text{Branch A:}&
+\text{coercivity obstruction}
+\longrightarrow
+\text{graph-space resolution},\\[1mm]
+\text{Branch B:}&
+\text{weighted well-posedness}
+\longrightarrow
+\text{quantitative kernel stability}
+\end{array}}
+\]
+という二つの基盤があります．Vision 18は，これらを無理に同一視するのではなく，
+未解像生成作用素の型に応じた二つの縮約機構として位置づけます．
+現在の論文状況は<a href="../publications/">Publications</a>にまとめます．<br><br>
+
+<h4>18b．Layer 1：Generation and classification of history operators</h4>
+解像変数を \(u\)，未解像変数を \(z\) とする拡張系
 \[
 \begin{aligned}
-  \partial_tu+Au+Bz&=f,\\
+  \partial_tu+A_0u+Bz&=f,\\
   \partial_tz+Cz-B^*u&=g
 \end{aligned}
 \]
-を考えます．未解像方程式を解いて \(z\) を消去すると，形式的に
+から \(z\) を消去すると，典型的には
 \[
-  \partial_tu+Au
+  \partial_tu+A_0u
   +\int_0^tK(t-s)u(s)\,ds
-  =F(t),
+  =F_{\mathrm{red}}(t),
   \qquad
   K(t)=Be^{-tC}B^*
 \]
-が得られます．ここで重要なのは，memoryが現れること自体ではなく，
-未解像作用素 \(C\) と結合作用素 \(B\) が，kernelの正値性，減衰，完全単調性，受動性を
-どのように決定するかを明らかにすることです．<br><br>
-
-厳密消去や内部状態実現は本研究の出発点ですが，それ自体を主要な新規性とはしません．
-近い目標は，
-<ul>
-  <li>完全系から縮約memory方程式への厳密な消去公式，</li>
-  <li>未解像初期値が生むhistory forcingの正確な記述，</li>
-  <li>作用素値kernel \(K(t)=Be^{-tC}B^*\) の構造条件，</li>
-  <li>未解像系の近似誤差をkernel・縮約解・graph energyの誤差へ伝播させる定量評価</li>
-</ul>
-を一つのHilbert空間枠組みで整理することです．<br><br>
-
-<h4>18b．Unresolved generators and the type of history operator</h4>
-未解像自由度を消去したときに現れる履歴作用の型は，未解像生成作用素の性質に依存します．
-本Visionでは，少なくとも次の原型を区別します．
+が現れます．ただし，履歴作用の型は未解像生成作用素 \(C\) の性質に依存します．
 \[
-  	ext{unresolved generator}
+  \text{unresolved generator}
   \longrightarrow
-  egin{cases}
-    	ext{positive-type Volterra memory},\
-    	ext{measure-valued delay},\
-    	ext{hybrid memory--delay operator},\
-    	ext{oscillatory or signed memory},\
-    	ext{memory with stochastic forcing}.
+  \begin{cases}
+    \text{positive-type Volterra memory},\\
+    \text{measure-valued delay},\\
+    \text{hybrid memory--delay operator},\\
+    \text{oscillatory or signed memory},\\
+    \text{memory with stochastic forcing}.
   \end{cases}
 \]
 <ul>
   <li><b>緩和・散逸型：</b>
-  非負自己共役作用素または解析的散逸生成作用素から，
-  \(K(t)=Be^{-tC}B^*\) 型の作用素値Volterra memoryが生じます．
-  これはpositive-type memoryとgraph-space安定性の系列に属します．</li>
+  \(K(t)=Be^{-tC}B^*\)型の作用素値Volterra memoryを生成し，
+  positive-type energyとgraph-space理論へ接続します．</li>
   <li><b>伝播・シフト型：</b>
-  未解像状態が一定時間後に解像系へ戻る機構から，離散遅延または
-  \(\int_{[0,\tau]}u(t-s)\,d\mu(s)\) 型のmeasure-valued delayが生じます．</li>
+  有限伝播時間やreturn mechanismにより，
+  \(u(t-r)\)または
+  \(\int_{[0,\tau]}u(t-s)\,d\mu(s)\)型のdelayを生成します．</li>
   <li><b>緩和＋伝播型：</b>
-  fading memoryと有限伝播時間が共存し，Volterra memoryとmeasure-valued delayの混合系が現れます．</li>
+  fading memoryとmeasure-valued delayが共存するhybrid history operatorを生成します．</li>
   <li><b>保存・振動型：</b>
-  符号を変えるoscillatory kernelが現れ得るため，positive-type energyだけでは扱えません．</li>
+  signedまたはoscillatory kernelを生成し得るため，
+  positive-type energyとは異なる安定性概念が必要です．</li>
 </ul>
 
-したがって，最初のマルチスケール論文は，
-<b>緩和・散逸型の未解像ダイナミクスが生成する作用素値Volterra memory</b>
-に限定します．measure-valued delayは同じ式へ形式的に含めるのではなく，
-伝播・シフト型生成作用素から生じる別の履歴機構として扱います．<br><br>
+厳密消去や内部状態実現は重要な出発点ですが，それ自体を主要な新規性とはしません．
+本programmeの中心は，生成作用素の近似からkernel，transfer function，縮約解，
+graph energyの近似へ進む<b>定量的な安定縮約理論</b>です．<br><br>
 
-<h4>18c．Stable reduction and energy selection</h4>
-未解像変数を消去すると，元のエネルギーが失われるのではなく，
-履歴を含む別のエネルギーへ移されることがあります．一方，positive-type memoryであっても，
-失われた瞬時の \(L^2(0,T;V)\)-coercivityを一様に回復するとは限りません．
-したがって，縮約後の方程式に対しては，元の完全系が選ぶmemory graph spaceを用いる必要があります．<br><br>
+<h4>18c．Layer 2：Stable reduction and energy selection</h4>
+未解像変数を消去すると，完全系のエネルギーは消失するのではなく，
+履歴を含む縮約energyへ移されることがあります．
+一方，positive-type memoryであっても，失われた瞬時の
+\(L^2(0,T;V)\)-coercivityを一様に回復するとは限りません．
+したがって，縮約後には完全系が自然に選ぶmemory graph spaceを用います．<br><br>
 
-本項の中心課題は，
+中心課題は，
 <ul>
-  <li>完全系と縮約系の解の同値性，</li>
+  <li>完全系と縮約系のweak／mild solutionの対応，</li>
   <li>完全系のenergyと縮約系のgraph energyの対応，</li>
-  <li>瞬時作用素 \(A\) が退化する場合のwell-posedness，</li>
-  <li>消失するinstantaneous coercivityに依存しない安定定数</li>
+  <li>瞬時作用素 \(A_0\) が退化する場合のwell-posedness，</li>
+  <li>instantaneous coercivityの消失に依存しない安定定数，</li>
+  <li>transfer function
+  \(B(sI+C)^{-1}B^*\)の摂動から縮約解の摂動を導く評価</li>
 </ul>
-です．これにより，未解像化によって失われた制御を，通常の状態空間へ無理に戻すのではなく，
-縮約が自然に選ぶ状態空間上で回復します．<br><br>
+です．<br><br>
 
-<h4>18d．Stable approximation and discretisation</h4>
-実際の縮約では，未解像空間，semigroup，memory kernelを有限次元近似します．例えば，
+このLayerの新規性候補は，
+\[
+  (C_N,B_N)
+  \longrightarrow
+  B_N(sI+C_N)^{-1}B_N^*
+  \longrightarrow
+  K_N
+  \longrightarrow
+  u_N
+\]
+という誤差伝播をgraph normで定量化し，
+その定数をvanishing instantaneous coercivityに対して一様に保つことです．<br><br>
+
+<h4>18d．Layer 2b：Stable approximation and commuting reduction</h4>
+未解像空間の有限次元近似から
 \[
   K_N(t)=B_Ne^{-tC_N}B_N^*
 \]
-を用いるとき，\(K_N\to K\) から縮約解の収束を導けること，
-および正値性・受動性・graph energyが近似後も保持されることが必要です．<br><br>
+を構成します．ここで必要なのはkernelの点wise収束だけではなく，
+縮約作用素
+\[
+  \mathcal S_N(s)
+  =
+  sI+A_{0,N}
+  +B_N(sI+C_N)^{-1}B_N^*
+\]
+の安定性と，縮約解・graph energyの収束です．<br><br>
 
-中心となる構造は，
+中心となる図は，
 \[
 \begin{array}{ccc}
 \text{full system}
 &\xrightarrow{\text{elimination}}&
-\text{memory equation}\\
-\downarrow\text{discretisation}
+\text{history-dependent reduced system}\\
+\downarrow\text{approximation}
 &&
-\downarrow\text{discretisation}\\
-\text{discrete full system}
+\downarrow\text{approximation}\\
+\text{discrete or truncated full system}
 &\xrightarrow{\text{elimination}}&
-\text{discrete memory equation}
+\text{discrete reduced system}
 \end{array}
 \]
-という図の可換性です．厳密に可換しない場合には，そのcommutatorをmodel-reduction errorとして評価します．
-Prony近似，内部変数近似，BDF/convolution quadrature，空間Galerkin法を，
-同じgraph-energy安定性の下で扱うことを目指します．<br><br>
-
-この段階で追跡すべき誤差は，
+です．compatibleな近似では厳密な可換性を示し，一般の近似ではcommutatorを
+model-reduction errorとして評価します．さらに，
 \[
-  \text{reduction error}
-  +\text{kernel error}
-  +\text{space error}
-  +\text{time error}
+  \lim_{\varepsilon\downarrow0}\lim_{N\to\infty}u_{N,\varepsilon}
+  \quad\text{と}\quad
+  \lim_{N\to\infty}\lim_{\varepsilon\downarrow0}u_{N,\varepsilon}
 \]
-です．最終的には，指定した目的量に必要な未解像状態だけを追加する
-<b>goal-oriented model adaptivity</b>へ接続します．<br><br>
+の一致をgraph topologyで調べます．<br><br>
 
-<h4>18e．Bridge between Volterra memory and measure-valued delay</h4>
-現在の連続理論には，
+<h4>18e．Layer 3：Structure-preserving numerical analysis</h4>
+数値解析は単なる実装層ではなく，連続graph energyと縮約構造を離散レベルで保持する
+本programmeの中核です．近い段階では次の二論文を数値解析の主系列とします．
+
+<h5>Numerical Paper I：BDF convolution quadrature and discrete graph energy</h5>
+BDF1／BDF2 convolution quadratureを，単なるCQ weightの計算ではなく，
+内部変数系を同じBDF法で離散化したものとして理解します．主要課題は，
+<ul>
+  <li>BDF-CQと離散内部変数系の厳密同値性，</li>
+  <li>離散cross-term cancellation，</li>
+  <li>離散memory graph energy，</li>
+  <li>瞬時coercivityの退化に一様な安定性，</li>
+  <li>kernel近似誤差と時間離散誤差の分離，</li>
+  <li>\(\varepsilon\downarrow0\)と\(\tau\downarrow0\)の極限可換性</li>
+</ul>
+です．
+
+<h5>Numerical Paper II：Anisotropic CR–RT full discretisation</h5>
+Numerical Paper Iの時間安定性を基礎に，
+CR空間近似，RT flux reconstruction，semi-regular mesh，
+方向別異方性誤差評価を組み合わせます．主要課題は，
+<ul>
+  <li>完全離散graph-energy安定性，</li>
+  <li>CR–RT構造による局所保存と離散energy identity，</li>
+  <li>flatness parameterを用いた異方性空間誤差評価，</li>
+  <li>kernel・時間・空間誤差の分離，</li>
+  <li>平衡化fluxまたはgoal-oriented quantityへの拡張</li>
+</ul>
+です．
+
+目標とする誤差予算は，
 \[
-  egin{array}{ll}
-  	ext{positive-type Volterra memory}
-  &+	ext{退化し得る瞬時拡散},\
-  	ext{measure-valued delay}
-  &+	ext{coerciveな瞬時発展}
-  \end{array}
+  \|u-U_{h,\tau}\|_{\mathrm{graph}}
+  \leq
+  C\left(
+    \eta_{\mathrm{kernel}}
+    +\eta_{\mathrm{time}}
+    +\eta_{\mathrm{space}}
+    +\eta_{\mathrm{data}}
+  \right),
 \]
-という二つの原型があります．両者の橋渡しとして，
+ただし \(C\) は退化する瞬時coercivityに依存しない，という形です．<br><br>
+
+measure-valued delay系列については，原子近似・delay quadrature・空間離散化を結ぶ
+完全離散論文も将来候補ですが，近い数値解析の主軸は上記二本とします．
+数値解析の詳細な定理設計はVision 11に置き，本Visionでは縮約・同定・認証との依存関係を管理します．<br><br>
+
+<h4>18f．Layer 3b：Bridge between Volterra memory and measure-valued delay</h4>
+二つの連続理論を接続する候補として，
 \[
   \partial_tu+A_0u+A_1(k*u)
-  +\int_{[0,	au]}B\widetilde u(t-s)\,d\mu(s)=f
+  +\int_{[0,\tau]}B\widetilde u(t-s)\,d\mu(s)=f
 \]
-のような混合履歴系を考えます．<br><br>
-
-ここでは，任意のdelayを単に追加できるとは仮定しません．
-純粋な原子遅延は一般にpositive-typeではなく，
-principal-part delayはgraph-space解に必要な空間正則性を要求するためです．
-中心課題は，
+というhybrid memory–delay系を考えます．ここで，
 <ul>
-  <li>lower-order measure-valued delayをgraph-space上の有界摂動として許容する条件，</li>
+  <li>\(A_0\)は非負で，coerciveとは限らない，</li>
+  <li>\(k\)はpositive-type Volterra memoryを生成する，</li>
+  <li>\(\mu\)は原子・分布・混合delayを許す</li>
+</ul>
+という設定を目指します．<br><br>
+
+ただし，任意のprincipal-part delayをそのまま追加できるとは考えません．
+純粋な原子delayは一般にpositive-typeではなく，
+principal-part delayはgraph-space解に追加の空間正則性を要求します．
+したがって，中心課題は，
+<ul>
+  <li>lower-order measure-valued delayを有界摂動として許容する条件，</li>
   <li>principal-part residual delayに必要なadmissibility・smallness・追加正則性，</li>
-  <li>positive-type memoryがdelayによって壊される高周波障害とno-go結果，</li>
-  <li>瞬時coercivityの消失に一様な安定性が成立する範囲と破綻する境界</li>
+  <li>delayがgraph energyを壊す高周波障害とno-go結果，</li>
+  <li>instantaneous coercivityの消失に一様な安定性が成立する範囲，</li>
+  <li>緩和型＋伝播型の未解像生成作用素からhybrid系を導く条件</li>
 </ul>
 を明らかにすることです．<br><br>
 
-この橋渡し論文は，未解像生成作用素の分類とも対応します．
-緩和型部分がgraph energyを供給し，伝播型部分がmeasure-valued delayを生成するとき，
-どの結合構造なら安定縮約が可能かを調べます．
-これは単なる二つの既存枠組みの併記ではなく，
-<b>memoryがdelayをどこまで安定に支えられるかという可能性と不可能性の境界</b>
-を定理化する課題です．<br><br>
+この橋渡しの核心は，二つの既存理論を形式的に足すことではなく，
+<b>positive-type memoryがmeasure-valued delayをどこまで安定に支えられるか</b>
+という可能性と不可能性の境界を定理化することです．<br><br>
 
-<h4>18f．Identification and applications</h4>
-kernel同定は，基礎理論と安定離散化を閉じた後のExpansionとして扱います．
-例えば，
+<h4>18g．Layer 4：Data-driven identification and latent-state inference</h4>
+データドリブン研究は，安定縮約理論の代替ではなく，その逆問題・同定層に位置づけます．
 \[
-  K_J(t)=\sum_{j=1}^{J}C_je^{-\lambda_jt},
-  \qquad C_j\succeq0,
-  \quad \lambda_j>0
+\boxed{
+\begin{array}{lll}
+\text{forward direction:}&
+\text{hidden dynamics}\to\text{memory/delay},\\
+\text{inverse direction:}&
+\text{observations}\to\text{kernel/delay/latent state}
+\end{array}}
 \]
-という制約付き近似により，正値性，受動性，完全単調性を保持したまま，
-観測または高解像度計算からmemoryを同定することを目指します．
-同定誤差はkernel-to-solution stabilityを介して解と目的量の誤差へ伝播させます．<br><br>
+です．<br><br>
 
-応用候補には，縮約流体，分子動力学，粘弾性材料，非フーリエ熱伝導，
-潜在状態を含む生体システムがあります．ただし，個別応用では，
-何がresolved／unresolvedであるか，kernelが何を表すか，どの量が観測可能かを明示します．
+データが入る場所を次の三つに分けます．
+<ul>
+  <li><b>Resolved／unresolved decomposition：</b>
+  POD，reduced basis，autoencoder，Koopman-type representationなどを用いて
+  縮約座標を選びます．ただし再構成誤差だけでなく，energy，passivity，
+  long-time stability，目的量の保持を評価基準とします．</li>
+  <li><b>Kernel／delay identification：</b>
+  \[
+    K_J(t)=\sum_{j=1}^{J}C_je^{-\lambda_jt},
+    \qquad C_j\succeq0,\quad \lambda_j>0
+  \]
+  のような制約付きProny表現，または
+  \[
+    \mu_J=\sum_{j=1}^{J}w_j\delta_{\tau_j}+\mu_{\mathrm{cont},J}
+  \]
+  を用い，positive type，passivity，delay supportなどの構造を保持して同定します．</li>
+  <li><b>Model enrichment：</b>
+  予測誤差やcertificateが大きいとき，latent state，relaxation mode，
+  delay atom，局所fine-scale modelを追加します．</li>
+</ul>
+
+観測された解像軌道だけから内部状態対 \((B,C)\)を一意に復元できるとは限りません．
+したがって，第一段階では内部機構の完全復元ではなく，
+<b>観測可能なkernelまたはtransfer functionの安定同定</b>を目標とします．
+その後，minimal realisation，物理的解釈，identifiabilityを調べます．<br><br>
+
+<h4>18h．Layer 5：Certification, goal-oriented adaptivity, and applications</h4>
+最終的には，fine model，reduced model，identified kernel，完全離散解の差を分離します．
+\[
+\begin{aligned}
+  |J(u_{\mathrm{fine}})-J(U_{h,\tau,\widehat K})|
+  \leq{}&
+  \eta_{\mathrm{reduction}}
+  +\eta_{\mathrm{identification}}
+  +\eta_{\mathrm{kernel}}\\
+  &+\eta_{\mathrm{space}}
+  +\eta_{\mathrm{time}}
+  +\eta_{\mathrm{data}} .
+\end{aligned}
+\]
+ここで重要なのは状態全体の誤差だけではなく，
+流量，応力，治療効果差，長時間平均などの目的量 \(J\) に対する
+goal-oriented reduction errorです．<br><br>
+
+certificateが許容値を超えたときには，
+\[
+  \text{large certified error}
+  \longrightarrow
+  \text{missing hidden mechanism}
+  \longrightarrow
+  \text{model enrichment}
+  \longrightarrow
+  \text{recertification}
+\]
+というgoal-oriented model adaptivityを構成します．
+応用候補には，縮約流体，分子動力学，粘弾性，非フーリエ熱伝導，
+気候・災害モデル，潜在状態を含む生体システムがあります．
 疾患進行予測への具体化はVision 19にまとめます．<br><br>
 
-<h4>Near-term paper sequence</h4>
-厳密消去や内部状態実現のみを主結果とするのではなく，次の短い連載を想定します．
+<h4>18i．Anticipated paper programme</h4>
+以下は現時点で想定する論文地図です．題名はworking titleであり，
+新規性調査と主定理の成立に応じて統合・分割します．
+
+<h5>Phase I：Near-term numerical core</h5>
 <ol>
-  <li><b>Stable approximation of unresolved dissipative dynamics:
-  graph-space convergence and commuting reduction</b><br>
-  未解像生成作用素・結合作用素の近似から，transfer function，作用素値kernel，
-  縮約解，graph energyの収束を導き，消去・Galerkin近似・退化極限の可換性を調べます．</li>
-  <li><b>Degenerate diffusion with mixed memory and measure-valued delay</b><br>
-  positive-type Volterra memoryとmeasure-valued delayの混合系について，
-  lower-order delayの許容条件，principal-part delayの障害，coercivity消失に一様な安定性の境界を扱います．</li>
-  <li><b>Passivity-preserving kernel identification</b>（必要な場合）<br>
-  構造制約付き同定とkernel errorの解・目的量への伝播を扱います．</li>
+  <li><b>N1．Structure-preserving BDF convolution quadrature for memory-dominated evolution equations</b><br>
+  BDF-CQの内部変数表示，離散graph energy，coercivity-uniform stability，
+  kernel／time error separation．</li>
+  <li><b>N2．Anisotropic Crouzeix–Raviart approximation of memory-dominated diffusion</b><br>
+  CR–RT完全離散化，semi-regular anisotropic meshes，
+  graph-norm error estimate，局所保存と誤差予算．</li>
 </ol>
 
-構造保存BDF convolution quadratureと異方性CR--RT完全離散化はVision 11の数値解析系列として先行させ，
-その結果を本Visionの未解像空間近似・可換縮約へ利用します．
+<h5>Phase II：Stable reduction and the memory–delay bridge</h5>
+<ol start="3">
+  <li><b>R1．Stable approximation of unresolved dissipative dynamics:
+  graph-space convergence and commuting reduction</b><br>
+  未解像生成作用素の近似，transfer-function convergence，
+  reduction／approximation commutator，vanishing-coercivity limitとの可換性．</li>
+  <li><b>R2．Degenerate diffusion with mixed positive-type memory and measure-valued delay:
+  admissibility and sharp obstructions</b><br>
+  lower-order delayの許容性，principal-part delayの障害，
+  graph-space well-posednessが成立する境界とno-go結果．</li>
+</ol>
 
-この研究が目指す中心的な流れは，
+<h5>Phase III：Data-driven and certified reduction</h5>
+<ol start="5">
+  <li><b>D1．Passivity-preserving identification of operator-valued memory kernels</b><br>
+  構造制約付きProny／transfer-function同定，
+  identifiability，kernel-to-solution error propagation．</li>
+  <li><b>C1．Certified model reduction for history-dependent evolution equations</b><br>
+  reduction・identification・kernel・space・time errorの統合，
+  goal-oriented certificateとmodel adaptivity．</li>
+</ol>
+
+<h5>Possible additional branches</h5>
+<ul>
+  <li>measure-valued delayの原子近似と完全離散誤差解析，</li>
+  <li>伝播・シフト型未解像系からdelay measureを生成する縮約理論，</li>
+  <li>oscillatory／signed memoryに対する非positive-type安定性，</li>
+  <li>stochastic closureとkernel uncertainty，</li>
+  <li>非線形未解像系と局所線形化／Mori–Zwanzig型closure</li>
+</ul>
+
+<h4>18j．Priority and dependency map</h4>
+現時点での実行順序は，
+\[
+\boxed{
+  \mathrm{N1}
+  \longrightarrow
+  \mathrm{N2}
+  \longrightarrow
+  \mathrm{R1}
+  \longrightarrow
+  \mathrm{R2}
+  \longrightarrow
+  \mathrm{D1/C1}
+}
+\]
+です．N1・N2は既存の連続graph-space理論を数値化する近接課題です．
+R1はその離散内部変数構造を未解像空間近似へ引き上げます．
+R2は二つの連続理論を接続します．D1・C1は，
+forward stabilityと構造保存離散化が閉じた後に進めます．<br><br>
+
+各論文の出口条件は，
+<ul>
+  <li>既知の厳密消去または内部状態表示だけを主結果にしないこと，</li>
+  <li>新しい安定定数，誤差伝播，極限可換性，sharp obstructionのいずれかを主定理にすること，</li>
+  <li>連続理論・数値解析・同定・応用を一論文へ詰め込まないこと，</li>
+  <li>各論文が独立した問いと再利用可能な定理を持つこと</li>
+</ul>
+です．<br><br>
+
+本programmeが目指す中心的な流れは，
 \[
   \text{unresolved dynamics}
   \longrightarrow
-  \text{operator-valued memory}
+  \text{memory or delay}
   \longrightarrow
   \text{stable reduction}
   \longrightarrow
-  \text{structure-preserving approximation}
+  \text{structure-preserving computation}
+\]
+\[
   \longrightarrow
-  \text{certified prediction}
+  \text{data-driven identification}
+  \longrightarrow
+  \text{certified prediction and model adaptivity}
 \]
 です．<br><br>
 
@@ -1231,7 +1456,7 @@ kernel同定は，基礎理論と安定離散化を閉じた後のExpansionと�
 <ul>
   <li>Vision 5：縮約・内部状態・memory closureの数理構造の抽象化</li>
   <li>Vision 7／7b：確率的closure，kernel同定，推論の信頼性</li>
-  <li>Vision 11：与えられたmemory／delay方程式の連続理論，memory–delay橋渡し，完全離散化</li>
+  <li>Vision 11：与えられたmemory／delay方程式の連続理論と構造保存完全離散化</li>
   <li>Vision 15：表現・計量・射影による縮約法と数値解法の統一的理解</li>
   <li>Vision 17：model-reduction・kernel・離散化誤差に対するcertificate</li>
   <li>Vision 19：治療履歴と潜在状態に基づく疾患進行予測</li>
@@ -1242,7 +1467,6 @@ kernel同定は，基礎理論と安定離散化を閉じた後のExpansionと�
 </p>
 </article>
 </div>
-
 
 
 <h3>Vision 19: 治療履歴と潜在状態に基づく癌・歯周病の動的進行予測 — 履歴依存型推論・因果推論・信頼保証付き時空間可視化【R】【A】【V】</h3>
