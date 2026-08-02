@@ -10,7 +10,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,Certified FEM,AI4Math,Trustworthy Simulation,Anisotropic Meshes,Unresolved Dynamics,Memory Equations,Multiscale Reduction">
-<meta name="description" content="Hiroki Ishizaka: certified finite element analysis under computable geometric conditions and stable reduction theory for unresolved dynamics.">
+<meta name="description" content="Hiroki Ishizaka: certified finite element analysis and stable reduction theory that retains the dynamical influence of unresolved scales.">
 
 <link rel="stylesheet" href="./css/base.css">
 <link rel="stylesheet" href="./css/rwd.css">
@@ -89,7 +89,7 @@
 			<div class="main-image-in-text-cont">
 			<p class="main-copy">Mathematics for Trustworthy Simulation</p>
 			<p class="sub-copy">Mathematics makes the invisible visible</p>
-			<p class="sub-copy">Certified FEM &amp; stable reduction of unresolved dynamics</p>
+			<p class="sub-copy">Certified finite element analysis &nbsp;|&nbsp; Stable reduction theory for unresolved dynamics</p>
 			</div>
 		</div>
 	</div>
@@ -134,7 +134,8 @@ In my research, the “invisible” includes discretisation error, the influence
 unresolved scales, latent memory, and the limits of numerical prediction.
 I study the mathematics needed to make these hidden effects visible, quantifiable, and controllable,
 so that numerical prediction becomes <b>stable, accurate, and certifiable</b>.
-My work currently develops two complementary research programmes:
+My research is organised into two mathematically distinct programmes, linked by a common demand:
+approximation must not conceal the mechanisms that determine reliability.
 </p>
 
 <ol>
@@ -149,12 +150,14 @@ My work currently develops two complementary research programmes:
 </ol>
 
 <p>
-The first programme asks how mesh geometry, anisotropy, nonconformity, flux reconstruction,
-and goal-oriented error estimation determine the reliability of finite element computation.
-The second asks what remains after fine scales, latent states, or unobserved variables are eliminated,
-and how the resulting memory, delay, nonlocal closure, and internal states can be approximated without destroying stability.
-Their common objective is <b>trustworthy simulation</b>: not only producing a numerical prediction,
-but also explaining its stability, error, unresolved influence, and range of validity.
+The first programme studies how mesh geometry, anisotropy, nonconformity, flux reconstruction,
+and goal-oriented error estimation govern the reliability of finite element computation.
+The second studies what mathematical trace remains after fine scales, latent states, or unobserved variables are eliminated,
+and how that trace can be retained through memory, internal states, effective dissipation, or nonlocal closure.
+The two programmes are not the same theory: finite element analysis discretises PDEs,
+whereas stable reduction analyses the consequences of eliminating degrees of freedom.
+They meet in a broader objective, <b>trustworthy simulation</b>, by identifying what an approximation leaves unresolved
+and by quantifying how that omission affects stability, error, and predictive validity.
 </p>
 
 <h3>Programme I — Certified finite element analysis</h3>
@@ -190,11 +193,19 @@ and computable certificates for quantities of interest.
 
 <h3 id="stable-reduction">Programme II — Stable reduction theory for unresolved dynamics</h3>
 <p>
-When unresolved degrees of freedom are removed from an evolution equation, their influence does not generally disappear.
-It may remain as operator-valued memory, delayed or history-dependent forcing,
-spatially nonlocal closure, internal states, or stochastic fluctuation.
-The purpose of stable reduction theory is to construct and analyse reduced models that retain
-relevant stability, dissipation, causality, and singular-limit structure of the full dynamics.
+Eliminating unresolved variables is not the same as setting their influence to zero.
+A reduced model may have fewer variables and still be dynamically wrong if it erases the mechanisms carried by discarded scales.
+Low-amplitude or weakly observed components may still control dissipation, instability, boundary and internal layers,
+scale-to-scale transfer, long-time statistics, or rare events.
+</p>
+
+<p>
+<b>Dimension reduction removes variables. Stable reduction removes variables without erasing their dynamical influence.</b>
+That influence may survive as operator-valued memory, delayed or history-dependent forcing,
+effective dissipation, spatially nonlocal closure, internal states, or stochastic fluctuation.
+Accordingly, this programme is not identified with any particular model-order-reduction algorithm.
+Its central problem is to determine what must remain after elimination and which structural properties of the full dynamics
+can be transferred to the reduced description.
 </p>
 
 \[
@@ -202,20 +213,27 @@ relevant stability, dissipation, causality, and singular-limit structure of the 
   \longrightarrow
   \text{resolved / unresolved decomposition}
   \longrightarrow
-  \text{memory or nonlocal closure}
+  \text{elimination with retained influence}
 \]
 \[
   \longrightarrow
-  \text{stable reduced dynamics}
+  \text{memory, internal states, or nonlocal closure}
   \longrightarrow
-  \text{certified computation}.
+  \text{stable reduced dynamics}.
 \]
 
 <p>
-Current work develops the analytical core of this programme through graph-space well-posedness,
+The objective is stronger than well-posedness of the reduced equation alone.
+A satisfactory reduction should retain, quantify, or correctly approximate the relevant stability,
+dissipation, causality, constraints, and singular-limit structure of the full system.
+It should also reveal when a chosen reduction suppresses an essential phenomenon.
+</p>
+
+<p>
+Current work provides analytical ingredients for this programme through graph-space well-posedness,
 positive-type and measure-valued memory, kernel stability, internal-variable representations,
 and singular limits such as memory concentration and vanishing instantaneous coercivity.
-The next stage is to derive and approximate such kernels and closure operators directly from unresolved generators,
+The next stage is to derive and approximate kernels and closure operators directly from unresolved generators,
 with applications to convection-dominated diffusion, incompressible flow, multiscale systems,
 and data-informed reduced models.
 </p>
@@ -224,10 +242,11 @@ and data-informed reduced models.
 Central questions include:
 </p>
 <ul>
-  <li>Which state space, energy, and dissipation mechanism survive reduction?</li>
-  <li>How do projection, kernel, closure, and unresolved-initial-state errors propagate to the resolved solution?</li>
+  <li>Which unresolved mechanisms must be retained for the reduced model to remain dynamically faithful?</li>
+  <li>Which state space, energy, constraints, and dissipation mechanisms survive elimination?</li>
+  <li>How do projection, kernel, closure, and unresolved-initial-state errors propagate to resolved quantities?</li>
   <li>Do reduction, discretisation, homogenisation, and singular limits commute?</li>
-  <li>How can memory and internal states be approximated while preserving positivity, causality, and stability?</li>
+  <li>How can lost or distorted phenomena be detected, bounded, and corrected?</li>
 </ul>
 
 <p>
@@ -236,7 +255,9 @@ Central questions include:
 
 <h3>Research architecture — G / R / A / V</h3>
 <p>
-The two programmes are developed through four interacting research lines:
+The two programmes remain mathematically distinct, but they interact through four research lines.
+The links arise in structure-preserving approximation, multiscale error decomposition,
+and certification of what discretisation or reduction leaves unresolved:
 </p>
 <ul>
   <li><b>G — Geometry &amp; Anisotropic FEM Theory</b><br>
@@ -260,10 +281,14 @@ The two programmes are developed through four interacting research lines:
 <h3>Why trustworthy simulation?</h3>
 <p>
 Digital twins, scientific machine learning, and data-informed models increasingly connect simulation with practical decisions.
-In such settings, a visually plausible prediction is not enough: one must quantify approximation error,
-unresolved effects, extrapolation risk, conservation defects, and the resolution needed for a target quantity.
-My aim is to develop the mathematical reliability layer linking PDE analysis, numerical discretisation,
-model reduction, and verification.
+In such settings, a visually plausible prediction is not enough.
+Two distinct omissions must be controlled: discretisation leaves spatial or temporal structure unresolved,
+whereas reduction deliberately eliminates variables or scales.
+Both can suppress phenomena that matter to a target quantity.
+My aim is therefore to quantify approximation error, unresolved influence, extrapolation risk,
+conservation defects, and the resolution needed for a defensible prediction.
+This forms a mathematical reliability layer linking PDE analysis, numerical discretisation,
+stable reduction, and verification.
 </p>
 
 <p>
@@ -277,7 +302,7 @@ and urban or disaster-oriented digital-twin simulation
 
 <h3>Near-future directions</h3>
 <ul>
-  <li><b>Stable reduction of unresolved dynamics:</b> derive memory and nonlocal closures from unresolved generators and establish resolution- and singular-limit stability.</li>
+  <li><b>Stable reduction without dynamical erasure:</b> identify which unresolved effects must survive as memory, internal states, effective dissipation, or nonlocal closure, and establish resolution- and singular-limit stability.</li>
   <li><b>Structure-preserving memory discretisation:</b> combine finite internal states, convolution quadrature, and anisotropic CR–RT approximation.</li>
   <li><b>Certified error control for decision-making:</b> provide computable error radii and certificates for quantities of interest.</li>
   <li><b>Reliability layers for surrogates and physics-ML:</b> detect boundary-layer, extrapolation, conservation, and under-resolution failures.</li>
