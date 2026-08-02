@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>第2回：未解像状態を消去すると，なぜmemoryが現れるのか | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,履歴依存型発展方程式,memory kernel,measure-valued delay,Volterra equation,internal variables,graph space,structure-preserving discretisation,convolution quadrature">
+<meta name="description" content="時間局所的な拡張系から未解像状態を消去し，memory kernel K(t)=Be^{-tC}Dとdynamic Schur complementが現れる仕組みを導出します．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../">Home</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../fem/">Research Visions</a></li>
+        <li><a href="../../suppl/">Supplementary Visions</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+        <li><a href="../../links/">Links</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+    <li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a>
+      <meta itemprop="position" content="1">
+    </li>
+    <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../" itemprop="item"><span itemprop="name">Blog</span></a>
+      <meta itemprop="position" content="2">
+    </li>
+    <li class="bcl-last">Blog post from 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第2回：未解像状態を消去すると，なぜmemoryが現れるのか</h1>
+
+<p class="news-date"><time datetime="2026-08-02">2nd August 2026</time></p>
+
+<h2>Introduction：memoryはどこから来るのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+memory kernelは，現象に後から付け加える経験係数として導入されることがあります．
+しかし，より基本的な生成機構があります．
+時間局所的な拡張系から未解像状態を厳密に消去すると，
+解像状態だけの方程式に履歴積分が現れます．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>今回の結論</b><br>
+拡張状態ではMarkov型であった系も，観測する変数を減らすと履歴依存型になります．<br>
+memory kernelは，未解像発展作用素のsemigroupと，解像・未解像状態の結合から作られます．
+</div>
+<p>
+以下では，有限次元の行列系から始めますが，導出の本質はHilbert空間上の作用素系でも同じです．
+計算の途中で初期未解像状態が現れる点，kernelの符号が結合に依存する点，
+completely monotone kernelが自動的に得られるわけではない点に注意します．
+</p>
+</article>
+</div>
+
+<h2>1．出発点は時間局所的な拡張系</h2>
+<div class="news">
+<article class="news-item">
+<p>
+解像状態を \(u(t)\)，未解像状態を \(z(t)\) とし，
+\[
+\begin{aligned}
+  \partial_tu(t)+Au(t)+Bz(t)&=f(t),\\
+  \partial_tz(t)+Cz(t)&=Du(t)+g(t)
+\end{aligned}
+\tag{1}
+\]
+を考えます．\(A\) は解像状態の瞬時作用，\(C\) は未解像状態の内部発展，
+\(B\) と \(D\) は二つの状態を結ぶ作用素です．
+</p>
+<p>
+状態ベクトル \(X=(u,z)\) を使えば，これは
+\[
+  \partial_tX+\begin{pmatrix}A&B\\-D&C\end{pmatrix}X
+  =\begin{pmatrix}f\\g\end{pmatrix}
+\]
+という時間局所系です．\(u(t)\) と \(z(t)\) の現在値が分かれば，
+少なくとも形式的には次の時刻の変化が決まります．この拡張状態の意味ではmemoryはありません．
+</p>
+<p>
+ところが，観測・保存・計算する変数を \(u\) だけに限定すると，\(z\) の現在値が見えません．
+その不足情報を補うために，\(u\) の過去が必要になります．
+</p>
+</article>
+</div>
+
+<h2>2．variation of constantsで未解像状態を解く</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(-C\) がsemigroup \(e^{-tC}\) を生成するとします．第二式をvariation of constantsで解くと，
+\[
+  z(t)=e^{-tC}z_0
+  +\int_0^t e^{-(t-s)C}Du(s)\,ds
+  +\int_0^t e^{-(t-s)C}g(s)\,ds
+\tag{2}
+\]
+となります．右辺の三項には，それぞれ明確な意味があります．
+</p>
+<ul>
+  <li>\(e^{-tC}z_0\)：初期未解像状態の残存効果．</li>
+  <li>\(\int_0^t e^{-(t-s)C}Du(s)\,ds\)：解像状態が未解像状態へ渡した過去情報．</li>
+  <li>\(\int_0^t e^{-(t-s)C}g(s)\,ds\)：未解像側に加わる外力の履歴効果．</li>
+</ul>
+<p>
+ここで重要なのは，\(z(t)\) が \(u(t)\) の現在値だけではなく，
+\(0\le s\le t\) における軌道全体を含むことです．
+</p>
+</article>
+</div>
+
+<h2>3．代入するとmemory kernelが現れる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+式 (2) を第一式へ代入すると，
+\[
+\begin{aligned}
+  \partial_tu(t)+Au(t)
+  +\int_0^t K(t-s)u(s)\,ds
+  ={}&f(t)-r_{z_0}(t)-r_g(t),
+\end{aligned}
+\tag{3}
+\]
+を得ます．ここで，
+\[
+  K(t):=Be^{-tC}D,
+  \qquad
+  r_{z_0}(t):=Be^{-tC}z_0,
+  \qquad
+  r_g(t):=\int_0^t Be^{-(t-s)C}g(s)\,ds
+\tag{4}
+\]
+です．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 2px solid #666666;">
+<b>memory kernelの生成公式</b>
+\[
+  \boxed{K(t)=Be^{-tC}D}
+\]
+未解像状態の内部伝播 \(e^{-tC}\) を，入力結合 \(D\) と出力結合 \(B\) ではさんだものがkernelです．
+</div>
+<p>
+この導出は厳密な状態消去です．Taylor展開や小遅延近似をまだ行っていません．
+したがって，式 (3) は元の拡張系と同じ情報をもっています．ただし，そのためには
+初期未解像状態 \(z_0\) に由来する項 \(r_{z_0}\) を捨ててはいけません．
+</p>
+<p>
+また，kernelの符号は \(B\)，\(C\)，\(D\) の構造に依存します．
+式の符号規約を変えればmemory項の符号も変わります．
+「状態を消去すれば必ずpositive kernelになる」という結論は導けません．
+</p>
+</article>
+</div>
+
+<h2>4．最小のスカラー例</h2>
+<div class="news">
+<article class="news-item">
+<p>
+一つの解像変数と一つの未解像緩和変数を考えます．
+\[
+\begin{aligned}
+  u'(t)+a u(t)+b z(t)&=f(t),\\
+  z'(t)+\lambda z(t)&=c u(t),
+  \qquad \lambda>0.
+\end{aligned}
+\tag{5}
+\]
+第二式から
+\[
+  z(t)=e^{-\lambda t}z_0
+  +c\int_0^t e^{-\lambda(t-s)}u(s)\,ds
+\]
+なので，
+\[
+  u'(t)+a u(t)
+  +bc\int_0^t e^{-\lambda(t-s)}u(s)\,ds
+  =f(t)-b e^{-\lambda t}z_0
+\tag{6}
+\]
+を得ます．kernelは
+\[
+  k(t)=bc\,e^{-\lambda t}
+\]
+です．
+</p>
+<p>
+\(\lambda\) が大きいほど未解像状態は速く忘れ，kernelは短時間で減衰します．
+\(\lambda\) が小さいほど記憶は長く残ります．\(bc\) は解像状態から未解像状態へ渡され，
+再び戻ってくる結合の強さを表します．
+</p>
+<p>
+この一つの指数kernelは，一つの内部変数と完全に等価です．
+したがって，指数kernelを直接畳み込む代わりに，\(z\) の常微分方程式を更新できます．
+</p>
+</article>
+</div>
+
+<h2>5．Laplace領域ではdynamic Schur complementになる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+初期値項と外力項をいったん分け，Laplace変換を考えます．
+第二式から形式的に
+\[
+  \widehat z(s)=(sI+C)^{-1}D\widehat u(s)+\cdots
+\]
+となり，第一式は
+\[
+  \Bigl[sI+A+B(sI+C)^{-1}D\Bigr]\widehat u(s)=\cdots
+\tag{7}
+\]
+へ変わります．
+</p>
+<p>
+行列の静的なSchur complementでは \(C^{-1}\) が現れますが，
+発展方程式では \((sI+C)^{-1}\) が現れます．周波数変数 \(s\) に依存するため，
+これは<b>dynamic Schur complement</b>とみなせます．
+</p>
+<p>
+時間領域へ戻すと，\((sI+C)^{-1}\) の逆変換が \(e^{-tC}\) であり，
+その結果がkernel \(K(t)=Be^{-tC}D\) です．
+つまり，memoryは「時間方向のSchur complement」です．
+</p>
+</article>
+</div>
+
+<h2>6．有限個の未解像モードは指数関数の和を作る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(C\) が有限次元で対角化でき，非負の実固有値を \(\lambda_j\)，対応する射影を \(P_j\) とすると，
+\[
+  e^{-tC}=\sum_{j=1}^{N}e^{-\lambda_jt}P_j
+\]
+です．したがって，
+\[
+  K(t)=\sum_{j=1}^{N}BP_jD\,e^{-\lambda_jt}
+\tag{8}
+\]
+となります．
+</p>
+<p>
+有限個の未解像緩和モードを消去すると，有限個の指数関数の和が得られます．
+逆に，sum-of-exponentials kernelは，各指数関数に一つずつ内部変数を割り当てることで，
+有限次元の拡張状態へ戻せます．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+  <tr>
+    <th style="border:1px solid #777; padding:7px;">未解像構造</th>
+    <th style="border:1px solid #777; padding:7px;">縮約後のmemory</th>
+    <th style="border:1px solid #777; padding:7px;">計算表現</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">一つの緩和モード</td>
+    <td style="border:1px solid #777; padding:7px;">一つの指数kernel</td>
+    <td style="border:1px solid #777; padding:7px;">一つの内部変数</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">有限個の緩和モード</td>
+    <td style="border:1px solid #777; padding:7px;">指数関数の有限和</td>
+    <td style="border:1px solid #777; padding:7px;">有限個の内部変数</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">連続スペクトル</td>
+    <td style="border:1px solid #777; padding:7px;">指数関数の測度積分</td>
+    <td style="border:1px solid #777; padding:7px;">連続個の内部変数またはquadrature</td>
+  </tr>
+</table>
+</article>
+</div>
+
+<h2>7．連続スペクトルからcompletely monotone kernelへ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+未解像作用素 \(C\) が連続スペクトルをもつ場合，指数関数の有限和は測度積分へ移ります．
+適切な自己共役性・非負性・結合の整合性があると，スカラーkernelは
+\[
+  k(t)=\int_{[0,\infty)}e^{-\lambda t}\,d\nu(\lambda)
+\tag{9}
+\]
+と表されます．これはBernstein representationであり，\(k\) はcompletely monotoneです．
+</p>
+<p>
+この式では，\(\nu\) が未解像緩和率の分布を表します．
+大きな \(\lambda\) は速い緩和，小さな \(\lambda\) は長い記憶に対応します．
+有限原子測度は指数関数の有限和，連続測度は連続スペクトルを表します．
+</p>
+<p>
+ただし，任意の状態消去が式 (9) を生むわけではありません．
+非自己共役な内部発展，符号の異なる結合，振動モードを含む系では，
+kernelが符号変化したり，指数減衰ではなく振動を伴ったりします．
+completely monotone kernelは重要な構造クラスですが，状態消去の一般形ではありません．
+</p>
+</article>
+</div>
+
+<h2>8．離散遅延は緩和モードとは別の未解像機構から生じる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Dirac kernel \(\delta_{\tau_d}\) による離散遅延 \(u(t-\tau_d)\) は，
+有限個の指数緩和モードとは異なる構造です．
+一つの見方は，履歴を運ぶtransport state \(q(t,\theta)\) を導入することです．
+\[
+  \partial_tq(t,\theta)+\partial_\theta q(t,\theta)=0,
+  \qquad q(t,0)=u(t).
+\tag{10}
+\]
+特性線に沿って
+\[
+  q(t,\theta)=u(t-\theta)
+\]
+なので，端点 \(\theta=\tau_d\) を観測すれば
+\[
+  q(t,\tau_d)=u(t-\tau_d)
+\]
+が得られます．
+</p>
+<p>
+したがって，離散遅延は「緩和するhidden mode」ではなく，
+過去値を遅延線に沿って運ぶ未解像transport stateを消去した結果と理解できます．
+分布遅延は，この遅延線上の複数位置を測度 \(\mu\) で観測するものです．
+この見方が，次回のmeasure-valued delayへつながります．
+</p>
+</article>
+</div>
+
+<h2>9．初期未解像状態はprehistoryとして残る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+式 (3) には \(r_{z_0}(t)=Be^{-tC}z_0\) が残りました．
+これは縮約後の方程式が，\(u(0)\) だけでは閉じないことを示しています．
+未解像状態の初期値を捨てるなら，その代わりに過去履歴，初期memory，
+またはzero-prehistoryという追加仮定を指定しなければなりません．
+</p>
+<p>
+有限遅延モデルでは，未知軌道 \(u\) を \((0,T)\) だけで定めても
+\(u(t-s)\) が負の時刻を参照します．そのため，\((-\tau,0)\) 上の履歴 \(\psi\) と接続した
+\(\widetilde u\) を使います．
+Volterraモデルでは積分下端を0に置くことでzero-prehistoryを選んでいます．
+どちらも，状態消去前の初期情報をどう符号化するかという問題です．
+</p>
+</article>
+</div>
+
+<h2>10．なぜ物理変数だけのenergyでは足りないのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+元の拡張系では，安定性が \(u\) と \(z\) の合成エネルギーに現れることがあります．
+ところが，\(z\) を消去して \(u\) だけを見ると，内部に保存されたエネルギーが見えなくなります．
+これが，memory termは非負のdissipationをもつのに，瞬時の \(L^2(0,T;V)\) energyを
+周波数一様に支配できない，という現象の直観です．
+</p>
+<p>
+completely monotone kernelに対して
+\[
+  \zeta(\lambda,t)=\int_0^t e^{-\lambda(t-s)}u(s)\,ds
+\]
+を戻すと，memory dissipationは各内部モードの終端エネルギーと散逸の積分として表されます．
+正しい安定性ノルムは，概念的には
+\[
+  \|u(t)\|_H^2
+  +\int_{[0,\infty)}a_1\bigl(\zeta(\lambda,t),\zeta(\lambda,t)\bigr)\,d\nu(\lambda)
+\tag{11}
+\]
+を含む拡張memory energyです．
+</p>
+<p>
+物理方程式と内部変数方程式を同時にテストすると，結合項が正確に打ち消し合います．
+このcross-term cancellationが，瞬時coercivityが退化してもgraph-space安定性を得る鍵になります．
+したがって，数値法でも同じadjoint relationと打消しを保存しなければなりません．
+</p>
+</article>
+</div>
+
+<h2>11．状態消去から数値近似へ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+生成公式 \(K(t)=Be^{-tC}D\) は，数値計算の設計にも直接つながります．
+</p>
+<ol>
+  <li>
+    <b>hidden spectrumのquadrature：</b>
+    連続測度 \(\nu\) を有限原子 \(\nu_N=\sum_{j=1}^{N}w_j\delta_{\lambda_j}\) で近似し，
+    kernelを指数関数の有限和へ置き換える．
+  </li>
+  <li>
+    <b>internal-variable update：</b>
+    各 \(\lambda_j\) に対して \(\partial_t\zeta_j+\lambda_j\zeta_j=u\) を時間離散化する．
+  </li>
+  <li>
+    <b>convolution quadrature：</b>
+    kernelのLaplace transformとBDFなどの生成多項式を組み合わせ，
+    履歴作用素全体を離散化する．
+  </li>
+  <li>
+    <b>space discretisation：</b>
+    物理変数と内部変数の結合が連続energy identityを再現するように，
+    conforming FEMまたはCR–RT型の再構成を設計する．
+  </li>
+</ol>
+<p>
+有限原子化は単なる高速化ではなく，未解像スペクトルのmodel reductionです．
+したがって，quadrature errorとspace-time discretisation errorを分離して評価する必要があります．
+</p>
+</article>
+</div>
+
+<h2>12．この導出から言えること，言えないこと</h2>
+<div class="news">
+<article class="news-item">
+<h3>言えること</h3>
+<ul>
+  <li>履歴依存性は，時間局所な拡張系の状態消去から厳密に生じ得る．</li>
+  <li>kernelは未解像semigroupと結合作用素から構成される．</li>
+  <li>有限個の緩和モードは指数kernelの有限和に対応する．</li>
+  <li>連続緩和スペクトルは測度積分型kernelに対応する．</li>
+  <li>正しいenergyは消去された内部状態のenergyを含むことがある．</li>
+</ul>
+<h3>この導出だけでは言えないこと</h3>
+<ul>
+  <li>得られたkernelが必ず非負，completely monotone，positive typeであるとは限らない．</li>
+  <li>縮約kernelが観測から一意に同定できるとは限らない．</li>
+  <li>有限原子近似がどの距離で解を近似するかは，別途kernel stabilityが必要である．</li>
+  <li>memory dissipationだけで瞬時energyのcoercivityが回復するとは限らない．</li>
+</ul>
+</article>
+</div>
+
+<h2>Conclusion</h2>
+<div class="news">
+<article class="news-item">
+<p>
+未解像状態を消去するとmemoryが現れる理由は，その状態が過去の入力を内部で伝播・緩和し，
+後から解像状態へ返すからです．拡張状態では現在値だけで閉じていた系も，
+解像変数だけに射影すると，失われた現在値を過去軌道で補う必要があります．
+</p>
+<p>
+\[
+  \text{local extended dynamics}
+  \xrightarrow{\text{eliminate hidden state}}
+  \text{history-dependent reduced dynamics}
+\]
+</p>
+<p>
+そして，この消去は
+\[
+  K(t)=Be^{-tC}D
+\]
+というkernel生成公式，または
+\[
+  B(sI+C)^{-1}D
+\]
+というdynamic Schur complementとして読めます．
+この視点を持つと，kernel approximationはhidden dynamicsのmodel reductionであり，
+internal-variable methodは消去した状態を計算可能な形で戻す操作だと分かります．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>次回：</b>measure-valued delayで分布遅延・原子遅延・混合遅延を統一する<br>
+遅延線上の観測を有限Borel測度で表し，原子遅延を平方可積分な履歴上で
+代表元に依存せず定義する方法と，kernel convergenceに適したtopologyを整理します．
+</div>
+<p>
+前の記事：
+<a href="./unresolved-memory-01.html">第1回：未解像ダイナミクスと履歴依存型発展方程式</a>
+</p>
+<p>
+関連ページ：
+<a href="../../publications/">Publications</a>（S3–S5，A3），
+<a href="../../fem/">Research Visions</a>（Vision 11，18），
+<a href="../../suppl/">Supplementary Visions</a>（履歴依存型発展方程式とmemory kernel）
+</p>
+</article>
+</div>
+
+
+</div>
+</article>
+</div>
+</main>
+
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
