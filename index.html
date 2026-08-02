@@ -209,6 +209,15 @@ and computable certificates for quantities of interest.
 
 <h3 id="stable-reduction">Programme II — Stable reduction theory for unresolved dynamics</h3>
 <p>
+I use the expression <b>stable reduction theory for unresolved dynamics</b> as an organising name
+for a mathematical programme that brings together memory equations, internal-state representations,
+nonlocal closure, structure-preserving reduction, and stability with respect to resolution and singular limits.
+It is not intended to denote one particular model-order-reduction algorithm.
+Rather, it identifies a common mathematical problem: how can unresolved variables be eliminated
+without erasing, misrepresenting, or destabilising the mechanisms through which they influence observable dynamics?
+</p>
+
+<p>
 Observable variables do not display every mechanism that governs their evolution.
 Eliminating unresolved variables is therefore not the same as setting their influence to zero.
 A reduced model may have fewer variables and still be dynamically wrong if it erases the mechanisms carried by discarded scales.
@@ -218,11 +227,13 @@ scale-to-scale transfer, long-time statistics, or rare events.
 
 <p>
 <b>Dimension reduction removes variables. Stable reduction removes variables without erasing their dynamical influence.</b>
-That influence may survive as operator-valued memory, delayed or history-dependent forcing,
+Here, “stable” does not refer only to the stability of a reduced finite-dimensional system.
+It also refers to the controlled transfer of energy, dissipation, causality, constraints,
+memory, and limiting structure from the full dynamics to the reduced description.
+The unresolved influence may survive as operator-valued memory, delayed or history-dependent forcing,
 effective dissipation, spatially nonlocal closure, internal states, or stochastic fluctuation.
-Accordingly, this programme is not identified with any particular model-order-reduction algorithm.
-Its central problem is to determine what must remain after elimination and which structural properties of the full dynamics
-can be transferred to the reduced description.
+The central problem is therefore to determine what must remain after elimination,
+how accurately it must be represented, and which structural properties of the full dynamics survive reduction.
 </p>
 
 \[
@@ -534,6 +545,6 @@ parameter." [<a href="https://arxiv.org/pdf/2504.16012" target="_blank">Arxiv</a
 <script src="./js/utility.js" charset="utf-8"></script>
 <script src="./js/socialButton.js" charset="utf-8"></script>
 
-<!-- Top page revision: ver15, 2 August 2026 -->
+<!-- Top page revision: ver16, 2 August 2026 -->
 </body>
 </html>
