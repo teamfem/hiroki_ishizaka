@@ -7,8 +7,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,anisotropic FEM,Crouzeix-Raviart,Raviart-Thomas,Nedelec,de Rham,history-dependent PDE,unresolved dynamics,operator-valued memory,multiscale reduction,exact-curved FEM,certified computation">
-<meta name="description" content="Research visions on computable geometry, anisotropic FEM, stable reduction of unresolved dynamics, operator-valued memory, history-dependent PDEs, exact-curved geometry, and certified computation">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,anisotropic FEM,Crouzeix-Raviart,Raviart-Thomas,Nedelec,de Rham,history-dependent PDE,unresolved dynamics,operator-valued memory,measure-valued delay,hybrid memory-delay,multiscale reduction,exact-curved FEM,certified computation">
+<meta name="description" content="Research visions on computable geometry, anisotropic FEM, stable reduction of unresolved dynamics, operator-valued memory, measure-valued delay, history-dependent PDEs, exact-curved geometry, and certified computation">
 
 <link rel="stylesheet" href="../css/base.css">
 <link rel="stylesheet" href="../css/rwd.css">
@@ -999,7 +999,7 @@ AI支援型数学，形式推論，自動証明支援の発展により，数学
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
-<b>位置づけ：〖Core〗（生成・実現・graph-space安定性・安定近似）／〖Expansion〗（kernel同定・確率的closure・応用）</b><br><br>
+<b>位置づけ：〖Core〗（履歴作用の生成・分類・graph-space安定性・安定近似・memory–delay橋渡し）／〖Expansion〗（kernel同定・確率的closure・応用）</b><br><br>
 
 <h4>Programme statement</h4>
 本Visionの目的は，未解像自由度を消去して得られる履歴依存系について，
@@ -1025,7 +1025,8 @@ AI支援型数学，形式推論，自動証明支援の発展により，数学
 
 <p><b>Research statement:</b><br>
 My research develops a stable reduction theory for unresolved dynamics by connecting
-operator-valued memory, graph-space energy, kernel approximation, and structure-preserving discretisation.</p>
+the type of unresolved generator with operator-valued memory or delay, graph-space energy,
+stable approximation, and structure-preserving discretisation.</p>
 
 <h4>18a．Generation and realisation of memory</h4>
 解像変数 \(u\) と未解像変数 \(z\) の線形発展系
@@ -1047,16 +1048,50 @@ operator-valued memory, graph-space energy, kernel approximation, and structure-
 未解像作用素 \(C\) と結合作用素 \(B\) が，kernelの正値性，減衰，完全単調性，受動性を
 どのように決定するかを明らかにすることです．<br><br>
 
+厳密消去や内部状態実現は本研究の出発点ですが，それ自体を主要な新規性とはしません．
 近い目標は，
 <ul>
   <li>完全系から縮約memory方程式への厳密な消去公式，</li>
   <li>未解像初期値が生むhistory forcingの正確な記述，</li>
   <li>作用素値kernel \(K(t)=Be^{-tC}B^*\) の構造条件，</li>
-  <li>与えられたpositive-type kernelを内部状態系として実現する条件</li>
+  <li>未解像系の近似誤差をkernel・縮約解・graph energyの誤差へ伝播させる定量評価</li>
 </ul>
 を一つのHilbert空間枠組みで整理することです．<br><br>
 
-<h4>18b．Stable reduction and energy selection</h4>
+<h4>18b．Unresolved generators and the type of history operator</h4>
+未解像自由度を消去したときに現れる履歴作用の型は，未解像生成作用素の性質に依存します．
+本Visionでは，少なくとも次の原型を区別します．
+\[
+  	ext{unresolved generator}
+  \longrightarrow
+  egin{cases}
+    	ext{positive-type Volterra memory},\
+    	ext{measure-valued delay},\
+    	ext{hybrid memory--delay operator},\
+    	ext{oscillatory or signed memory},\
+    	ext{memory with stochastic forcing}.
+  \end{cases}
+\]
+<ul>
+  <li><b>緩和・散逸型：</b>
+  非負自己共役作用素または解析的散逸生成作用素から，
+  \(K(t)=Be^{-tC}B^*\) 型の作用素値Volterra memoryが生じます．
+  これはpositive-type memoryとgraph-space安定性の系列に属します．</li>
+  <li><b>伝播・シフト型：</b>
+  未解像状態が一定時間後に解像系へ戻る機構から，離散遅延または
+  \(\int_{[0,\tau]}u(t-s)\,d\mu(s)\) 型のmeasure-valued delayが生じます．</li>
+  <li><b>緩和＋伝播型：</b>
+  fading memoryと有限伝播時間が共存し，Volterra memoryとmeasure-valued delayの混合系が現れます．</li>
+  <li><b>保存・振動型：</b>
+  符号を変えるoscillatory kernelが現れ得るため，positive-type energyだけでは扱えません．</li>
+</ul>
+
+したがって，最初のマルチスケール論文は，
+<b>緩和・散逸型の未解像ダイナミクスが生成する作用素値Volterra memory</b>
+に限定します．measure-valued delayは同じ式へ形式的に含めるのではなく，
+伝播・シフト型生成作用素から生じる別の履歴機構として扱います．<br><br>
+
+<h4>18c．Stable reduction and energy selection</h4>
 未解像変数を消去すると，元のエネルギーが失われるのではなく，
 履歴を含む別のエネルギーへ移されることがあります．一方，positive-type memoryであっても，
 失われた瞬時の \(L^2(0,T;V)\)-coercivityを一様に回復するとは限りません．
@@ -1072,7 +1107,7 @@ operator-valued memory, graph-space energy, kernel approximation, and structure-
 です．これにより，未解像化によって失われた制御を，通常の状態空間へ無理に戻すのではなく，
 縮約が自然に選ぶ状態空間上で回復します．<br><br>
 
-<h4>18c．Stable approximation and discretisation</h4>
+<h4>18d．Stable approximation and discretisation</h4>
 実際の縮約では，未解像空間，semigroup，memory kernelを有限次元近似します．例えば，
 \[
   K_N(t)=B_Ne^{-tC_N}B_N^*
@@ -1108,7 +1143,43 @@ Prony近似，内部変数近似，BDF/convolution quadrature，空間Galerkin�
 です．最終的には，指定した目的量に必要な未解像状態だけを追加する
 <b>goal-oriented model adaptivity</b>へ接続します．<br><br>
 
-<h4>18d．Identification and applications</h4>
+<h4>18e．Bridge between Volterra memory and measure-valued delay</h4>
+現在の連続理論には，
+\[
+  egin{array}{ll}
+  	ext{positive-type Volterra memory}
+  &+	ext{退化し得る瞬時拡散},\
+  	ext{measure-valued delay}
+  &+	ext{coerciveな瞬時発展}
+  \end{array}
+\]
+という二つの原型があります．両者の橋渡しとして，
+\[
+  \partial_tu+A_0u+A_1(k*u)
+  +\int_{[0,	au]}B\widetilde u(t-s)\,d\mu(s)=f
+\]
+のような混合履歴系を考えます．<br><br>
+
+ここでは，任意のdelayを単に追加できるとは仮定しません．
+純粋な原子遅延は一般にpositive-typeではなく，
+principal-part delayはgraph-space解に必要な空間正則性を要求するためです．
+中心課題は，
+<ul>
+  <li>lower-order measure-valued delayをgraph-space上の有界摂動として許容する条件，</li>
+  <li>principal-part residual delayに必要なadmissibility・smallness・追加正則性，</li>
+  <li>positive-type memoryがdelayによって壊される高周波障害とno-go結果，</li>
+  <li>瞬時coercivityの消失に一様な安定性が成立する範囲と破綻する境界</li>
+</ul>
+を明らかにすることです．<br><br>
+
+この橋渡し論文は，未解像生成作用素の分類とも対応します．
+緩和型部分がgraph energyを供給し，伝播型部分がmeasure-valued delayを生成するとき，
+どの結合構造なら安定縮約が可能かを調べます．
+これは単なる二つの既存枠組みの併記ではなく，
+<b>memoryがdelayをどこまで安定に支えられるかという可能性と不可能性の境界</b>
+を定理化する課題です．<br><br>
+
+<h4>18f．Identification and applications</h4>
 kernel同定は，基礎理論と安定離散化を閉じた後のExpansionとして扱います．
 例えば，
 \[
@@ -1126,15 +1197,21 @@ kernel同定は，基礎理論と安定離散化を閉じた後のExpansionと�
 疾患進行予測への具体化はVision 19にまとめます．<br><br>
 
 <h4>Near-term paper sequence</h4>
-長大な統一論文にはせず，次の短い連載を想定します．
+厳密消去や内部状態実現のみを主結果とするのではなく，次の短い連載を想定します．
 <ol>
-  <li><b>Generation and stable realisation of operator-valued memory</b><br>
-  厳密消去，作用素値kernel，完全系と縮約系の同値性，graph-space安定性．</li>
-  <li><b>Stable approximation and structure-preserving discretisation</b><br>
-  未解像空間の切断，kernel近似，消去と離散化の可換性，離散graph energy．</li>
+  <li><b>Stable approximation of unresolved dissipative dynamics:
+  graph-space convergence and commuting reduction</b><br>
+  未解像生成作用素・結合作用素の近似から，transfer function，作用素値kernel，
+  縮約解，graph energyの収束を導き，消去・Galerkin近似・退化極限の可換性を調べます．</li>
+  <li><b>Degenerate diffusion with mixed memory and measure-valued delay</b><br>
+  positive-type Volterra memoryとmeasure-valued delayの混合系について，
+  lower-order delayの許容条件，principal-part delayの障害，coercivity消失に一様な安定性の境界を扱います．</li>
   <li><b>Passivity-preserving kernel identification</b>（必要な場合）<br>
-  構造制約付き同定とkernel errorの解・目的量への伝播．</li>
+  構造制約付き同定とkernel errorの解・目的量への伝播を扱います．</li>
 </ol>
+
+構造保存BDF convolution quadratureと異方性CR--RT完全離散化はVision 11の数値解析系列として先行させ，
+その結果を本Visionの未解像空間近似・可換縮約へ利用します．
 
 この研究が目指す中心的な流れは，
 \[
@@ -1154,7 +1231,7 @@ kernel同定は，基礎理論と安定離散化を閉じた後のExpansionと�
 <ul>
   <li>Vision 5：縮約・内部状態・memory closureの数理構造の抽象化</li>
   <li>Vision 7／7b：確率的closure，kernel同定，推論の信頼性</li>
-  <li>Vision 11：与えられたmemory／delay方程式の連続理論と完全離散化</li>
+  <li>Vision 11：与えられたmemory／delay方程式の連続理論，memory–delay橋渡し，完全離散化</li>
   <li>Vision 15：表現・計量・射影による縮約法と数値解法の統一的理解</li>
   <li>Vision 17：model-reduction・kernel・離散化誤差に対するcertificate</li>
   <li>Vision 19：治療履歴と潜在状態に基づく疾患進行予測</li>
