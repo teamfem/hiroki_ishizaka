@@ -3,12 +3,12 @@
 <head>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-<title>未解像ダイナミクスと非マルコフ方程式 — 記憶をどう安定にモデル化・同定・離散化するか | ISHIZAKA Hiroki Website</title>
+<title>第1回：未解像ダイナミクスと履歴依存型発展方程式 — 記憶をどう安定にモデル化・同定・離散化するか | ISHIZAKA Hiroki Website</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,unresolved dynamics,measure-valued delay,memory kernel,non-Markovian equation,kernel stability,finite element method,cancer cell dynamics">
-<meta name="description" content="未解像ダイナミクスから生じる記憶をmeasure-valued delayやVolterra memoryで表し，非マルコフ方程式の導出・同定・安定性・離散化・検証と，癌・材料・分子・流体への応用を考える．">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,履歴依存型発展方程式,memory kernel,measure-valued delay,Volterra equation,internal variables,graph space,structure-preserving discretisation,convolution quadrature">
+<meta name="description" content="未解像ダイナミクスから生じる履歴依存型方程式を，measure-valued delay，Volterra memory，内部変数，kernel stability，構造保存完全離散化の観点から整理します．">
 
 <link rel="stylesheet" href="../../css/base.css">
 <link rel="stylesheet" href="../../css/rwd.css">
@@ -30,329 +30,315 @@
 
 <!--▼サイトヘッダー-->
 <header id="top" class="site-header">
-	
-	<div class="site-header-in">
-		<div class="site-header-conts">
-			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
-		</div>
-	</div>
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
 
-	<!--▼グローバルナビ-->
-	<nav class="global-nav">
-		<div class="global-nav-in">
-			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
-			<ul id="menu">
-				<li>
-					<a href="../../">Home</a>
-				</li>
-			
-				<li><a href="../../publications/">Publications</a></li>
-				
-				<li>
-					<a href="../../research/">Research</a>
-				</li>
-				
-				<li>
-					<a href="../../fem/">Research Visions</a>
-					<!--
-					<ul>
-						<li><a href="../fem/research01/">Research1</a></li>
-						<li><a href="../fem/research02/">Research2</a></li>
-					</ul>
-					-->
-				</li>
-				
-				<li>
-					<a href="../../suppl/">Supplementary Visions</a>
-				</li>
-				
-				<li>
-					<a href="../../blog/">Blog</a>
-				</li>
-				
-				<li>
-					<a href="../../geo/">History of Geometric Conditions in FEM</a>
-				</li>
-								
-				<li>
-					<a href="../../links/">Links</a>
-				</li>
-			</ul>
-		</div>
-	</nav>
-	<!--▲グローバルナビ-->
-
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../">Home</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../fem/">Research Visions</a></li>
+        <li><a href="../../suppl/">Supplementary Visions</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+        <li><a href="../../links/">Links</a></li>
+      </ul>
+    </div>
+  </nav>
 </header>
 <!--▲サイトヘッダー-->
 
 <div class="main-body">
 <div class="main-body-in">
 
-	<!--▼パンくずリスト-->
-	<nav class="breadcrumbs">
-		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
-			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
-				<a href="../../" itemprop="item">
-				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
-				</a>
-				<meta itemprop="position" content="1">
-			</li>
-			<li class="bcl-last">
-				Blog post from 25th July 2026
-			</li>
-		</ol>
-	</nav>
-	<!--▲パンくずリスト-->
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+    <li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a>
+      <meta itemprop="position" content="1">
+    </li>
+    <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../" itemprop="item"><span itemprop="name">Blog</span></a>
+      <meta itemprop="position" content="2">
+    </li>
+    <li class="bcl-last">Blog post from 2026</li>
+  </ol>
+</nav>
 
-<!--▼メインコンテンツ-->
 <main>
 <div class="main-conts">
 <article class="section-wrap">
 <div class="section-in">
 
+<h1 class="section-title">第1回：未解像ダイナミクスと履歴依存型発展方程式 — 記憶をどう安定にモデル化・同定・離散化するか</h1>
 
-<h1 class="section-title">未解像ダイナミクスと非マルコフ方程式 — 記憶をどう安定にモデル化・同定・離散化するか</h1>
-<div class="news-date"><time datetime="2026-07-25">25th July 2026</time>（26th July 2026 updated）</div>
+<p class="news-date"><time datetime="2026-07-25">25th July 2026</time><br>
+Revised on <time datetime="2026-08-02">2nd August 2026</time></p>
 
-<h2>Introduction：計算から消した過程は，本当に消えるのか</h2>
+<h2>Introduction：計算から消した状態は，本当に消えるのか</h2>
 <div class="news">
 <article class="news-item">
 <p>
-大規模な物理・生体現象を計算または観測するとき，すべての時間・空間スケールと内部状態を直接解像することはできません．細かな渦，微視的な熱輸送，材料内部の緩和過程，生体分子の高速自由度，癌細胞集団の潜在状態や腫瘍微小環境など，計算から除かれる変数だけでなく，直接測定できない変数も必ず存在します．
+大規模な物理現象を計算するとき，すべての自由度を同じ精度で追跡することはできません．
+細かな渦，材料内部の緩和モード，微視的な熱輸送，複数の反応経路など，
+観測や計算の対象から外れる状態は必ず存在します．
 </p>
 <p>
-ここでいう未解像ダイナミクスは，「小さすぎて見えない運動」だけを意味しません．計測していない内部状態，多数の自由度を平均化した効果，短時間スケールの変動，現在の観測値だけでは区別できず過去の履歴によって初めて識別できる潜在状態も含みます．
+しかし，未解像状態を変数から取り除いても，その影響まで消えるとは限りません．
+未解像状態は，解像された状態から過去に受け取った情報を内部に蓄え，
+少し遅れて解像状態へ返します．
+解像変数だけで方程式を書き直すと，この往復が履歴積分，分布遅延，離散遅延，
+あるいは追加の内部変数として現れます．
 </p>
-<p>
-しかし，除かれた過程の影響がゼロになるとは限りません．現在の状態だけでは説明できず，過去の状態が現在へ影響する「記憶」として残ることがあります．このような系は，現在の状態だけで未来を決めるMarkov型モデルとは異なり，非マルコフ型モデルと呼ばれます．
-</p>
-<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
-<strong>未解像とは，未知を自由に想像することではない</strong><br><br>
-観測データと数理モデルから，どの潜在状態またはmemory kernelが識別可能かを明らかにし，推定の非一意性・データ誤差・モデル化誤差・離散化誤差を区別することが必要です．
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>この連載の中心問題</b><br>
+未解像ダイナミクスが残す記憶を，どのように導出し，観測から同定し，
+安定性を壊さずに近似し，構造保存的に完全離散化するか．
 </div>
-<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
-<strong>この研究テーマの中心問題</strong><br><br>
-未解像過程の記憶を，どのようにモデル化し，観測から同定し，安定かつ誤差保証つきで離散化するか．
-</div>
 <p>
-これは一つの方程式を解くだけの問題ではありません．<strong>modelling，well-posedness，kernel stability，inverse problem，numerical discretisation，verification</strong>を一つの流れとして扱う研究課題です．
+したがって，本連載で扱うのは「memory項を一つ追加して解く」だけの問題ではありません．
+
+modelling，well-posedness，kernel stability，model reduction，space-time discretisation，
+そしてcertificationを一つの誤差予算の中で結び付けることが目標です．
+確率性は必須ではありません．まずは決定論的な線形問題において，
+memoryがどのような構造をもち，何を制御し，どの極限で構造が変わるかを明らかにします．
 </p>
 </article>
 </div>
 
-<h2>1．瞬時モデルからmemory modelへ</h2>
+<h2>1．履歴依存型発展方程式の三つの表し方</h2>
 <div class="news">
 <article class="news-item">
 <p>
-最も単純な拡散モデルは，抽象的には
-\[
-  \partial_tu(t)+A_0u(t)=f(t)
-\]
-と書けます．右辺と現在の状態が与えられれば，未来の変化が決まります．
+「memory equation」という言葉の下には，少なくとも三つの異なる表現があります．
+これらは関係していますが，無条件に同一ではありません．
 </p>
+
+<h3>1.1 measure-valued delay</h3>
 <p>
-未解像過程の影響が履歴として残る場合には，例えば
+有限の最大遅延をもつモデルは，Gelfand triple
+\(V\hookrightarrow H\cong H^*\hookrightarrow V^*\) 上で，例えば
 \[
-  \partial_tu(t)+A_0u(t)
+  \partial_t u(t)+A_0u(t)
   +\int_{[0,\tau]}A_1\widetilde u(t-s)\,d\mu(s)=f(t)
 \]
-を考えます．ここで，\(\mu\) は遅延時間の分布を表す有限測度です．
+と書けます．ここで，\(\widetilde u\) は未知の軌道と与えられた過去履歴を接続した関数，
+\(\mu\) は遅延時間の分布を表す有限Borel測度です．
 </p>
 <ul>
-  <li>\(\mu=m\delta_{\tau_d}\)：一つの離散遅延</li>
-  <li>\(\mu=\sum_jm_j\delta_{\tau_j}\)：複数の離散遅延</li>
-  <li>\(d\mu(s)=k(s)\,ds\)：分布遅延</li>
-  <li>原子と密度部分の和：離散遅延と分布遅延の混合</li>
+  <li>\(\mu=m\delta_{\tau_d}\)：一つの離散遅延．</li>
+  <li>\(\mu=\sum_{j=1}^{N}m_j\delta_{\tau_j}\)：複数の離散遅延．</li>
+  <li>\(d\mu(s)=k(s)\,ds\)：分布遅延．</li>
+  <li>原子部分と密度部分の和：離散遅延と分布遅延の混合．</li>
 </ul>
 <p>
-一方，遠い過去まで減衰しながら影響が続く場合には，
+原点の原子 \(m_0\delta_0\) は遅延ではなく瞬時作用です．したがって，
+\(m_0A_1\) を瞬時作用素へ吸収し，残りのretarded kernelと分けて考える必要があります．
+</p>
+
+<h3>1.2 Volterra memory</h3>
+<p>
+過去全体の影響が時間とともに減衰する場合には，
 \[
-  \int_0^t k(t-s)A_1u(s)\,ds
+  \partial_tu(t)+A_0u(t)+A_1(k*u)(t)=f(t),
+  \qquad
+  (k*u)(t):=\int_0^t k(t-s)u(s)\,ds
 \]
-というVolterra型memoryが自然です．有限遅延と長期memoryは同じではありませんが，「履歴を方程式の中に保持する」という共通の構造を持ちます．
+というVolterra型memoryが自然です．
+有限遅延とVolterra memoryは時間区間も極限構造も異なりますが，
+現在の状態だけではなく，過去の軌道を通じて作用する点は共通しています．
+</p>
+
+<h3>1.3 internal-variable formulation</h3>
+<p>
+completely monotone kernelが
+\[
+  k(t)=\int_{[0,\infty)}e^{-\lambda t}\,d\nu(\lambda)
+\]
+と表されるとき，各緩和率 \(\lambda\) に対して
+\[
+  \zeta(\lambda,t)
+  :=\int_0^t e^{-\lambda(t-s)}u(s)\,ds,
+  \qquad
+  \partial_t\zeta+\lambda\zeta=u
+\]
+を導入できます．すると，
+\[
+  (k*u)(t)=\int_{[0,\infty)}\zeta(\lambda,t)\,d\nu(\lambda)
+\]
+となり，時間非局所な方程式は，物理変数と連続個の内部変数からなる時間局所系へ移ります．
+これは単なる計算テクニックではなく，memoryが蓄えるエネルギーを可視化する表現です．
 </p>
 </article>
 </div>
 
-<h2>2．なぜmeasure-valued delayなのか</h2>
+<h2>2．memory kernelは「与えられた係数」ではない</h2>
 <div class="news">
 <article class="news-item">
 <p>
-遅延を測度で表す利点は，単に記号を統一できることではありません．分布型kernelを有限個の原子へ近似する操作や，原子の位置が動く極限を，測度の収束として扱えます．例えば，連続kernelを
-\[
-  \mu_N=\sum_{j=1}^{N}m_j\delta_{\tau_j}
-\]
-で近似すれば，履歴積分は有限個の過去値の和になります．これは数値計算やモデル簡約に直接つながります．
+通常の偏微分方程式では，拡散係数や反応係数を既知として解析を始めることが多いでしょう．
+しかし，縮約モデルに現れるkernelは，未解像状態の時間スケール，結合の強さ，
+初期分布，観測帯域に依存します．したがって，kernel自体が次の四つの操作の対象になります．
 </p>
+<ol>
+  <li><b>導出：</b>拡張状態から未解像変数を消去し，kernelの形を求める．</li>
+  <li><b>同定：</b>観測された解からkernelまたはそのパラメータを回収する．</li>
+  <li><b>近似：</b>連続スペクトルや分布kernelを有限個の原子・指数関数へ置き換える．</li>
+  <li><b>検証：</b>kernelの近似誤差が解の誤差へどう伝播するかを評価する．</li>
+</ol>
 <p>
-このとき本当に必要なのは，\(\mu_N\) が \(\mu\) に近いという事実だけではなく，その近さが解へどの程度伝播するかを示すことです．理想的には，
-\[
-  \|u_{\mu_N}-u_\mu\|
-  \le C\,d(\mu_N,\mu)^\theta
-\]
-というkernel stabilityを得たい．ここで \(d\) には，total variation距離だけでなく，原子の移動や集中を測れるWasserstein距離などが候補になります．
-</p>
-<p>
-この評価があれば，「何個の原子で近似すれば十分か」「kernelの位置誤差が解へどれだけ影響するか」を定量的に議論できます．
+この視点では，kernel quadratureやsum-of-exponentials approximationは，
+積分公式だけではありません．未解像ダイナミクスのモデル簡約そのものです．
 </p>
 </article>
 </div>
 
-<h2>3．四つの数学的課題</h2>
+<h2>3．何が数学的ボトルネックになるのか</h2>
 <div class="news">
 <article class="news-item">
-<h3>3.1 モデル化</h3>
+
+<h3>3.1 delayed operatorがpivot space上で有界とは限らない</h3>
 <p>
-どの履歴項を採用すべきかは，現象名だけでは決まりません．有限の伝播時間を表すのか，広い時間スケールの緩和を表すのか，kernelは正か符号変化するのか，遅延項は反応項に入るのか最高階空間微分に入るのかによって，数学的性質が大きく変わります．
+遅延項が反応項ではなくprincipal spatial derivativeを含む場合，
+\(A_1:V\to V^*\) は自然でも，\(H\to V^*\) の有界作用素ではないことがあります．
+このとき，過去履歴を単に連続な \(H\)-値関数として扱う理論だけでは不十分です．
+平方可積分な \(V\)-値履歴に対して，原子遅延を代表元の点評価なしに定義する必要があります．
 </p>
 
-<h3>3.2 適切性とkernel stability</h3>
+<h3>3.2 dissipativeであることとcoerciveであることは違う</h3>
 <p>
-解の存在と一意性だけでなく，kernel・初期履歴・外力の摂動に対する安定性が必要です．とくにprincipal-part delayでは，遅延が原点へ近づく極限が一様に安定とは限りません．「小さな遅延だから瞬時項とほぼ同じ」とは自動的には言えない点が重要です．
+positive-type memoryは非負のmemory dissipationを与えます．しかし，
+それが瞬時の \(L^2(0,T;V)\) エネルギーを一様に支配するとは限りません．
+completely monotone kernelでは，高周波に対するmemory symbolが零へ減衰するため，
+memoryはゆっくり変化する成分を強く見る一方，急速に振動する成分には弱くなります．
 </p>
+<div style="padding: 12px; margin: 14px 0; border: 2px solid #666666;">
+<b>重要な区別</b><br>
+positive type \(\Rightarrow\) memory dissipationは非負．<br>
+positive type \(\nRightarrow\) memoryだけで瞬時エネルギーを周波数一様に支配できる．
+</div>
 
-<h3>3.3 同定</h3>
+<h3>3.3 瞬時coercivityが消えると，自然な状態空間が変わる</h3>
 <p>
-観測から未知のkernel \(\mu\) を回収する逆問題を考えます．有限原子kernelなら，未知量は原子の質量と位置です．一般の分布kernelでは未知量が無限次元になるため，一意性，条件付き安定性，正則化，実験設計が必要になります．
-</p>
-<p>
-exact modelではkernelの情報そのものは方程式に残りますが，有限時間・有限帯域・ノイズを含む観測からの回収は不安定になり得ます．これは，Taylor展開によって最初から有限個のmomentへ情報を圧縮する場合とは異なる種類の困難です．
-</p>
-
-<h3>3.4 離散化と検証</h3>
-<p>
-数値計算では，少なくとも三つの誤差が現れます．
-\[
-  u_\mu-U_{h,k,N}
-  =\underbrace{(u_\mu-u_{\mu_N})}_{\text{kernel approximation}}
-  +\underbrace{(u_{\mu_N}-u_{h,\mu_N})}_{\text{space discretisation}}
-  +\underbrace{(u_{h,\mu_N}-U_{h,k,N})}_{\text{time discretisation}}.
-\]
-</p>
-<p>
-したがって，目標とする誤差評価は概念的に
-\[
-  \|u_\mu-U_{h,k,N}\|
-  \le C\left(
-    E_{\mathrm{kernel}}+E_{\mathrm{space}}+E_{\mathrm{time}}
-  \right)
-\]
-という形になります．定数が原子数，メッシュサイズ，時間刻みへ不必要に依存しないことが重要です．
+瞬時拡散 \(A_0\) がcoerciveなら，通常のparabolic energy spaceが基礎になります．
+一方，そのcoercivityが退化すると，物理変数 \(u\) だけのノルムではなく，
+内部変数 \(\zeta\) が蓄えるmemory energyを含む拡張状態を使う必要があります．
+この拡張状態のzero-prehistory軌道がmemory graph spaceを形成します．
 </p>
 </article>
 </div>
 
-<h2>4．Taylor-reduced modelとの違い</h2>
-<div class="news">
-<article class="news-item">
-<p>
-履歴をTaylor展開すると，例えば
-\[
-  u(t-s)\approx u(t)-s\partial_tu(t)+\frac{s^2}{2}\partial_{tt}u(t)
-\]
-となり，非局所な履歴項は有限個の時間微分へ置き換えられます．この方法は時間局所的で実装しやすく，低周波・小遅延領域では有効です．
-</p>
-<p>
-一方，Taylor展開しないexact delay modelでは，過去の状態をそのまま保持します．そのため，kernelの形状，原子の移動，distributed-to-discrete concentration，高周波での挙動を直接扱えます．代わりに，履歴の保存，off-grid delayの補間，kernel quadratureが必要になります．
-</p>
-<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
-<strong>Taylor reduction：</strong>履歴を有限個の時間微分へ圧縮する．<br>
-<strong>Exact delay：</strong>履歴情報を非局所項として保持する．
-</div>
-<p>
-どちらかが常に優れているわけではありません．重要なのは，どの周波数・時間スケールで近似が妥当か，モデル化誤差と離散化誤差を区別できるかという点です．
-</p>
-</article>
-</div>
-
-<h2>5．exact measure-valued delayで現れる境界現象</h2>
-<div class="news">
-<article class="news-item">
-<p>
-非局所構造を保持すると，通常の拡散方程式では見えにくい問題が現れます．
-</p>
-<ul>
-  <li><b>zero-delay boundary：</b>正の位置にある原子が原点へ近づいても，非重み付き安定性が一様に保たれるとは限らない．</li>
-  <li><b>positivity and maximum principles：</b>過去時刻のprincipal partが入ると，現在時刻の最大点を用いる通常の最大値原理の証明が崩れ，正の履歴から負の解が生じる可能性がある．</li>
-  <li><b>resolution limit in inverse problems：</b>低周波観測では小さな正の遅延と瞬時効果を区別しにくい一方，高周波では応答が極端に敏感になる可能性がある．</li>
-  <li><b>kernel approximation：</b>total variationでは遠い原子同士が近づく極限を捉えにくく，輸送型距離が必要になる．</li>
-</ul>
-<p>
-これらは単なる技術的障害ではありません．どのmemory modelが物理的に許容され，どの近似が信頼できるかを判断するための理論的境界です．
-</p>
-</article>
-</div>
-
-<h2>6．応用へどうつながるか</h2>
-<div class="news">
-<article class="news-item">
-<p>
-この研究テーマは特定の応用だけに属するものではありません．共通するのは，計算・観測・粗視化によって捨てられた自由度や内部状態が，履歴依存性，確率的forcing，またはmemory kernelとして現在へ戻ってくることです．各応用では，<strong>何を観測するか，何を未解像とするか，kernelが何を表すか，最終的に何を推定・保証するか</strong>を区別する必要があります．
-</p>
-
-<h3>6.1 癌細胞集団・薬剤耐性・腫瘍微小環境</h3>
-<p>
-腫瘍体積，画像，血中バイオマーカーなどを解像・観測変数とし，直接観測されない細胞状態の構成比，薬剤耐性を準備する潜在状態，癌幹細胞様状態，低酸素，免疫応答，薬剤曝露履歴などを未解像変数として扱うことが考えられます．
-</p>
-<p>
-同じ大きさの腫瘍でも，未治療，治療中，再発後では将来の反応が異なり得ます．現在の腫瘍量だけでは状態を記述しきれず，治療履歴や細胞状態の可塑性がmemoryとして現れる可能性があります．単一細胞計測，系譜追跡，縦断画像などから，潜在細胞集団の割合，状態遷移率，有効kernelを推定し，治療反応や再発に関係する目的量を不確実性付きで評価することが課題になります．
-</p>
-
-<h3>6.2 生体分子・分子動力学の粗視化</h3>
-<p>
-全原子運動を直接追跡せず，反応座標や分子形状など少数の変数だけを残すと，除去された高速自由度は摩擦memoryやcolored noiseとして現れます．一般化Langevin方程式のkernelを全原子計算や時系列データから同定し，構造遷移時間，相関関数，反応率を再現する縮約モデルを構成します．
-</p>
-
-<h3>6.3 粘弾性材料・軟組織・履歴依存材料</h3>
-<p>
-粘弾性体では，現在の応力が現在のひずみだけでなく過去の変形履歴に依存します．材料内部の緩和機構，微細構造，再配列を未解像過程とみなし，緩和kernel，遅延測度，分数階kernelによって構成則を表します．kernel同定，有限原子・Prony近似，空間FEM，時間離散化の各誤差を同時に追跡することが中心課題です．
-</p>
-
-<h3>6.4 非フーリエ熱伝導・マイクロ／ナノスケール輸送</h3>
-<p>
-超短時間加熱やマイクロ・ナノスケールでは，熱流束が温度勾配へ瞬時に応答するFourier則が十分でない場合があります．未解像なphonon輸送，緩和時間，ballistic成分，微細構造の影響を，時間memoryまたは空間非局所kernelとして表します．kernelの因果性・減衰・符号，正値性，非物理的振動の抑制，異方性メッシュによる局所輸送の解像が問題になります．
-</p>
-
-<h3>6.5 縮約流体・乱流・輸送・大気海洋モデル</h3>
-<p>
-高Reynolds数流れや気候系では，計算格子より小さい渦，波，境界層，化学反応，海洋内部過程などをすべて解像できません．これらを消去したclosureは，瞬時的な渦粘性だけでなく，過去の状態に依存するmemoryや確率的forcingを含み得ます．Mori–Zwanzig型縮約，variational multiscale法，データ駆動kernel同定を接続し，energy transfer，輸送量，長時間統計，極端事象に関する誤差を追跡することが目標です．
-</p>
-
-<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333;">
-<strong>計算のverificationと現象のvalidationは別である</strong><br><br>
-数値解析による誤差保証は，採用した数理モデルの内部での計算精度を保証するものです．癌を含む生体応用では，個々の患者に対する診断や治療効果の医学的妥当性まで直接保証するものではありません．臨床・実験データによる独立したvalidationと，医学・生命科学研究者との共同研究が必要です．
-</div>
-
-<p>
-したがって，応用での中心問題は「見えない状態を当てる」ことではなく，
-\[
-  \text{observation}
-  \longrightarrow
-  \text{identifiable latent dynamics or kernel}
-  \longrightarrow
-  \text{non-Markovian equation}
-  \longrightarrow
-  \text{certified quantity of interest}
-\]
-という流れを，どの条件で正当化できるかです．
-</p>
-</article>
-</div>
-
-<h2>7．研究ロードマップ</h2>
+<h2>4．連続理論からすでに分かる四つの境界</h2>
 <div class="news">
 <article class="news-item">
 <ol>
-  <li><b>基礎解析：</b>measure-valued delayに対するwell-posednessと定性的kernel stability．</li>
-  <li><b>定量化：</b>Wasserstein型距離によるkernel concentration rateとzero-delay boundary．</li>
-  <li><b>完全離散化：</b>有限原子kernel，空間Galerkin法，時間離散を統合した誤差評価．</li>
-  <li><b>逆問題：</b>有限原子kernelの局所同定，一般kernelの条件付き安定性．</li>
-  <li><b>構造保存：</b>最大値原理，正値性，保存則，確率的memoryの安定性．</li>
-  <li><b>応用：</b>癌細胞集団，生体分子粗視化，粘弾性・非フーリエ熱伝導，縮約流体・輸送モデルでの検証．</li>
+  <li>
+    <b>coercive regimeの有限時間適切性：</b>
+    瞬時作用がcoerciveで，遅延測度が有限かつ原点に原子をもたない場合，
+    exponential weightによってcausal history operatorを縮小写像にできます．
+    kernelのtotal variationが小さいという仮定や，遅延形式の符号条件は不要です．
+  </li>
+  <li>
+    <b>kernel stability：</b>
+    signed kernelにはtotal-variation型の定量評価があり，
+    non-negative kernelにはnarrow convergenceによる強収束が得られます．
+    ただし，連続密度をDirac原子へ集中させる極限はtotal variationでは近づかないため，
+    topologyの選択自体が問題の一部です．
+  </li>
+  <li>
+    <b>positive-lag concentrationとzero-delay boundary：</b>
+    正の遅延位置へのdistributed-to-discrete concentrationは安定に扱えますが，
+    原点では原子が瞬時作用素を変えるため，同じ一様評価をそのまま延長できません．
+  </li>
+  <li>
+    <b>degenerate instantaneous diffusion：</b>
+    瞬時coercivityが消えても適切性そのものが必ず失われるわけではありません．
+    ただし，安定性を測るべき量はinstantaneous energyではなく，
+    physical stateとinternal variablesを合わせたgraph energyです．
+  </li>
 </ol>
+</article>
+</div>
+
+<h2>5．誤差は一つではない</h2>
+<div class="news">
+<article class="news-item">
 <p>
-一つの論文へ全てを詰め込むのではなく，forward analysis，fully discrete approximation，inverse problem，stochastic／positivity theoryを段階的に分けて進めます．
+完全離散解 \(U_{h,k,N}\) をfull modelの観測量 \(y_{\mathrm{full}}\) と比較するなら，
+誤差は少なくとも次のように分ける必要があります．
+\[
+\begin{aligned}
+ y_{\mathrm{full}}-U_{h,k,N}
+ ={}&\underbrace{(y_{\mathrm{full}}-u_{\mu})}_{\text{model reduction}}\\
+ &+\underbrace{(u_{\mu}-u_{\mu_N})}_{\text{kernel approximation}}\\
+ &+\underbrace{(u_{\mu_N}-u_{h,\mu_N})}_{\text{space discretisation}}\\
+ &+\underbrace{(u_{h,\mu_N}-U_{h,k,N})}_{\text{time/history discretisation}}.
+\end{aligned}
+\]
 </p>
+<p>
+第一項は，未解像状態をmemory modelへ置き換えたことによるモデル誤差です．
+第二項はkernelを有限原子や有限緩和モードへ近似した誤差，
+第三項と第四項が通常の空間・時間離散化誤差です．
+これらを混ぜると，メッシュを細かくしても減らない誤差をFEMの失敗と誤認することになります．
+</p>
+<p>
+目標は概念的に
+\[
+  \|y_{\mathrm{full}}-U_{h,k,N}\|
+  \le C\bigl(
+  E_{\mathrm{model}}+E_{\mathrm{kernel}}
+  +E_{\mathrm{space}}+E_{\mathrm{time}}
+  \bigr)
+\]
+という評価です．さらに，\(C\) が瞬時coercivity parameter，空間メッシュ幅，
+時間刻み，原子数，緩和スペクトルのquadratureへ不必要に依存しないことが重要です．
+</p>
+</article>
+</div>
+
+<h2>6．なぜ「構造保存」完全離散化が必要なのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+安定な連続問題を離散化しても，連続レベルの打消しを壊せば，
+離散安定性定数が急激に悪化する可能性があります．本連載で保存すべき構造は，主に次の三つです．
+</p>
+<ul>
+  <li><b>causality：</b>未来値を用いず，履歴作用素の向きを保つこと．</li>
+  <li><b>memory energy：</b>内部変数の散逸と終端エネルギーを非負の形で再現すること．</li>
+  <li><b>cross-term cancellation：</b>物理方程式と内部変数方程式の結合項が離散レベルでも正確に打ち消し合うこと．</li>
+</ul>
+<p>
+空間離散には，異方性メッシュ上のCrouzeix–Raviart／Raviart–Thomas構造を利用できます．
+時間離散にはBDFとconvolution quadrature，あるいは有限原子kernelに対する内部変数更新が候補になります．
+重要なのは，既存手法を並べるだけでなく，連続graph energyに対応する離散エネルギーを先に定め，
+そのエネルギーを保存・散逸するように空間と時間の離散化を組み合わせることです．
+</p>
+</article>
+</div>
+
+<h2>7．この連載のロードマップ</h2>
+<div class="news">
+<article class="news-item">
+<ol>
+  <li><b>第1回：</b>研究全体の誤差構造と，delay・Volterra memory・internal variablesの位置付け．</li>
+  <li><b>第2回：</b>未解像状態の厳密消去からmemory kernelが現れる仕組み．</li>
+  <li><b>第3回：</b>measure-valued delayによる分布遅延・原子遅延・混合遅延の統一．</li>
+  <li><b>第4回：</b>positive-type memory，memory symbol，coercivity gap，critical horizon．</li>
+  <li><b>第5回：</b>instantaneous coercivityが消えるときのmemory graph space．</li>
+  <li><b>第6回：</b>kernel stability，Wasserstein型評価，finite-atomic approximation．</li>
+  <li><b>第7回：</b>内部変数表示とcross-term cancellation．</li>
+  <li><b>第8回：</b>BDFとconvolution quadratureによる時間離散化．</li>
+  <li><b>第9回：</b>model-reduction error，kernel error，state-discretisation errorの分離．</li>
+  <li><b>第10回：</b>誤差指標に応じて潜在状態を追加するmodel adaptivity．</li>
+</ol>
 </article>
 </div>
 
@@ -360,56 +346,48 @@ exact modelではkernelの情報そのものは方程式に残りますが，有
 <div class="news">
 <article class="news-item">
 <p>
-未解像ダイナミクスの記憶を扱う研究は，「memory項を持つ方程式を解く」という一問題にとどまりません．直接観測できない潜在状態をどこまで識別できるか，その不確実性をどう表し，最終的な目的量をどこまで保証できるかも含む問題です．
+未解像状態を削除した後に残るmemoryは，経験的な補正項とは限りません．
+拡張状態から厳密に導出できる場合があり，そのkernelは同定・近似・検証の対象になります．
+一方，memoryがdissipativeであっても，通常の瞬時エネルギーを一様に制御するとは限りません．
+したがって，モデル，状態空間，安定性，離散エネルギーを同時に設計する必要があります．
 </p>
-<p style="text-align:center;">
+<p>
 \[
   \text{unresolved dynamics}
-  \longrightarrow
-  \text{memory model}
-  \longrightarrow
-  \text{kernel identification}
-  \longrightarrow
-  \text{certified computation}
+  \longrightarrow \text{memory representation}
+  \longrightarrow \text{kernel stability}
+  \longrightarrow \text{structure-preserving computation}
 \]
 </p>
-<p>
-この流れを確立することで，非マルコフ型モデルを経験的な補正項から，同定可能で近似誤差を保証できる計算対象へ変えることができます．これは，時間遅れ・memoryの解析，逆問題，確率論，最大値原理，有限要素法を結ぶ長期的な研究テーマになり得ます．
-</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>次回：</b>
+<a href="./unresolved-memory-02.html">未解像状態を消去すると，なぜmemoryが現れるのか</a><br>
+二つの状態からなる時間局所系を出発点に，variation of constantsとdynamic Schur complementによって，
+memory kernelが厳密に生成される過程を計算します．
+</div>
 <p>
 関連ページ：
-<a href="../../fem/">Research Visions</a>（Vision 11, 18），
-<a href="../../research/">Research</a>，
-<a href="../../publications/">Publications</a>
+<a href="../../publications/">Publications</a>（S3–S5，A3），
+<a href="../../fem/">Research Visions</a>（Vision 11，18），
+<a href="../../suppl/">Supplementary Visions</a>（履歴依存型発展方程式とmemory kernel）
 </p>
 </article>
 </div>
 
 
-
-<!--section-in-->
 </div>
 </article>
-</div>	
+</div>
 </main>
-<!--▲メインコンテンツ-->
 
-	
-</div><!--main-body-in-->
-</div><!--main-body-->
+</div>
+</div>
 
-
-<!--▼サイトフッター-->
 <footer class="site-footer">
-	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
 </footer>
-<!--▲サイトフッター-->
 
-
-<!--▼ページトップ-->
 <p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
-<!--▲ページトップ-->
-
 <script src="../../js/utility.js" charset="utf-8"></script>
 
 </body>
