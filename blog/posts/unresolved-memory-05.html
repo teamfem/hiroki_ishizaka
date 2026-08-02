@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>第5回：positive-type memoryとcoercivity gap | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,positive-type memory,coercivity gap,completely monotone kernel,memory coercivity symbol,critical horizon,finite-horizon coercivity profile,internal variables,graph space">
+<meta name="description" content="completely monotone kernelが与えるmemory dissipationの非負性と，瞬時energyに対するcoercivityを区別し，memory coercivity symbol，高周波no-go theorem，finite-horizon profile，critical horizonを解説します．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../">Home</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../fem/">Research Visions</a></li>
+        <li><a href="../../suppl/">Supplementary Visions</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+        <li><a href="../../links/">Links</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+    <li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a>
+      <meta itemprop="position" content="1">
+    </li>
+    <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../" itemprop="item"><span itemprop="name">Blog</span></a>
+      <meta itemprop="position" content="2">
+    </li>
+    <li class="bcl-last">Blog post from 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第5回：positive-type memoryとcoercivity gap</h1>
+
+<p class="news-date"><time datetime="2026-08-02">2nd August 2026</time></p>
+
+<h2>Introduction：散逸的であることとcoerciveであることは同じではない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+前回は，分布遅延，原子遅延，混合遅延を有限Borel測度で統一しました．
+今回は対象をVolterra型のmemoryへ戻し，kernelがcompletely monotoneである場合に，
+memory termがどのようなenergyを制御するかを調べます．
+</p>
+<p>
+completely monotone kernelから得られるmemory quadratic formは非負です．
+この性質はpositive typeと呼ばれます．
+しかし，
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>今回の中心問題</b><br>
+memory dissipationが常に非負なら，瞬時拡散が失った
+\(L^2(0,T;V)\)-coercivityをmemoryだけで回復できるのか．
+</div>
+<p>
+答えは否定的です．
+memoryは散逸を与えますが，高い時間周波数に対してその強さがゼロへ減衰するため，
+瞬時energyを周波数一様には支配できません．
+重要なのは，memoryが「何も制御しない」のではなく，
+<b>瞬時energyとは異なるenergy scaleを選ぶ</b>ということです．
+</p>
+</article>
+</div>
+
+<h2>1．対象とするmemory equation</h2>
+<div class="news">
+<article class="news-item">
+<p>
+有界Lipschitz領域 \(\Omega\subset\mathbb R^d\)，\(d\in\{1,2,3\}\) 上で，
+\[
+  H:=L^2(\Omega),
+  \qquad
+  V:=H_0^1(\Omega)
+\]
+とします．
+\(A_0,A_1:V\to V^*\) を対称な双線形形式 \(a_0,a_1\) から生成される作用素とし，
+\(a_1\) は非負であるとします．
+考える方程式は
+\[
+  \partial_tu(t)+A_0u(t)+A_1(k*u)(t)=f(t),
+  \qquad
+  u(0)=u_0,
+\tag{1}
+\]
+です．ここでzero prehistoryを選び，
+\[
+  (k*u)(t):=\int_0^t k(t-s)u(s)\,ds
+\tag{2}
+\]
+とします．
+</p>
+<p>
+\(a_1\) を係数場 \(A_1(x)\) で
+\[
+  a_1(w,v)
+  =\int_\Omega A_1(x)\nabla w\cdot\nabla v\,dx
+\]
+と書ける場合には，
+\[
+  W(t):=A_1^{1/2}\nabla u(t)
+\tag{3}
+\]
+をmemory energy fieldと呼ぶことにします．このとき，
+\[
+  a_1(u(s),u(t))=(W(s),W(t))_{L^2(\Omega)^d},
+  \qquad
+  a_1(u(t),u(t))=\|W(t)\|_{L^2(\Omega)^d}^2.
+\tag{4}
+\]
+</p>
+<p>
+以下の議論で比較する瞬時energyは
+\[
+  E_{\mathrm{inst}}[u](T)
+  :=\int_0^T a_1(u(t),u(t))\,dt
+  =\int_0^T\|W(t)\|_{L^2(\Omega)^d}^2\,dt
+\tag{5}
+\]
+です．
+</p>
+</article>
+</div>
+
+<h2>2．completely monotone kernelとBernstein representation</h2>
+<div class="news">
+<article class="news-item">
+<p>
+kernel \(k:(0,\infty)\to[0,\infty)\) がcompletely monotoneであるとは，
+\[
+  (-1)^n k^{(n)}(t)\ge0
+  \qquad
+  (t>0,\ n\in\mathbb N_0)
+\tag{6}
+\]
+が成り立つことです．Bernsteinの定理により，これは
+\[
+  k(t)=\int_{[0,\infty)}e^{-\lambda t}\,d\nu(\lambda)
+\tag{7}
+\]
+と表せることと同値です．
+\(\nu\) は非負Borel測度であり，緩和率 \(\lambda\) の分布を表します．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+  <tr>
+    <th style="border:1px solid #777; padding:7px;">kernel</th>
+    <th style="border:1px solid #777; padding:7px;">representing measure</th>
+    <th style="border:1px solid #777; padding:7px;">特徴</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">\(k(t)=\gamma e^{-\gamma t}\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(\nu=\gamma\delta_\gamma\)</td>
+    <td style="border:1px solid #777; padding:7px;">単一緩和時間</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">\(\sum_{j=1}^Jc_je^{-\gamma_jt}\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(\sum_{j=1}^Jc_j\delta_{\gamma_j}\)</td>
+    <td style="border:1px solid #777; padding:7px;">有限緩和スペクトル</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">\(\displaystyle k_\alpha(t)=\frac{t^{-\alpha}}{\Gamma(1-\alpha)}\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(\displaystyle d\nu_\alpha(\lambda)=\frac{\sin(\pi\alpha)}{\pi}\lambda^{\alpha-1}\,d\lambda\)</td>
+    <td style="border:1px solid #777; padding:7px;">fractional memory</td>
+  </tr>
+</table>
+<p>
+注意すべき量は二つあります．
+\[
+  M_0:=\nu([0,\infty)),
+  \qquad
+  \|k\|_{L^1(0,\infty)}
+  =\int_{[0,\infty)}\lambda^{-1}\,d\nu(\lambda).
+\tag{8}
+\]
+\(M_0\) はBernstein measureの総質量であり，
+\(\|k\|_{L^1}\) は時間kernelの総質量です．両者は同じではありません．
+</p>
+</article>
+</div>
+
+<h2>3．memory dissipationを定義する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+memory termが吸収する累積energyを
+\[
+  D_k[u](T)
+  :=\int_0^T
+      \bigl((k*W)(t),W(t)\bigr)_{L^2(\Omega)^d}\,dt
+\tag{9}
+\]
+と定めます．ここで
+\[
+  (k*W)(t)=\int_0^t k(t-s)W(s)\,ds.
+\]
+</p>
+<p>
+positive typeとは，
+\[
+  D_k[u](T)\ge0
+\tag{10}
+\]
+がすべての許される軌道について成り立つことです．
+これはmemoryがenergyを生成しないという意味では重要ですが，
+まだ
+\[
+  D_k[u](T)\ge c\,E_{\mathrm{inst}}[u](T)
+\tag{11}
+\]
+というcoercivityを意味しません．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 2px solid #666666;">
+<b>二つの向きは別物</b><br>
+positive type：
+\(D_k[u](T)\ge0\)．<br>
+instantaneous coercivity：
+\(D_k[u](T)\ge cE_{\mathrm{inst}}[u](T)\) を
+軌道に依らない \(c>0\) で示すこと．
+</div>
+</article>
+</div>
+
+<h2>4．内部変数表示がpositive typeを与える</h2>
+<div class="news">
+<article class="news-item">
+<p>
+各緩和率 \(\lambda\ge0\) に対して，
+\[
+  Z(\lambda,t)
+  :=\int_0^t e^{-\lambda(t-s)}W(s)\,ds
+\tag{12}
+\]
+を導入します．すると
+\[
+  \partial_tZ(\lambda,t)+\lambda Z(\lambda,t)=W(t),
+  \qquad
+  Z(\lambda,0)=0.
+\tag{13}
+\]
+さらに，Bernstein representationから
+\[
+  (k*W)(t)
+  =\int_{[0,\infty)}Z(\lambda,t)\,d\nu(\lambda)
+\tag{14}
+\]
+です．
+</p>
+<p>
+式 (13) を使うと，memory dissipationは
+\[
+\begin{aligned}
+  D_k[u](T)
+  =\int_{[0,\infty)}
+  \Biggl[
+    &\frac12\|Z(\lambda,T)\|_{L^2(\Omega)^d}^2\\
+    &+\lambda\int_0^T
+      \|Z(\lambda,t)\|_{L^2(\Omega)^d}^2\,dt
+  \Biggr]\,d\nu(\lambda)
+  \ge0
+\end{aligned}
+\tag{15}
+\]
+となります．
+</p>
+<p>
+右辺は，各内部モードの終端energyと散逸の和です．
+したがって，memoryが自然に制御するのは
+\(u\) の瞬時 \(V\)-energyそのものではなく，
+内部変数 \(Z(\lambda,\cdot)\) のenergyです．
+これが次回のmemory graph spaceへつながる最初の手掛かりです．
+</p>
+</article>
+</div>
+
+<h2>5．単一指数kernelではgapを時間領域で正確に書ける</h2>
+<div class="news">
+<article class="news-item">
+<p>
+正規化された単一指数kernel
+\[
+  k(t)=\gamma e^{-\gamma t},
+  \qquad
+  \gamma>0
+\tag{16}
+\]
+を考えます．このとき \(\|k\|_{L^1(0,\infty)}=1\) であり，
+内部変数を
+\[
+  Z(t):=\int_0^t e^{-\gamma(t-s)}W(s)\,ds
+\]
+と書けば，
+\[
+  \partial_tZ+\gamma Z=W.
+\]
+直接計算すると，
+\[
+\begin{aligned}
+  E_{\mathrm{inst}}[u](T)-D_k[u](T)
+  ={}&
+  \int_0^T\|\partial_tZ(t)\|_{L^2(\Omega)^d}^2\,dt\\
+  &+\frac{\gamma}{2}\|Z(T)\|_{L^2(\Omega)^d}^2
+  \ge0.
+\end{aligned}
+\tag{17}
+\]
+</p>
+<p>
+つまり，このkernelではmemory dissipationは瞬時energyを超えません．
+しかし，式 (17) は
+\(D_k[u](T)\ge cE_{\mathrm{inst}}[u](T)\)
+を与えていません．
+むしろ，急激に振動する入力では \(\partial_tZ\) が大きくなり，
+instantaneous energyとmemory dissipationのgapが広がり得ることを示しています．
+</p>
+</article>
+</div>
+
+<h2>6．memory coercivity symbolは周波数ごとの強さを測る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+memoryがどの時間周波数を制御するかを見るため，
+memory coercivity symbolを
+\[
+  m(\omega)
+  :=\int_{[0,\infty)}
+     \frac{\lambda}{\lambda^2+\omega^2}\,d\nu(\lambda),
+  \qquad
+  \omega\in\mathbb R
+\tag{18}
+\]
+と定めます．
+\(k\in L^1(0,\infty)\) なら，
+causal Fourier transform
+\[
+  \widehat k(\omega)
+  :=\int_0^\infty k(t)e^{-i\omega t}\,dt
+\]
+が存在し，
+\[
+  m(\omega)=\operatorname{Re}\widehat k(\omega)
+\tag{19}
+\]
+です．
+</p>
+<p>
+symbolには次の性質があります．
+</p>
+<ul>
+  <li>\(m\) は偶関数である．</li>
+  <li>\(|\omega|\) に関して非増加である．</li>
+  <li>\(\displaystyle m(0)=\|k\|_{L^1(0,\infty)}\in(0,\infty]\)．</li>
+  <li>任意の局所可積分completely monotone kernelについて
+      \(\displaystyle m(\omega)\to0\) as \(|\omega|\to\infty\)．</li>
+</ul>
+<p>
+したがって，memoryは低周波成分には強く作用しますが，
+高周波成分には次第に反応しなくなります．
+この高周波減衰がcoercivity failureの本体です．
+</p>
+</article>
+</div>
+
+<h2>7．finite \(L^1\)-massではcoercivity gapを周波数ごとに分解できる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(k\in L^1(0,\infty)\) とし，
+\(W\) を \((0,T)\) の外へ零拡張します．Plancherelの定理により，
+\[
+\begin{aligned}
+  E_{\mathrm{inst}}[u](T)-D_k[u](T)
+  =\frac{1}{2\pi}\int_{\mathbb R}
+  \bigl(1-m(\omega)\bigr)
+  \|\widehat W(\omega)\|_{L^2(\Omega;\mathbb C)^d}^2\,d\omega.
+\end{aligned}
+\tag{20}
+\]
+</p>
+<p>
+瞬時energyはすべての周波数へ重み \(1\) を与えます．
+一方，memory dissipationは周波数 \(\omega\) へ重み \(m(\omega)\) を与えます．
+したがって，gapの符号は \(1-m(\omega)\) で決まります．
+</p>
+<p>
+特に，\(a_1\not\equiv0\) なら，
+\[
+  E_{\mathrm{inst}}[u](T)-D_k[u](T)\ge0
+\]
+がすべての軌道・すべての時間区間で成り立つためのsharpな条件は
+\[
+  \|k\|_{L^1(0,\infty)}\le1
+\tag{21}
+\]
+です．
+\(\|k\|_{L^1}>1\) なら，\(m(\omega)>1\) となる低周波領域が存在し，
+低周波に集中した状態についてgapは負になります．
+</p>
+<p>
+ここでgapが負になることは，
+memory dissipation \(D_k[u](T)\) 自体が負になることを意味しません．
+positive typeにより \(D_k[u](T)\ge0\) は維持されています．
+負になるのは
+\[
+  E_{\mathrm{inst}}[u](T)-D_k[u](T)
+\]
+であり，その状態ではmemory dissipationが比較対象の瞬時energyを上回るという意味です．
+</p>
+</article>
+</div>
+
+<h2>8．固定した時間区間ではfinite-horizon profileがsharpな閾値になる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+条件 (21) は，すべての時間区間を同時に扱うglobalな条件です．
+固定した \(T>0\) だけを考えるなら，必要な情報はkernelの全時間質量ではなく，
+\((0,T)\) 上のmemory quadratic formのoperator normです．
+</p>
+<p>
+\(\varphi\in L^2(0,T)\) に対して
+\[
+  Q_{k,T}[\varphi]
+  :=\int_0^T
+     \varphi(t)\int_0^t k(t-s)\varphi(s)\,ds\,dt
+\tag{22}
+\]
+とし，
+\[
+  \Lambda_k(T)
+  :=\sup_{\varphi\in L^2(0,T)\setminus\{0\}}
+     \frac{Q_{k,T}[\varphi]}
+          {\|\varphi\|_{L^2(0,T)}^2}
+\tag{23}
+\]
+をfinite-horizon coercivity profileと呼びます．
+</p>
+<p>
+このprofileは
+\[
+  0<\Lambda_k(T)\le\int_0^Tk(s)\,ds,
+\tag{24}
+\]
+を満たし，\(T\) に関して非減少かつ左連続です．さらに，
+\[
+  \Lambda_k(T)\to0
+  \quad(T\downarrow0),
+  \qquad
+  \Lambda_k(T)\to\|k\|_{L^1(0,\infty)}
+  \quad(T\to\infty),
+\tag{25}
+\]
+ここで右端は \(+\infty\) でも構いません．
+</p>
+<p>
+そして，固定した \(T\) でgapがすべての状態について非負となるためのsharpな条件は
+\[
+  \Lambda_k(T)\le1
+\tag{26}
+\]
+です．この結果はkernelの局所可積分性だけを使うため，
+\(L^1(0,\infty)\)-massが無限大のfractional kernelにも適用できます．
+</p>
+</article>
+</div>
+
+<h2>9．critical horizonは「いつまでgapの符号が保たれるか」を表す</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\[
+  \|k\|_{L^1(0,\infty)}>1
+\]
+である場合，長時間では必ず \(\Lambda_k(T)>1\) になります．
+一方，短時間では \(\Lambda_k(T)\to0\) なので，gapは非負です．
+そこで
+\[
+  T_*:=\sup\{T>0:\Lambda_k(T)\le1\}
+\tag{27}
+\]
+をcritical horizonと定めます．すると
+\[
+  0<T_*<\infty,
+\]
+かつ
+\[
+  \Lambda_k(T)\le1
+  \quad(0<T\le T_*),
+  \qquad
+  \Lambda_k(T)>1
+  \quad(T>T_*).
+\tag{28}
+\]
+</p>
+<p>
+つまり，kernelの総質量が1を超えていても，
+十分短い時間区間ではcoercivity gapはすべての状態について非負です．
+しかし，critical horizonを越えると，gapが負になる状態が現れます．
+</p>
+<p>
+fractional kernel
+\[
+  k_\alpha(t)=\frac{t^{-\alpha}}{\Gamma(1-\alpha)},
+  \qquad
+  0<\alpha<1
+\]
+ではscalingにより
+\[
+  \Lambda_{k_\alpha}(T)
+  =T^{1-\alpha}\Lambda_{k_\alpha}(1)
+\tag{29}
+\]
+となるため，
+\[
+  T_{*,\alpha}
+  =\Lambda_{k_\alpha}(1)^{-1/(1-\alpha)}
+\tag{30}
+\]
+が一意なcritical horizonになります．
+</p>
+</article>
+</div>
+
+<h2>10．no-go theorem：positive-type memoryは瞬時coercivityを回復しない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+最も重要な結論は，任意の非自明な局所可積分completely monotone kernelについて，
+一般には
+\[
+  D_k[u](T)\ge c\,E_{\mathrm{inst}}[u](T)
+\tag{31}
+\]
+を満たす軌道に依らない定数 \(c>0\) は存在しない，ということです．
+</p>
+<p>
+直観的には，高周波振動
+\[
+  u_\omega(t)=\cos(\omega t)w_0,
+  \qquad
+  a_1(w_0,w_0)>0
+\tag{32}
+\]
+を考えれば分かります．
+\[
+  E_{\mathrm{inst}}[u_\omega](T)
+  \longrightarrow
+  \frac{T}{2}a_1(w_0,w_0)>0
+\]
+である一方，
+memory symbolは
+\[
+  m(\omega)\longrightarrow0
+  \qquad(|\omega|\to\infty)
+\]
+なので，
+\[
+  D_k[u_\omega](T)\longrightarrow0.
+\tag{33}
+\]
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>no-go theoremの意味</b><br>
+positive-type memoryは散逸的である．<br>
+しかし，急速に振動する時間成分を一様には制御できない．<br>
+したがって，失われた \(L^2(0,T;V)\)-coercivityをmemoryだけで置き換えることはできない．
+</div>
+<p>
+この障害は \(A_0\) がcoerciveな場合には表面化しません．
+その場合，瞬時項 \(A_0\) が必要な \(L^2(0,T;V)\)-controlをすでに与えるからです．
+問題になるのは，\(A_0\) のcoercivity constantが0へ近づく，または完全に消える場合です．
+</p>
+</article>
+</div>
+
+<h2>11．coercivity-gap indexは高周波で失う次数を測る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+symbolの高周波減衰を定量化するため，
+\[
+  \rho(k)
+  :=\sup\left\{
+       s\ge0:
+       \limsup_{|\omega|\to\infty}
+       |\omega|^s m(\omega)<\infty
+     \right\}
+\tag{34}
+\]
+をcoercivity-gap indexと呼びます．
+</p>
+<p>
+もし
+\[
+  m(\omega)\asymp|\omega|^{-r}
+  \qquad(|\omega|\to\infty)
+\]
+なら，
+\[
+  \rho(k)=r.
+\]
+\(\rho\) が大きいほどsymbolは速く0へ落ちるため，
+瞬時 \(L^2\)-coercivityからの損失が大きいことを意味します．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+  <tr>
+    <th style="border:1px solid #777; padding:7px;">kernel class</th>
+    <th style="border:1px solid #777; padding:7px;">高周波symbol</th>
+    <th style="border:1px solid #777; padding:7px;">\(\rho\)</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">exponential / Prony</td>
+    <td style="border:1px solid #777; padding:7px;">\(m(\omega)\asymp|\omega|^{-2}\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(2\)</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">fractional order \(\alpha\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(m(\omega)\asymp|\omega|^{-(1-\alpha)}\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(1-\alpha\)</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">slowly varying spectrum</td>
+    <td style="border:1px solid #777; padding:7px;">どの正の冪よりも遅い場合がある</td>
+    <td style="border:1px solid #777; padding:7px;">\(0\)</td>
+  </tr>
+</table>
+<p>
+非定数kernelについて一般に
+\[
+  0\le\rho(k)\le2.
+\tag{35}
+\]
+さらに，第一Bernstein moment
+\[
+  M_1:=\int_{[0,\infty)}\lambda\,d\nu(\lambda)
+\]
+が有限なら，
+\[
+  m(\omega)\sim M_1|\omega|^{-2},
+  \qquad
+  \rho(k)=2.
+\tag{36}
+\]
+</p>
+</article>
+</div>
+
+<h2>12．原点への集中ではcoercivity structureが不連続になる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第3回では，measure convergenceによってdistributed delayがDirac原子へ集中する極限を見ました．
+ここでは，原点への集中が高周波coercivityを保存しないことを確認します．
+</p>
+<p>
+\[
+  k_n(t):=ne^{-nt},
+  \qquad
+  d\mu_n(t):=k_n(t)\,dt
+\tag{37}
+\]
+とすると，
+\[
+  \mu_n\rightharpoonup^*\delta_0.
+\tag{38}
+\]
+また，\(k_n\) は一方向のapproximate identityなので，
+適切な \(L^p\)-空間で
+\[
+  k_n*F\longrightarrow F.
+\tag{39}
+\]
+つまり，memory operatorは瞬時作用へ近づきます．
+</p>
+<p>
+しかしsymbolは
+\[
+  m_n(\omega)=\frac{n^2}{n^2+\omega^2}.
+\tag{40}
+\]
+固定した \(n\) ごとには
+\[
+  m_n(\omega)\to0
+  \qquad(|\omega|\to\infty),
+  \qquad
+  \rho(k_n)=2.
+\]
+一方，固定した \(\omega\) に対して
+\[
+  m_n(\omega)\to1
+  \qquad(n\to\infty),
+\]
+極限 \(\delta_0\) のsymbolは定数 \(1\) で，indexは \(0\) です．
+したがって，
+\[
+  \lim_{|\omega|\to\infty}\lim_{n\to\infty}m_n(\omega)=1,
+  \qquad
+  \lim_{n\to\infty}\lim_{|\omega|\to\infty}m_n(\omega)=0.
+\tag{41}
+\]
+</p>
+<p>
+解や作用素が収束しても，それらを支えるcoercivity scaleまで一様に収束するとは限りません．
+原点は，distributed memoryとinstantaneous actionの間にある真の特異境界です．
+</p>
+</article>
+</div>
+
+<h2>13．数値解析で保存すべきものは何か</h2>
+<div class="news">
+<article class="news-item">
+<p>
+今回の結果から，memory equationの数値法に対して少なくとも四つの要請が見えてきます．
+</p>
+<ol>
+  <li>
+    <b>positive-type structure：</b>
+    離散memory dissipationが非負になること．
+  </li>
+  <li>
+    <b>internal-variable energy：</b>
+    瞬時 \(V\)-normだけでなく，離散内部変数のenergyを追跡すること．
+  </li>
+  <li>
+    <b>vanishing-coercivity robustness：</b>
+    \(a_0\) のcoercivity constantが0へ近づいても安定性定数が破綻しないこと．
+  </li>
+  <li>
+    <b>singular-limit awareness：</b>
+    kernel concentrationと時間離散化の極限順序を区別すること．
+  </li>
+</ol>
+<p>
+memory termがpositive typeだからといって，
+標準的な \(L^2(0,T;V)\)-energy estimateをそのまま流用することはできません．
+必要なのは，memoryが実際に制御する拡張energyに合わせて状態空間を作ることです．
+</p>
+</article>
+</div>
+
+<h2>Conclusion</h2>
+<div class="news">
+<article class="news-item">
+<p>
+completely monotone kernelは，Bernstein representationを通して非負の内部変数energyを生成します．
+したがってmemory dissipationはpositive typeです．
+しかし，memory coercivity symbolは高周波で0へ減衰するため，
+その散逸は瞬時 \(L^2(0,T;V)\)-energyを一様には支配しません．
+</p>
+<p>
+\[
+  \text{positive dissipation}
+  \not\Longrightarrow
+  \text{frequency-uniform instantaneous coercivity}
+\]
+</p>
+<p>
+finite \(L^1\)-massでは，gapは周波数重み \(1-m(\omega)\) によって正確に記述されます．
+固定時間区間ではfinite-horizon profile \(\Lambda_k(T)\) がsharpな閾値となり，
+そのunit crossingがcritical horizonを定めます．
+さらに，高周波のcoercivity lossはindex \(\rho\) で定量化できます．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>次回：</b>第6回：graph-space well-posednessとは何か<br>
+memoryが瞬時energyをcoerciveに支配できないなら，どの空間でwell-posednessを立てるべきか．
+物理変数と内部変数を一つの拡張状態にまとめ，memory graph normとm-dissipativityを整理します．
+</div>
+<p>
+前の記事：
+<a href="./unresolved-memory-04.html">第4回：指数重みでmeasure-valued delayのwell-posednessを得る</a>
+</p>
+<p>
+関連ページ：
+<a href="../../publications/">Publications</a>（S3–S5，A3），
+<a href="../../fem/">Research Visions</a>（Vision 11，18），
+<a href="../../suppl/">Supplementary Visions</a>（履歴依存型発展方程式とmemory kernel）
+</p>
+</article>
+</div>
+
+</div>
+</article>
+</div>
+</main>
+
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
