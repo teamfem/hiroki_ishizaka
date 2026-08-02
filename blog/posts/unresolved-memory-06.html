@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>第6回：graph-space well-posednessとは何か | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,graph-space well-posedness,memory graph space,internal variables,m-dissipative operator,contraction semigroup,cross-term cancellation,vanishing coercivity,completely monotone kernel">
+<meta name="description" content="瞬時拡散がcoercivityを失うmemory equationに対して，物理変数と内部変数からなる拡張状態空間を構成し，m-dissipativity，memory graph space，Hadamard well-posedness，vanishing-coercivity stabilityを解説します．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../">Home</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../fem/">Research Visions</a></li>
+        <li><a href="../../suppl/">Supplementary Visions</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+        <li><a href="../../links/">Links</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+    <li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a>
+      <meta itemprop="position" content="1">
+    </li>
+    <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../" itemprop="item"><span itemprop="name">Blog</span></a>
+      <meta itemprop="position" content="2">
+    </li>
+    <li class="bcl-last">Blog post from 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第6回：graph-space well-posednessとは何か</h1>
+
+<p class="news-date"><time datetime="2026-08-02">2nd August 2026</time></p>
+
+<h2>Introduction：no-go theoremはill-posednessを意味しない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+前回は，completely monotone kernelがpositive-type dissipationを与えても，
+memory dissipationだけでは瞬時energy
+\[
+  \int_0^T a_1(u(t),u(t))\,dt
+\]
+を周波数一様に支配できないことを見ました．
+高い時間周波数に対してmemory symbolが0へ減衰するため，
+失われた \(L^2(0,T;V)\)-coercivityをmemoryだけで回復することはできません．
+</p>
+<p>
+しかし，ここから
+「瞬時拡散が退化すれば方程式は解けない」
+と結論してはいけません．
+失敗したのは方程式そのものではなく，
+<b>瞬時 \(V\)-energyだけで安定性を測る試み</b>です．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>今回の結論</b><br>
+memoryが選ぶ内部変数energyを状態に組み込み，
+物理変数と内部変数を一つの拡張状態として扱えば，
+瞬時形式 \(a_0\) に正のcoercivity constantがなくても
+contraction semigroupとHadamard well-posednessを得られる．
+</div>
+<p>
+この拡張状態のzero-prehistory軌道が作る空間を
+<b>memory graph space</b>と呼びます．
+ここでいうgraphは，生成作用素のoperator graphではなく，
+物理軌道 \(u\) と，そこから因果的に生成される内部変数軌道とのgraphです．
+</p>
+</article>
+</div>
+
+<h2>1．coercive regimeとdegenerate regimeの違い</h2>
+<div class="news">
+<article class="news-item">
+<p>
+有界Lipschitz領域 \(\Omega\subset\mathbb R^d\)，\(d\in\{1,2,3\}\) 上で
+\[
+  H:=L^2(\Omega),
+  \qquad
+  V:=H_0^1(\Omega)
+\]
+とし，
+\[
+  \partial_tu(t)+A_0u(t)+A_1(k*u)(t)=f(t),
+  \qquad
+  u(0)=u_0
+\tag{1}
+\]
+を考えます．zero prehistoryを選び，
+\[
+  (k*u)(t):=\int_0^t k(t-s)u(s)\,ds.
+\tag{2}
+\]
+</p>
+<p>
+\(A_0,A_1:V\to V^*\) は対称な双線形形式 \(a_0,a_1\) から生成されるとします．
+今回の仮定は
+\[
+  a_0(v,v)\ge0,
+\tag{3}
+\]
+\[
+  a_1(v,v)\ge\beta |v|_V^2,
+  \qquad
+  \beta>0
+\tag{4}
+\]
+です．
+</p>
+<p>
+第4回のweighted well-posednessでは，瞬時形式に
+\[
+  a_0(v,v)\ge\alpha_0\|v\|_V^2,
+  \qquad
+  \alpha_0>0
+\]
+を仮定し，memoryをcoercive parabolic problemへのperturbationとして扱いました．
+今回は \(\alpha_0\) を使えません．
+\(a_0\) は非負ではあるものの，\(V\)-normを下から支配しない可能性があります．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+  <tr>
+    <th style="border:1px solid #777; padding:7px;">regime</th>
+    <th style="border:1px solid #777; padding:7px;">安定性を支えるもの</th>
+    <th style="border:1px solid #777; padding:7px;">自然な状態</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">coercive instantaneous diffusion</td>
+    <td style="border:1px solid #777; padding:7px;">\(a_0(v,v)\ge\alpha_0\|v\|_V^2\)</td>
+    <td style="border:1px solid #777; padding:7px;">物理変数 \(u\)</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">degenerate instantaneous diffusion</td>
+    <td style="border:1px solid #777; padding:7px;">物理energy＋internal-variable energy</td>
+    <td style="border:1px solid #777; padding:7px;">拡張状態 \((u,\zeta)\)</td>
+  </tr>
+</table>
+</article>
+</div>
+
+<h2>2．completely monotone kernelを緩和モードへ分解する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+kernel \(k\) は非自明なcompletely monotone kernelとし，
+Bernstein representation
+\[
+  k(t)
+  =
+  \int_{[0,\infty)}
+  e^{-\lambda t}\,d\nu(\lambda)
+\tag{5}
+\]
+をもつとします．
+\(\nu\) は緩和率 \(\lambda\) の分布です．
+</p>
+<p>
+今回のsemigroup構成に必要な量は
+\[
+  M_0
+  :=
+  \nu([0,\infty))
+  =
+  k(0+)
+\tag{6}
+\]
+です．基本理論では
+\[
+  0<M_0<\infty
+\tag{7}
+\]
+を仮定します．
+</p>
+<p>
+ここで \(M_0\) と時間kernelの総質量
+\[
+  \|k\|_{L^1(0,\infty)}
+  =
+  \int_{(0,\infty)}\lambda^{-1}\,d\nu(\lambda)
+\tag{8}
+\]
+を混同してはいけません．
+graph-space theoryを支えるのは，まずBernstein measureの総質量 \(M_0\) です．
+</p>
+<p>
+例えばProny kernel
+\[
+  k(t)=\sum_{j=1}^Jc_je^{-\gamma_jt},
+  \qquad
+  c_j,\gamma_j>0
+\]
+では
+\[
+  \nu=\sum_{j=1}^Jc_j\delta_{\gamma_j},
+  \qquad
+  M_0=\sum_{j=1}^Jc_j,
+  \qquad
+  \|k\|_{L^1}=\sum_{j=1}^J\frac{c_j}{\gamma_j}.
+\tag{9}
+\]
+両者は異なる量です．
+</p>
+</article>
+</div>
+
+<h2>3．内部変数によって非局所memoryを時間局所系へ戻す</h2>
+<div class="news">
+<article class="news-item">
+<p>
+各 \(\lambda\ge0\) に対して
+\[
+  \zeta(\lambda,t)
+  :=
+  \int_0^t e^{-\lambda(t-s)}u(s)\,ds
+\tag{10}
+\]
+を導入します．固定した \(\lambda\) ごとに
+\[
+  \partial_t\zeta(\lambda,t)
+  +\lambda\zeta(\lambda,t)
+  =
+  u(t),
+  \qquad
+  \zeta(\lambda,0)=0.
+\tag{11}
+\]
+</p>
+<p>
+memory potentialを
+\[
+  \xi(t)
+  :=
+  \int_{[0,\infty)}
+  \zeta(\lambda,t)\,d\nu(\lambda)
+\tag{12}
+\]
+とすると，Fubiniの定理により
+\[
+  \xi(t)=(k*u)(t).
+\tag{13}
+\]
+従って式 (1) は
+\[
+  \partial_tu+A_0u+A_1\xi=f,
+\tag{14}
+\]
+\[
+  \partial_t\zeta(\lambda,\cdot)
+  +\lambda\zeta(\lambda,\cdot)
+  =u
+\tag{15}
+\]
+という拡張系になります．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 2px solid #666666;">
+<b>局所化の意味</b><br>
+\(u\) だけを見ると方程式は過去全体に依存する．<br>
+\((u,\zeta)\) を状態とすれば，各時刻の状態だけで次の変化が決まる．
+</div>
+<p>
+つまり，memory equationを直接扱う代わりに，
+連続個の緩和モードを含むMarkov型の拡張系へ戻します．
+</p>
+</article>
+</div>
+
+<h2>4．memoryが選ぶ内部変数空間</h2>
+<div class="news">
+<article class="news-item">
+<p>
+内部変数familyのenergyを
+\[
+  \|\zeta\|_{\mathcal K}^2
+  :=
+  \int_{[0,\infty)}
+  a_1\bigl(\zeta(\lambda),\zeta(\lambda)\bigr)
+  \,d\nu(\lambda)
+\tag{16}
+\]
+と定めます．
+\(a_1\) が \(V\) 上coerciveなので，これは
+\[
+  \int_{[0,\infty)}
+  \|\zeta(\lambda)\|_V^2\,d\nu(\lambda)
+\]
+と同値なnormになります．
+</p>
+<p>
+このHilbert空間を \(\mathcal K\) と書き，
+物理変数と組み合わせて
+\[
+  \mathcal W:=H\times\mathcal K
+\tag{17}
+\]
+をextended memory state spaceとします．内積は
+\[
+\begin{aligned}
+  \bigl\langle (u,\zeta),(v,\chi)\bigr\rangle_{\mathcal W}
+  &:=
+  (u,v)_H\\
+  &\quad+
+  \int_{[0,\infty)}
+  a_1\bigl(\zeta(\lambda),\chi(\lambda)\bigr)
+  \,d\nu(\lambda).
+\end{aligned}
+\tag{18}
+\]
+</p>
+<p>
+対応するenergyは
+\[
+  \|(u,\zeta)\|_{\mathcal W}^2
+  =
+  \|u\|_H^2
+  +
+  \int_{[0,\infty)}
+  a_1\bigl(\zeta(\lambda),\zeta(\lambda)\bigr)\,d\nu(\lambda).
+\tag{19}
+\]
+</p>
+<p>
+前回のno-go theoremで不足したのは，
+まさに第二項でした．
+瞬時の \(u\)-energyだけでは見えないmemory storageを，
+状態normへ明示的に戻しています．
+</p>
+</article>
+</div>
+
+<h2>5．memory graph spaceはtrajectory space内のgraphである</h2>
+<div class="news">
+<article class="news-item">
+<p>
+任意の \(u\in C([0,T];H)\) に対して，causal internal-variable map
+\[
+  (\mathcal Ru)(t)(\lambda)
+  :=
+  \int_0^t e^{-\lambda(t-s)}u(s)\,ds
+\tag{20}
+\]
+を定めます．
+有限 \(M_0\) により，\(\mathcal R\) は適切な
+\(\nu\)-weighted \(H\)-spaceへ連続に写ります．
+</p>
+<p>
+zero-prehistory memory graph spaceを
+\[
+\begin{aligned}
+  \mathcal G_\nu(0,T)
+  :=
+  \bigl\{
+  &(u,\zeta)\in C([0,T];\mathcal W):\\
+  &\zeta(t)=(\mathcal Ru)(t)
+  \text{ for every }t\in[0,T]
+  \bigr\}
+\tag{21}
+\end{aligned}
+\]
+と定めます．等式は，\(\nu\)-ほとんどすべての \(\lambda\) に対する
+\(H\)-値関数の等式として理解します．
+</p>
+<p>
+normは
+\[
+  \|(u,\zeta)\|_{\mathcal G_\nu(0,T)}
+  :=
+  \sup_{0\le t\le T}
+  \|(u(t),\zeta(t))\|_{\mathcal W}.
+\tag{22}
+\]
+\(\mathcal G_\nu(0,T)\) は
+\(C([0,T];\mathcal W)\) の閉部分空間なのでBanach空間です．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>用語上の注意</b><br>
+memory graph spaceは，
+\(u\mapsto\mathcal Ru\) のtrajectory graphである．<br>
+生成作用素 \(\mathcal A\) のoperator graph norm
+\(\|X\|_{\mathcal W}+\|\mathcal AX\|_{\mathcal W}\)
+を意味するのではない．
+</div>
+</article>
+</div>
+
+<h2>6．aggregationとconstant embedding</h2>
+<div class="news">
+<article class="news-item">
+<p>
+二つの作用素がenergy cancellationの中心になります．
+</p>
+<p>
+aggregation operatorを
+\[
+  J:\mathcal K\to V,
+  \qquad
+  J\zeta
+  :=
+  \int_{[0,\infty)}
+  \zeta(\lambda)\,d\nu(\lambda),
+\tag{23}
+\]
+constant embeddingを
+\[
+  E:V\to\mathcal K,
+  \qquad
+  (Eu)(\lambda):=u
+\tag{24}
+\]
+と定めます．
+</p>
+<p>
+\(M_0<\infty\) により，両者は有界です．特に
+\[
+  \|Eu\|_{\mathcal K}^2
+  =
+  M_0a_1(u,u),
+\tag{25}
+\]
+また
+\[
+  a_1(J\zeta,J\zeta)^{1/2}
+  \le
+  M_0^{1/2}\|\zeta\|_{\mathcal K}.
+\tag{26}
+\]
+</p>
+<p>
+さらに，memory energyに関して
+\[
+  a_1(J\zeta,u)
+  =
+  \langle\zeta,Eu\rangle_{\mathcal K}
+\tag{27}
+\]
+が成り立ちます．
+これは \(J\) と \(E\) のadjoint relationであり，
+後のcross-term cancellationを生みます．
+</p>
+</article>
+</div>
+
+<h2>7．augmented generatorを作る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+緩和作用素を
+\[
+  (\Lambda\zeta)(\lambda):=\lambda\zeta(\lambda)
+\tag{28}
+\]
+とします．拡張状態
+\[
+  X=(u,\zeta)
+\]
+に対し，
+\[
+  \mathcal A(u,\zeta)
+  :=
+  \bigl(
+    -A_0u-A_1J\zeta,\,
+    Eu-\Lambda\zeta
+  \bigr)
+\tag{29}
+\]
+と定めます．
+</p>
+<p>
+domainは概念的に
+\[
+\begin{aligned}
+  D(\mathcal A)
+  :=
+  \bigl\{
+  (u,\zeta)\in V\times\mathcal K:\,
+  &A_0u+A_1J\zeta\in H,\\
+  &Eu-\Lambda\zeta\in\mathcal K
+  \bigr\}.
+\end{aligned}
+\tag{30}
+\]
+</p>
+<p>
+すると拡張系は
+\[
+  X'(t)
+  =
+  \mathcal AX(t)
+  +(f(t),0),
+  \qquad
+  X(0)=(u_0,0)
+\tag{31}
+\]
+というabstract Cauchy problemになります．
+</p>
+</article>
+</div>
+
+<h2>8．cross-term cancellationがenergyを閉じる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(X=(u,\zeta)\in D(\mathcal A)\) に対して
+\[
+\begin{aligned}
+  \langle\mathcal AX,X\rangle_{\mathcal W}
+  ={}&
+  -a_0(u,u)
+  -a_1(J\zeta,u)\\
+  &+\langle Eu,\zeta\rangle_{\mathcal K}
+  -\int_{[0,\infty)}
+   \lambda a_1(\zeta(\lambda),\zeta(\lambda))
+   \,d\nu(\lambda).
+\end{aligned}
+\tag{32}
+\]
+</p>
+<p>
+式 (27) により
+\[
+  -a_1(J\zeta,u)
+  +\langle Eu,\zeta\rangle_{\mathcal K}
+  =0.
+\tag{33}
+\]
+従って
+\[
+\boxed{
+  \langle\mathcal AX,X\rangle_{\mathcal W}
+  =
+  -a_0(u,u)
+  -
+  \int_{[0,\infty)}
+  \lambda a_1(\zeta(\lambda),\zeta(\lambda))
+  \,d\nu(\lambda)
+  \le0
+  }
+\tag{34}
+\]
+です．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>ここが構造保存の核心</b><br>
+物理方程式がmemoryへ渡すenergyと，
+内部変数方程式が物理変数から受け取るenergyが，
+拡張内積の中で正確に相殺する．
+</div>
+<p>
+重要なのは，式 (34) が
+\[
+  a_0(u,u)\ge0
+\]
+しか使っていないことです．
+\(a_0\) の正のcoercivity constantは一度も現れません．
+</p>
+</article>
+</div>
+
+<h2>9．m-dissipativeとは何を保証するのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+式 (34) は \(\mathcal A\) がdissipativeであることを示します．
+しかし，dissipativityだけでは任意の初期値から解を生成できません．
+さらに
+\[
+  \operatorname{Ran}(I-\mathcal A)
+  =
+  \mathcal W
+\tag{35}
+\]
+というrange conditionが必要です．
+</p>
+<p>
+range equation
+\[
+  (I-\mathcal A)(u,\zeta)=(g,h)
+\]
+では，内部変数の式を \(\lambda\) ごとに解いて \(\zeta\) を消去し，
+残る \(u\)-方程式をLax–Milgram型のcoercive problemへ帰着できます．
+このrange conditionとdissipativityを合わせると，
+\(\mathcal A\) はm-dissipativeです．
+</p>
+<p>
+Lumer–Phillips theoremにより，
+\(\mathcal A\) は \(\mathcal W\) 上の
+\(C_0\)-contraction semigroup
+\[
+  (S(t))_{t\ge0}
+\]
+を生成します．
+</p>
+</article>
+</div>
+
+<h2>10．mild solutionとcontraction estimate</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(u_0\in H\)，\(f\in L^1(0,T;H)\) に対して，
+式 (31) は一意なmild solution
+\[
+  X=(u,\zeta)\in C([0,T];\mathcal W)
+\tag{36}
+\]
+をもち，
+\[
+  X(t)
+  =
+  S(t)(u_0,0)
+  +
+  \int_0^t
+  S(t-s)(f(s),0)\,ds.
+\tag{37}
+\]
+</p>
+<p>
+semigroupがcontractionなので
+\[
+  \|X(t)\|_{\mathcal W}
+  \le
+  \|u_0\|_H
+  +
+  \int_0^t\|f(s)\|_H\,ds.
+\tag{38}
+\]
+</p>
+<p>
+二つのデータ \((u_{0,1},f_1)\)，\((u_{0,2},f_2)\) に対しても
+\[
+\begin{aligned}
+  \|X_1-X_2\|_{C([0,T];\mathcal W)}
+  \le{}&
+  \|u_{0,1}-u_{0,2}\|_H\\
+  &+
+  \|f_1-f_2\|_{L^1(0,T;H)}.
+\end{aligned}
+\tag{39}
+\]
+</p>
+<p>
+このestimateに，\(a_0\) の正のcoercivity constantは含まれません．
+したがって，瞬時coercivityが0へ近づくfamilyに対しても同じ形のboundが残ります．
+</p>
+</article>
+</div>
+
+<h2>11．Hadamard well-posednessはmemory graph spaceで成立する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+semigroup solutionの内部変数は，
+単に任意の \(\mathcal K\)-値軌道ではありません．
+zero initial memoryのもとで
+\[
+  \zeta(t)=\mathcal Ru(t)
+\]
+を満たします．従って
+\[
+  (u,\zeta)\in\mathcal G_\nu(0,T).
+\]
+</p>
+<p>
+式 (38) はそのまま
+\[
+  \|(u,\zeta)\|_{\mathcal G_\nu(0,T)}
+  \le
+  \|u_0\|_H
+  +
+  \|f\|_{L^1(0,T;H)}
+\tag{40}
+\]
+となります．
+</p>
+<p>
+存在，一意性，データに対するLipschitz連続依存性が
+同じBanach空間で成立するため，
+degenerate memory problemは
+memory graph spaceにおいてHadamardの意味でwell posedです．
+</p>
+<p>
+ここで状態空間を変更したことは，
+問題を弱くしたことではありません．
+消去されていたmemory storageを状態へ戻し，
+方程式が実際に制御するenergyで測り直したものです．
+</p>
+</article>
+</div>
+
+<h2>12．なぜ通常のweak formulationをそのまま使えないのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+graph-space mild solutionから直接得られるのは
+\[
+  u\in C([0,T];H)
+\]
+であり，一般には
+\[
+  u\in L^2(0,T;V)
+\tag{41}
+\]
+を自動的には得られません．
+これは前回のno-go theoremと整合しています．
+</p>
+<p>
+従って，通常のparabolic weak formulationで現れる
+\[
+  a_0(u(t),v)
+\]
+を直ちに書くことはできません．
+また，\(V^*\)-\(V\) pairingを使った標準energy calculationも，
+追加の \(V\)-regularityなしには正当化できません．
+</p>
+<p>
+この点が，単に「semigroup solutionを得た」で終わらず，
+弱形式との同定に別の工夫が必要になる理由です．
+</p>
+</article>
+</div>
+
+<h2>13．finite first momentとencoded weak formulation</h2>
+<div class="news">
+<article class="news-item">
+<p>
+追加のmoment
+\[
+  M_1
+  :=
+  \int_{[0,\infty)}
+  \lambda\,d\nu(\lambda)
+  =
+  -k'(0+)
+\tag{42}
+\]
+が有限であるとします．
+first-moment fieldを
+\[
+  \eta(t)
+  :=
+  \int_{[0,\infty)}
+  \lambda\zeta(\lambda,t)\,d\nu(\lambda)
+\tag{43}
+\]
+と定めると，
+\[
+  \partial_t\xi
+  =
+  M_0u-\eta.
+\tag{44}
+\]
+従って
+\[
+  u
+  =
+  \frac1{M_0}
+  \bigl(\partial_t\xi+\eta\bigr).
+\tag{45}
+\]
+</p>
+<p>
+\(\xi\) と \(\eta\) は \(V\)-値fieldとして制御できるため，
+式 (45) を使って \(a_0u\) の情報を
+\(\xi\) と \(\eta\) へ移し，時間積分によって
+\(\partial_t\xi\) をtest function側へ移せます．
+これがencoded weak formulationの考え方です．
+</p>
+<p>
+\(M_0,M_1<\infty\) のもとで，graph-space mild solutionは
+\[
+  \xi\in C([0,T];V)\cap H^1(0,T;H),
+\]
+\[
+  \eta\in L^2(0,T;V),
+\tag{46}
+\]
+および式 (44) を満たし，
+encoded weak solutionと同定できます．
+</p>
+<p>
+moment条件の役割は明確に分かれます．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+  <tr>
+    <th style="border:1px solid #777; padding:7px;">条件</th>
+    <th style="border:1px solid #777; padding:7px;">得られるもの</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">\(0<M_0<\infty\)</td>
+    <td style="border:1px solid #777; padding:7px;">extended-state semigroupとgraph-space well-posedness</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">さらに \(M_1<\infty\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(\eta\) のregularity，encoded weak formulation，explicit bounds</td>
+  </tr>
+</table>
+</article>
+</div>
+
+<h2>14．explicit graph-space stability</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(f\in L^2(0,T;H)\) とし，
+\[
+  D_0
+  :=
+  \|u_0\|_H^2
+  +
+  \|f\|_{L^2(0,T;H)}^2.
+\tag{47}
+\]
+\(M_0,M_1<\infty\) のもとで，
+ある \(C_T>0\) に対し
+\[
+\begin{aligned}
+  \sup_{t\in[0,T]}
+  \Biggl[
+    &\|u(t)\|_H^2
+    +
+    \int_{[0,\infty)}
+    a_1(\zeta(\lambda,t),\zeta(\lambda,t))
+    \,d\nu(\lambda)
+  \Biggr]\\
+  &+
+  2\int_0^T
+  \int_{[0,\infty)}
+  \lambda
+  a_1(\zeta(\lambda,t),\zeta(\lambda,t))
+  \,d\nu(\lambda)\,dt
+  \le
+  C_TD_0.
+\end{aligned}
+\tag{48}
+\]
+</p>
+<p>
+さらに
+\[
+  \sup_{t\in[0,T]}|\xi(t)|_V^2
+  \le
+  C\,M_0D_0,
+\tag{49}
+\]
+\[
+  \int_0^T|\eta(t)|_V^2\,dt
+  \le
+  C\,M_1D_0.
+\tag{50}
+\]
+</p>
+<p>
+これらのconstantには，
+\(a_0\) の正のcoercivity constantが含まれません．
+\(a_0\) が追加の非負dissipationを与えることはありますが，
+安定性の基礎としては使用していません．
+</p>
+</article>
+</div>
+
+<h2>15．どのkernelが現在のgraph spaceに入るのか</h2>
+<div class="news">
+<article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+  <tr>
+    <th style="border:1px solid #777; padding:7px;">kernel</th>
+    <th style="border:1px solid #777; padding:7px;">\(M_0\)</th>
+    <th style="border:1px solid #777; padding:7px;">\(M_1\)</th>
+    <th style="border:1px solid #777; padding:7px;">現在の理論</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">single exponential</td>
+    <td style="border:1px solid #777; padding:7px;">finite</td>
+    <td style="border:1px solid #777; padding:7px;">finite</td>
+    <td style="border:1px solid #777; padding:7px;">適用可能</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">finite Prony series</td>
+    <td style="border:1px solid #777; padding:7px;">finite</td>
+    <td style="border:1px solid #777; padding:7px;">finite</td>
+    <td style="border:1px solid #777; padding:7px;">適用可能</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">finite \(M_0\)，infinite \(M_1\)</td>
+    <td style="border:1px solid #777; padding:7px;">finite</td>
+    <td style="border:1px solid #777; padding:7px;">infinite</td>
+    <td style="border:1px solid #777; padding:7px;">semigroupは可能，encoded weak theoryは不足</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">fractional kernel</td>
+    <td style="border:1px solid #777; padding:7px;">infinite</td>
+    <td style="border:1px solid #777; padding:7px;">infinite</td>
+    <td style="border:1px solid #777; padding:7px;">現在のfinite-mass graph spaceの外</td>
+  </tr>
+</table>
+<p>
+fractional memory equationのsolvability自体が未解決なのではありません．
+問題は，今回と同じ形の
+<b>coercivity-independentで計算可能なgraph-space certificate</b>
+を \(M_0=M_1=\infty\) の場合にどう構成するかです．
+そのためには，別のweighted state spaceが必要になります．
+</p>
+</article>
+</div>
+
+<h2>16．single exponentialでは一つの内部変数へ縮約される</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\[
+  k(t)=\gamma e^{-\gamma t},
+  \qquad
+  \gamma>0
+\tag{51}
+\]
+なら
+\[
+  \nu=\gamma\delta_\gamma,
+  \qquad
+  M_0=\gamma,
+  \qquad
+  M_1=\gamma^2.
+\]
+内部変数familyは一つの変数 \(\zeta(t)\) に縮約され，
+\[
+  \partial_t\zeta+\gamma\zeta=u,
+\tag{52}
+\]
+\[
+  \partial_tu+A_0u+\gamma A_1\zeta=f.
+\tag{53}
+\]
+</p>
+<p>
+さらに \(u=\partial_t\zeta+\gamma\zeta\) を代入すると
+\[
+  \partial_{tt}\zeta
+  +(\gamma+A_0)\partial_t\zeta
+  +\gamma(A_0+A_1)\zeta
+  =
+  f.
+\tag{54}
+\]
+これはdegenerate Kelvin–Voigt型，またはstrongly damped wave型の方程式です．
+一般のcompletely monotone kernelでは，
+連続個の内部変数が必要であり，一つの二階方程式には縮約できません．
+</p>
+</article>
+</div>
+
+<h2>17．vanishing-coercivity limit</h2>
+<div class="news">
+<article class="news-item">
+<p>
+graph-space formulationの強みは，
+瞬時coercivityが実際に0へ近づくfamilyを同じ状態空間で比較できることです．
+</p>
+<p>
+\(a_v\) をcoerciveな形式として
+\[
+  a_0^\varepsilon
+  :=
+  a_0+\varepsilon a_v,
+  \qquad
+  0\le\varepsilon\le1
+\tag{55}
+\]
+を考えます．
+\(\varepsilon>0\) では瞬時coercivityがありますが，
+\(\varepsilon=0\) では退化する可能性があります．
+memory kernel \(k\) とrepresenting measure \(\nu\) は固定します．
+</p>
+<p>
+対応するgenerator \(\mathcal A_\varepsilon\) は
+すべて同じextended memory space \(\mathcal W\) 上で作用し，
+resolventは
+\[
+  \bigl\|
+    (I-\mathcal A_\varepsilon)^{-1}
+    -
+    (I-\mathcal A_0)^{-1}
+  \bigr\|_{\mathcal L(\mathcal W)}
+  =
+  O(\varepsilon).
+\tag{56}
+\]
+このnorm-resolvent convergenceから
+\[
+  S_\varepsilon(t)X
+  \longrightarrow
+  S_0(t)X
+\tag{57}
+\]
+およびinhomogeneous solutionの
+\(C([0,T];\mathcal W)\)-収束が得られます．
+</p>
+<p>
+さらに，極限解の物理成分が追加的に
+\[
+  u^0\in L^2(0,T;V)
+\tag{58}
+\]
+を満たすなら，
+\[
+  \|X^\varepsilon-X^0\|_{C([0,T];\mathcal W)}
+  \le
+  C\varepsilon^{1/2}
+  \left(
+    \int_0^T a_v(u^0(t),u^0(t))\,dt
+  \right)^{1/2}.
+\tag{59}
+\]
+</p>
+<p>
+この \(O(\varepsilon^{1/2})\) rateには追加regularity (58) が必要です．
+それはmemory dissipationから自動的に出るものではありません．
+</p>
+</article>
+</div>
+
+<h2>18．数値解析で何を保存すべきか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+continuous theoryは，structure-preserving discretisationの設計目標を明確にします．
+</p>
+<ol>
+  <li>
+    <b>共通の離散memory state space：</b>
+    物理変数と離散内部変数を同じenergyで測る．
+  </li>
+  <li>
+    <b>離散adjoint relation：</b>
+    aggregationとconstant embeddingの離散版が互いにadjointになる．
+  </li>
+  <li>
+    <b>cross-term cancellation：</b>
+    連続式 (33) と同じ相殺を離散energy identityで再現する．
+  </li>
+  <li>
+    <b>coercivity-independent stability：</b>
+    reliability constantを退化する瞬時coercivityで割らない．
+  </li>
+  <li>
+    <b>vanishing-coercivity convergence：</b>
+    \(\varepsilon\downarrow0\) で離散解も同じgraph normに収束する．
+  </li>
+</ol>
+<p>
+瞬時 \(L^2(0,T;V)\)-normだけをcertificateに使うと，
+no-go theoremによりmemory-dominated regimeで一様性を失います．
+一方，extended memory energyをcertificateに選べば，
+continuous stability targetと離散energyを一致させられます．
+</p>
+</article>
+</div>
+
+<h2>19．この理論が示すこと，示さないこと</h2>
+<div class="news">
+<article class="news-item">
+<h3>示すこと</h3>
+<ul>
+  <li>瞬時形式が非負であれば，正のcoercivity constantなしに拡張状態のwell-posednessを得られる．</li>
+  <li>zero-prehistory solutionはmemory graph spaceに属する．</li>
+  <li>データから解への写像はgraph normでLipschitz連続である．</li>
+  <li>有限 \(M_1\) のもとでmild solutionをencoded weak solutionと同定できる．</li>
+  <li>瞬時coercivityが消える極限でも，同じmemory state spaceでsolution convergenceを扱える．</li>
+</ul>
+
+<h3>この理論だけでは示さないこと</h3>
+<ul>
+  <li>一般のgraph-space solutionが必ず \(L^2(0,T;V)\) に属するとは限らない．</li>
+  <li>fractional kernelに同じfinite-mass state spaceをそのまま使えるわけではない．</li>
+  <li>kernel自体が変化・集中する極限は，式 (55) のvanishing-coercivity limitとは別問題である．</li>
+  <li>任意の時間離散法がcross-term cancellationを保存するわけではない．</li>
+</ul>
+</article>
+</div>
+
+<h2>Conclusion</h2>
+<div class="news">
+<article class="news-item">
+<p>
+positive-type memoryが瞬時energyをcoerciveに支配できないという事実は，
+degenerate problemのill-posednessを意味しません．
+それは，物理変数 \(u\) だけを状態とするenergy spaceが不完全であることを示しています．
+</p>
+<p>
+internal-variable familyを状態へ戻し，
+\[
+  \mathcal W
+  =
+  H\times\mathcal K
+\]
+で測ると，
+aggregationとconstant embeddingのadjoint relationが
+cross-term cancellationを生みます．
+その結果，augmented generatorはm-dissipativeとなり，
+contraction semigroupとHadamard well-posednessが得られます．
+</p>
+<p>
+\[
+  \text{no instantaneous coercivity}
+  \not\Longrightarrow
+  \text{ill-posedness}
+\]
+\[
+  \text{correct extended state}
+  +
+  \text{exact energy cancellation}
+  \Longrightarrow
+  \text{graph-space well-posedness}
+\]
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>次回：</b>第7回：kernel stabilityとfinite-atomic approximation<br>
+kernelを有限原子測度へ近似したとき，解誤差をdelay massの移動量でどう評価するか．
+asymmetric residual，translation modulus，Wasserstein距離を整理します．
+</div>
+<p>
+前の記事：
+<a href="./unresolved-memory-05.html">第5回：positive-type memoryとcoercivity gap</a>
+</p>
+<p>
+関連ページ：
+<a href="../../publications/">Publications</a>（S3–S5，A3），
+<a href="../../fem/">Research Visions</a>（Vision 11，18），
+<a href="../../suppl/">Supplementary Visions</a>（履歴依存型発展方程式とmemory kernel）
+</p>
+</article>
+</div>
+
+</div>
+</article>
+</div>
+</main>
+
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
