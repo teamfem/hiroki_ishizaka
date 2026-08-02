@@ -9,7 +9,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,Certified FEM,AI4Math,Trustworthy Simulation,Anisotropic Meshes,Unresolved Dynamics,Memory Equations,Multiscale Reduction">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,Certified FEM,AI4Math,Trustworthy Simulation,Anisotropic Meshes,Unresolved Dynamics,Memory Equations,Multiscale Reduction,Latent-State Reconstruction,Inverse Problems">
 <meta name="description" content="Hiroki Ishizaka: certified finite element analysis and stable reduction theory that retains the dynamical influence of unresolved scales.">
 
 <link rel="stylesheet" href="./css/base.css">
@@ -239,13 +239,44 @@ and data-informed reduced models.
 </p>
 
 <p>
+A further branch of the programme concerns <b>stable reconstruction from partial observations</b>.
+Not every unobserved variable should be eliminated: some latent states are physically or clinically meaningful
+and should remain as reconstruction targets, while finer unresolved variables are compressed into memory,
+effective internal states, nonlocal closure, or stochastic forcing.
+The resulting problem is to determine whether those retained latent states can be recovered stably from
+partial, noisy, and history-dependent observations, and to quantify how observation, kernel, closure,
+and initial-history errors propagate to reconstruction and prediction.
+</p>
+
+\[
+  \text{full dynamics}
+  \longrightarrow
+  \text{stable reduction}
+  \longrightarrow
+  \text{partial observation}
+  \longrightarrow
+  \text{latent-state reconstruction}
+  \longrightarrow
+  \text{prediction and intervention}.
+\]
+
+<p>
+This perspective includes, for example, the reconstruction of hidden internal states in multiscale physical systems
+and in disease-progression models, where directly visible measurements may not reveal the internal mechanisms
+that govern future evolution. The mathematical goal is not merely to fit hidden variables,
+but to establish observability, identifiability, stability, and uncertainty bounds for the reconstructed state.
+</p>
+
+<p>
 Central questions include:
 </p>
 <ul>
   <li>Which unresolved mechanisms must be retained for the reduced model to remain dynamically faithful?</li>
   <li>Which state space, energy, constraints, and dissipation mechanisms survive elimination?</li>
-  <li>How do projection, kernel, closure, and unresolved-initial-state errors propagate to resolved quantities?</li>
-  <li>Do reduction, discretisation, homogenisation, and singular limits commute?</li>
+  <li>Which latent states should be retained as reconstruction targets rather than eliminated?</li>
+  <li>Under which observability and identifiability conditions can those states be recovered from partial and noisy history-dependent data?</li>
+  <li>How do projection, observation, kernel, closure, and unresolved-initial-state errors propagate to reconstruction and resolved quantities?</li>
+  <li>Do reduction, reconstruction, discretisation, homogenisation, and singular limits commute?</li>
   <li>How can lost or distorted phenomena be detected, bounded, and corrected?</li>
 </ul>
 
@@ -303,6 +334,7 @@ and urban or disaster-oriented digital-twin simulation
 <h3>Near-future directions</h3>
 <ul>
   <li><b>Stable reduction without dynamical erasure:</b> identify which unresolved effects must survive as memory, internal states, effective dissipation, or nonlocal closure, and establish resolution- and singular-limit stability.</li>
+  <li><b>Stable latent-state reconstruction:</b> recover physically or clinically meaningful hidden states from partial, noisy, history-dependent observations, with observability, identifiability, and uncertainty estimates.</li>
   <li><b>Structure-preserving memory discretisation:</b> combine finite internal states, convolution quadrature, and anisotropic CR–RT approximation.</li>
   <li><b>Certified error control for decision-making:</b> provide computable error radii and certificates for quantities of interest.</li>
   <li><b>Reliability layers for surrogates and physics-ML:</b> detect boundary-layer, extrapolation, conservation, and under-resolution failures.</li>
