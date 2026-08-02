@@ -78,7 +78,7 @@
 
 <h1 class="section-title">第3回：measure-valued delayで分布遅延・原子遅延・混合遅延を統一する</h1>
 
-<p class="news-date"><time datetime="2026-08-02">2nd August 2026</time>（revised）</p>
+<p class="news-date"><time datetime="2026-08-02">2nd August 2026</time></p>
 
 <h2>Introduction：delay lawを「関数」ではなく「測度」で表す</h2>
 <div class="news">
@@ -127,65 +127,30 @@ delay law全体を
 \]
 </p>
 <p>
-未知軌道と過去履歴は，まず点wiseな関数としてではなく，
+未知解 \(u:(0,T)\to V\) と，与えられた過去履歴
+\(\psi:(-\tau,0)\to V\) を
 \[
-  u\in L^2(0,T;V),
-  \qquad
-  \psi\in L^2(-\tau,0;V)
-\]
-というBochner空間の元として扱います．
-両者を一つにまとめた履歴軌道を
-\[
-  \widetilde u
-  :=
-  \psi\,\mathbf 1_{(-\tau,0)}
-  +u\,\mathbf 1_{(0,T)}
-  \quad\text{in }L^2(-\tau,T;V)
-\tag{1}
-\]
-と定めます．これは \(L^2(-\tau,T;V)\) の同値類としての定義です．
-同じ内容を区分的に書けば，
-\[
-  \widetilde u(t)=
+  \widetilde u(t):=
   \begin{cases}
-    \psi(t),&\text{for a.e. }t\in(-\tau,0),\\
-    u(t),&\text{for a.e. }t\in(0,T)
+    \psi(t),&-\tau<t<0,\\
+    u(t), & 0<t<T
   \end{cases}
 \]
-となりますが，\(t=0\) の値を指定する必要はありません．
-</p>
-<div style="padding: 12px; margin: 14px 0; border: 2px solid #666666;">
-<b>\(t=0\) における二つの問題を分ける</b><br>
-\(\widetilde u\) は \(L^2(-\tau,T;V)\) の元なので，\(t=0\) の一点で値を与えても同値類は変わりません．<br>
-一方，発展方程式の初期条件 \(u(0)=u_0\) は，解が
+と接続します．measure-valued delayをもつ発展方程式は
 \[
-  W(0,T):=\{v\in L^2(0,T;V):\partial_tv\in L^2(0,T;V^*)\}
+  \partial_tu(t)+A_0u(t)
+  +\int_{[0,\tau]}A_1\widetilde u(t-s)\,d\mu(s)
+  =f(t),
+  \qquad u(0)=u_0
+\tag{1}
 \]
-に属するときに得られる \(H\)-連続代表元に対して課します．
-したがって，履歴の \(L^2\)-結合と初期条件は別の概念です．
-</div>
-<p>
-measure-valued delayをもつ発展方程式は，
-\[
-  \begin{aligned}
-    \partial_tu(t)+A_0u(t)
-    +\int_{[0,\tau]}A_1\widetilde u(t-s)\,d\mu(s)
-    &=f(t)
-    &&\text{in }V^*\text{ for a.e. }t\in(0,T),\\
-    u(0)&=u_0
-    &&\text{in }H
-  \end{aligned}
-\tag{2}
-\]
-として定式化します．
+です．
 </p>
 <p>
-ここで \(T\) は観測・計算する最終時刻，\(\tau\) は最大遅延であり，
-両者は同じである必要はありません．
-また，一般の \(\psi\in L^2(-\tau,0;V)\) には \(t=0\) のtraceがないため，
-\(\psi(0)=u_0\) という適合条件は課しません．
-必要なのは，過去履歴 \(\psi\) と未知軌道 \(u\) を一つの
-\(L^2(-\tau,T;V)\)-軌道として扱うことです．
+ここで \(T\) は観測・計算する最終時刻，\(\tau\) は最大遅延です．
+\(T\) と \(\tau\) は同じである必要はありません．
+また，一般の \(\psi\in L^2(-\tau,0;V)\) に対して
+\(\psi(0)=u_0\) という条件は意味をもちません．点一つの値は \(L^2\)-同値類を変えないからです．
 </p>
 </article>
 </div>
@@ -254,15 +219,15 @@ measure-valued delayをもつ発展方程式は，
 \[
   (K_\sigma g)(t)
   :=\int_{[0,\tau]}A_1g(t-s)\,d\sigma(s)
-\tag{3}
+\tag{2}
 \]
 と定めます．積分は \(V^*\)-値Bochner積分です．
 </p>
 <p>
-この定義が成立すれば，式 (2) は簡潔に
+この定義が成立すれば，式 (1) は簡潔に
 \[
   \partial_tu+A_0u+K_\mu\widetilde u=f
-\tag{4}
+\tag{3}
 \]
 と書けます．さらに，密度kernel，有限原子，可算原子，混合kernelのすべてに同じ記号 \(K_\mu\) を使えます．
 </p>
@@ -305,7 +270,7 @@ measure-valued delayをもつ発展方程式は，
 \[
   K_\sigma g_1=K_\sigma g_2
   \qquad\text{in }L^2(0,T;V^*)
-\tag{5}
+\tag{4}
 \]
 を得ます．
 </p>
@@ -333,7 +298,7 @@ measure-valued delayをもつ発展方程式は，
   \le
   \Lambda_1\|\sigma\|_{\mathcal M([0,\tau])}
   \|g\|_{L^2(-\tau,T;V)}
-\tag{6}
+\tag{5}
 \]
 を得ます．
 </p>
@@ -386,21 +351,15 @@ principal spatial derivativeを含むfeedbackを十分に扱えません．
 </article>
 </div>
 
-<h2>7．未知のcausal partと与えられたprehistoryを分ける</h2>
+<h2>7．未知の履歴と与えられたprehistoryを分ける</h2>
 <div class="news">
 <article class="news-item">
 <p>
-\(E^+u\) を \((0,T)\) 上の \(u\) の零拡張，
-\(E^-\psi\) を \((-\tau,0)\) 上の \(\psi\) の零拡張とします．
-このとき，\(L^2(-\tau,T;V)\) の同値類として
+\(E^+u\) を \((0,T)\) 上の \(u\) の零拡張，\(E^-\psi\) を \((-\tau,0)\) 上の履歴の零拡張とすると，
 \[
   \widetilde u=E^+u+E^-\psi
 \]
-です．二つの拡張の値が \(t=0\) でどう定められているかは，
-この等式にもhistory operatorにも影響しません．
-</p>
-<p>
-線形性により，
+です．したがって，
 \[
   K_\mu\widetilde u
   =K_\mu^+u+h_{\mu,\psi},
@@ -408,18 +367,18 @@ principal spatial derivativeを含むfeedbackを十分に扱えません．
   K_\mu^+u:=K_\mu(E^+u),
   \qquad
   h_{\mu,\psi}:=K_\mu(E^-\psi)
-\tag{7}
+\tag{6}
 \]
 と分解できます．
 </p>
 <ul>
-  <li>\(K_\mu^+u\)：計算開始後の未知軌道から生じるcausal feedback．</li>
-  <li>\(h_{\mu,\psi}\)：計算開始前の既知のprehistoryが作るhistory forcing．</li>
+  <li>\(K_\mu^+u\)：未知解自身の過去から生じるcausal feedback．</li>
+  <li>\(h_{\mu,\psi}\)：計算開始前のprehistoryが作る既知の外力．</li>
 </ul>
 <p>
 この分離はwell-posednessの証明で重要です．
-縮小写像として制御する必要があるのは未知のcausal partだけであり，
-prehistory contributionは右辺データとして扱えます．
+縮小写像として小さくする必要があるのは未知のcausal partだけであり，
+prehistoryは右辺データとして扱えます．
 </p>
 <p>
 また，prehistoryを零と置くことは単なる記号上の簡略化ではありません．
@@ -441,7 +400,7 @@ prehistory contributionは右辺データとして扱えます．
 \[
   K_{\widehat\mu}\widetilde u
   =m_0A_1u+K_\mu\widetilde u
-\tag{8}
+\tag{7}
 \]
 です．\(s=0\) では過去値ではなく現在値 \(u(t)\) が作用するため，
 \(m_0\delta_0\) はretarded termではありません．
@@ -474,7 +433,7 @@ prehistory contributionは右辺データとして扱えます．
 \[
   \kappa_\mu(\beta)
   :=\int_{[0,\tau]}e^{-\beta s}\,d|\mu|(s)
-\tag{9}
+\tag{8}
 \]
 と定めます．未知のcausal partには
 \[
@@ -482,7 +441,7 @@ prehistory contributionは右辺データとして扱えます．
   \le
   \Lambda_1\kappa_\mu(\beta)
   \|w\|_{L^2_\beta(0,T;V)}
-\tag{10}
+\tag{9}
 \]
 という評価が成り立ちます．ここで
 \[
@@ -500,7 +459,7 @@ prehistory contributionは右辺データとして扱えます．
 \[
   \lim_{\beta\to\infty}\kappa_\mu(\beta)
   =|\mu|(\{0\})
-\tag{11}
+\tag{10}
 \]
 です．従って，weighted massを任意に小さくできることと，原点に原子がないことは同値です．
 </p>
@@ -543,7 +502,7 @@ prehistory contributionは右辺データとして扱えます．
   \int_{[0,\tau]}\varphi\,d\mu
   \quad
   \text{for every }\varphi\in C([0,\tau])
-\tag{12}
+\tag{11}
 \]
 をnarrow convergenceと呼びます．これは，delay massの位置が移動・集中する極限に適しています．
 </p>
@@ -555,7 +514,7 @@ prehistory contributionは右辺データとして扱えます．
 となり得ます．しかし，絶対連続測度とDirac測度は互いに特異なので，
 \[
   \|k_\varepsilon(s)ds-M\delta_r\|_{\mathcal M}=2M
-\tag{13}
+\tag{12}
 \]
 のままです．total variationでは全く近づきません．
 </p>
@@ -582,13 +541,13 @@ narrow convergence：非負delay massの移動・集中・distributed-to-discret
 を数値計算するため，測度を
 \[
   \mu_N:=\sum_{j=1}^{N}w_j\delta_{s_j}
-\tag{14}
+\tag{13}
 \]
 で近似すると，history termは
 \[
   K_{\mu_N}\widetilde u(t)
   =\sum_{j=1}^{N}w_jA_1\widetilde u(t-s_j)
-\tag{15}
+\tag{14}
 \]
 になります．これはdelay quadratureであると同時に，連続delay lawを有限個の代表遅延へ縮約する操作です．
 </p>
@@ -599,7 +558,7 @@ narrow convergence：非負delay massの移動・集中・distributed-to-discret
   <li>全質量は保存されているか．</li>
   <li>原子位置は正の遅延領域に留まっているか．</li>
   <li>どの測度距離で \(\mu_N\to\mu\) と評価するか．</li>
-  <li>過去履歴と解を一つにまとめた軌道の時間正則性はどの程度あるか．</li>
+  <li>joined trajectoryの時間正則性はどの程度あるか．</li>
   <li>kernel errorとspace-time discretisation errorを分離できるか．</li>
 </ul>
 <p>
@@ -630,8 +589,9 @@ narrow convergence：非負delay massの移動・集中・distributed-to-discret
   <li>memory dissipationが瞬時energyをcoerciveに支配するとは限らない．</li>
 </ul>
 <p>
-つまり，測度はdelay lawの表現を統一しますが，dissipationとcoercivityの構造までは自動的に決めません．
-次回は，kernelがpositive typeであるときに何が保証され，それでも何が保証されないかを調べます．
+つまり，測度はdelay lawの表現を統一しますが，方程式の存在・一意性までは自動的に与えません．
+次回は，瞬時形式がcoerciveな場合に，指数重みとcausalityを用いて，
+大きな有限符号付きdelay measureに対する有限時間well-posednessを導きます．
 </p>
 </article>
 </div>
@@ -645,10 +605,8 @@ measure-valued delayの中心的な考えは，遅延項を「ある関数kernel
 可算多重遅延，混合kernelを同じ作用素 \(K_\mu\) で扱えます．
 </p>
 <p>
-より重要なのは，過去履歴と未知軌道を \(t=0\) でpointwiseに接続するのではなく，
-一つの \(L^2(-	au,T;V)\)-同値類としてまとめることです．
-その上で，原子遅延を固定時刻の点評価ではなく，
-時間平行移動を含む \(L^2(0,T;V^*)\)-値history operatorとして定義します．
+より重要なのは，原子遅延を固定時刻の点評価としてではなく，
+時間平行移動を含む \(L^2(0,T;V^*)\)-値history operatorとして定義することです．
 この見方によって，平方可積分なenergy-space historyとprincipal-part delayが両立します．
 </p>
 <p>
@@ -661,9 +619,10 @@ measure-valued delayの中心的な考えは，遅延項を「ある関数kernel
 \]
 </p>
 <div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
-<b>次回：</b>positive-type memoryとcoercivity gap<br>
-memory dissipationが非負であることと，瞬時energyを一様に支配することを区別し，
-memory symbol，高周波減衰，critical horizonを整理します．
+<b>次回：</b>
+<a href="./unresolved-memory-04.html">第4回：指数重みでmeasure-valued delayのwell-posednessを得る</a><br>
+weighted variation massとcausal splittingを用い，
+kernelの全変動にsmallnessを課さずに有限時間well-posednessを得る仕組みを整理します．
 </div>
 <p>
 前の記事：
