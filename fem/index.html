@@ -164,8 +164,9 @@ DMPやmaximum-norm quasi-optimalityには追加の単調性・接続条件が必
 <h4>Core M：Stable reduction theory for unresolved dynamics</h4>
 未解像ダイナミクス系列では，微細自由度・潜在状態・未観測変数を消去したときに生じる
 memory，delay，history forcingを，生成・安定性・近似・離散化・同定の対象として扱います．
-Vision 11では，与えられたpositive-type Volterra memoryおよびmeasure-valued delayをもつ
-履歴依存型発展方程式の連続理論と構造保存数値解析を扱います．
+Vision 11では，[S3]–[S6]の連続理論を基礎として，
+与えられたpositive-type Volterra memoryおよびmeasure-valued delayをもつ
+履歴依存型発展方程式の<b>構造保存数値解析</b>を主役とします．
 Vision 18では一段上流に戻り，
 \[
   \text{unresolved dynamics}
@@ -785,16 +786,32 @@ exact-curvedとは真の界面を事前に知ることではありません．
 
 
 
-<h3>Vision 11: 記憶・時間遅れをもつ履歴依存型発展方程式 — 連続理論から構造保存完全離散化へ【R】【G】【V】</h3>
+<h3>Vision 11: Structure-preserving numerical analysis for evolution equations with memory and delay — 記憶・時間遅れをもつ発展方程式の構造保存数値解析【R】【G】【V】</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
-<b>位置づけ：〖Core〗（連続理論・kernel stability・完全離散解析）</b><br><br>
+<b>位置づけ：
+〖Foundation〗[S3]–[S6]の連続理論／
+〖Core〗BDF convolution quadrature・離散graph energy・異方性CR–RT完全離散化／
+〖Expansion〗measure-valued delayの離散化・誤差認証
+</b><br><br>
 
-本Visionでは，記憶効果，分布遅延，離散遅延，弱特異kernelを，
-「分数階微分ですべて統一する」のではなく，
-それぞれのkernel・測度構造を保持した履歴依存型発展方程式として扱います．
+<h4>Programme statement</h4>
+本Visionの主役は，memory kernelまたはdelay measureが<b>与えられた後</b>の
+履歴依存型発展方程式に対する構造保存数値解析です．
+連続理論を改めて並列に発展させるのではなく，[S3]–[S6]で得られた
+coercivity structure，graph-space well-posedness，weighted stability，
+kernel concentrationを，時間・空間・kernelの離散化へ移します．<br><br>
+
 基本モデルは，
+\[
+  \partial_tu(t)+A_0u(t)
+  +
+  \int_0^t k(t-s)A_1u(s)\,ds
+  =
+  f(t)
+\]
+および
 \[
   \partial_tu(t)+A_0u(t)
   +
@@ -803,34 +820,62 @@ exact-curvedとは真の界面を事前に知ることではありません．
   =
   f(t)
 \]
-および
+です．本Visionでは，両者を一つの形式へ無理に押し込めず，
+それぞれのpositive-type structureまたはmeasure structureを保ったまま離散化します．<br><br>
+
+<b>Vision 18との役割分担：</b><br>
+Vision 11は，与えられたhistory operatorを<b>どのように安定かつ高精度に計算するか</b>を扱います．
+Vision 18は，そのhistory operatorが<b>どの未解像ダイナミクスから生じるか</b>，
+未解像系の近似・データ同定・model-reduction errorをどのように扱うかを研究します．
+したがって，
 \[
-  \partial_tu(t)+A_0u(t)
-  +
-  \int_0^t k(t-s)A_1u(s)\,ds
-  =
-  f(t)
+\boxed{
+\begin{aligned}
+  \text{Vision 11:}&\quad
+  \text{history-dependent PDE}\longrightarrow\text{structure-preserving computation},\\
+  \text{Vision 18:}&\quad
+  \text{unresolved dynamics}\longrightarrow\text{stable reduced model}
+\end{aligned}}
 \]
-です．現在値だけでは将来の時間発展を決められず，
-過去の軌道または拡張状態を必要とするという意味で履歴依存型です．
-確率性は必須ではありません．
+という分担です．<br><br>
 
-<h4>11a．連続問題の構造</h4>
-近い段階では，
+<h4>11a．Continuous foundations for numerical analysis</h4>
+数値解析を支える連続理論は，次の二系列です．
 <ul>
-  <li>positive-type memoryのcoercivity gapとcritical horizon，</li>
-  <li>瞬間的拡散が退化する場合のgraph-space well-posedness，</li>
-  <li>measure-valued delayに対するweighted well-posedness，</li>
-  <li>kernel摂動・原子近似・zero-delay limitに対する安定性</li>
+  <li><b>Branch A：positive-type Volterra memory＋退化し得る瞬時拡散</b><br>
+  [S3]のcoercivity gapとno-go構造により，通常の
+  \(L^2(0,T;V)\)-coercivityへ戻すのではなく，memory graph energyを離散化すべきことが分かります．
+  [S4]のgraph-space well-posednessとvanishing-coercivity stabilityが，
+  離散安定性の基準になります．</li>
+  <li><b>Branch B：measure-valued delay＋coerciveな瞬時発展</b><br>
+  [S5]のweighted well-posednessとkernel stability，
+  [S6]のatomic approximation，kernel concentration，zero-delay limit，
+  sharp stability boundaryが，delay measureの数値近似と誤差解析の基礎になります．</li>
 </ul>
-を相互に役割分担させ，連続理論を閉じます．
 
-<h4>11b．内部変数と構造保存離散化</h4>
-完全単調kernelまたは指数和近似について，memory項を内部変数の連続体または有限系として表現します．
-BDF／convolution quadratureを，単なるweight計算ではなく，
-内部変数系を同じ時間スキームで離散化したものとして理解し，
-cross-term cancellationとgraph energyを離散レベルで再現します．
-目標は，
+この節の役割は既存の連続結果を再証明することではなく，
+各離散スキームが保持すべき構造と，誤差定数が依存してよい量・依存してはならない量を明確にすることです．<br><br>
+
+<h4>11b．Numerical Paper I：BDF convolution quadrature and discrete graph energy</h4>
+最初の数値解析論文では，positive-type Volterra memoryを対象として，
+BDF1／BDF2 convolution quadratureを内部変数系の離散化として解析します．
+完全単調kernelまたは指数和近似に対し，
+\[
+  k(t)=\int_{[0,\infty)}e^{-\lambda t}\,d\nu(\lambda)
+\]
+という内部変数表示を用い，
+CQ weightだけを操作するのではなく，各relaxation modeを同じBDF法で離散化します．<br><br>
+
+主要課題は，
+<ul>
+  <li>BDF-CQとBDF離散内部変数系の厳密同値性，</li>
+  <li>連続系のcross-term cancellationの離散再現，</li>
+  <li>離散memory graph energyの構成，</li>
+  <li>瞬時coercivityの退化に一様な安定性，</li>
+  <li>kernel近似誤差と時間離散誤差の分離，</li>
+  <li>\(\varepsilon\downarrow0\)と\(\tau\downarrow0\)の極限可換性</li>
+</ul>
+です．目標は，
 \[
   \|U_\tau\|_{\mathrm{graph},\tau}
   \leq
@@ -838,31 +883,141 @@ cross-term cancellationとgraph energyを離散レベルで再現します．
   \qquad
   C\ \text{independent of the degenerating instantaneous coercivity}
 \]
-という一様安定性です．
+という評価です．<br><br>
 
-<h4>11c．空間異方性と認証</h4>
-時間・履歴構造を閉じた後に，CR–RT空間離散，
-flatness parameterに基づく異方性誤差評価，
-平衡化フラックスを組み合わせ，
+この論文では空間離散を抽象Galerkin空間に留め，
+CR要素・異方性メッシュ・平衡化fluxを入れません．
+時間方向の構造とgraph-energy安定性だけで独立した主定理を閉じます．<br><br>
+
+<h4>11c．Numerical Paper II：Anisotropic CR–RT full discretisation</h4>
+第二の数値解析論文では，Numerical Paper Iの時間安定性を基礎に，
+Crouzeix–Raviart空間離散とRaviart–Thomas flux reconstructionを組み合わせます．
+対象はsemi-regularな異方性単体メッシュであり，
+flatness parameterと方向別補間評価を用いて空間誤差を制御します．<br><br>
+
+主要課題は，
+<ul>
+  <li>CR–RT構造と離散graph energyの整合性，</li>
+  <li>完全離散系のcoercivity-uniform stability，</li>
+  <li>semi-regular mesh上の方向別異方性誤差評価，</li>
+  <li>RT再構成による局所保存と離散energy identity，</li>
+  <li>kernel・時間・空間誤差の分離，</li>
+  <li>平衡化fluxまたは目的量評価への接続</li>
+</ul>
+です．<br><br>
+
+目標とする完全離散評価は，
 \[
-  \eta_{\mathrm{kernel}}
-  +
-  \eta_{\mathrm{space}}
-  +
-  \eta_{\mathrm{time}}
-  +
-  \eta_{\mathrm{flux}}
+  \|u-U_{h,\tau}\|_{\mathrm{graph}}
+  \leq
+  C\left(
+    \eta_{\mathrm{kernel}}
+    +\eta_{\mathrm{time}}
+    +\eta_{\mathrm{space}}
+    +\eta_{\mathrm{data}}
+  \right),
 \]
-という完全離散誤差予算を構成します．
-memory系列では，一つの論文に連続理論，完全離散化，逆問題，異方性FEM，応用をすべて詰め込まず，
-主定理ごとに分割します．
+ただし \(C\) はinstantaneous coercivityの消失に依存しない，という形です．
+この論文で，履歴依存型PDEのgraph-space理論と，
+異方性CR–RT有限要素解析を直接結び付けます．<br><br>
+
+<h4>11d．Numerical branch for measure-valued delay</h4>
+measure-valued delayに対しては，Volterra CQとは異なる数値課題があります．
+遅延measureを
+\[
+  \mu_J
+  =
+  \sum_{j=1}^{J}w_j\delta_{\tau_j}
+  +
+  \mu_{\mathrm{cont},J}
+\]
+のように近似し，原子遅延，分布遅延，混合遅延を同じ誤差予算で扱います．<br><br>
+
+想定する課題は，
+<ul>
+  <li>delay measureのatomic approximationとquadrature error，</li>
+  <li>原子位置・質量の摂動が解へ伝播する定量評価，</li>
+  <li>kernel concentrationおよびzero-delay limitと離散化の可換性，</li>
+  <li>history interpolationと時間stepの不整合誤差，</li>
+  <li>空間離散誤差とmeasure近似誤差の分離，</li>
+  <li>[S6]のsharp stability boundaryを離散系が保持する条件</li>
+</ul>
+です．<br><br>
+
+この方向は独立した第三の数値論文候補ですが，
+近い執筆順序ではNumerical Paper I・IIを先行させます．
+また，退化瞬時拡散とmeasure-valued delayの混合系そのもののwell-posednessは
+Vision 18の橋渡し理論で扱い，その連続理論が閉じた後に本Visionで離散化します．<br><br>
+
+<h4>11e．Certified full discretisation</h4>
+最終段階では，kernel，時間，空間，flux reconstructionの誤差を分離し，
+\[
+  \eta_{\mathrm{total}}
+  =
+  \eta_{\mathrm{kernel}}
+  +\eta_{\mathrm{time}}
+  +\eta_{\mathrm{space}}
+  +\eta_{\mathrm{flux}}
+  +\eta_{\mathrm{data}}
+\]
+という計算可能な誤差予算を構成します．<br><br>
+
+ここでは，
+<ul>
+  <li>平衡化RT fluxによるenergy error certificate，</li>
+  <li>DWRによるgoal-oriented error estimate，</li>
+  <li>kernel近似とmesh/time adaptivityの誤差配分，</li>
+  <li>長時間計算における誤差蓄積と安定性，</li>
+  <li>退化極限に対するcertificateの一様性</li>
+</ul>
+を調べます．
+この認証層はVision 17へ接続し，未解像縮約誤差まで含む場合はVision 18へ接続します．<br><br>
+
+<h4>11f．Anticipated numerical paper programme</h4>
+現時点で想定する論文地図は次のとおりです．
+<ol>
+  <li><b>N1．Structure-preserving BDF convolution quadrature for memory-dominated evolution equations</b><br>
+  BDF-CQの内部変数表示，離散graph energy，coercivity-uniform stability，
+  kernel／time error separation．</li>
+  <li><b>N2．Anisotropic Crouzeix–Raviart approximation of memory-dominated diffusion</b><br>
+  CR–RT完全離散化，semi-regular anisotropic meshes，
+  graph-norm error estimate，局所保存，完全離散誤差予算．</li>
+  <li><b>N3．Numerical approximation of coercive evolution equations with measure-valued delays</b>（将来候補）<br>
+  atomic approximation，delay quadrature，concentration limit，
+  kernel／time／space error propagation．</li>
+  <li><b>N4．Certified computation for history-dependent evolution equations</b>（必要に応じて独立化）<br>
+  equilibrated flux，goal-oriented estimate，adaptive allocation of kernel・time・space errors．</li>
+</ol>
+
+近い実行順序は，
+\[
+\boxed{
+  \mathrm{N1}
+  \longrightarrow
+  \mathrm{N2}
+  \longrightarrow
+  \mathrm{N3\ or\ N4}
+}
+\]
+です．N3とN4は主定理の大きさに応じて，N2へ一部統合するか独立論文とします．<br><br>
+
+<h4>11g．Exit criteria</h4>
+各数値論文は，次の条件を満たす場合に独立論文とします．
+<ul>
+  <li>連続理論の単純な再記述ではなく，離散固有のenergy identityまたは安定性定理を持つこと，</li>
+  <li>kernel・時間・空間誤差の少なくとも二つを新しい形で分離できること，</li>
+  <li>退化するinstantaneous coercivityまたはkernel concentrationに対して一様な評価を持つこと，</li>
+  <li>数値実験が理論上の極限・収束率・sharp boundaryを検証できること，</li>
+  <li>Vision 18の縮約・同定問題を入れ過ぎず，与えられたhistory operatorの数値解析に集中すること</li>
+</ul>
 
 関連する Vision:
 <ul>
-  <li>Vision 6：BDF系時間積分と長時間安定性</li>
-  <li>Vision 17：完全離散certificate</li>
-  <li>Vision 18：未解像状態の消去，kernel導出，model-reduction error</li>
-  <li>Vision 19：治療履歴と潜在状態に基づく疾患進行予測</li>
+  <li>Vision 6：BDF系時間積分，長時間安定性，時間離散構造</li>
+  <li>Vision 14：異方性メッシュと計量幾何</li>
+  <li>Vision 17：完全離散certificateとverified output</li>
+  <li>Vision 18：未解像状態の消去，安定縮約，memory–delay橋渡し，model-reduction error</li>
+  <li>Vision 19：履歴依存型モデルの疾患進行予測への応用</li>
 </ul>
 </p>
 </article>
@@ -1052,7 +1207,7 @@ AI支援型数学，形式推論，自動証明支援の発展により，数学
 
 <b>Vision 11との役割分担：</b><br>
 Vision 11は，memory kernelまたはdelay measureが<b>与えられた後</b>の方程式について，
-連続理論と完全離散解析を構築します．
+[S3]–[S6]の連続結果を基礎とし，構造保存時間離散・異方性空間離散・完全離散誤差評価を主に構築します．
 Vision 18は，それらの履歴作用が<b>どの未解像ダイナミクスから生じるか</b>，
 未解像系やkernelを近似したとき縮約解がどの程度安定か，
 さらにデータから何を同定し，どの誤差を認証できるかを扱います．<br><br>
@@ -1456,7 +1611,7 @@ forward stabilityと構造保存離散化が閉じた後に進めます．<br><b
 <ul>
   <li>Vision 5：縮約・内部状態・memory closureの数理構造の抽象化</li>
   <li>Vision 7／7b：確率的closure，kernel同定，推論の信頼性</li>
-  <li>Vision 11：与えられたmemory／delay方程式の連続理論と構造保存完全離散化</li>
+  <li>Vision 11：与えられたmemory／delay方程式の構造保存数値解析と完全離散誤差評価</li>
   <li>Vision 15：表現・計量・射影による縮約法と数値解法の統一的理解</li>
   <li>Vision 17：model-reduction・kernel・離散化誤差に対するcertificate</li>
   <li>Vision 19：治療履歴と潜在状態に基づく疾患進行予測</li>
