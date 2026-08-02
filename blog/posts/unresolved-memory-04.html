@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>第4回：指数重みでmeasure-valued delayのwell-posednessを得る | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,weighted well-posedness,measure-valued delay,exponential weight,causal history operator,weighted variation mass,principal-part delay,fixed point">
+<meta name="description" content="指数重みとweighted variation massを用いて，原点に原子をもたない任意の有限符号付きmeasure-valued delayに対する有限時間well-posednessを導く仕組みを解説します．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../">Home</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../fem/">Research Visions</a></li>
+        <li><a href="../../suppl/">Supplementary Visions</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+        <li><a href="../../links/">Links</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+    <li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a>
+      <meta itemprop="position" content="1">
+    </li>
+    <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../" itemprop="item"><span itemprop="name">Blog</span></a>
+      <meta itemprop="position" content="2">
+    </li>
+    <li class="bcl-last">Blog post from 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第4回：指数重みでmeasure-valued delayのwell-posednessを得る</h1>
+
+<p class="news-date"><time datetime="2026-08-02">2nd August 2026</time></p>
+
+<h2>Introduction：delay massが大きくても解けるのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+前回は，分布遅延，原子遅延，混合遅延を，一つの有限Borel測度 \(\mu\) で表しました．
+しかし，history operatorを定義できただけでは，方程式に解が存在し，一意に定まり，
+データに連続依存することはまだ分かりません．
+</p>
+<p>
+考える問題は
+\[
+  \partial_tu(t)+A_0u(t)
+  +\int_{[0,\tau]}A_1\widetilde u(t-s)\,d\mu(s)
+  =f(t),
+  \qquad
+  u(0)=u_0
+\tag{1}
+\]
+です．瞬時形式 \(a_0\) はcoerciveですが，遅延形式 \(a_1\) には
+対称性，非負性，smallnessを仮定しません．
+さらに，\(\mu\) は有限符号付き測度でよく，全変動
+\(\|\mu\|_{\mathcal M([0,\tau])}\) は大きくても構いません．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>今回の結論</b><br>
+原点に原子をもたない任意の有限符号付きretarded kernelに対して，
+適切な指数重みを選べば，未知のcausal history operatorを
+coercive parabolic solution operatorに対するstrict contractionにできる．
+</div>
+<p>
+この方法は有限時間区間上のwell-posednessを与えます．
+weightは方程式へ物理的な減衰を追加するものではなく，
+同じ解空間に同値なノルムを入れ，causalityを定量化するための解析上の道具です．
+</p>
+</article>
+</div>
+
+<h2>1．coercive regimeの設定</h2>
+<div class="news">
+<article class="news-item">
+<p>
+実Hilbert空間のGelfand triple
+\[
+  V\hookrightarrow H\cong H^*\hookrightarrow V^*
+\]
+を考えます．有界双線形形式 \(a_0,a_1:V\times V\to\mathbb R\) が
+\[
+  |a_i(w,v)|
+  \le\Lambda_i\|w\|_V\|v\|_V,
+  \qquad i\in\{0,1\},
+\tag{2}
+\]
+および
+\[
+  a_0(v,v)\ge\alpha_0\|v\|_V^2,
+  \qquad \alpha_0>0
+\tag{3}
+\]
+を満たすとします．対応する作用素を \(A_i:V\to V^*\) と書きます．
+</p>
+<p>
+データは
+\[
+  u_0\in H,
+  \qquad
+  f\in L^2(0,T;V^*),
+  \qquad
+  \psi\in L^2(-\tau,0;V)
+\tag{4}
+\]
+とします．未知解は
+\[
+  W(0,T)
+  :=\left\{
+      u\in L^2(0,T;V):
+      \partial_tu\in L^2(0,T;V^*)
+    \right\}
+\tag{5}
+\]
+に求めます．標準埋込み
+\[
+  W(0,T)\hookrightarrow C([0,T];H)
+\]
+により，初期条件 \(u(0)=u_0\) は \(H\) の意味で定義できます．
+</p>
+<p>
+過去履歴と未知軌道は，点wiseに端点を接続するのではなく，
+\[
+  \widetilde u
+  :=
+  \psi\,\mathbf 1_{(-\tau,0)}
+  +u\,\mathbf 1_{(0,T)}
+  \quad\text{in }L^2(-\tau,T;V)
+\tag{6}
+\]
+と定めます．\(t=0\) の値はこの \(L^2\)-同値類に影響しません．
+</p>
+</article>
+</div>
+
+<h2>2．通常のノルムではkernel massのsmallnessが現れる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+history operatorの基本評価は
+\[
+  \|K_\mu g\|_{L^2(0,T;V^*)}
+  \le
+  \Lambda_1\|\mu\|_{\mathcal M([0,\tau])}
+  \|g\|_{L^2(-\tau,T;V)}
+\tag{7}
+\]
+でした．一方，coercive parabolic equation
+\[
+  \partial_ty+A_0y=g,\qquad y(0)=0
+\tag{8}
+\]
+のsolution operatorは，energy estimateから概略
+\[
+  \|y\|_{L^2(0,T;V)}
+  \le
+  \alpha_0^{-1}\|g\|_{L^2(0,T;V^*)}
+\tag{9}
+\]
+を満たします．
+</p>
+<p>
+これらをそのまま組み合わせると，fixed-point mapのLipschitz constantは
+\[
+  \frac{\Lambda_1\|\mu\|_{\mathcal M}}{\alpha_0}
+\tag{10}
+\]
+になります．したがって，通常の \(L^2\)-normだけで縮小写像を作ろうとすると，
+\[
+  \Lambda_1\|\mu\|_{\mathcal M}<\alpha_0
+\]
+というsmallness conditionが現れます．
+</p>
+<p>
+しかし，これは有限時間well-posednessに本質的な制約ではありません．
+遅延は必ず正の時間だけ過去を参照します．
+そのcausal structureを指数重みによって利用します．
+</p>
+</article>
+</div>
+
+<h2>3．指数重みを入れても解空間は変わらない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(\beta\ge0\) に対して，
+\[
+  \|g\|_{L^2_\beta(I;X)}
+  :=
+  \left(
+    \int_I e^{-2\beta t}\|g(t)\|_X^2\,dt
+  \right)^{1/2}
+\tag{11}
+\]
+と定めます．有限区間 \((0,T)\) では
+\[
+  e^{-\beta T}\|g\|_{L^2(0,T;X)}
+  \le
+  \|g\|_{L^2_\beta(0,T;X)}
+  \le
+  \|g\|_{L^2(0,T;X)}.
+\tag{12}
+\]
+</p>
+<p>
+従って，
+\[
+  L^2_\beta(0,T;X)=L^2(0,T;X)
+\]
+は集合として同じで，ノルムだけが同値なものへ変わります．
+weighted spaceで解を構成しても，得られる解は通常の
+\(L^2(0,T;V)\) に属します．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 2px solid #666666;">
+<b>weightの役割</b><br>
+方程式を変更するのではない．<br>
+有限時間区間上の同じ関数空間で，現在より過去を相対的に小さく測る．
+</div>
+</article>
+</div>
+
+<h2>4．weighted variation massはdelay massの位置を見る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+測度 \(\mu\) に対して
+\[
+  \kappa_\mu(\beta)
+  :=
+  \int_{[0,\tau]}e^{-\beta s}\,d|\mu|(s)
+\tag{13}
+\]
+をweighted variation massと呼びます．
+\(\kappa_\mu(0)=\|\mu\|_{\mathcal M}\) ですが，
+\(\beta>0\) では正の遅延位置にある質量が
+\(e^{-\beta s}\) だけ小さく評価されます．
+</p>
+<p>
+\(\beta\mapsto\kappa_\mu(\beta)\) は非増加かつ連続で，
+\[
+  \lim_{\beta\to\infty}\kappa_\mu(\beta)
+  =|\mu|(\{0\}).
+\tag{14}
+\]
+したがって，
+\[
+  \kappa_\mu(\beta)\longrightarrow0
+  \quad(\beta\to\infty)
+\tag{15}
+\]
+となるための必要十分条件は，
+\[
+  |\mu|(\{0\})=0
+\tag{16}
+\]
+です．
+</p>
+<p>
+つまり，kernelの全変動が大きいことは障害ではありません．
+障害になるのは，指数重みでも減衰させられない原点の原子です．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+  <tr>
+    <th style="border:1px solid #777; padding:7px;">kernel</th>
+    <th style="border:1px solid #777; padding:7px;">\(\kappa_\mu(\beta)\)</th>
+    <th style="border:1px solid #777; padding:7px;">\(\beta\to\infty\)</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">\(M\delta_r,\ r>0\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(|M|e^{-\beta r}\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(0\)</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">\(M\delta_0\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(|M|\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(|M|\)</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">\(k(s)\,ds\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(\int_0^\tau e^{-\beta s}|k(s)|\,ds\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(0\)</td>
+  </tr>
+</table>
+</article>
+</div>
+
+<h2>5．未知のcausal partと既知のprehistoryを分ける</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(E^+u\) を \((0,T)\) 上の \(u\) の零拡張，
+\(E^-\psi\) を \((-\tau,0)\) 上の \(\psi\) の零拡張とします．
+式 (6) は
+\[
+  \widetilde u=E^+u+E^-\psi
+  \quad\text{in }L^2(-\tau,T;V)
+\tag{17}
+\]
+なので，
+\[
+  K_\mu\widetilde u
+  =
+  K_\mu^+u+h_{\mu,\psi},
+\tag{18}
+\]
+\[
+  K_\mu^+u:=K_\mu(E^+u),
+  \qquad
+  h_{\mu,\psi}:=K_\mu(E^-\psi).
+\tag{19}
+\]
+</p>
+<ul>
+  <li>\(K_\mu^+u\)：未知軌道から生じるcausal feedback．</li>
+  <li>\(h_{\mu,\psi}\)：計算開始前の履歴が作る既知のforcing．</li>
+</ul>
+<p>
+fixed-point differenceに現れるのは \(K_\mu^+\) だけです．
+したがって，縮小させるべきなのは未知のcausal partであり，
+prehistoryは全変動を用いて
+\[
+  \|h_{\mu,\psi}\|_{L^2_\beta(0,T;V^*)}
+  \le
+  \Lambda_1\|\mu\|_{\mathcal M}
+  \|\psi\|_{L^2(-\tau,0;V)}
+\tag{20}
+\]
+と外力として評価します．
+</p>
+<p>
+ここで \(\|\mu\|_{\mathcal M}\) が残っても問題ありません．
+既知データの大きさは解のboundへ入りますが，contraction constantには入りません．
+</p>
+</article>
+</div>
+
+<h2>6．weighted causal estimateの核心</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(w\in L^2_\beta(0,T;V)\) に対して，
+\[
+  \|K_\mu^+w\|_{L^2_\beta(0,T;V^*)}
+  \le
+  \Lambda_1\kappa_\mu(\beta)
+  \|w\|_{L^2_\beta(0,T;V)}
+\tag{21}
+\]
+が成り立ちます．
+</p>
+<p>
+因子 \(e^{-\beta s}\) が現れる理由は単純です．
+causal partでは \(E^+w(t-s)\ne0\) となるのは \(s<t\) のときだけで，
+\[
+  e^{-\beta t}
+  =
+  e^{-\beta s}e^{-\beta(t-s)}
+\tag{22}
+\]
+と分解できます．従って，
+現在時刻 \(t\) に置かれた重みを遅延時刻 \(t-s\) へ移すたびに，
+delay location \(s\) に応じた減衰 \(e^{-\beta s}\) が得られます．
+</p>
+<p>
+この評価はcausalityをノルム評価へ変換したものです．
+通常の全変動 \(\|\mu\|_{\mathcal M}\) ではなく，
+遅延位置を反映した \(\kappa_\mu(\beta)\) がcontraction constantに現れます．
+</p>
+</article>
+</div>
+
+<h2>7．weighted parabolic estimate</h2>
+<div class="news">
+<article class="news-item">
+<p>
+次に，
+\[
+  \partial_ty+A_0y=g,
+  \qquad
+  y(0)=y_0
+\tag{23}
+\]
+を考えます．\(z(t):=e^{-\beta t}y(t)\) と置くと，
+\[
+  \partial_tz+\beta z+A_0z=e^{-\beta t}g.
+\tag{24}
+\]
+\(z\) でテストすると，\(\beta\|z\|_H^2\) が追加の非負項として現れます．
+coercivity (3) を使えば，
+\[
+  \|y\|_{L^2_\beta(0,T;V)}
+  \le
+  \alpha_0^{-1/2}\|y_0\|_H
+  +\alpha_0^{-1}\|g\|_{L^2_\beta(0,T;V^*)}.
+\tag{25}
+\]
+</p>
+<p>
+特に初期値が零なら，
+\[
+  \|y\|_{L^2_\beta(0,T;V)}
+  \le
+  \alpha_0^{-1}
+  \|g\|_{L^2_\beta(0,T;V^*)}.
+\tag{26}
+\]
+fixed-point differenceには同じ初期値をもつ二つの解の差が現れるため，
+必要なのはこの零初期値評価です．
+</p>
+</article>
+</div>
+
+<h2>8．fixed-point mapを作る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\[
+  X_\beta:=L^2_\beta(0,T;V)
+\]
+とし，\(w\in X_\beta\) に対して \(\Phi w\) を
+\[
+  \partial_t(\Phi w)+A_0(\Phi w)
+  =
+  f-h_{\mu,\psi}-K_\mu^+w,
+\tag{27}
+\]
+\[
+  (\Phi w)(0)=u_0
+\tag{28}
+\]
+の解として定めます．
+</p>
+<p>
+\(w_1,w_2\in X_\beta\) に対し，
+\(z:=\Phi w_1-\Phi w_2\) は
+\[
+  \partial_tz+A_0z
+  =
+  -K_\mu^+(w_1-w_2),
+  \qquad
+  z(0)=0
+\tag{29}
+\]
+を満たします．式 (21) と式 (26) を組み合わせると，
+\[
+\begin{aligned}
+  \|\Phi w_1-\Phi w_2\|_{X_\beta}
+  &\le
+  \frac{\Lambda_1\kappa_\mu(\beta)}{\alpha_0}
+  \|w_1-w_2\|_{X_\beta}.
+\end{aligned}
+\tag{30}
+\]
+</p>
+<p>
+そこで
+\[
+  q_{\mu,\beta}
+  :=
+  \frac{\Lambda_1\kappa_\mu(\beta)}{\alpha_0}
+\tag{31}
+\]
+と置きます．
+\[
+  q_{\mu,\beta}<1
+\tag{32}
+\]
+となる \(\beta\) を選べば，\(\Phi\) はcomplete space \(X_\beta\) 上のstrict contractionです．
+Banachのfixed-point theoremから，一意な固定点 \(u=\Phi u\) が得られます．
+</p>
+</article>
+</div>
+
+<h2>9．weighted well-posedness theorem</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\[
+  \mathcal M_0([0,\tau])
+  :=
+  \left\{
+    \mu\in\mathcal M([0,\tau]):
+    |\mu|(\{0\})=0
+  \right\}
+\tag{33}
+\]
+とします．\(\mu\in\mathcal M_0([0,\tau])\) なら，
+式 (15) により \(q_{\mu,\beta}<1\) を満たす \(\beta\ge0\) が必ず存在します．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>Weighted well-posedness</b><br>
+\(\mu\in\mathcal M_0([0,\tau])\) とし，
+\(q_{\mu,\beta}<1\) となる \(\beta\) を選ぶ．
+このとき式 (1) は一意な弱解
+\[
+  u_\mu\in W(0,T)\hookrightarrow C([0,T];H)
+\]
+をもつ．
+</div>
+<p>
+さらに，
+\[
+\begin{aligned}
+  \|u_\mu\|_{L^2_\beta(0,T;V)}
+  \le\frac{1}{1-q_{\mu,\beta}}
+  \Bigl[
+    &\alpha_0^{-1/2}\|u_0\|_H
+    +\alpha_0^{-1}\|f\|_{L^2_\beta(0,T;V^*)}\\
+    &+\alpha_0^{-1}\Lambda_1
+      \|\mu\|_{\mathcal M([0,\tau])}
+      \|\psi\|_{L^2(-\tau,0;V)}
+  \Bigr].
+\end{aligned}
+\tag{34}
+\]
+</p>
+<p>
+方程式から
+\[
+  \partial_tu_\mu
+  =
+  f-A_0u_\mu-K_\mu\widetilde u_\mu
+\]
+を評価し，式 (12) で通常のノルムへ戻すと，
+\(W(0,T)\)-normおよび \(C([0,T];H)\)-normのboundも得られます．
+</p>
+</article>
+</div>
+
+<h2>10．この定理で不要になる仮定</h2>
+<div class="news">
+<article class="news-item">
+<p>
+weighted argumentの利点は，次の仮定を要求しないことです．
+</p>
+<ul>
+  <li>
+    <b>kernel massのsmallness：</b>
+    \(\Lambda_1\|\mu\|_{\mathcal M}<\alpha_0\) は不要．
+  </li>
+  <li>
+    <b>kernelの非負性：</b>
+    \(\mu\) は有限符号付き測度でよい．
+  </li>
+  <li>
+    <b>delayed formのpositivity：</b>
+    \(a_1(v,v)\ge0\) を仮定しない．
+  </li>
+  <li>
+    <b>pivot-space boundedness：</b>
+    \(A_1\) は \(V\to V^*\) のform-valued operatorでよい．
+  </li>
+  <li>
+    <b>historyの時間連続性：</b>
+    \(\psi\in L^2(-\tau,0;V)\) でよい．
+  </li>
+</ul>
+<p>
+coercivityを供給するのはあくまで瞬時形式 \(a_0\) です．
+遅延項をpositive dissipationとして利用しているのではなく，
+指数重みによってcoercive parabolic problemへのstrict perturbationにしています．
+</p>
+</article>
+</div>
+
+<h2>11．原点の原子はなぜ別扱いなのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\[
+  \widehat\mu=m_0\delta_0+\mu,
+  \qquad
+  |\mu|(\{0\})=0
+\]
+なら，
+\[
+  K_{\widehat\mu}\widetilde u
+  =
+  m_0A_1u+K_\mu\widetilde u.
+\tag{35}
+\]
+\(m_0\delta_0\) は遅延ではなく瞬時作用なので，
+\[
+  a_0^{\mathrm{new}}
+  :=
+  a_0+m_0a_1
+\tag{36}
+\]
+へ吸収すべきです．その後，
+\(a_0^{\mathrm{new}}\) がcoerciveであることを確認し，
+残りのretarded measure \(\mu\) にweighted argumentを適用します．
+</p>
+<p>
+指数重みで原点の原子を小さくできないのは，解析上の欠点ではありません．
+現在値への作用はcausal delayではなく，principal operatorの一部だからです．
+</p>
+</article>
+</div>
+
+<h2>12．単一離散遅延はweightの意味を最も明確に示す</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\[
+  \mu=M\delta_r,
+  \qquad r>0
+\]
+なら，
+\[
+  q_{\mu,\beta}
+  =
+  \frac{\Lambda_1|M|}{\alpha_0}e^{-\beta r}.
+\tag{37}
+\]
+\(\Lambda_1|M|/\alpha_0>1\) でも，
+\[
+  \beta>
+  \frac1r
+  \log\left(\frac{\Lambda_1|M|}{\alpha_0}\right)
+\tag{38}
+\]
+と選べば \(q_{\mu,\beta}<1\) です．
+</p>
+<p>
+一方，\(r\downarrow0\) では必要な \(\beta\) が \(r^{-1}\) のscaleで発散します．
+従って，正の遅延位置にある任意のmassは各固定 \(r>0\) で扱えますが，
+原点へ集中するfamilyに対して同じweightと同じconstantを一様に使えるとは限りません．
+</p>
+<p>
+これは後に扱うsmall-delay boundaryをすでに予告しています．
+weighted well-posednessは各固定retarded kernelの有限時間可解性を与えますが，
+原点集中に対する一様安定性までは自動的に与えません．
+</p>
+</article>
+</div>
+
+<h2>13．有限時間well-posednessと長時間安定性を区別する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+式 (12) で通常のノルムへ戻すときには \(e^{\beta T}\) が現れます．
+従って，大きなkernel massを扱うため大きな \(\beta\) を選ぶと，
+unweighted estimateのconstantは \(T\) とともに大きくなり得ます．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 2px solid #666666;">
+<b>保証されるもの</b><br>
+各固定 \(T<\infty\) と各固定retarded kernelに対する存在，一意性，連続依存性．<br><br>
+<b>この議論だけでは保証されないもの</b><br>
+\(T\to\infty\) で一様な安定性，指数減衰，attractor，kernel familyに一様なconstant．
+</div>
+<p>
+したがって，weighted well-posednessを「長時間安定性」と読み替えてはいけません．
+この方法は，有限時間問題をsmallness conditionなしで閉じるための基礎理論です．
+</p>
+</article>
+</div>
+
+<h2>14．kernel stabilityと空間離散化への橋渡し</h2>
+<div class="news">
+<article class="news-item">
+<p>
+weighted well-posednessは，kernelを変えたときのsolution differenceを評価する基盤にもなります．
+二つのkernel \(\mu,\nu\) に対して，同じデータをもつ解の差を取ると，
+右辺には
+\[
+  K_{\mu-\nu}\widetilde u_\nu
+\]
+というkernel residualが現れます．
+左辺は \(\mu\) に対するweighted resolvent margin
+\[
+  d_{\mu,\beta}
+  :=
+  \alpha_0-\Lambda_1\kappa_\mu(\beta)>0
+\tag{39}
+\]
+で制御できます．
+</p>
+<p>
+このasymmetric residual principleから，
+total variation，narrow convergence，Wasserstein distanceによる
+kernel stabilityへ進めます．
+また，離散空間で
+\(\alpha_0,\Lambda_0,\Lambda_1\) がmesh parameterに依存せず保たれれば，
+同じweighted argumentはspatial Galerkin semidiscretisationへ移ります．
+</p>
+<p>
+従って，この理論は単なる存在証明ではなく，
+kernel approximationとspace-time discretisation errorを分離するための基礎になります．
+</p>
+</article>
+</div>
+
+<h2>Conclusion</h2>
+<div class="news">
+<article class="news-item">
+<p>
+measure-valued delayの有限時間well-posednessで本質的なのは，
+kernel massを直接小さくすることではなく，
+未知のcausal history operatorだけを指数重みで小さくすることです．
+</p>
+<p>
+\[
+  \kappa_\mu(\beta)
+  =
+  \int_{[0,\tau]}e^{-\beta s}\,d|\mu|(s)
+  \longrightarrow0
+\]
+は，原点に原子がないことを正確に検出します．
+そして
+\[
+  q_{\mu,\beta}
+  =
+  \frac{\Lambda_1\kappa_\mu(\beta)}{\alpha_0}<1
+\]
+を満たすweightを選べば，coercive parabolic solution operatorと
+causal history operatorの合成がstrict contractionになります．
+</p>
+<p>
+\[
+  \text{retarded causality}
+  +\text{ exponential weight}
+  +\text{ instantaneous coercivity}
+  \Longrightarrow
+  \text{finite-time well-posedness}
+\]
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>次回：</b>
+<a href="./unresolved-memory-05.html">第5回：positive-type memoryとcoercivity gap</a><br>
+coercive regimeでは瞬時作用がenergyを支えました．
+次は瞬時coercivityが弱くなる場合を見据え，
+memory dissipationの非負性とfrequency-uniform coercivityを区別します．
+</div>
+<p>
+前の記事：
+<a href="./unresolved-memory-03.html">第3回：measure-valued delayで分布遅延・原子遅延・混合遅延を統一する</a>
+</p>
+<p>
+関連ページ：
+<a href="../../publications/">Publications</a>（S3–S5，A3），
+<a href="../../fem/">Research Visions</a>（Vision 11，18），
+<a href="../../suppl/">Supplementary Visions</a>（履歴依存型発展方程式とmemory kernel）
+</p>
+</article>
+</div>
+
+</div>
+</article>
+</div>
+</main>
+
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
