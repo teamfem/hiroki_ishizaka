@@ -10,7 +10,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,Certified FEM,AI4Math,Trustworthy Simulation,Anisotropic Meshes,Unresolved Dynamics,Memory Equations,Multiscale Reduction">
-<meta name="description" content="Certified finite element analysis and stable reduction theory for unresolved dynamics, including anisotropic FEM, memory equations, kernel stability, and trustworthy simulation.">
+<meta name="description" content="Hiroki Ishizaka: certified finite element analysis under computable geometric conditions and stable reduction theory for unresolved dynamics.">
 
 <link rel="stylesheet" href="./css/base.css">
 <link rel="stylesheet" href="./css/rwd.css">
@@ -90,7 +90,7 @@
 			<p class="main-copy">Mathematics for Trustworthy Simulation</p>
 			<p class="sub-copy">Mathematics makes the invisible visible</p>
 			<div class="main-image-in-text-box">
-				
+				<p>Certified FEM &amp; stable reduction of unresolved dynamics</p>
 			</div>
 			</div>
 		</div>
@@ -114,128 +114,199 @@
 <p style="font-weight:bold; font-size:200%;">ISHIZAKA Hiroki, Ph. D. (Dr.) <br>
 石坂 宏樹</p>
 E-mail: h.ishizaka005[at]gmail.com<br>
-Independent Researcher - PhD-level Numerical Analyst｜Certified FEM &amp; Trustworthy Simulation｜<br>
+Independent Researcher — Numerical Analysis, Partial Differential Equations, and Finite Element Methods<br>
+AI Evaluator (Mathematics / Reasoning / Numerical Methods)｜Scientific-Computing SME (PDEs &amp; FEMs)<br>
+JP/EN｜日本数学会員｜日本応用数理学会員<br><br>
 
-AI Evaluator (Math/Reasoning/Numerical Methods)｜Scientific‑Computing SME (PDEs &amp; FEMs)｜<br>
-JP/EN｜日本数学会員｜日本応用数理学会員｜<br><br>
-
-
-<h3 class="news-title">Self-introduction</h3>
+<h3 class="news-title">Profiles</h3>
 <p class="news-cont">
-<a href="https://www.researchgate.net/profile/Hiroki-Ishizaka" rel="nofollow">ResearchGate</a> 
-<a href="https://scholar.google.com/citations?user=kmHMrZIAAAAJ&hl=ja" rel="nofollow">Google Scholar</a>
-<a href="https://researchmap.jp/3dns" rel="nofollow">researchmap</a> 
-<a href="https://arxiv.org/search/math?searchtype=author&query=Ishizaka,+H" rel="nofollow">Arxiv</a> 
-<a href="https://orcid.org/0000-0002-5892-7488" rel="nofollow">ORCID</a> 
-<a href="https://sites.google.com/view/hiroki-ishizaka-website/home" rel="nofollow">スライド保管 (Under construction)</a> 
-<a href="https://x.com/teamfem16key" rel="nofollow">X</a> 
+<a href="https://www.researchgate.net/profile/Hiroki-Ishizaka" rel="nofollow">ResearchGate</a>
+<a href="https://scholar.google.com/citations?user=kmHMrZIAAAAJ&amp;hl=ja" rel="nofollow">Google Scholar</a>
+<a href="https://researchmap.jp/3dns" rel="nofollow">researchmap</a>
+<a href="https://arxiv.org/search/math?searchtype=author&amp;query=Ishizaka,+H" rel="nofollow">arXiv</a>
+<a href="https://orcid.org/0000-0002-5892-7488" rel="nofollow">ORCID</a>
+<a href="https://sites.google.com/view/hiroki-ishizaka-website/home" rel="nofollow">Slides</a>
+<a href="https://x.com/teamfem16key" rel="nofollow">X</a>
 </p>
-<br><br>
-<b>"Certified finite element analysis under computable geometric conditions."</b><br>
-<b>計算可能な幾何条件に基づく，保証付き有限要素解析</b><br>
-私の研究の中心は，有限要素法（FEM）におけるメッシュ幾何，異方性誤差評価，離散安定性，平衡化フラックス，目的量誤差評価を結び，計算結果の「どこまで信じてよいか」を数学的に説明することです．<br>
-これは，単に数値解を高精度化するだけでなく，AI・データ同定・デジタルツインの時代に必要となる <b>trustworthy simulation</b> の基盤を作る試みです．<br><br>
 
-<b>有限要素解析の信頼性を高める4つの戦略</b><br>
-"スキーム設計" × "メッシュ制御" × "誤差保証" × "検証可能性" = "Certified error control"<br>
-これを，数理解析・計算実装・データ／AI・形式推論の協調設計として発展させます．<br><br>
-
-<b>Why “Trustworthy Simulation” now? — Digital Twins, AI4Math &amp; Model Credibility</b><br>
-<b>"予測を作る"だけでなく，"予測の信用度"を数学で作る</b><br>
-デジタルツインとは，現実世界の情報をデジタル空間に写し取り，将来予測などのシミュレーションを行い，その結果を現実の意思決定へフィードバックする枠組みです．<br>
-実際に，防災・都市計画の文脈でデジタルツイン活用（例：<a href="https://www.city.kobe.lg.jp/a93584/516920176162.html" target="_blank">神戸市×ドコモ×理研R-CCS「富岳」を活用したデジタルツインシミュレーション</a>）が進んでいます．<br>
-この段階で重要になるのは，見た目がもっともらしい結果ではなく，「どこまで信じてよいか」を説明できるモデルの信憑性（credibility）です．そのために工学では，Verification / Validation / Uncertainty Quantification（<a href="https://www.asme.org/codes-standards/publications-information/verification-validation-uncertainty" target="_blank">VVUQ (ASME)</a>）が重視されます．<br><br>
-
-一方，物理系機械学習（PINNs等）は有望ですが，対流・反応・多スケール構造・高周波成分・境界層を含む問題では，重要な物理現象を十分に学べず，もっともらしく外れることがあります（参考：<a href="https://arxiv.org/abs/2109.01050" target="_blank">Characterizing possible failure modes in physics-informed neural networks</a>）．<br>
-そのため，予測値だけでなく，誤差，不確かさ，危険領域，必要な解像度，目的量に対する信頼区間を与える <b>reliability layer</b> が不可欠です．<br><br>
-
-近年は AI4Math，形式推論，自動証明支援，Lean / Mathlib などの発展により，数学的結果を「発見する」だけでなく，「検証可能な形で記述し，再利用可能な知識として整理する」ことの重要性が増しています．私の立場は，AIでFEMを単に置き換えることではありません．むしろ，AI時代に耐える有限要素解析，すなわち <b>AI4Math-ready certified FEM</b> を構築することです．<br><br>
-
-そこで私は，幾何（メッシュ）・異方性解析・誤差評価・平衡化フラックス・DWR型目的量評価を核に，シミュレーションやデータ駆動モデルに対して「危ない領域」「必要な解像度」「目的量に対する誤差」を定量化し，意思決定に耐えうる trustworthy simulation を数学で支えることを目指しています．<br><br>
-
-<b>Local outreach (Matsuyama)</b><br>
-松山市では3D都市モデル等を用いた防災・避難の可視化／シミュレーション活用が進む一方，短時間での処理や結果提示の妥当性が課題として整理されています（<a href="https://www.mlit.go.jp/toshi/tosiko/content/001579903.pdf" target="_blank">国土交通省(MLIT)：松山スマートシティプロジェクト(R2-4実証)の概要</a>）．<br>
-このような取り組みに対して，誤差制御と不確かさの定量化を信頼性レイヤとして組み込み，意思決定に耐える trustworthy simulation の設計図を描くことを目指します．<br><br>
-
-<b>Research Attitude and Perspectives</b><br>
-幾何（メッシュ）が精度と安定性をどう支配するのか，という問いを出発点に，有限要素法（FEM）を <b>FEM 2.0</b> として再設計しています．FEM 2.0では，効率性（Efficiency），抽象化（Abstraction），自動化（Automation），応用展開（Application），検証性（Verification）という5つの目標を置き，私の研究を4つの Research Line（G/R/A/V）に整理します．<br><br>
-
-I study numerical analysis — the mathematics that makes computer simulations accurate, reliable, and certifiable.<br>
-My main tool is the finite element method (FEM), widely used to model physical systems such as fluids, heat, and materials. A central question guides my work:
-<ul>
-<li>How does the geometry of the computational mesh control accuracy and stability?</li>
-<li>How can computable geometric conditions be turned into reliable error estimates?</li>
-<li>How can these estimates become certificates for simulation, data-driven models, and AI-assisted mathematics?</li>
-</ul>
-
-Within this long-term programme, I organise my projects into four core research lines:
-<ul>
-  <li><b>G — Geometry &amp; Anisotropic FEM Theory</b><br>New geometric properties, such as the flatness parameter, semi-regular mesh conditions, and two-step transformations, together with anisotropic error estimates for nonstandard elements (CR, Morley, DG, Nitsche), discrete Sobolev/Korn inequalities, and mesh-geometry conditions.</li>
-  <li><b>R — Reliable &amp; Goal-Oriented PDE Simulation</b><br>Time-dependent and memory-effect PDEs (BDF/FBDF, fractional order in time), pressure-robust Stokes/Navier–Stokes, and goal-oriented / verified error control via functional estimators, hypercircle-type estimates, DWR, and equilibrated fluxes.</li>
-  <li><b>A — Automation, Learning &amp; New Numerical Methods</b><br>Using geometric parameters and a posteriori indicators as computable features for adaptive FEM, mesh generation, and scheme selection. I also study connections with PINNs, Deep Ritz, and meshless methods through a shared lens of representation–metric–projection.</li>
-  <li><b>V — Verification, Formal Reasoning &amp; AI4Math</b><br>Connecting finite element error analysis, computable mesh conditions, equilibrated flux certificates, and goal-oriented bounds with AI-assisted mathematics, formal reasoning, and future formalisation. The aim is not merely to use AI for simulation, but to build FEM theory that remains verifiable and reusable in the AI4Math era.</li>
-</ul>
-
-
-<h4 id="stable-reduction">Emerging research programme</h4>
+<h3>Research mission</h3>
 <p>
-<b>Stable reduction theory for unresolved dynamics</b><br>
-<b>未解像ダイナミクスの安定縮約理論</b><br><br>
-When fine-scale, latent, or unobserved variables are eliminated from multiscale evolution equations,
-their influence may remain as operator-valued memory, delayed forcing, or stochastic closure.
-I aim to develop a stability-based reduction theory connecting
+<b>Mathematics makes the invisible visible.</b>
+In my research, the “invisible” includes discretisation error, the influence of mesh geometry,
+unresolved scales, latent memory, and the limits of numerical prediction.
+I study the mathematics needed to make these hidden effects visible, quantifiable, and controllable,
+so that numerical prediction becomes <b>stable, accurate, and certifiable</b>.
+My work currently develops two complementary research programmes:
+</p>
+
+<ol>
+  <li>
+    <b>Certified finite element analysis under computable geometric conditions</b><br>
+    <b>計算可能な幾何条件に基づく，保証付き有限要素解析</b>
+  </li>
+  <li>
+    <b>Stable reduction theory for unresolved dynamics</b><br>
+    <b>未解像ダイナミクスの安定縮約理論</b>
+  </li>
+</ol>
+
+<p>
+The first programme asks how mesh geometry, anisotropy, nonconformity, flux reconstruction,
+and goal-oriented error estimation determine the reliability of finite element computation.
+The second asks what remains after fine scales, latent states, or unobserved variables are eliminated,
+and how the resulting memory, delay, nonlocal closure, and internal states can be approximated without destroying stability.
+Their common objective is <b>trustworthy simulation</b>: not only producing a numerical prediction,
+but also explaining its stability, error, unresolved influence, and range of validity.
+</p>
+
+<h3>Programme I — Certified finite element analysis</h3>
+<p>
+A central question in my finite element research is:
+<b>how does the geometry of a computational mesh control approximation, stability, and certification?</b>
+I study computable geometric conditions, including semi-regularity and flatness-type parameters,
+and use them to develop anisotropic error estimates for nonstandard finite elements such as
+Crouzeix–Raviart, Morley, discontinuous Galerkin, Nitsche, and mixed methods.
+</p>
+
+<p>
+The long-term objective is to connect
+</p>
+
 \[
-  \text{unresolved dynamics}
+  \text{scheme design}
+  \;\times\;
+  \text{mesh geometry}
+  \;\times\;
+  \text{error estimation}
+  \;\times\;
+  \text{verification}
+  \;\longrightarrow\;
+  \text{certified computation}.
+\]
+
+<p>
+This includes discrete Sobolev and Korn inequalities, equilibrated fluxes,
+hypercircle-type estimates, dual-weighted residual methods, pressure-robust flow discretisations,
+and computable certificates for quantities of interest.
+</p>
+
+<h3 id="stable-reduction">Programme II — Stable reduction theory for unresolved dynamics</h3>
+<p>
+When unresolved degrees of freedom are removed from an evolution equation, their influence does not generally disappear.
+It may remain as operator-valued memory, delayed or history-dependent forcing,
+spatially nonlocal closure, internal states, or stochastic fluctuation.
+The purpose of stable reduction theory is to construct and analyse reduced models that retain
+relevant stability, dissipation, causality, and singular-limit structure of the full dynamics.
+</p>
+
+\[
+  \text{full dynamics}
   \longrightarrow
-  \text{memory}
+  \text{resolved / unresolved decomposition}
   \longrightarrow
-  \text{stable approximation}
+  \text{memory or nonlocal closure}
+  \longrightarrow
+  \text{stable reduced dynamics}
   \longrightarrow
   \text{certified computation}.
 \]
-The central questions are which energy and state space survive reduction,
-how kernel and model-reduction errors propagate, and how these structures
-can be preserved under discretisation and identification.<br><br>
-<a href="./fem/#vision18">Research Vision 18</a>
+
+<p>
+Current work develops the analytical core of this programme through graph-space well-posedness,
+positive-type and measure-valued memory, kernel stability, internal-variable representations,
+and singular limits such as memory concentration and vanishing instantaneous coercivity.
+The next stage is to derive and approximate such kernels and closure operators directly from unresolved generators,
+with applications to convection-dominated diffusion, incompressible flow, multiscale systems,
+and data-informed reduced models.
 </p>
 
-This website is organised accordingly:
+<p>
+Central questions include:
+</p>
 <ul>
-  <li>Publications and Research show completed and near-completed results along these lines.</li>
-  <li>Research Visions collects open directions and long-term ideas, indexed by the four lines above.</li>
-  <li>History of Geometric Conditions in FEM records the geometric side of Line G.</li>
-  <li>Supplementary Visions and Blog pages develop explanatory and exploratory materials around these themes.</li>
+  <li>Which state space, energy, and dissipation mechanism survive reduction?</li>
+  <li>How do projection, kernel, closure, and unresolved-initial-state errors propagate to the resolved solution?</li>
+  <li>Do reduction, discretisation, homogenisation, and singular limits commute?</li>
+  <li>How can memory and internal states be approximated while preserving positivity, causality, and stability?</li>
 </ul>
 
-<b>Near-future directions</b><br>
+<p>
+<a href="./fem/#vision18"><b>Research Vision 18: Stable reduction theory for unresolved dynamics</b></a>
+</p>
+
+<h3>Research architecture — G / R / A / V</h3>
+<p>
+The two programmes are developed through four interacting research lines:
+</p>
 <ul>
-  <li><b>Certified error control for decision-making:</b> QoI（目的量）に対して，「どこまで信じてよいか」を上界・誤差半径・certificate として提示する．</li>
-  <li><b>Credible digital twins on realistic meshes:</b> 実運用の歪んだ／異方性メッシュを前提に，幾何量と誤差指標で品質管理・適応化を設計する．</li>
-  <li><b>Reliability layer for surrogates and physics-ML:</b> 物理サロゲートやPINNsに対して，破綻しやすい領域（境界層・外挿・保存則の崩れ等）を検知・定量化する．</li>
-  <li><b>AI4Math-ready finite element theory:</b> 異方性補間評価，準正則条件，平衡化フラックス，DWR型目的量評価を，形式化・再利用・自動検証に接続しやすい形へ整理する．</li>
+  <li><b>G — Geometry &amp; Anisotropic FEM Theory</b><br>
+  Computable geometric parameters, semi-regular meshes, anisotropic interpolation,
+  nonconforming and mixed elements, discrete functional inequalities, and curved-domain geometry.</li>
+
+  <li><b>R — Reliable PDE Simulation &amp; Reduction</b><br>
+  Time-dependent and history-dependent PDEs, graph-space well-posedness,
+  stable reduction of unresolved dynamics, pressure-robust Stokes/Navier–Stokes methods,
+  and verified or goal-oriented error control.</li>
+
+  <li><b>A — Approximation, Automation &amp; Learning</b><br>
+  Adaptive FEM, mesh and method selection, structure-preserving approximation of memory and internal states,
+  data-informed kernel identification, and connections with PINNs, Deep Ritz, and meshless methods.</li>
+
+  <li><b>V — Verification, Formal Reasoning &amp; AI4Math</b><br>
+  Computable certificates, equilibrated-flux and goal-oriented bounds,
+  reproducible mathematical structure, AI-assisted reasoning, and future formalisation.</li>
 </ul>
-デジタルツインや物理AIが実運用に近づくほど，数理解析・計算科学・データ／AI・工学的要請（目的量・安全率）をつなぐ分野横断が重要になります．私は数学（幾何・誤差評価・検証可能性）を核に，これらを <b>certified error control</b> として統一して扱います．<br><br>
+
+<h3>Why trustworthy simulation?</h3>
+<p>
+Digital twins, scientific machine learning, and data-informed models increasingly connect simulation with practical decisions.
+In such settings, a visually plausible prediction is not enough: one must quantify approximation error,
+unresolved effects, extrapolation risk, conservation defects, and the resolution needed for a target quantity.
+My aim is to develop the mathematical reliability layer linking PDE analysis, numerical discretisation,
+model reduction, and verification.
+</p>
+
+<p>
+Relevant broader contexts include Verification, Validation and Uncertainty Quantification
+(<a href="https://www.asme.org/codes-standards/publications-information/verification-validation-uncertainty" target="_blank">ASME VVUQ</a>),
+physics-informed learning and its failure modes
+(<a href="https://arxiv.org/abs/2109.01050" target="_blank">PINN failure modes</a>),
+and urban or disaster-oriented digital-twin simulation
+(<a href="https://www.city.kobe.lg.jp/a93584/516920176162.html" target="_blank">Kobe digital-twin project</a>).
+</p>
+
+<h3>Near-future directions</h3>
+<ul>
+  <li><b>Stable reduction of unresolved dynamics:</b> derive memory and nonlocal closures from unresolved generators and establish resolution- and singular-limit stability.</li>
+  <li><b>Structure-preserving memory discretisation:</b> combine finite internal states, convolution quadrature, and anisotropic CR–RT approximation.</li>
+  <li><b>Certified error control for decision-making:</b> provide computable error radii and certificates for quantities of interest.</li>
+  <li><b>Reliability layers for surrogates and physics-ML:</b> detect boundary-layer, extrapolation, conservation, and under-resolution failures.</li>
+  <li><b>AI4Math-ready numerical analysis:</b> organise geometric conditions, stability mechanisms, and error certificates in verifiable and reusable forms.</li>
+</ul>
+
+<h3>Website guide</h3>
+<ul>
+  <li><a href="./publications/">Publications</a> lists published and preprint results.</li>
+  <li><a href="./research/">Research</a> summarises completed and current research programmes.</li>
+  <li><a href="./fem/">Research Visions</a> collects open problems, long-term projects, and proposed directions.</li>
+  <li><a href="./geo/">History of Geometric Conditions in FEM</a> develops the geometric background of Line G.</li>
+  <li><a href="./blog/">Blog</a> and <a href="./suppl/">Supplementary Visions</a> contain explanatory and exploratory material.</li>
+</ul>
 
 <p><b><span style="color:red;">
-This site includes open directions (proposals). Published results are clearly labelled and linked on the Publications and Research pages.
+This site includes open research directions and proposals. Published and preprint results are labelled and linked on the Publications and Research pages.
 </span></b></p>
 
-<p><b><span style="color:red;">
-"Research Visions"は日々増えてます．もっと整理した形で公開できるようにすることを検討中です．
-</span></b></p>
-
-<!--(5th September 2025 <span class="cat cat001">Update</span>)-->
 <br><br>
-<img src="img/B3FA9639-3EF3-4219-8D87-0F18B9C47505_1_105_c.jpeg" width="120px" height="120px" border="4px" > 
-<img src="img/732CF340-2E05-4258-B31F-B65F4A216D2C_1_105_c.jpeg" width="120px" height="120px" border="4px" > 
-<img src="img/39D0B273-F3B6-4A3A-99A6-F0C33483FD5E_1_105_c.jpeg" width="120px" height="120px" border="4px" > 
-<img src="img/WP_20151005_011.jpg" width="120px" height="120px" border="4px" > 
-<img src="img/mathematikon.jpg" width="120px" height="120px" border="4px" > 
-<img src="img/heidelberg_castle.jpg" width="120px" height="120px" border="4px" > 
-<img src="img/WP_20151031_003.jpg" width="120px" height="120px" border="4px" > <br>
-<p>左から，にこ淵・高樋沈下橋・佐田岬・ハイデルベルク大学図書館・ハイデルベルク大学数学・ハイデルベルク城・ドイツ バンメンタール</p>
+<img src="img/B3FA9639-3EF3-4219-8D87-0F18B9C47505_1_105_c.jpeg" width="120" height="120" border="4" alt="Niko-buchi gorge">
+<img src="img/732CF340-2E05-4258-B31F-B65F4A216D2C_1_105_c.jpeg" width="120" height="120" border="4" alt="Takahi submersible bridge">
+<img src="img/39D0B273-F3B6-4A3A-99A6-F0C33483FD5E_1_105_c.jpeg" width="120" height="120" border="4" alt="Cape Sada">
+<img src="img/WP_20151005_011.jpg" width="120" height="120" border="4" alt="Heidelberg University Library">
+<img src="img/mathematikon.jpg" width="120" height="120" border="4" alt="Mathematikon Heidelberg">
+<img src="img/heidelberg_castle.jpg" width="120" height="120" border="4" alt="Heidelberg Castle">
+<img src="img/WP_20151031_003.jpg" width="120" height="120" border="4" alt="Bammental, Germany"><br>
+<p>左から，にこ淵・高樋沈下橋・佐田岬・ハイデルベルク大学図書館・Mathematikon・ハイデルベルク城・ドイツ バンメンタール</p>
 </article>
-
 </div>
 
 
@@ -346,7 +417,7 @@ parameter." [<a href="https://arxiv.org/pdf/2504.16012" target="_blank">Arxiv</a
 	
 </div>
 
-<div class="news-date"><time datetime="2026-7-22">22nd July 2026</time></div>
+<div class="news-date"><time datetime="2026-8-2">2nd August 2026</time></div>
 <div class="news-cat">
 <span class="cat cat001">Last Update</span>
 </div>
