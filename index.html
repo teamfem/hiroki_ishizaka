@@ -9,8 +9,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,Certified FEM,AI4Math,Trustworthy Simulation,Anisotropic Meshes,Unresolved Dynamics,Memory Equations,Multiscale Reduction,Latent-State Reconstruction,Inverse Problems">
-<meta name="description" content="Hiroki Ishizaka: certified finite element analysis and stable reduction theory that retains the dynamical influence of unresolved scales.">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,Certified FEM,Anisotropic Meshes,Unresolved Dynamics,Stable Reduction,Memory Equations,Latent States,Mathematical Structures,Trustworthy Simulation,AI4Math">
+<meta name="description" content="Hiroki Ishizaka: mathematics of invisible structures, certified finite element analysis, and stable reduction theory for unresolved dynamics.">
 
 <link rel="stylesheet" href="./css/base.css">
 <link rel="stylesheet" href="./css/rwd.css">
@@ -87,8 +87,8 @@
 	<div class="main-image">
 		<div class="main-image-in-text wide" style="background-image: url(https://teamfem.github.io/hiroki_ishizaka/head_image.png);">
 			<div class="main-image-in-text-cont">
-			<p class="main-copy">Mathematics for Trustworthy Simulation</p>
-			<p class="sub-copy">Mathematics makes the invisible visible</p>
+			<p class="main-copy">Mathematics makes the invisible visible</p>
+			<p class="sub-copy">Mathematical structures behind error, memory, and unresolved dynamics</p>
 			<p class="sub-copy">Certified finite element analysis &nbsp;|&nbsp; Stable reduction theory for unresolved dynamics</p>
 			</div>
 		</div>
@@ -127,42 +127,58 @@ JP/EN｜日本数学会員｜日本応用数理学会員<br><br>
 <a href="https://x.com/teamfem16key" rel="nofollow">X</a>
 </p>
 
-<h3>Research mission</h3>
+<h3>Research philosophy</h3>
 <p>
 <b>Mathematics makes the invisible visible.</b>
+My primary interest is not merely to reproduce visible phenomena by computation.
+I am more interested in identifying and expressing the invisible mathematical structures
+that generate, constrain, or distort what we observe.
+</p>
+
+<p>
 In my research, the “invisible” includes discretisation error, the influence of mesh geometry,
-unresolved scales, latent memory, and the limits of numerical prediction.
-I study the mathematics needed to make these hidden effects visible, quantifiable, and controllable,
-so that numerical prediction becomes <b>stable, accurate, and certifiable</b>.
-My research is organised into two mathematically distinct programmes, linked by a common demand:
-approximation must not conceal the mechanisms that determine reliability.
+unresolved scales, latent states, memory, dissipation, and the limits of numerical prediction.
+These effects are not usually observed directly, but mathematics can represent them through
+operators, norms, memory kernels, measures, internal variables, geometric parameters,
+and computable error bounds.
+The aim is to determine what has been omitted, how the omitted structure acts on observable dynamics,
+and which conclusions remain mathematically valid.
+</p>
+
+<p>
+This philosophy leads to two mathematically distinct research programmes:
 </p>
 
 <ol>
   <li>
     <b>Certified finite element analysis under computable geometric conditions</b><br>
-    <b>計算可能な幾何条件に基づく，保証付き有限要素解析</b>
+    <b>計算可能な幾何条件に基づく，保証付き有限要素解析</b><br>
+    making discretisation error and the hidden influence of mesh geometry quantitatively visible;
   </li>
   <li>
     <b>Stable reduction theory for unresolved dynamics</b><br>
-    <b>未解像ダイナミクスの安定縮約理論</b>
+    <b>未解像ダイナミクスの安定縮約理論</b><br>
+    making the dynamical influence of eliminated scales and latent states visible through memory,
+    internal states, effective dissipation, and nonlocal closure.
   </li>
 </ol>
 
 <p>
-The first programme studies how mesh geometry, anisotropy, nonconformity, flux reconstruction,
-and goal-oriented error estimation govern the reliability of finite element computation.
-The second studies what mathematical trace remains after fine scales, latent states, or unobserved variables are eliminated,
-and how that trace can be retained through memory, internal states, effective dissipation, or nonlocal closure.
-The two programmes are not the same theory: finite element analysis discretises PDEs,
-whereas stable reduction analyses the consequences of eliminating degrees of freedom.
-They meet in a broader objective, <b>trustworthy simulation</b>, by identifying what an approximation leaves unresolved
-and by quantifying how that omission affects stability, error, and predictive validity.
+The two programmes are not the same theory.
+Finite element analysis approximates PDEs in computable spaces,
+whereas stable reduction studies the consequences of eliminating variables or scales.
+Their connection is philosophical rather than merely methodological:
+both seek to reveal effects that approximation can hide.
+<b>Trustworthy simulation is one consequence of this work, not its sole starting point.</b>
+A computation becomes trustworthy when its invisible errors, unresolved influences,
+stability mechanisms, and range of validity have been mathematically represented and controlled.
 </p>
 
 <h3>Programme I — Certified finite element analysis</h3>
 <p>
-A central question in my finite element research is:
+A computed finite element field does not by itself reveal why its error has a particular size,
+which geometric defect controls that error, or where the approximation may cease to be reliable.
+A central question in my finite element research is therefore:
 <b>how does the geometry of a computational mesh control approximation, stability, and certification?</b>
 I study computable geometric conditions, including semi-regularity and flatness-type parameters,
 and use them to develop anisotropic error estimates for nonstandard finite elements such as
@@ -193,7 +209,8 @@ and computable certificates for quantities of interest.
 
 <h3 id="stable-reduction">Programme II — Stable reduction theory for unresolved dynamics</h3>
 <p>
-Eliminating unresolved variables is not the same as setting their influence to zero.
+Observable variables do not display every mechanism that governs their evolution.
+Eliminating unresolved variables is therefore not the same as setting their influence to zero.
 A reduced model may have fewer variables and still be dynamically wrong if it erases the mechanisms carried by discarded scales.
 Low-amplitude or weakly observed components may still control dissipation, instability, boundary and internal layers,
 scale-to-scale transfer, long-time statistics, or rare events.
@@ -311,21 +328,25 @@ and certification of what discretisation or reduction leaves unresolved:
   reproducible mathematical structure, AI-assisted reasoning, and future formalisation.</li>
 </ul>
 
-<h3>Why trustworthy simulation?</h3>
+<h3>From invisible structure to trustworthy simulation</h3>
 <p>
-Digital twins, scientific machine learning, and data-informed models increasingly connect simulation with practical decisions.
-In such settings, a visually plausible prediction is not enough.
-Two distinct omissions must be controlled: discretisation leaves spatial or temporal structure unresolved,
-whereas reduction deliberately eliminates variables or scales.
-Both can suppress phenomena that matter to a target quantity.
-My aim is therefore to quantify approximation error, unresolved influence, extrapolation risk,
-conservation defects, and the resolution needed for a defensible prediction.
-This forms a mathematical reliability layer linking PDE analysis, numerical discretisation,
-stable reduction, and verification.
+Trustworthy simulation is not the starting point of these programmes, but an important consequence.
+A visually plausible computation can still be wrong because discretisation leaves spatial or temporal structure unresolved,
+or because reduction deliberately eliminates variables and scales whose influence remains dynamically important.
+The mathematical task is to expose these hidden omissions and quantify their effects on stability,
+conservation, target quantities, extrapolation, and predictive validity.
 </p>
 
 <p>
-Relevant broader contexts include Verification, Validation and Uncertainty Quantification
+This perspective provides a reliability layer linking PDE analysis, numerical discretisation,
+stable reduction, and verification.
+It is relevant to digital twins, scientific machine learning, and data-informed models,
+where simulations increasingly inform practical decisions but their hidden errors and unresolved mechanisms
+cannot be judged from visual agreement alone.
+</p>
+
+<p>
+Broader contexts include Verification, Validation and Uncertainty Quantification
 (<a href="https://www.asme.org/codes-standards/publications-information/verification-validation-uncertainty" target="_blank">ASME VVUQ</a>),
 physics-informed learning and its failure modes
 (<a href="https://arxiv.org/abs/2109.01050" target="_blank">PINN failure modes</a>),
@@ -334,6 +355,7 @@ and urban or disaster-oriented digital-twin simulation
 </p>
 
 <h3>Near-future directions</h3>
+<p>These directions develop mathematical representations of effects that are present but not directly visible.</p>
 <ul>
   <li><b>Stable reduction without dynamical erasure:</b> identify which unresolved effects must survive as memory, internal states, effective dissipation, or nonlocal closure, and establish resolution- and singular-limit stability.</li>
   <li><b>Stable latent-state reconstruction:</b> recover physically or clinically meaningful hidden states from partial, noisy, history-dependent observations, with observability, identifiability, and uncertainty estimates.</li>
@@ -512,5 +534,6 @@ parameter." [<a href="https://arxiv.org/pdf/2504.16012" target="_blank">Arxiv</a
 <script src="./js/utility.js" charset="utf-8"></script>
 <script src="./js/socialButton.js" charset="utf-8"></script>
 
+<!-- Top page revision: ver15, 2 August 2026 -->
 </body>
 </html>
