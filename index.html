@@ -9,8 +9,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,Certified FEM,AI4Math,Trustworthy Simulation,Anisotropic Meshes">
-<meta name="description" content="Certified finite element analysis under computable geometric conditions for trustworthy simulation, verified error control, and AI4Math-ready numerical analysis.">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,Certified FEM,AI4Math,Trustworthy Simulation,Anisotropic Meshes,Unresolved Dynamics,Memory Equations,Multiscale Reduction">
+<meta name="description" content="Certified finite element analysis and stable reduction theory for unresolved dynamics, including anisotropic FEM, memory equations, kernel stability, and trustworthy simulation.">
 
 <link rel="stylesheet" href="./css/base.css">
 <link rel="stylesheet" href="./css/rwd.css">
@@ -175,6 +175,29 @@ Within this long-term programme, I organise my projects into four core research 
   <li><b>A — Automation, Learning &amp; New Numerical Methods</b><br>Using geometric parameters and a posteriori indicators as computable features for adaptive FEM, mesh generation, and scheme selection. I also study connections with PINNs, Deep Ritz, and meshless methods through a shared lens of representation–metric–projection.</li>
   <li><b>V — Verification, Formal Reasoning &amp; AI4Math</b><br>Connecting finite element error analysis, computable mesh conditions, equilibrated flux certificates, and goal-oriented bounds with AI-assisted mathematics, formal reasoning, and future formalisation. The aim is not merely to use AI for simulation, but to build FEM theory that remains verifiable and reusable in the AI4Math era.</li>
 </ul>
+
+
+<h4 id="stable-reduction">Emerging research programme</h4>
+<p>
+<b>Stable reduction theory for unresolved dynamics</b><br>
+<b>未解像ダイナミクスの安定縮約理論</b><br><br>
+When fine-scale, latent, or unobserved variables are eliminated from multiscale evolution equations,
+their influence may remain as operator-valued memory, delayed forcing, or stochastic closure.
+I aim to develop a stability-based reduction theory connecting
+\[
+  \text{unresolved dynamics}
+  \longrightarrow
+  \text{memory}
+  \longrightarrow
+  \text{stable approximation}
+  \longrightarrow
+  \text{certified computation}.
+\]
+The central questions are which energy and state space survive reduction,
+how kernel and model-reduction errors propagate, and how these structures
+can be preserved under discretisation and identification.<br><br>
+<a href="./fem/#vision18">Research Vision 18</a>
+</p>
 
 This website is organised accordingly:
 <ul>
