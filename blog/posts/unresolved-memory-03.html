@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>第3回：measure-valued delayで分布遅延・原子遅延・混合遅延を統一する | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,measure-valued delay,分布遅延,離散遅延,Dirac measure,atomic delay,mixed delay,history operator,kernel stability,narrow convergence,total variation">
+<meta name="description" content="有限Borel測度を用いて分布遅延・離散遅延・混合遅延を統一し，平方可積分な履歴に対する代表元非依存のhistory operator，原点の原子，total variationとnarrow convergenceの違いを解説します．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../">Home</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../fem/">Research Visions</a></li>
+        <li><a href="../../suppl/">Supplementary Visions</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+        <li><a href="../../links/">Links</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+    <li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a>
+      <meta itemprop="position" content="1">
+    </li>
+    <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../" itemprop="item"><span itemprop="name">Blog</span></a>
+      <meta itemprop="position" content="2">
+    </li>
+    <li class="bcl-last">Blog post from 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第3回：measure-valued delayで分布遅延・原子遅延・混合遅延を統一する</h1>
+
+<p class="news-date"><time datetime="2026-08-02">2nd August 2026</time></p>
+
+<h2>Introduction：delay lawを「関数」ではなく「測度」で表す</h2>
+<div class="news">
+<article class="news-item">
+<p>
+前回は，未解像状態を消去すると，指数kernel，連続スペクトル，あるいは遅延線上のtransport stateが現れることを見ました．
+ここから先では，遅延の形を一つに固定せず，分布遅延，有限個・可算個の離散遅延，それらの混合を同じ方程式で扱いたくなります．
+</p>
+<p>
+そのための自然な道具が，遅延区間 \([0,\tau]\) 上の有限Borel測度 \(\mu\) です．
+解の過去を \(\widetilde u(t-s)\) として観測し，遅延位置 \(s\) ごとの重みを測度で与えると，
+delay law全体を
+\[
+  \int_{[0,\tau]} A_1\widetilde u(t-s)\,d\mu(s)
+\]
+で表せます．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>measure-valued delayの利点</b><br>
+密度kernelとDirac原子を別々の理論で扱うのではなく，
+「遅延位置にどれだけ作用を置くか」という一つのdelay lawとして統一できる．
+</div>
+<p>
+ただし，測度に原子が含まれると，形式的には \(u(t-\tau_j)\) という点評価が現れます．
+一方，自然なenergy spaceでは履歴は \(L^2\)-同値類であり，各時刻の値は定まりません．
+本当に原子遅延を定義できるのか．これが今回の中心問題です．
+</p>
+</article>
+</div>
+
+<h2>1．有限遅延問題の基本形</h2>
+<div class="news">
+<article class="news-item">
+<p>
+実Hilbert空間のGelfand triple
+\[
+  V\hookrightarrow H\cong H^*\hookrightarrow V^*
+\]
+を考えます．
+\(A_0,A_1:V\to V^*\) は有界双線形形式 \(a_0,a_1\) から生成され，
+瞬時形式 \(a_0\) はcoerciveであるとします．すなわち，
+\[
+  |a_i(w,v)|\le \Lambda_i\|w\|_V\|v\|_V,
+  \qquad
+  a_0(v,v)\ge \alpha_0\|v\|_V^2.
+\]
+</p>
+<p>
+未知解 \(u:(0,T)\to V\) と，与えられた過去履歴
+\(\psi:(-\tau,0)\to V\) を
+\[
+  \widetilde u(t):=
+  \begin{cases}
+    \psi(t),&-\tau<t<0,\\
+    u(t),&0<t<T
+  \end{cases}
+\]
+と接続します．measure-valued delayをもつ発展方程式は
+\[
+  \partial_tu(t)+A_0u(t)
+  +\int_{[0,\tau]}A_1\widetilde u(t-s)\,d\mu(s)
+  =f(t),
+  \qquad u(0)=u_0
+\tag{1}
+\]
+です．
+</p>
+<p>
+ここで \(T\) は観測・計算する最終時刻，\(\tau\) は最大遅延です．
+\(T\) と \(\tau\) は同じである必要はありません．
+また，一般の \(\psi\in L^2(-\tau,0;V)\) に対して
+\(\psi(0)=u_0\) という条件は意味をもちません．点一つの値は \(L^2\)-同値類を変えないからです．
+</p>
+</article>
+</div>
+
+<h2>2．一つの測度が複数のdelay classを含む</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(\mathcal M([0,\tau])\) を \([0,\tau]\) 上の有限符号付きBorel測度の空間とし，
+全変動ノルムを
+\[
+  \|\mu\|_{\mathcal M([0,\tau])}:=|\mu|([0,\tau])
+\]
+で定めます．この一つの空間に，次のdelay lawがすべて入ります．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+  <tr>
+    <th style="border:1px solid #777; padding:7px;">delay law</th>
+    <th style="border:1px solid #777; padding:7px;">測度</th>
+    <th style="border:1px solid #777; padding:7px;">履歴作用</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">分布遅延</td>
+    <td style="border:1px solid #777; padding:7px;">\(d\mu(s)=k(s)\,ds\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(\int_0^\tau k(s)A_1\widetilde u(t-s)\,ds\)</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">一つの離散遅延</td>
+    <td style="border:1px solid #777; padding:7px;">\(m\delta_r\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(mA_1\widetilde u(t-r)\)</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">有限多重遅延</td>
+    <td style="border:1px solid #777; padding:7px;">\(\sum_{j=1}^{J}m_j\delta_{\tau_j}\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(\sum_{j=1}^{J}m_jA_1\widetilde u(t-\tau_j)\)</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">可算原子遅延</td>
+    <td style="border:1px solid #777; padding:7px;">\(\sum_{j\ge1}m_j\delta_{\tau_j}\)，\(\sum_j|m_j|<\infty\)</td>
+    <td style="border:1px solid #777; padding:7px;">絶対総和可能な多重遅延</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">混合遅延</td>
+    <td style="border:1px solid #777; padding:7px;">密度部分＋原子部分＋特異連続部分</td>
+    <td style="border:1px solid #777; padding:7px;">すべてを一つの測度積分で表す</td>
+  </tr>
+</table>
+<p>
+可算原子の遅延位置は \((0,\tau]\) 内で集積しても構いません．
+また，解析ではLebesgue分解を毎回使う必要はありません．
+密度，原子，特異連続成分をまとめた \(\mu\) に対して，一つの作用素評価を証明すればよいからです．
+</p>
+<p>
+符号付き測度も許せるため，異なる遅延位置のfeedbackが同じ符号である必要はありません．
+ただし，後でnarrow convergenceを使うときには非負測度へ制限します．
+</p>
+</article>
+</div>
+
+<h2>3．measure-valued history operator</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(g\in L^2(-\tau,T;V)\) を実数直線上へ零拡張し，
+\(\sigma\in\mathcal M([0,\tau])\) に対して
+\[
+  (K_\sigma g)(t)
+  :=\int_{[0,\tau]}A_1g(t-s)\,d\sigma(s)
+\tag{2}
+\]
+と定めます．積分は \(V^*\)-値Bochner積分です．
+</p>
+<p>
+この定義が成立すれば，式 (1) は簡潔に
+\[
+  \partial_tu+A_0u+K_\mu\widetilde u=f
+\tag{3}
+\]
+と書けます．さらに，密度kernel，有限原子，可算原子，混合kernelのすべてに同じ記号 \(K_\mu\) を使えます．
+</p>
+<p>
+しかし，式 (2) をそのまま読むと疑問が残ります．
+\(g\) は \(L^2\)-同値類なので，\(g(t-s)\) は各 \((t,s)\) で一意ではありません．
+特に \(\sigma=\delta_r\) なら，形式的には \(A_1g(t-r)\) という点評価に見えます．
+</p>
+</article>
+</div>
+
+<h2>4．原子遅延は，なぜ平方可積分な履歴上でも定義できるのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+結論から言えば，\(K_\sigma g\) は \(L^2(0,T;V^*)\) の元として，
+\(g\) の代表元に依存せず定義できます．重要なのは，
+「各 \(t\) で点値を固定する」のではなく，「出力全体を時間に関する \(L^2\)-同値類として定める」ことです．
+</p>
+<p>
+二つの代表元 \(g_1,g_2\) がLebesgue零集合 \(N\subset\mathbb R\) の外で一致するとします．
+固定した遅延位置 \(s\) に対して，
+\[
+  g_1(t-s)\ne g_2(t-s)
+\]
+となり得る時刻は，平行移動された零集合 \(N+s\) に限られます．
+したがって，どの \(s\) に対しても
+\[
+  |N+s|=0
+\]
+です．
+</p>
+<p>
+これを時間Lebesgue測度とdelay measure \(|\sigma|\) の積測度で見ると，
+\[
+  (t,s)\mapsto g_1(t-s)-g_2(t-s)
+\]
+はほとんど至る所で零です．Bochner–Fubiniの定理により，ほとんどすべての \(t\) について
+\(|\sigma|\)-ほとんどすべての \(s\) で差が零となり，
+\[
+  K_\sigma g_1=K_\sigma g_2
+  \qquad\text{in }L^2(0,T;V^*)
+\tag{4}
+\]
+を得ます．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 2px solid #666666;">
+<b>Dirac原子の場合の読み方</b><br>
+\(K_{\delta_r}g\) は形式的には \(t\mapsto A_1g(t-r)\) ですが，
+代表元を一時刻で変更しても，出力が変わるのは平行移動された一時刻だけです．
+したがって，時間 \(L^2\)-同値類としては同じ元です．
+</div>
+<p>
+ここで「点評価が連続作用素になった」と主張しているわけではありません．
+固定時刻の値を取り出す作用素は依然として \(L^2\) 上で定義できません．
+定義できるのは，時間平行移動と測度積分を組み合わせたhistory operator全体です．
+</p>
+</article>
+</div>
+
+<h2>5．基本評価はkernelの全変動だけで書ける</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(A_1:V\to V^*\) の有界性とMinkowskiの積分不等式から，
+\[
+  \|K_\sigma g\|_{L^2(0,T;V^*)}
+  \le
+  \Lambda_1\|\sigma\|_{\mathcal M([0,\tau])}
+  \|g\|_{L^2(-\tau,T;V)}
+\tag{5}
+\]
+を得ます．
+</p>
+<p>
+この評価の重要な点は，右辺がkernelの表示方法に依存しないことです．
+密度 \(k\)，原子の個数，原子の集積，特異連続成分を個別に追う必要はなく，
+有限測度としての全変動だけでhistory operatorを制御できます．
+</p>
+<p>
+例えば，
+\[
+  \mu=k(s)\,ds+\sum_{j\ge1}m_j\delta_{\tau_j}
+\]
+なら，概念的に
+\[
+  \|\mu\|_{\mathcal M}
+  \le \|k\|_{L^1(0,\tau)}+\sum_{j\ge1}|m_j|
+\]
+です．符号付きkernelでcancelationがあっても，安定性評価では全変動が安全側の大きさを与えます．
+</p>
+</article>
+</div>
+
+<h2>6．principal-part delayでは履歴をenergy spaceに置く必要がある</h2>
+<div class="news">
+<article class="news-item">
+<p>
+反応型の遅延なら，\(A_1\) がpivot space \(H\) 上で有界な場合があります．
+しかし，遅延項が空間微分を含むと事情が変わります．
+例えば \(H=L^2(\Omega)\)，\(V=H_0^1(\Omega)\) とし，
+\[
+  a_1(w,v)=\int_\Omega B_1(x)\nabla w\cdot\nabla v\,dx
+\]
+なら，\(A_1\) は自然には \(V\to V^*\) の作用素です．
+一般には \(H\to V^*\) の有界拡張をもちません．
+</p>
+<p>
+この場合，過去履歴を \(C([-\tau,0];H)\) に置くだけでは，
+principal spatial derivativeを含むfeedbackを十分に扱えません．
+自然な設定は
+\[
+  \psi\in L^2(-\tau,0;V)
+\]
+です．そして，前節の代表元非依存性によって，この低い時間正則性のまま原子遅延も扱えます．
+</p>
+<p>
+つまり，measure-valued formulationの役割は，delay classを統一するだけではありません．
+<b>form-valued feedbackと自然なenergy regularityを両立させる</b>ことが本質です．
+</p>
+</article>
+</div>
+
+<h2>7．未知の履歴と与えられたprehistoryを分ける</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(E^+u\) を \((0,T)\) 上の \(u\) の零拡張，\(E^-\psi\) を \((-\tau,0)\) 上の履歴の零拡張とすると，
+\[
+  \widetilde u=E^+u+E^-\psi
+\]
+です．したがって，
+\[
+  K_\mu\widetilde u
+  =K_\mu^+u+h_{\mu,\psi},
+  \qquad
+  K_\mu^+u:=K_\mu(E^+u),
+  \qquad
+  h_{\mu,\psi}:=K_\mu(E^-\psi)
+\tag{6}
+\]
+と分解できます．
+</p>
+<ul>
+  <li>\(K_\mu^+u\)：未知解自身の過去から生じるcausal feedback．</li>
+  <li>\(h_{\mu,\psi}\)：計算開始前のprehistoryが作る既知の外力．</li>
+</ul>
+<p>
+この分離はwell-posednessの証明で重要です．
+縮小写像として小さくする必要があるのは未知のcausal partだけであり，
+prehistoryは右辺データとして扱えます．
+</p>
+<p>
+また，prehistoryを零と置くことは単なる記号上の簡略化ではありません．
+状態消去前のhidden stateが平衡にあった，あるいは計算開始前のmemoryを無視するというモデル仮定です．
+</p>
+</article>
+</div>
+
+<h2>8．原点の原子は「delay」ではなく瞬時作用である</h2>
+<div class="news">
+<article class="news-item">
+<p>
+測度が
+\[
+  \widehat\mu=m_0\delta_0+\mu,
+  \qquad |\mu|(\{0\})=0
+\]
+と分解されるとき，
+\[
+  K_{\widehat\mu}\widetilde u
+  =m_0A_1u+K_\mu\widetilde u
+\tag{7}
+\]
+です．\(s=0\) では過去値ではなく現在値 \(u(t)\) が作用するため，
+\(m_0\delta_0\) はretarded termではありません．
+</p>
+<p>
+したがって，原点の原子は瞬時形式へ吸収し，
+\[
+  a_0^{\mathrm{new}}:=a_0+m_0a_1
+\]
+として扱う必要があります．ただし，吸収後の形式がcoerciveであることを確認しなければなりません．
+\(a_1\) に符号条件を課していない場合，原点の原子は瞬時coercivityを強めることも弱めることもあります．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>正の遅延と零遅延の境界</b><br>
+\(r>0\) の原子 \(m\delta_r\) は履歴作用である．<br>
+\(r=0\) の原子 \(m\delta_0\) は瞬時作用素そのものを変更する．
+</div>
+<p>
+この違いが，後にdistributed kernelを正の遅延位置へ集中させる極限と，
+原点へ集中させる極限が同じでない理由になります．
+</p>
+</article>
+</div>
+
+<h2>9．exponential weightは「原点からの距離」を見る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(\beta\ge0\) に対してweighted variation massを
+\[
+  \kappa_\mu(\beta)
+  :=\int_{[0,\tau]}e^{-\beta s}\,d|\mu|(s)
+\tag{8}
+\]
+と定めます．未知のcausal partには
+\[
+  \|K_\mu^+w\|_{L^2_\beta(0,T;V^*)}
+  \le
+  \Lambda_1\kappa_\mu(\beta)
+  \|w\|_{L^2_\beta(0,T;V)}
+\tag{9}
+\]
+という評価が成り立ちます．ここで
+\[
+  \|w\|_{L^2_\beta(0,T;X)}^2
+  :=\int_0^T e^{-2\beta t}\|w(t)\|_X^2\,dt
+\]
+です．
+</p>
+<p>
+現在時刻の重み \(e^{-\beta t}\) を遅延時刻 \(t-s\) へ移すと，
+\(e^{-\beta s}\) が現れます．したがって，大きな \(\beta\) は正の遅延位置にある質量を小さく見ます．
+</p>
+<p>
+実際，
+\[
+  \lim_{\beta\to\infty}\kappa_\mu(\beta)
+  =|\mu|(\{0\})
+\tag{10}
+\]
+です．従って，weighted massを任意に小さくできることと，原点に原子がないことは同値です．
+</p>
+<ul>
+  <li>\(\mu=m\delta_r\)，\(r>0\)：\(\kappa_\mu(\beta)=|m|e^{-\beta r}\to0\)．</li>
+  <li>\(\mu=m\delta_0\)：\(\kappa_\mu(\beta)=|m|\) のまま．</li>
+  <li>大きなtotal massをもつsigned kernelでも，原点に原子がなければ有限時間では適切なweightを選べる．</li>
+</ul>
+<p>
+この仕組みにより，retarded kernelの全変動が小さいという仮定や，
+遅延形式 \(a_1\) のpositivityを課さずに，coercive regimeの有限時間well-posednessを得られます．
+</p>
+</article>
+</div>
+
+<h2>10．kernel convergenceでは距離を選び分ける</h2>
+<div class="news">
+<article class="news-item">
+<p>
+測度でdelay lawを表すと，kernel approximationを測度収束として議論できます．
+ただし，目的に応じてtopologyを選ぶ必要があります．
+</p>
+<h3>10.1 total-variation convergence</h3>
+<p>
+符号付き測度に対する強い距離は
+\[
+  \|\mu-\nu\|_{\mathcal M([0,\tau])}
+\]
+です．式 (5) に直接入り，signed kernelの定量的なLipschitz評価に適しています．
+同じ遅延位置で重みを少し変える摂動などをよく捉えます．
+</p>
+<h3>10.2 narrow convergence</h3>
+<p>
+非負測度 \(\mu_n,\mu\) に対して，
+\[
+  \mu_n\rightharpoonup\mu
+  \quad\Longleftrightarrow\quad
+  \int_{[0,\tau]}\varphi\,d\mu_n
+  \longrightarrow
+  \int_{[0,\tau]}\varphi\,d\mu
+  \quad
+  \text{for every }\varphi\in C([0,\tau])
+\tag{11}
+\]
+をnarrow convergenceと呼びます．これは，delay massの位置が移動・集中する極限に適しています．
+</p>
+<p>
+例えば，質量 \(M\) の分布kernel \(k_\varepsilon(s)ds\) が正の位置 \(r>0\) の周囲へ集中すると，
+\[
+  k_\varepsilon(s)ds\rightharpoonup M\delta_r
+\]
+となり得ます．しかし，絶対連続測度とDirac測度は互いに特異なので，
+\[
+  \|k_\varepsilon(s)ds-M\delta_r\|_{\mathcal M}=2M
+\tag{12}
+\]
+のままです．total variationでは全く近づきません．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 2px solid #666666;">
+<b>topologyの役割分担</b><br>
+total variation：signed kernelの強い定量摂動．<br>
+narrow convergence：非負delay massの移動・集中・distributed-to-discrete limit．
+</div>
+<p>
+正の遅延位置への集中では，固定軌道の時間平行移動の連続性を使って解の強収束を導けます．
+一方，原点への集中では瞬時作用素そのものが変わるため，別の境界解析が必要です．
+</p>
+</article>
+</div>
+
+<h2>11．finite-atomic approximationはdelay lawのモデル簡約である</h2>
+<div class="news">
+<article class="news-item">
+<p>
+分布遅延
+\[
+  \int_{[0,\tau]}A_1\widetilde u(t-s)\,d\mu(s)
+\]
+を数値計算するため，測度を
+\[
+  \mu_N:=\sum_{j=1}^{N}w_j\delta_{s_j}
+\tag{13}
+\]
+で近似すると，history termは
+\[
+  K_{\mu_N}\widetilde u(t)
+  =\sum_{j=1}^{N}w_jA_1\widetilde u(t-s_j)
+\tag{14}
+\]
+になります．これはdelay quadratureであると同時に，連続delay lawを有限個の代表遅延へ縮約する操作です．
+</p>
+<p>
+ここで必要なのは，積分公式の精度だけではありません．
+</p>
+<ul>
+  <li>全質量は保存されているか．</li>
+  <li>原子位置は正の遅延領域に留まっているか．</li>
+  <li>どの測度距離で \(\mu_N\to\mu\) と評価するか．</li>
+  <li>joined trajectoryの時間正則性はどの程度あるか．</li>
+  <li>kernel errorとspace-time discretisation errorを分離できるか．</li>
+</ul>
+<p>
+特に，delay massの位置誤差は時間平行移動誤差へ変換されます．
+この考えをWasserstein距離と結び付けると，finite-atomic approximationの定量評価が得られます．
+詳細は第6回で扱います．
+</p>
+</article>
+</div>
+
+<h2>12．measure-valued formulationが解決すること，解決しないこと</h2>
+<div class="news">
+<article class="news-item">
+<h3>解決すること</h3>
+<ul>
+  <li>分布遅延，有限・可算原子遅延，混合遅延を一つのdelay lawとして表せる．</li>
+  <li>principal-part feedbackを自然な \(V\to V^*\) の枠組みで扱える．</li>
+  <li>\(L^2\)-履歴に対する原子遅延を，代表元に依存しないhistory operatorとして定義できる．</li>
+  <li>kernel approximationを測度の距離・収束として記述できる．</li>
+  <li>原点の原子と正の遅延を明確に分離できる．</li>
+</ul>
+<h3>この定式化だけでは解決しないこと</h3>
+<ul>
+  <li>符号付き測度がpositive-type memoryを与えるとは限らない．</li>
+  <li>delay lawのmassが大きくても長時間安定であるとは限らない．</li>
+  <li>narrow convergenceだけから常に定量rateが得られるわけではない．</li>
+  <li>原点へ集中する極限を正の遅延位置と同じ一様評価で扱えるとは限らない．</li>
+  <li>memory dissipationが瞬時energyをcoerciveに支配するとは限らない．</li>
+</ul>
+<p>
+つまり，測度はdelay lawの表現を統一しますが，dissipationとcoercivityの構造までは自動的に決めません．
+次回は，kernelがpositive typeであるときに何が保証され，それでも何が保証されないかを調べます．
+</p>
+</article>
+</div>
+
+<h2>Conclusion</h2>
+<div class="news">
+<article class="news-item">
+<p>
+measure-valued delayの中心的な考えは，遅延項を「ある関数kernelとの積分」に限定せず，
+遅延位置上の有限測度として捉えることです．これにより，分布遅延，Dirac原子，
+可算多重遅延，混合kernelを同じ作用素 \(K_\mu\) で扱えます．
+</p>
+<p>
+より重要なのは，原子遅延を固定時刻の点評価としてではなく，
+時間平行移動を含む \(L^2(0,T;V^*)\)-値history operatorとして定義することです．
+この見方によって，平方可積分なenergy-space historyとprincipal-part delayが両立します．
+</p>
+<p>
+\[
+  \text{delay density, atoms, and mixtures}
+  \longrightarrow
+  \text{one finite Borel measure }\mu
+  \longrightarrow
+  \text{one history operator }K_\mu
+\]
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>次回：</b>positive-type memoryとcoercivity gap<br>
+memory dissipationが非負であることと，瞬時energyを一様に支配することを区別し，
+memory symbol，高周波減衰，critical horizonを整理します．
+</div>
+<p>
+前の記事：
+<a href="./unresolved-memory-02.html">第2回：未解像状態を消去すると，なぜmemoryが現れるのか</a>
+</p>
+<p>
+関連ページ：
+<a href="../../publications/">Publications</a>（S3–S5，A3），
+<a href="../../fem/">Research Visions</a>（Vision 11，18），
+<a href="../../suppl/">Supplementary Visions</a>（履歴依存型発展方程式とmemory kernel）
+</p>
+</article>
+</div>
+
+
+</div>
+</article>
+</div>
+</main>
+
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
