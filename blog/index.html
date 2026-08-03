@@ -1,113 +1,90 @@
 <!DOCTYPE html>
-<html lang="ja" class="col1">
+
+<html class="col1" lang="ja">
 <head>
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
+<script async="" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <title>Blog | ISHIZAKA Hiroki Website</title>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,anisotropic FEM,anisotropic mesh,mesh regularity,semi-regularity,Shishkin mesh,Bakhvalov mesh,Crouzeix-Raviart,Raviart-Thomas,Nedelec,de Rham,discrete maximum principle,maximum norm,history-dependent PDE,exact-curved FEM,certified computation,AI4Math">
-<meta name="description" content="Research notes on anisotropic finite element geometry, mesh regularity and semi-regularity, layer-adapted meshes, CR-RT methods, discrete maximum principles, maximum-norm estimates, Nedelec and de Rham complexes, history-dependent PDEs, exact-curved geometry, and certified computation">
-
-<link rel="stylesheet" href="../css/base.css">
-<link rel="stylesheet" href="../css/rwd.css">
-
-<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
-<link rel="apple-touch-icon" href="../favicon.ico">
-<link rel="apple-touch-icon-precomposed" href="../favicon.ico">
-<link rel="icon" href="../favicon.ico">
-
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+<meta content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,anisotropic FEM,anisotropic mesh,mesh regularity,semi-regularity,Shishkin mesh,Bakhvalov mesh,Crouzeix-Raviart,Raviart-Thomas,Nedelec,de Rham,discrete maximum principle,maximum norm,history-dependent PDE,exact-curved FEM,certified computation,AI4Math" name="keywords"/>
+<meta content="Research notes on anisotropic finite element geometry, mesh regularity and semi-regularity, layer-adapted meshes, CR-RT methods, discrete maximum principles, maximum-norm estimates, Nedelec and de Rham complexes, history-dependent PDEs, exact-curved geometry, and certified computation" name="description"/>
+<link href="../css/base.css" rel="stylesheet"/>
+<link href="../css/rwd.css" rel="stylesheet"/>
+<link href="../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../favicon.ico" rel="apple-touch-icon"/>
+<link href="../favicon.ico" rel="apple-touch-icon-precomposed"/>
+<link href="../favicon.ico" rel="icon"/>
 <!--[if lt IE 9]>
 <script src="../js/html5.js"></script>
 <![endif]-->
-<script src="../js/jquery.js" charset="utf-8"></script>
-<script src="../js/jquery-migrate.js" charset="utf-8"></script>
-
+<script charset="utf-8" src="../js/jquery.js"></script>
+<script charset="utf-8" src="../js/jquery-migrate.js"></script>
 </head>
-
 <body class="page">
-
 <!--▼サイトヘッダー-->
-<header id="top" class="site-header">
-
-	<div class="site-header-in">
-		<div class="site-header-conts">
-			<p class="site-title"><a href="../">ISHIZAKA Hiroki Website</a></p>
-		</div>
-	</div>
-
-	<!--▼グローバルナビ-->
-	<nav class="global-nav">
-		<div class="global-nav-in">
-			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
-			<ul id="menu">
-				<li>
-					<a href="../">Home</a>
-				</li>
-
-				<li><a href="../publications/">Publications</a></li>
-
-				<li>
-					<a href="../research/">Research</a>
-				</li>
-
-				<li>
-					<a href="../fem/">Research Visions</a>
-				</li>
-
-				<li>
-					<a href="../suppl/">Supplementary Visions</a>
-				</li>
-
-				<li>
-					<a href="../blog/">Blog</a>
-				</li>
-
-				<li>
-					<a href="../geo/">History of Geometric Conditions in FEM</a>
-				</li>
-
-				<li>
-					<a href="../links/">Links</a>
-				</li>
-			</ul>
-		</div>
-	</nav>
-	<!--▲グローバルナビ-->
-
+<header class="site-header" id="top">
+<div class="site-header-in">
+<div class="site-header-conts">
+<p class="site-title"><a href="../">ISHIZAKA Hiroki Website</a></p>
+</div>
+</div>
+<!--▼グローバルナビ-->
+<nav class="global-nav">
+<div class="global-nav-in">
+<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu">
+<li>
+<a href="../">Home</a>
+</li>
+<li><a href="../publications/">Publications</a></li>
+<li>
+<a href="../research/">Research</a>
+</li>
+<li>
+<a href="../fem/">Research Visions</a>
+</li>
+<li>
+<a href="../suppl/">Supplementary Visions</a>
+</li>
+<li>
+<a href="../blog/">Blog</a>
+</li>
+<li>
+<a href="../geo/">History of Geometric Conditions in FEM</a>
+</li>
+<li>
+<a href="../links/">Links</a>
+</li>
+</ul>
+</div>
+</nav>
+<!--▲グローバルナビ-->
 </header>
 <!--▲サイトヘッダー-->
-
 <div class="main-body">
 <div class="main-body-in">
-
-	<!--▼パンくずリスト-->
-	<nav class="breadcrumbs">
-		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
-			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
-				<a href="../" itemprop="item">
-				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
+<!--▼パンくずリスト-->
+<nav class="breadcrumbs">
+<ol class="breadcrumbs-in" itemscope="" itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope="" itemtype="http://schema.org/ListItem">
+<a href="../" itemprop="item">
+<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
 				</a>
-				<meta itemprop="position" content="1">
-			</li>
-			<li class="bcl-last">
+<meta content="1" itemprop="position"/>
+</li>
+<li class="bcl-last">
 				Blog
 			</li>
-		</ol>
-	</nav>
-	<!--▲パンくずリスト-->
-
+</ol>
+</nav>
+<!--▲パンくずリスト-->
 <!--▼メインコンテンツ-->
 <main>
 <div class="main-conts">
 <article class="section-wrap">
 <div class="section-in">
-
-
-
 <h1 class="section-title">Blog</h1>
-
 <h2>このBlogの役割</h2>
 <div class="news">
 <article class="news-item">
@@ -117,35 +94,33 @@
 各ページの役割は次の通りです．
 </p>
 <ul>
-  <li><a href="../publications/">Publications</a>：完成・投稿中の成果と直近の原稿順．</li>
-  <li><a href="../fem/">Research Visions</a>：Core programmeとResearch Expansion．</li>
-  <li><a href="../suppl/">Supplementary Visions</a>：中核研究へ到達するための学習地図．</li>
-  <li><b>Blog：</b>理論の背景，試行錯誤，最小計算，実装，研究途中の問題整理．</li>
+<li><a href="../publications/">Publications</a>：完成・投稿中の成果と直近の原稿順．</li>
+<li><a href="../fem/">Research Visions</a>：Core programmeとResearch Expansion．</li>
+<li><a href="../suppl/">Supplementary Visions</a>：中核研究へ到達するための学習地図．</li>
+<li><b>Blog：</b>理論の背景，試行錯誤，最小計算，実装，研究途中の問題整理．</li>
 </ul>
 <p>
 現在のCore研究に直結する主要連載は，次の六つです．
 </p>
 <ol>
-  <li><b>異方性有限要素法の幾何学的基礎</b></li>
-  <li><b>異方性CR–RT，DMP，maximum-norm解析</b></li>
-  <li><b>3D Nédélec，異方性de Rham・Hodge・Maxwell</b></li>
-  <li><b>履歴依存型発展方程式と構造保存完全離散化</b></li>
-  <li><b>Exact-curved geometry programme</b></li>
-  <li><b>Certified FEM，verified output，AI4Math</b></li>
+<li><b>異方性有限要素法の幾何学的基礎</b></li>
+<li><b>異方性CR–RT，DMP，maximum-norm解析</b></li>
+<li><b>3D Nédélec，異方性de Rham・Hodge・Maxwell</b></li>
+<li><b>履歴依存型発展方程式と構造保存完全離散化</b></li>
+<li><b>Exact-curved geometry programme</b></li>
+<li><b>Certified FEM，verified output，AI4Math</b></li>
 </ol>
 <p>
 癌・歯周病，PINNs，学習支援型適応化などは，Coreで得られた理論を展開する
 Applications and Research Expansionsとして分けて掲載します．
 準備中の記事には架空の日付や仮リンクを付けず，「構想中」と表示します．
-<br>
-This page is updated periodically.<br>
+<br/>
+This page is updated periodically.<br/>
 (3rd August 2026 <span class="cat cat001">Update</span>)
 </p>
 </article>
 </div>
-
 <h2>Current Core Research Series</h2>
-
 <h3>異方性有限要素法の幾何学的基礎</h3>
 <div class="news">
 <article class="news-item">
@@ -175,30 +150,30 @@ DMP，maximum-norm評価，離散Sobolev不等式など，
 <div class="news-cont">
 <b>公開済み・構想中の記事</b>
 <ol>
-  <li><a href="./posts/anisotropic-geometry-01.html">有限要素法ではなぜメッシュの幾何条件が必要なのか</a>
-  <div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-  <li><a href="./posts/anisotropic-geometry-02.html">正則性と準正則性を角度を使わずに表す</a>
-  <div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-  <li><a href="./posts/anisotropic-geometry-03.html">異方性メッシュの二つの現れ方：相似縮小とgraded mesh</a>
-  <div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-  <li><a href="./posts/anisotropic-geometry-04.html">相似縮小された細長い要素は非正則なのか</a>
-  <div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-  <li><a href="./posts/anisotropic-geometry-05.html">graded mesh，quasi-uniformity，shape regularityの違い</a>
-  <div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-  <li><a href="./posts/anisotropic-geometry-06.html">長方形の三角形分割を\(Q_T\)と\(H_T/h_T\)で調べる</a>
-  <div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-  <li><a href="./posts/anisotropic-geometry-07.html">Shishkin meshは正則か，準正則か</a>
-  <div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-  <li><a href="./posts/anisotropic-geometry-08.html">Bakhvalov meshの滑らかなgradingと幾何条件</a>
-  <div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-  <li><a href="./posts/anisotropic-geometry-09.html">Bakhvalov–Shishkin meshとS-type mesh：最適性と幾何条件</a>
-  <div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-  <li><a href="./posts/anisotropic-geometry-10.html">代表的なlayer-adapted meshの幾何条件を比較する</a>
-  <div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-  <li><a href="./posts/anisotropic-geometry-11.html">三次元layer-adapted meshを四面体分割すると何が起こるか</a>
-  <div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-  <li><a href="./posts/anisotropic-geometry-12.html">幾何条件から補間・DMP・\(L^\infty\)解析へ何が引き継げるか</a>
-  <div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
+<li><a href="./posts/anisotropic-geometry-01.html">有限要素法ではなぜメッシュの幾何条件が必要なのか</a>
+<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
+<li><a href="./posts/anisotropic-geometry-02.html">正則性と準正則性を角度を使わずに表す</a>
+<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
+<li><a href="./posts/anisotropic-geometry-03.html">異方性メッシュの二つの現れ方：相似縮小とgraded mesh</a>
+<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
+<li><a href="./posts/anisotropic-geometry-04.html">相似縮小された細長い要素は非正則なのか</a>
+<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
+<li><a href="./posts/anisotropic-geometry-05.html">graded mesh，quasi-uniformity，shape regularityの違い</a>
+<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
+<li><a href="./posts/anisotropic-geometry-06.html">長方形の三角形分割を\(Q_T\)と\(H_T/h_T\)で調べる</a>
+<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
+<li><a href="./posts/anisotropic-geometry-07.html">Shishkin meshは正則か，準正則か</a>
+<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
+<li><a href="./posts/anisotropic-geometry-08.html">Bakhvalov meshの滑らかなgradingと幾何条件</a>
+<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
+<li><a href="./posts/anisotropic-geometry-09.html">Bakhvalov–Shishkin meshとS-type mesh：最適性と幾何条件</a>
+<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
+<li><a href="./posts/anisotropic-geometry-10.html">代表的なlayer-adapted meshの幾何条件を比較する</a>
+<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
+<li><a href="./posts/anisotropic-geometry-11.html">三次元layer-adapted meshを四面体分割すると何が起こるか</a>
+<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
+<li><a href="./posts/anisotropic-geometry-12.html">幾何条件から補間・DMP・\(L^\infty\)解析へ何が引き継げるか</a>
+<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
 </ol>
 </div>
 <p>
@@ -210,7 +185,6 @@ DMP，maximum-norm評価，離散Sobolev不等式など，
 </p>
 </article>
 </div>
-
 <h3>異方性CR–RT：離散最大値原理とmaximum-norm解析</h3>
 <div class="news">
 <article class="news-item">
@@ -224,14 +198,14 @@ DMPにはmetric-angle型の単調性条件が，
 <p class="news-cont">
 <b>構想中の記事</b>
 <ul>
-  <li>第1回：CR要素の離散最大値原理とは何か</li>
-  <li>第2回：semi-regularityとmetric-angle条件は何が違うか</li>
-  <li>第3回：CR自由度のDMPとpointwise boundは同じではない</li>
-  <li>第4回：正値性を保つ右辺離散化</li>
-  <li>第5回：異方性メッシュでは接続の仕方が\(L^\infty\)精度を変える</li>
-  <li>第6回：Ritz射影と離散Green関数</li>
-  <li>第7回：CR conforming companionとRT局所保存流束</li>
-  <li>第8回：DMP・局所保存・誤差保証を同時に満たせるか</li>
+<li>第1回：CR要素の離散最大値原理とは何か</li>
+<li>第2回：semi-regularityとmetric-angle条件は何が違うか</li>
+<li>第3回：CR自由度のDMPとpointwise boundは同じではない</li>
+<li>第4回：正値性を保つ右辺離散化</li>
+<li>第5回：異方性メッシュでは接続の仕方が\(L^\infty\)精度を変える</li>
+<li>第6回：Ritz射影と離散Green関数</li>
+<li>第7回：CR conforming companionとRT局所保存流束</li>
+<li>第8回：DMP・局所保存・誤差保証を同時に満たせるか</li>
 </ul>
 </p>
 <p>
@@ -242,7 +216,6 @@ DMPにはmetric-angle型の単調性条件が，
 </p>
 </article>
 </div>
-
 <h3>3D Nédélecから異方性de Rham・Hodge・Maxwellへ</h3>
 <div class="news">
 <article class="news-item">
@@ -264,16 +237,16 @@ DMPにはmetric-angle型の単調性条件が，
 <p class="news-cont">
 <b>構想中の記事</b>
 <ul>
-  <li>第1回：RT要素とNédélec要素はどこが同じでどこが違うか</li>
-  <li>第2回：contravariant Piolaとcovariant Piola</li>
-  <li>第3回：edge momentは低正則性で定義できるか</li>
-  <li>第4回：two-step transformationで方向別評価を作る</li>
-  <li>第5回：curl可換性とRT補間評価</li>
-  <li>第6回：de Rham complexは有限要素法で何を保証するか</li>
-  <li>第7回：CRはde Rham理論にどう関係するか</li>
-  <li>第8回：調和成分と多重連結領域</li>
-  <li>第9回：異方性メッシュ上のdiscrete compactness</li>
-  <li>第10回：verified Maxwellへの道</li>
+<li>第1回：RT要素とNédélec要素はどこが同じでどこが違うか</li>
+<li>第2回：contravariant Piolaとcovariant Piola</li>
+<li>第3回：edge momentは低正則性で定義できるか</li>
+<li>第4回：two-step transformationで方向別評価を作る</li>
+<li>第5回：curl可換性とRT補間評価</li>
+<li>第6回：de Rham complexは有限要素法で何を保証するか</li>
+<li>第7回：CRはde Rham理論にどう関係するか</li>
+<li>第8回：調和成分と多重連結領域</li>
+<li>第9回：異方性メッシュ上のdiscrete compactness</li>
+<li>第10回：verified Maxwellへの道</li>
 </ul>
 </p>
 <p>
@@ -284,7 +257,6 @@ DMPにはmetric-angle型の単調性条件が，
 </p>
 </article>
 </div>
-
 <h3>履歴依存型発展方程式：memory kernelと構造保存完全離散化</h3>
 <div class="news">
 <article class="news-item">
@@ -296,24 +268,25 @@ DMPにはmetric-angle型の単調性条件が，
 </p>
 <p class="news-cont">
 <ul>
-  <li><a href="./posts/unresolved-memory-01.html">第1回：未解像ダイナミクスと履歴依存型方程式 — 記憶をどう安定にモデル化・同定・離散化するか</a>
-  <div class="news-date"><time datetime="2026-07-25">25th July 2026</time>（2nd August 2026 revised）</div></li>
-  <li><a href="./posts/unresolved-memory-02.html">第2回：未解像状態を消去すると，なぜmemoryが現れるのか</a>
-  <div class="news-date"><time datetime="2026-08-02">2nd August 2026</time></div></li>
-  <li><a href="./posts/unresolved-memory-03.html">第3回：measure-valued delayで分布遅延・原子遅延・混合遅延を統一する</a>
-  <div class="news-date"><time datetime="2026-08-02">2nd August 2026</time></div></li>
-  <li><a href="./posts/unresolved-memory-04.html">第4回：指数重みでmeasure-valued delayのwell-posednessを得る</a>
-  <div class="news-date"><time datetime="2026-08-02">2nd August 2026</time></div></li>
-  <li><a href="./posts/unresolved-memory-05.html">第5回：positive-type memoryとcoercivity gap</a>
-  <div class="news-date"><time datetime="2026-08-02">2nd August 2026</time></div></li>
-  <li><a href="./posts/unresolved-memory-06.html">第6回：graph-space well-posednessとは何か</a>
-  <div class="news-date"><time datetime="2026-08-02">2nd August 2026</time></div></li>
-  <li><a href="./posts/unresolved-memory-07.html">第7回：kernel stabilityとfinite-atomic approximation</a>
-  <div class="news-date"><time datetime="2026-08-03">3rd August 2026</time></div></li>
-  <li>第8回：離散内部変数でcross-term cancellationを保存する（構想中）</li>
-  <li>第9回：BDFとconvolution quadratureは何を離散化しているのか（構想中）</li>
-  <li>第10回：model-reduction errorをどう分解するか（構想中）</li>
-  <li>第11回：誤差に応じて潜在状態を追加するmodel adaptivity（構想中）</li>
+<li><a href="./posts/unresolved-memory-01.html">第1回：未解像ダイナミクスと履歴依存型方程式 — 記憶をどう安定にモデル化・同定・離散化するか</a>
+<div class="news-date"><time datetime="2026-07-25">25th July 2026</time>（2nd August 2026 revised）</div></li>
+<li><a href="./posts/unresolved-memory-02.html">第2回：未解像状態を消去すると，なぜmemoryが現れるのか</a>
+<div class="news-date"><time datetime="2026-08-02">2nd August 2026</time></div></li>
+<li><a href="./posts/unresolved-memory-03.html">第3回：measure-valued delayで分布遅延・原子遅延・混合遅延を統一する</a>
+<div class="news-date"><time datetime="2026-08-02">2nd August 2026</time></div></li>
+<li><a href="./posts/unresolved-memory-04.html">第4回：指数重みでmeasure-valued delayのwell-posednessを得る</a>
+<div class="news-date"><time datetime="2026-08-02">2nd August 2026</time></div></li>
+<li><a href="./posts/unresolved-memory-05.html">第5回：positive-type memoryとcoercivity gap</a>
+<div class="news-date"><time datetime="2026-08-02">2nd August 2026</time></div></li>
+<li><a href="./posts/unresolved-memory-06.html">第6回：graph-space well-posednessとは何か</a>
+<div class="news-date"><time datetime="2026-08-02">2nd August 2026</time></div></li>
+<li><a href="./posts/unresolved-memory-07.html">第7回：kernel stabilityとfinite-atomic approximation</a>
+<div class="news-date"><time datetime="2026-08-03">3rd August 2026</time></div></li>
+<li><a href="./posts/unresolved-memory-08.html">第8回：離散内部変数でcross-term cancellationを保存する</a>
+<div class="news-date"><time datetime="2026-08-03">3rd August 2026</time></div></li>
+<li>第9回：BDFとconvolution quadratureは何を離散化しているのか（構想中）</li>
+<li>第10回：model-reduction errorをどう分解するか（構想中）</li>
+<li>第11回：誤差に応じて潜在状態を追加するmodel adaptivity（構想中）</li>
 </ul>
 </p>
 <p>
@@ -324,7 +297,6 @@ DMPにはmetric-angle型の単調性条件が，
 </p>
 </article>
 </div>
-
 <h3>Exact-curved geometry programme：曲CR–RT・形状微分・ALE・FSI</h3>
 <div class="news">
 <article class="news-item">
@@ -340,28 +312,28 @@ DMPにはmetric-angle型の単調性条件が，
 <p class="news-cont">
 <b>公開済み</b>
 <ul>
-  <li><a href="./posts/exact-curved-fem-01.html">第1回：有限要素法で「丸い領域」を丸いまま扱いたい</a>
-  <div class="news-date"><time datetime="2026-05-28">28th May 2026</time></div></li>
-  <li><a href="./posts/exact-curved-fem-02.html">第2回：曲線要素写像をaffine coreとcurved correctionに分ける</a>
-  <div class="news-date"><time datetime="2026-05-28">28th May 2026</time></div></li>
-  <li><a href="./posts/exact-curved-fem-03.html">第3回：Gmshのgeometry orderは有限要素次数ではない</a>
-  <div class="news-date"><time datetime="2026-05-28">28th May 2026</time></div></li>
-  <li><a href="./posts/exact-curved-fem-04.html">第4回：UFLのgradとdxの中で何が起きているか</a>
-  <div class="news-date"><time datetime="2026-05-28">28th May 2026</time></div></li>
-  <li><a href="./posts/exact-curved-fem-05.html">第5回：単位円上のPoisson問題で曲線メッシュを比較する</a>
-  <div class="news-date"><time datetime="2026-05-28">28th May 2026</time></div></li>
-  <li><a href="./posts/exact-curved-fem-06.html">第6回：Exact-curved FEMsとisoparametric FEMsは何が違うのか</a>
-  <div class="news-date"><time datetime="2026-06-01">1st June 2026</time></div></li>
+<li><a href="./posts/exact-curved-fem-01.html">第1回：有限要素法で「丸い領域」を丸いまま扱いたい</a>
+<div class="news-date"><time datetime="2026-05-28">28th May 2026</time></div></li>
+<li><a href="./posts/exact-curved-fem-02.html">第2回：曲線要素写像をaffine coreとcurved correctionに分ける</a>
+<div class="news-date"><time datetime="2026-05-28">28th May 2026</time></div></li>
+<li><a href="./posts/exact-curved-fem-03.html">第3回：Gmshのgeometry orderは有限要素次数ではない</a>
+<div class="news-date"><time datetime="2026-05-28">28th May 2026</time></div></li>
+<li><a href="./posts/exact-curved-fem-04.html">第4回：UFLのgradとdxの中で何が起きているか</a>
+<div class="news-date"><time datetime="2026-05-28">28th May 2026</time></div></li>
+<li><a href="./posts/exact-curved-fem-05.html">第5回：単位円上のPoisson問題で曲線メッシュを比較する</a>
+<div class="news-date"><time datetime="2026-05-28">28th May 2026</time></div></li>
+<li><a href="./posts/exact-curved-fem-06.html">第6回：Exact-curved FEMsとisoparametric FEMsは何が違うのか</a>
+<div class="news-date"><time datetime="2026-06-01">1st June 2026</time></div></li>
 </ul>
 <b>次の論文化に沿った構想</b>
 <ol>
-  <li>曲面平均自由度としてのCR要素，曲単体上のRT要素，Piola変換</li>
-  <li>curved Marini reconstructionとequilibrated flux</li>
-  <li>material derivativeと補間作用素の交換子</li>
-  <li>shape derivativeとFEM離散化の可換性</li>
-  <li>ALE速度，Jacobianの時間微分，geometric conservation law</li>
-  <li>離散曲界面をさらに直線化しないFSIと界面仕事の相殺</li>
-  <li>形状感度，traction，流量，エネルギー交換のverified output</li>
+<li>曲面平均自由度としてのCR要素，曲単体上のRT要素，Piola変換</li>
+<li>curved Marini reconstructionとequilibrated flux</li>
+<li>material derivativeと補間作用素の交換子</li>
+<li>shape derivativeとFEM離散化の可換性</li>
+<li>ALE速度，Jacobianの時間微分，geometric conservation law</li>
+<li>離散曲界面をさらに直線化しないFSIと界面仕事の相殺</li>
+<li>形状感度，traction，流量，エネルギー交換のverified output</li>
 </ol>
 </p>
 <p>
@@ -372,7 +344,6 @@ DMPにはmetric-angle型の単調性条件が，
 </p>
 </article>
 </div>
-
 <h3>Certified FEM・verified output・AI4Math</h3>
 <div class="news">
 <article class="news-item">
@@ -384,15 +355,15 @@ AI4MathやLean 4は研究の主目的ではなく，
 </p>
 <p class="news-cont">
 <ul>
-  <li><a href="./posts/lean4-01.html">第1回：Lean 4は有限要素法研究に何をもたらすか</a>
-  <div class="news-date"><time datetime="2026-06-08">8th June 2026</time></div></li>
-  <li>第2回：a priori，a posteriori，verified outputは何が違うか（構想中）</li>
-  <li>第3回：equilibrated fluxはなぜcertificateになるのか（構想中）</li>
-  <li>第4回：DWRで目的量誤差をどう評価するか（構想中）</li>
-  <li>第5回：maximum-normとpointwise certificate（構想中）</li>
-  <li>第6回：model-reduction errorをcertificateにできるか（構想中）</li>
-  <li>第7回：幾何条件を機械可読なcertificateへ変換する（構想中）</li>
-  <li>第8回：Leanで形式化しやすい補題列とは何か（構想中）</li>
+<li><a href="./posts/lean4-01.html">第1回：Lean 4は有限要素法研究に何をもたらすか</a>
+<div class="news-date"><time datetime="2026-06-08">8th June 2026</time></div></li>
+<li>第2回：a priori，a posteriori，verified outputは何が違うか（構想中）</li>
+<li>第3回：equilibrated fluxはなぜcertificateになるのか（構想中）</li>
+<li>第4回：DWRで目的量誤差をどう評価するか（構想中）</li>
+<li>第5回：maximum-normとpointwise certificate（構想中）</li>
+<li>第6回：model-reduction errorをcertificateにできるか（構想中）</li>
+<li>第7回：幾何条件を機械可読なcertificateへ変換する（構想中）</li>
+<li>第8回：Leanで形式化しやすい補題列とは何か（構想中）</li>
 </ul>
 </p>
 <p>
@@ -403,9 +374,7 @@ AI4MathやLean 4は研究の主目的ではなく，
 </p>
 </article>
 </div>
-
 <h2>Applications and Research Expansions</h2>
-
 <h3>潜在状態と治療履歴から疾患進行を予測する数理</h3>
 <div class="news">
 <article class="news-item">
@@ -421,25 +390,25 @@ AI4MathやLean 4は研究の主目的ではなく，
 </div>
 <p class="news-cont">
 <ul>
-  <li><a href="./posts/disease-progression-math-01.html">第1回：癌と歯周病はなぜ同じ数理構造で考えられるのか</a>
-  <div class="news-date"><time datetime="2026-07-26">26th July 2026</time></div></li>
-  <li>第2回：observed stateとcomplete state（構想中）</li>
-  <li>第3回：潜在状態を消去するとmemoryが現れる（構想中）</li>
-  <li>第4回：縮約モデルで治療法の順位が逆転することはあるか（構想中）</li>
-  <li>第5回：進行予測と因果的治療効果は何が違うか（構想中）</li>
-  <li>第6回：予測値と不確実性をどう可視化するか（構想中）</li>
-  <li>第7回：goal-oriented observation design（構想中）</li>
-  <li>第8回：verification，statistical validation，clinical validation（構想中）</li>
+<li><a href="./posts/disease-progression-math-01.html">第1回：癌と歯周病はなぜ同じ数理構造で考えられるのか</a>
+<div class="news-date"><time datetime="2026-07-26">26th July 2026</time></div></li>
+<li>第2回：observed stateとcomplete state（構想中）</li>
+<li>第3回：潜在状態を消去するとmemoryが現れる（構想中）</li>
+<li>第4回：縮約モデルで治療法の順位が逆転することはあるか（構想中）</li>
+<li>第5回：進行予測と因果的治療効果は何が違うか（構想中）</li>
+<li>第6回：予測値と不確実性をどう可視化するか（構想中）</li>
+<li>第7回：goal-oriented observation design（構想中）</li>
+<li>第8回：verification，statistical validation，clinical validation（構想中）</li>
 </ul>
 </p>
 <p>
 <b>既公開の歯科数理記事</b>
 </p>
 <ul>
-  <li><a href="./posts/dental-math-01.html">数学で虫歯・歯周病に何ができるか</a>
-  <div class="news-date"><time datetime="2026-07-26">26th July 2026</time></div></li>
-  <li><a href="./posts/dental-math-02.html">治療履歴から虫歯・歯周病の未来を予測できるか</a>
-  <div class="news-date"><time datetime="2026-07-26">26th July 2026</time></div></li>
+<li><a href="./posts/dental-math-01.html">数学で虫歯・歯周病に何ができるか</a>
+<div class="news-date"><time datetime="2026-07-26">26th July 2026</time></div></li>
+<li><a href="./posts/dental-math-02.html">治療履歴から虫歯・歯周病の未来を予測できるか</a>
+<div class="news-date"><time datetime="2026-07-26">26th July 2026</time></div></li>
 </ul>
 <p>
 虫歯は酸・pH・脱灰・再石灰化という独自の機構を持つため，
@@ -448,7 +417,6 @@ AI4MathやLean 4は研究の主目的ではなく，
 <p>関連ページ：<a href="../fem/">Research Visions</a>（Vision 19）</p>
 </article>
 </div>
-
 <h3>PINNs・Deep Ritz・学習支援型数値計算</h3>
 <div class="news">
 <article class="news-item">
@@ -459,73 +427,68 @@ PINNsやDeep RitzをFEMの代替として無条件に推奨するのではなく
 </p>
 <p class="news-cont">
 <ul>
-  <li><a href="./posts/pinns-01.html">第1回：1次元Poisson問題でPINNsを動かす</a></li>
-  <li><a href="./posts/pinns-02.html">第2回：残差点の配置と近似誤差の関係</a></li>
-  <li><a href="./posts/pinns-03.html">第3回：どの幾何的量が誤差を支配するか</a></li>
-  <li><a href="./posts/pinns-04.html">第4回：PINNs / Deep Ritz / VPINN / WANを比べる</a></li>
-  <li><a href="./posts/pinns-05.html">第5回：コードと数学の辞書</a></li>
-  <li><a href="./posts/pinns-06.html">第6回：flatness parameterからNN幾何条件へ</a></li>
-  <li><a href="./posts/pinns-07.html">第7回：研究ビジョン全体図</a></li>
+<li><a href="./posts/pinns-01.html">第1回：1次元Poisson問題でPINNsを動かす</a></li>
+<li><a href="./posts/pinns-02.html">第2回：残差点の配置と近似誤差の関係</a></li>
+<li><a href="./posts/pinns-03.html">第3回：どの幾何的量が誤差を支配するか</a></li>
+<li><a href="./posts/pinns-04.html">第4回：PINNs / Deep Ritz / VPINN / WANを比べる</a></li>
+<li><a href="./posts/pinns-05.html">第5回：コードと数学の辞書</a></li>
+<li><a href="./posts/pinns-06.html">第6回：flatness parameterからNN幾何条件へ</a></li>
+<li><a href="./posts/pinns-07.html">第7回：研究ビジョン全体図</a></li>
 </ul>
 </p>
 <p>関連ページ：<a href="../fem/">Research Visions</a>（Vision 2，4，15）</p>
 </article>
 </div>
-
 <h2>Published Foundational and Computational Series</h2>
-
 <h3 id="published-geometry-mesh">有限要素法における幾何とメッシュ</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
 <ul>
-  <li><a href="./posts/article16apr26.html">FEniCSxで学ぶメッシュ分割入門</a>
-  <div class="news-date"><time datetime="2026-04-16">16th April 2026</time></div></li>
-  <li><a href="./posts/article18apr26.html">異方性メッシュ族をPythonで再構成する</a>
-  <div class="news-date"><time datetime="2026-04-18">18th April 2026</time></div></li>
-  <li><a href="./posts/article20apr26.html">FEniCSx用メッシュファイルを取り出す</a>
-  <div class="news-date"><time datetime="2026-04-20">20th April 2026</time></div></li>
-  <li><a href="./posts/article20apr26_2.html">FreeFEM用メッシュファイルを取り出す</a>
-  <div class="news-date"><time datetime="2026-04-20">20th April 2026</time></div></li>
+<li><a href="./posts/article16apr26.html">FEniCSxで学ぶメッシュ分割入門</a>
+<div class="news-date"><time datetime="2026-04-16">16th April 2026</time></div></li>
+<li><a href="./posts/article18apr26.html">異方性メッシュ族をPythonで再構成する</a>
+<div class="news-date"><time datetime="2026-04-18">18th April 2026</time></div></li>
+<li><a href="./posts/article20apr26.html">FEniCSx用メッシュファイルを取り出す</a>
+<div class="news-date"><time datetime="2026-04-20">20th April 2026</time></div></li>
+<li><a href="./posts/article20apr26_2.html">FreeFEM用メッシュファイルを取り出す</a>
+<div class="news-date"><time datetime="2026-04-20">20th April 2026</time></div></li>
 </ul>
 </p>
 </article>
 </div>
-
 <h3>FEniCSx・FreeFEM入門</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
 <ul>
-  <li><a href="./posts/article15apr26.html">Google Colabで始めるFEniCSx入門</a>
-  <div class="news-date"><time datetime="2026-04-15">15th April 2026</time></div></li>
-  <li><a href="./posts/article20apr26_3.html">Google ColabでFreeFEMを使う</a>
-  <div class="news-date"><time datetime="2026-04-20">20th April 2026</time></div></li>
-  <li><a href="./posts/article21apr26.html">Google Colabで始めるFreeFEM入門</a>
-  <div class="news-date"><time datetime="2026-04-21">21st April 2026</time></div></li>
+<li><a href="./posts/article15apr26.html">Google Colabで始めるFEniCSx入門</a>
+<div class="news-date"><time datetime="2026-04-15">15th April 2026</time></div></li>
+<li><a href="./posts/article20apr26_3.html">Google ColabでFreeFEMを使う</a>
+<div class="news-date"><time datetime="2026-04-20">20th April 2026</time></div></li>
+<li><a href="./posts/article21apr26.html">Google Colabで始めるFreeFEM入門</a>
+<div class="news-date"><time datetime="2026-04-21">21st April 2026</time></div></li>
 </ul>
 </p>
 </article>
 </div>
-
 <h3>外挿法と誤差展開</h3>
 <div class="news">
 <article class="news-item">
 <p class="news-cont">
 <ul>
-  <li><a href="./posts/article08may26.html">第1回：外挿法で円周率を求める</a></li>
-  <li><a href="./posts/article08may26_2.html">第2回：数値微分と外挿法</a></li>
-  <li><a href="./posts/article08may26_3.html">第3回：Romberg積分入門</a></li>
-  <li><a href="./posts/article09may26.html">第4回：ODEにおける外挿法とCrank–Nicolson</a></li>
-  <li><a href="./posts/article10may26.html">第5回：FEMにおけるRitz射影と点値外挿</a></li>
-  <li><a href="./posts/article10may26_2.html">第6回：Defect correctionとは何か</a></li>
-  <li><a href="./posts/article10may26_3.html">第7回：特異性があると外挿はどうなるか</a></li>
-  <li><a href="./posts/article10may26_4.html">第8回：外挿，defect correction，特異性の比較</a></li>
+<li><a href="./posts/article08may26.html">第1回：外挿法で円周率を求める</a></li>
+<li><a href="./posts/article08may26_2.html">第2回：数値微分と外挿法</a></li>
+<li><a href="./posts/article08may26_3.html">第3回：Romberg積分入門</a></li>
+<li><a href="./posts/article09may26.html">第4回：ODEにおける外挿法とCrank–Nicolson</a></li>
+<li><a href="./posts/article10may26.html">第5回：FEMにおけるRitz射影と点値外挿</a></li>
+<li><a href="./posts/article10may26_2.html">第6回：Defect correctionとは何か</a></li>
+<li><a href="./posts/article10may26_3.html">第7回：特異性があると外挿はどうなるか</a></li>
+<li><a href="./posts/article10may26_4.html">第8回：外挿，defect correction，特異性の比較</a></li>
 </ul>
 </p>
 </article>
 </div>
-
 <h2>Exploratory Series</h2>
 <div class="news">
 <article class="news-item">
@@ -535,45 +498,35 @@ PINNsやDeep RitzをFEMの代替として無条件に推奨するのではなく
 主要定理，反例，または実装上の出口が見えた段階で個別記事を追加します．
 </p>
 <ul>
-  <li><b>CIP法の二つの顔：</b>
-  <a href="./posts/article10may26_5.html">第1回：Constrained Interpolation ProfileとContinuous Interior Penalty</a>．</li>
-  <li><b>Weak GalerkinとハイブリッドFEM：</b>
+<li><b>CIP法の二つの顔：</b>
+<a href="./posts/article10may26_5.html">第1回：Constrained Interpolation ProfileとContinuous Interior Penalty</a>．</li>
+<li><b>Weak GalerkinとハイブリッドFEM：</b>
   境界未知量，弱微分，局所消去，CR–RT再構成を整理予定．</li>
-  <li><b>非圧縮流れとpressure robustness：</b>
+<li><b>非圧縮流れとpressure robustness：</b>
   弱い発散自由，局所質量保存，\(H(\operatorname{div})\)再構成，離散Kornを整理予定．</li>
-  <li><b>SPDE・気候・災害：</b>
+<li><b>SPDE・気候・災害：</b>
   異方性・不確実性・memory closureの数学的出口が明確になった段階で記事化．</li>
-  <li><b>Never Ending Story：</b>
+<li><b>Never Ending Story：</b>
   DMP，移流支配，長時間誤差，異方性inf–supなど，FEMの未解決問題を必要に応じて扱う．</li>
 </ul>
 </article>
 </div>
-
-
 <!--section-in-->
 </div>
 </article>
 </div>
 </main>
 <!--▲メインコンテンツ-->
-
-
 </div><!--main-body-in-->
 </div><!--main-body-->
-
-
 <!--▼サイトフッター-->
 <footer class="site-footer">
-	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
 </footer>
 <!--▲サイトフッター-->
-
-
 <!--▼ページトップ-->
-<p class="page-top"><a href="#top"><img class="over" src="../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../images/common/page-top_off.png" width="80"/></a></p>
 <!--▲ページトップ-->
-
-<script src="../js/utility.js" charset="utf-8"></script>
-
+<script charset="utf-8" src="../js/utility.js"></script>
 </body>
 </html>
