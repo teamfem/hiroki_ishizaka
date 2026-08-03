@@ -7,8 +7,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Babuska paradox,Babuška paradox,バブシュカパラドックス,plate paradox,有限要素法,domain approximation,plate bending,curved boundary,数値解析">
-<meta name="description" content="曲線領域を多角形領域で近似すると，領域は収束しても単純支持板の解が別の極限問題へ収束し得る．バブシュカ・パラドックスの仕組み，単位円板の具体例，回避法，現代的な研究課題を解説する．">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Babuska paradox,Babuška paradox,バブシュカパラドックス,plate paradox,有限要素法,domain approximation,plate bending,curved boundary,Rannacher,exact-curved FEM,数値解析">
+<meta name="description" content="曲線領域を多角形領域で近似すると，領域は収束しても単純支持板の解が別の極限問題へ収束し得る．バブシュカ・パラドックスの仕組み，Rannacher以降の有限要素研究，exact-curved FEMとの接点，難易度別の現代的研究課題を解説する．">
 
 <link rel="stylesheet" href="../../css/base.css">
 <link rel="stylesheet" href="../../css/rwd.css">
@@ -275,10 +275,60 @@ Poisson比を\(\sigma\in[0,1)\)，荷重を\(f\)とします．単純支持板�
 </article>
 </div>
 
-<h2>6．どのように回避できるのか</h2>
+
+<h2>6．Rannacher 1979から現在まで――何が既に分かっているのか</h2>
 <div class="news">
 <article class="news-item">
-<h3>6.1　exact-curved FEMで領域そのものを近似しない</h3>
+<p>
+バブシュカ・パラドックスを有限要素法の問題として論じるとき，
+Rannacherの1979年論文
+<cite>Finite Element Approximation of Simply Supported Plates and the Babuška Paradox</cite>
+は外せません．この論文は，曲線領域を多角形で近似したときの誤収束を，
+有限要素空間と境界条件の実現方法の問題として早い段階から扱っています．
+同年の非適合・混合法に関する論文と合わせると，
+「多角形近似を使えば必ず誤る」のではなく，
+<b>離散空間が境界条件をどのように実現するかによって極限が変わる</b>ことが分かります．
+</p>
+
+<div style="padding:10px; margin-bottom:10px; border:1px solid #999;">
+<b>したがって，既に研究されている問い</b>
+<ul>
+<li>多角形近似上でバブシュカ・パラドックスを再現すること．</li>
+<li>非適合法・混合法・penalty法によって誤収束を避けること．</li>
+<li>適合法で境界条件を全面的に課すと失敗し得ること．</li>
+<li>曲線HHJ要素や低次HHJ法がどのように振る舞うかを調べること．</li>
+</ul>
+</div>
+
+<p>
+その後，Arnold–Walkerは曲線境界上のparametric HHJ法について最適収束を示し，
+最低次HHJ法が円板の多角形近似上でも古典的パラドックスに陥らないことを示しました．
+さらにBartels–Tschernerは，単体メッシュ上で正しい収束を得るための抽象条件を整理し，
+標準的な非適合法・DG法は正しく収束し得る一方，
+適合法では境界条件の適切な緩和が必要であることを示しています．
+</p>
+
+<p>
+したがって，現代の研究テーマは単に
+「有限要素法でパラドックスを回避する」ことではありません．
+次に問うべきなのは，
+</p>
+<div style="padding:10px; margin-bottom:10px; border:5px double #333333; text-align:center;">
+<p style="margin:0;">
+<b>exact geometry，曲要素写像，異方性，境界作用素を含む離散問題全体について，<br>
+正しい変分極限と定量的誤差評価をどう保証するか</b>
+</p>
+</div>
+<p>
+という問題です．ここに，現在のexact-curved FEMとの本質的な接点があります．
+</p>
+</article>
+</div>
+
+<h2>7．どのように回避できるのか</h2>
+<div class="news">
+<article class="news-item">
+<h3>7.1　exact-curved FEMで領域近似を問題から切り離す</h3>
 <p>
 最も直接的な考え方は，多角形領域\(\Omega_h\)上の別問題を解くのではなく，
 元の曲線領域\(\Omega\)上で離散化することです．exact-curved FEMでは，要素写像を例えば
@@ -287,15 +337,16 @@ Poisson比を\(\sigma\in[0,1)\)，荷重を\(f\)とします．単純支持板�
   F_K=\Psi_K\circ\Phi_{T_K}
 \]
 <p>
-と分け，\(\Phi_{T_K}\)が要素のaffine coreを，\(\Psi_K\)が曲線境界への補正を担います．
+と分け，\(\Phi_{T_K}\)が要素のaffine coreを，
+\(\Psi_K\)が曲線境界への補正を担います．
 境界点だけでなく，法線，Jacobian，曲率を元の境界上で扱えれば，
-バブシュカ・パラドックスを生む<b>領域近似と境界条件の不整合</b>を最初から切り離せます．
+領域近似によって別の連続問題が選ばれる機構を切り離せます．
 </p>
 <div style="padding:10px; margin-bottom:10px; border:1px solid #999;">
 <p style="margin:0;">
-<b>重要：</b>exact geometryだけで自動的に安全になるわけではありません．
-四階問題では，離散空間，境界条件の実現，Hessianの変換，数値積分まで含めて，
-元の変分問題と整合していることを確認する必要があります．
+<b>ただし：</b>exact geometryを使うだけで自動的に安全になるわけではありません．
+四階問題では，離散空間，境界条件の実現，Hessianの変換，
+曲率を含む境界項，数値積分まで元の変分問題と整合している必要があります．
 </p>
 </div>
 <p>
@@ -303,122 +354,199 @@ Poisson比を\(\sigma\in[0,1)\)，荷重を\(f\)とします．単純支持板�
 <b>幾何誤差を離散化誤差から分離し，どの連続問題を解いているかを固定すること</b>にあります．
 </p>
 
-<h3>6.2　高次曲線・isoparametric幾何で曲率を近似する</h3>
+<h3>7.2　高次曲線・isoparametric幾何で曲率を近似する</h3>
 <p>
-区分的二次曲線などを用いて境界曲率を関数として近似すれば，直線辺だけを用いる場合に失われる曲率情報を回復できます．
-ただし，これはexact-domain法とは異なり，依然として幾何近似を含みます．
-「幾何次数を上げれば常に安全」とは限らず，境界条件と変分形式との整合性を確認する必要があります．
+区分的高次曲線を用いれば，直線辺で失われる法線や曲率の情報を近似できます．
+ただし，これはexact-domain法とは異なり幾何近似を含みます．
+幾何次数だけでなく，境界条件と変分形式との整合性を確認する必要があります．
 </p>
 
-<h3>6.3　適合要素では境界条件を緩和する</h3>
+<h3>7.3　適合要素では境界条件を緩和する</h3>
 <p>
-多角形境界の全辺上で\(u_h=0\)を強制する代わりに，境界頂点など，元の曲線境界との整合性を保つ部分だけで条件を課します．
-近年の解析では，このようなnodal supportが，正しい変分極限を得るための本質的条件として整理されています．
+多角形境界の全辺上で\(u_h=0\)を強く課す代わりに，
+元の曲線境界との整合性を保つ節点などに条件を限定します．
+適合法では，このような境界条件の緩和が正しい変分極限を得るために本質的です．
 </p>
 
-<h3>6.4　非適合法・DG法の柔軟性を利用する</h3>
+<h3>7.4　非適合法・混合法・DG法の柔軟性を利用する</h3>
 <p>
-標準的な非適合有限要素法や不連続Galerkin法は，境界条件を連続適合空間ほど強く実現しないため，
-適切な離散Hessianと安定化を備えた場合に正しい極限へ収束できます．
-ここでは「非適合だから精度が低い」のではなく，<b>必要な幾何学的自由度を残すことが利点</b>になります．
+非適合有限要素法，HHJ型混合法，不連続Galerkin法は，
+境界条件を連続適合空間と同じ仕方では実現しません．
+適切な離散Hessian，曲率テンソル，安定化を備えれば，
+多角形近似上でも正しい極限を選択できる場合があります．
+ここでは非適合性が欠点ではなく，
+<b>過剰な境界拘束を避ける構造</b>として働きます．
 </p>
 
-<h3>6.5　修正境界条件・penalty法を用いる</h3>
+<h3>7.5　penalty・Nitsche型の弱い境界条件を用いる</h3>
 <p>
-境界条件をpenaltyとして弱く課す方法や，頂点に集中する曲率効果を補正する方法も提案されています．
-ただし，penalty parameterを大きくすればよいという単純な話ではなく，極限問題の整合性を解析する必要があります．
+境界条件を弱く課し，幾何近似と整合するようにpenalty項や補正項を設計する方法もあります．
+ただし，parameterを大きくすればよいのではなく，
+離散エネルギーがどの連続エネルギーへ収束するかを確認する必要があります．
 </p>
 </article>
 </div>
 
-<h2>7．現代的な研究課題</h2>
+<h2>8．現代的な研究課題――難易度別</h2>
 <div class="news">
 <article class="news-item">
 <p>
-以下は，すべてが未解決であると断定するものではありません．古典的なパラドックスを，現在の計算数学から再検討するときの
-<b>研究の問い</b>です．
+以下は，必要となる数学，実装，文献調査の深さによる分類です．
+また，すべてを未解決問題と断定するものではありません．
+実際の研究開始前には，各項目について最新文献との重複を確認する必要があります．
 </p>
 
-<h3>7.1　exact-curved FEMをplate問題へ拡張する</h3>
-<p>
-exact-curved FEMを二階Poisson問題だけでなく，単純支持板，clamped plate，Morley型非適合法へ拡張すると，
-バブシュカ・パラドックスを避けるための理論を直接検証できます．主要な問いは次の通りです．
+<h3>難易度A：基準問題と誤収束診断を作る</h3>
+<div style="padding:10px; margin-bottom:12px; border:1px solid #999;">
+<p><b>テーマ案：</b>曲線板問題に対するgeometry–boundary consistency benchmark</p>
+<p><b>核心の問い：</b>
+通常の誤差グラフだけでなく，離散解が「どの連続問題へ収束しているか」を数値的に診断できるか．
 </p>
 <ul>
-<li>元の曲線領域上のエネルギーと，曲要素上の離散エネルギーは同じ極限を持つか．</li>
-<li>曲要素上のHessian変換と境界曲率項を，幾何に依存しない形で評価できるか．</li>
-<li>exact-curved Morley，曲CR–RT再構成，equilibrated fluxを統一できるか．</li>
-<li>affine coreの異方性とcurved correctionの曲率効果を，誤差評価で分離できるか．</li>
-<li>exact-curved法とisoparametric法の差を，geometry errorとして定量化できるか．</li>
+<li>単位円板，楕円，曲率が変化する領域を用いる．</li>
+<li>直線境界，isoparametric境界，exact-curved境界を比較する．</li>
+<li>適合，非適合，HHJ，DG，弱境界条件を同じ出力で比較する．</li>
+<li>中心変位だけでなく，境界モーメント，曲率項，エネルギーを測る．</li>
 </ul>
-<p>
-この方向では，バブシュカ・パラドックスは単なる古典的反例ではなく，
-<b>exact-curved geometry programmeが何を保証すべきかを測る基準問題</b>になります．
+<p><b>難所：</b>
+単なる既知結果の追試で終わらせず，
+幾何誤差，境界条件誤差，離散化誤差を別々に観測できる診断量を設計すること．
 </p>
+</div>
 
-<h3>7.2　一般の高次・曲線・spline幾何に対する必要十分条件</h3>
-<p>
-多角形から区分的高次曲線，isoparametric要素，NURBS，曲線Virtual Elementへ進むとき，
-正しい極限を保証する最小条件は何でしょうか．境界位置，法線，曲率，Jacobian，トレース空間のうち，
-どの量をどの位相で収束させれば十分なのかを，Mosco収束や\(\Gamma\)-収束によって統一できる可能性があります．
+<h3>難易度B：exact-curved \(C^0\) interior penalty法を四階問題へ拡張する</h3>
+<div style="padding:10px; margin-bottom:12px; border:1px solid #999;">
+<p><b>テーマ案：</b>Exact-curved \(C^0\) interior penalty approximation for supported plates</p>
+<p><b>核心の問い：</b>
+元の曲線領域上で，broken Hessian，penalty項，曲率を含む境界条件を整合的に離散化できるか．
 </p>
-
-<h3>7.3　CutFEM・unfitted FEM・level-set geometry</h3>
-<p>
-背景格子と物理境界が一致しない方法では，境界は零レベル集合や局所再構成によって表されます．
-Nitsche項，ghost penalty，法線近似，曲率近似を組み合わせたとき，離散エネルギーが正しい境界値問題へ収束するための条件は何か．
-これは「メッシュが境界に適合しない」現代的手法におけるplate paradoxの再検討です．
+<ul>
+<li>写像 \(F_K=\Psi_K\circ\Phi_{T_K}\) の下でHessian変換を導出する．</li>
+<li>法線，辺測度，曲率，境界モーメントの変換を整理する．</li>
+<li>exact geometryとisoparametric geometryの誤差差を定量化する．</li>
+<li>Strang型評価で離散化・幾何・数値積分の寄与を分離する．</li>
+</ul>
+<p><b>難所：</b>
+非アフィン写像ではHessianに\(D^2F_K\)を含む項が現れ，
+二階問題の写像則をそのまま使えないこと．
 </p>
+</div>
 
-<h3>7.4　非線形板・殻・foldingモデル</h3>
-<p>
-2026年には，バブシュカ・パラドックスが，Gauss曲率ゼロを課す非線形bending–foldingモデルにも現れることが示されました．
-線形理論だけの古い例外ではありません．大変形殻，折紙構造，塑性ヒンジ，接触を含むモデルで，
-幾何近似がどの拘束や解分枝を選択するかは，さらに検討する価値があります．
+<h3>難易度C：exact-curved Morley・HHJ構造を構築する</h3>
+<div style="padding:10px; margin-bottom:12px; border:1px solid #999;">
+<p><b>テーマ案：</b>Exact-curved nonconforming and mixed finite elements for fourth-order problems</p>
+<p><b>核心の問い：</b>
+曲線辺・曲面上で，Morley自由度，曲げモーメント，非適合連続性，
+混合再構成を構造保存的に定義できるか．
 </p>
-
-<h3>7.5　固有値・振動・長時間計算</h3>
-<p>
-静的作用素が誤った極限へ収束するなら，固有振動数，モード形状，時間発展も誤った作用素に支配される可能性があります．
-領域近似誤差がスペクトル近似やエネルギー保存へ与える影響を，静的誤差とは別に評価する必要があります．
+<ul>
+<li>曲辺上の法線微分平均を自由度としてどう定義するか．</li>
+<li>Morley補間と曲要素写像の交換関係をどう表すか．</li>
+<li>曲Morley–HHJまたはMorley–RT型再構成を作れるか．</li>
+<li>equilibrated bending momentとa posteriori評価へ接続できるか．</li>
+<li>Rannacher型の非適合性とexact geometryを同じ枠組みで説明できるか．</li>
+</ul>
+<p><b>難所：</b>
+アフィン単体で成り立つ自由度保存，可換性，部分積分構造が，
+非アフィン曲要素では自動的に保存されないこと．
 </p>
+</div>
 
-<h3>7.6　幾何誤差を含むgoal-oriented certificate</h3>
+<h3>難易度D：異方性と曲率を分離した誤差理論を作る</h3>
+<div style="padding:10px; margin-bottom:12px; border:1px solid #999;">
+<p><b>テーマ案：</b>Anisotropic exact-curved finite element analysis for plate problems</p>
+<p><b>核心の問い：</b>
+要素のflatnessと境界曲率の影響を，誤差定数の中で混同せずに分離できるか．
+</p>
 <p>
-通常のa posteriori誤差評価は，固定された連続問題に対する離散化誤差を測ります．
-しかしバブシュカ・パラドックスでは，離散問題そのものが別の極限を選びます．したがって，
+目標となる定数依存性は，概念的には
+</p>
+\[
+ C=C\!\left(
+   \frac{H_T}{h_T},
+   \|D\Psi_K\|_{L^\infty},
+   \|D^2\Psi_K\|_{L^\infty},
+   \|(D\Psi_K)^{-1}\|_{L^\infty}
+ \right)
+\]
+<p>
+のような形です．
+</p>
+<ul>
+<li>affine core上の異方性評価とcurved correctionを分離する．</li>
+<li>境界層に沿う細長い曲要素を許す．</li>
+<li>曲率の大きい場所と異方性の強い場所が重なる場合を扱う．</li>
+<li>Morley，HHJ，\(C^0\)-IPの各方法で共通する幾何条件を探す．</li>
+</ul>
+<p><b>難所：</b>
+\(D^2\Psi_K\)に由来する曲率項が，異方性スケールと結合して増幅され得ること．
+</p>
+</div>
+
+<h3>難易度E：正しい変分極限の統一理論を作る</h3>
+<div style="padding:10px; margin-bottom:12px; border:1px solid #999;">
+<p><b>テーマ案：</b>Geometry–boundary compatibility and correct variational limits</p>
+<p><b>核心の問い：</b>
+polygonal，isoparametric，exact-curved，CutFEM，level-set，spline geometryを横断して，
+正しい連続問題への収束を保証する最小条件を特徴付けられるか．
+</p>
+<ul>
+<li>許容空間のMosco収束とエネルギーの\(\Gamma\)-収束を対応させる．</li>
+<li>境界位置，法線，曲率，trace operatorのどこまでの収束が必要かを調べる．</li>
+<li>強い境界条件とNitsche・penalty型境界条件を統一する．</li>
+<li>線形板から非線形bending–folding，殻，固有値問題へ拡張する．</li>
+</ul>
+<p><b>難所：</b>
+幾何写像，関数空間，境界作用素，離散エネルギーの収束を同時に扱う必要があること．
+</p>
+</div>
+
+<h3>難易度F：誤った極限を検出するcertificateを作る</h3>
+<div style="padding:10px; margin-bottom:12px; border:1px solid #999;">
+<p><b>テーマ案：</b>Certified detection of geometry-induced wrong limits</p>
+<p><b>核心の問い：</b>
+固定されたPDEに対する離散化誤差だけでなく，
+離散問題が別の連続問題を選んでいる可能性を計算可能に検出できるか．
 </p>
 \[
   \text{total error}
-  =\text{PDE discretisation error}
-   +\text{geometry/model error}
-   +\text{boundary-realisation error}
+  =
+  \text{PDE discretisation error}
+  +\text{geometry error}
+  +\text{boundary-realisation error}
+  +\text{quadrature error}.
 \]
-<p>
-という分解を，計算可能なcertificateへ落とし込めるかが問題になります．
+<ul>
+<li>equilibrated bending momentによる離散化誤差保証．</li>
+<li>境界曲率項の残差によるgeometry／boundary errorの検出．</li>
+<li>中心変位，最大たわみ，固有振動数など目的量別certificate．</li>
+<li>exact-curved法を基準問題としてpolygonal法のmodel errorを評価する．</li>
+</ul>
+<p><b>難所：</b>
+通常の残差評価は「同じ連続問題」を前提とするため，
+異なる極限問題の選択を検出する新しい比較原理が必要になること．
 </p>
-
-<h3>7.7　データ駆動型領域表現における「誤った極限」</h3>
-<p>
-PINNsやneural operatorsでは，領域境界を点群，signed distance function，implicit neural representationで与える場合があります．
-境界lossが小さくなることと，曲率を含む境界作用素が正しく近似されることは同じではありません．
-学習点数を増やしたときに，損失は収束しても異なる境界値問題を学習する可能性を，どの収束概念で排除できるでしょうか．
-</p>
+</div>
 
 <div style="padding:10px; margin-top:12px; border:5px double #333333;">
-<b>最小研究課題としての切り出し方</b>
-<ul>
-<li><b>対象：</b>単位円板上の単純支持板，\(f=1\)，\(\sigma=0\)．</li>
-<li><b>基準値：</b>中心変位\(u(0)=5/64\)．誤った極限値は\(3/64\)．</li>
-<li><b>比較：</b>直線境界，isoparametric曲線境界，exact-curved geometry，境界条件の全面実現，nodal realization，非適合法，DG法．</li>
-<li><b>理論目標：</b>離散エネルギーの\(\Gamma\)-収束または許容空間のMosco収束．</li>
-<li><b>計算目標：</b>通常の誤差だけでなく，「どの連続問題へ収束しているか」を診断する．</li>
-</ul>
+<b>この系列で最も独自性が出やすい方向</b>
+<p>
+Rannacher以降の既存研究を踏まえると，
+単なるパラドックスの再現や回避ではなく，
+</p>
+\[
+  \text{anisotropic affine core}
+  +\text{exact curved correction}
+  +\text{fourth-order nonconforming／mixed structure}
+\]
+<p>
+を統合し，異方性と曲率を分離した誤差評価を作る方向が，
+現在の研究系列と最も自然につながります．
+</p>
 </div>
 </article>
 </div>
-
-<h2>8．数値解析上の教訓</h2>
+<h2>9．数値解析上の教訓</h2>
 <div class="news">
 <article class="news-item">
 <p>
@@ -467,10 +595,27 @@ I. Babuška,
 <a href="https://eudml.org/doc/14244" target="_blank" rel="noopener">EuDML</a>．
 </li>
 <li>
+R. Rannacher,
+“Finite Element Approximation of Simply Supported Plates and the Babuška Paradox,”
+<cite>Zeitschrift für Angewandte Mathematik und Mechanik</cite>, 59 (1979), T73–T76.
+</li>
+<li>
+R. Rannacher,
+“On nonconforming and mixed finite element methods for plate bending problems. The linear case,”
+<cite>RAIRO. Analyse numérique</cite>, 13 (1979), 369–387.
+<a href="https://www.numdam.org/item/M2AN_1979__13_4_369_0/" target="_blank" rel="noopener">Numdam</a>．
+</li>
+<li>
 I. Babuška and J. Pitkäranta,
 “The Plate Paradox for Hard and Soft Simple Support,”
 <cite>SIAM Journal on Mathematical Analysis</cite>, 21 (1990), 551–576.
 <a href="https://doi.org/10.1137/0521030" target="_blank" rel="noopener">DOI</a>．
+</li>
+<li>
+D. N. Arnold and S. W. Walker,
+“The Hellan–Herrmann–Johnson Method with Curved Elements,”
+<cite>SIAM Journal on Numerical Analysis</cite>, 58 (2020), 2829–2855.
+<a href="https://doi.org/10.1137/19M1288723" target="_blank" rel="noopener">DOI</a>．
 </li>
 <li>
 S. Bartels and P. Tscherner,
