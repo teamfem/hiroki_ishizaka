@@ -1,85 +1,72 @@
 <!DOCTYPE html>
-<html lang="ja" class="col1">
+
+<html class="col1" lang="ja">
 <head>
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-
+<script async="" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <title>第7回：kernel stabilityとfinite-atomic approximation | ISHIZAKA Hiroki Website</title>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,kernel stability,measure-valued delay,finite-atomic approximation,Wasserstein distance,translation modulus,distributed-to-discrete concentration,kernel quadrature,asymmetric residual">
-<meta name="description" content="measure-valued delay lawの摂動をasymmetric residualへ還元し，total variation，narrow convergence，translation modulus，Wasserstein距離によるkernel stabilityとfinite-atomic approximationを解説します．">
-
-<link rel="stylesheet" href="../../css/base.css">
-<link rel="stylesheet" href="../../css/rwd.css">
-
-<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
-<link rel="apple-touch-icon" href="../../favicon.ico">
-<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
-<link rel="icon" href="../../favicon.ico">
-
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+<meta content="石坂宏樹,Hiroki Ishizaka,kernel stability,measure-valued delay,finite-atomic approximation,Wasserstein distance,translation modulus,distributed-to-discrete concentration,kernel quadrature,asymmetric residual" name="keywords"/>
+<meta content="measure-valued delay lawの摂動をasymmetric residualへ還元し，total variation，narrow convergence，translation modulus，Wasserstein距離によるkernel stabilityとfinite-atomic approximationを解説します．" name="description"/>
+<link href="../../css/base.css" rel="stylesheet"/>
+<link href="../../css/rwd.css" rel="stylesheet"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="apple-touch-icon"/>
+<link href="../../favicon.ico" rel="apple-touch-icon-precomposed"/>
+<link href="../../favicon.ico" rel="icon"/>
 <!--[if lt IE 9]>
 <script src="../../js/html5.js"></script>
 <![endif]-->
-<script src="../../js/jquery.js" charset="utf-8"></script>
-<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
-
+<script charset="utf-8" src="../../js/jquery.js"></script>
+<script charset="utf-8" src="../../js/jquery-migrate.js"></script>
 </head>
-
 <body class="page">
-
 <!--▼サイトヘッダー-->
-<header id="top" class="site-header">
-  <div class="site-header-in">
-    <div class="site-header-conts">
-      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
-    </div>
-  </div>
-
-  <nav class="global-nav">
-    <div class="global-nav-in">
-      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
-      <ul id="menu">
-        <li><a href="../../">Home</a></li>
-        <li><a href="../../publications/">Publications</a></li>
-        <li><a href="../../research/">Research</a></li>
-        <li><a href="../../fem/">Research Visions</a></li>
-        <li><a href="../../suppl/">Supplementary Visions</a></li>
-        <li><a href="../../blog/">Blog</a></li>
-        <li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
-        <li><a href="../../links/">Links</a></li>
-      </ul>
-    </div>
-  </nav>
+<header class="site-header" id="top">
+<div class="site-header-in">
+<div class="site-header-conts">
+<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+</div>
+</div>
+<nav class="global-nav">
+<div class="global-nav-in">
+<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu">
+<li><a href="../../">Home</a></li>
+<li><a href="../../publications/">Publications</a></li>
+<li><a href="../../research/">Research</a></li>
+<li><a href="../../fem/">Research Visions</a></li>
+<li><a href="../../suppl/">Supplementary Visions</a></li>
+<li><a href="../../blog/">Blog</a></li>
+<li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+<li><a href="../../links/">Links</a></li>
+</ul>
+</div>
+</nav>
 </header>
 <!--▲サイトヘッダー-->
-
 <div class="main-body">
 <div class="main-body-in">
-
 <nav class="breadcrumbs">
-  <ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
-    <li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
-      <a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a>
-      <meta itemprop="position" content="1">
-    </li>
-    <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
-      <a href="../" itemprop="item"><span itemprop="name">Blog</span></a>
-      <meta itemprop="position" content="2">
-    </li>
-    <li class="bcl-last">Blog post from 2026</li>
-  </ol>
+<ol class="breadcrumbs-in" itemscope="" itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope="" itemtype="http://schema.org/ListItem">
+<a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a>
+<meta content="1" itemprop="position"/>
+</li>
+<li itemprop="itemListElement" itemscope="" itemtype="http://schema.org/ListItem">
+<a href="../" itemprop="item"><span itemprop="name">Blog</span></a>
+<meta content="2" itemprop="position"/>
+</li>
+<li class="bcl-last">Blog post from 2026</li>
+</ol>
 </nav>
-
 <main>
 <div class="main-conts">
 <article class="section-wrap">
 <div class="section-in">
-
 <h1 class="section-title">第7回：kernel stabilityとfinite-atomic approximation</h1>
-
 <p class="news-date"><time datetime="2026-08-03">3rd August 2026</time></p>
-
 <h2>Introduction：kernelも離散化変数である</h2>
 <div class="news">
 <article class="news-item">
@@ -108,7 +95,7 @@ kernelも誤差をもつモデル変数です．
 解 \(u_{\mu_N}\) が元の解 \(u_\mu\) にどの程度近いかを示さなければなりません．
 </p>
 <div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
-<b>今回の中心問題</b><br>
+<b>今回の中心問題</b><br/>
 delay law \(\mu\) を別の測度 \(\nu\) へ置き換えたとき，
 kernel errorをsolution errorへどう伝播させるか．
 </div>
@@ -119,7 +106,6 @@ kernel errorをsolution errorへどう伝播させるか．
 </p>
 </article>
 </div>
-
 <h2>1．今回扱うのはcoercive instantaneous regime</h2>
 <div class="news">
 <article class="news-item">
@@ -158,7 +144,7 @@ kernel errorをsolution errorへどう伝播させるか．
   \ge
   \alpha_0\|v\|_V^2,
   \qquad
-  \alpha_0>0
+  \alpha_0&gt;0
 \tag{4}
 \]
 を満たすとします．
@@ -173,7 +159,6 @@ kernelは有限符号付き測度でもよく，
 </p>
 </article>
 </div>
-
 <h2>2．asymmetric residual principle</h2>
 <div class="news">
 <article class="news-item">
@@ -210,7 +195,7 @@ kernelは有限符号付き測度でもよく，
 \]
 とします．
 \[
-  d_{\mu,\beta}>0
+  d_{\mu,\beta}&gt;0
 \tag{8}
 \]
 なら，第4回のweighted estimateから
@@ -226,8 +211,8 @@ kernelは有限符号付き測度でもよく，
 \]
 </p>
 <div style="padding: 12px; margin: 14px 0; border: 2px solid #666666;">
-<b>asymmetricである理由</b><br>
-左辺の安定性marginは \(\mu\) が決める．<br>
+<b>asymmetricである理由</b><br/>
+左辺の安定性marginは \(\mu\) が決める．<br/>
 右辺のkernel residualはreference solution \(u_\nu\) に沿って評価する．
 </div>
 <p>
@@ -238,7 +223,6 @@ regularityが分かっている極限軌道をreference trajectoryに選び，
 </p>
 </article>
 </div>
-
 <h2>3．kernelを比較する四つの方法</h2>
 <div class="news">
 <article class="news-item">
@@ -248,31 +232,31 @@ regularityが分かっている極限軌道をreference trajectoryに選び，
 目的に応じた役割分担は次の通りです．
 </p>
 <table style="width:100%; border-collapse:collapse; margin:14px 0;">
-  <tr>
-    <th style="border:1px solid #777; padding:7px;">kernel comparison</th>
-    <th style="border:1px solid #777; padding:7px;">trajectory assumption</th>
-    <th style="border:1px solid #777; padding:7px;">consequence</th>
-  </tr>
-  <tr>
-    <td style="border:1px solid #777; padding:7px;">total variation</td>
-    <td style="border:1px solid #777; padding:7px;">\(\widetilde u_\nu\in L^2(-\tau,T;V)\)</td>
-    <td style="border:1px solid #777; padding:7px;">signed kernelに対するLipschitz estimate</td>
-  </tr>
-  <tr>
-    <td style="border:1px solid #777; padding:7px;">narrow convergence</td>
-    <td style="border:1px solid #777; padding:7px;">\(L^2\)-translation continuity</td>
-    <td style="border:1px solid #777; padding:7px;">非負kernelのqualitative strong convergence</td>
-  </tr>
-  <tr>
-    <td style="border:1px solid #777; padding:7px;">transport modulus</td>
-    <td style="border:1px solid #777; padding:7px;">\(G\in L^2(\mathbb R;V)\)</td>
-    <td style="border:1px solid #777; padding:7px;">軌道固有の定量評価</td>
-  </tr>
-  <tr>
-    <td style="border:1px solid #777; padding:7px;">Wasserstein distance</td>
-    <td style="border:1px solid #777; padding:7px;">\(G\in H^\theta(\mathbb R;V)\)</td>
-    <td style="border:1px solid #777; padding:7px;">\(W_1^\theta\)-rate</td>
-  </tr>
+<tr>
+<th style="border:1px solid #777; padding:7px;">kernel comparison</th>
+<th style="border:1px solid #777; padding:7px;">trajectory assumption</th>
+<th style="border:1px solid #777; padding:7px;">consequence</th>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">total variation</td>
+<td style="border:1px solid #777; padding:7px;">\(\widetilde u_\nu\in L^2(-\tau,T;V)\)</td>
+<td style="border:1px solid #777; padding:7px;">signed kernelに対するLipschitz estimate</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">narrow convergence</td>
+<td style="border:1px solid #777; padding:7px;">\(L^2\)-translation continuity</td>
+<td style="border:1px solid #777; padding:7px;">非負kernelのqualitative strong convergence</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">transport modulus</td>
+<td style="border:1px solid #777; padding:7px;">\(G\in L^2(\mathbb R;V)\)</td>
+<td style="border:1px solid #777; padding:7px;">軌道固有の定量評価</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">Wasserstein distance</td>
+<td style="border:1px solid #777; padding:7px;">\(G\in H^\theta(\mathbb R;V)\)</td>
+<td style="border:1px solid #777; padding:7px;">\(W_1^\theta\)-rate</td>
+</tr>
 </table>
 <p>
 一つの距離ですべてを扱おうとすると，重要な極限を見失います．
@@ -280,7 +264,6 @@ regularityが分かっている極限軌道をreference trajectoryに選び，
 </p>
 </article>
 </div>
-
 <h2>4．total variationはsigned kernelの係数摂動を捉える</h2>
 <div class="news">
 <article class="news-item">
@@ -289,10 +272,10 @@ history operatorの基本評価から
 \[
 \begin{aligned}
   \|K_{\mu-\nu}\widetilde u_\nu\|_{L^2(0,T;V^*)}
-  \le{}&
+  \le{}&amp;
   \Lambda_1
   \|\mu-\nu\|_{\mathcal M([0,\tau])}\\
-  &\times
+  &amp;\times
   \|\widetilde u_\nu\|_{L^2(-\tau,T;V)}.
 \end{aligned}
 \tag{10}
@@ -327,7 +310,6 @@ total variationではdistributed-to-discrete concentrationを検出できませ�
 </p>
 </article>
 </div>
-
 <h2>5．narrow convergenceは集中を捉えるがrateを与えない</h2>
 <div class="news">
 <article class="news-item">
@@ -350,7 +332,7 @@ total variationではdistributed-to-discrete concentrationを検出できませ�
 <p>
 \(\mu_n\) と \(\mu\) が非負で，
 \(\mu(\{0\})=0\) なら，一つの指数重み \(\beta\) と
-一つのmargin \(d_*>0\) を選び，
+一つのmargin \(d_*&gt;0\) を選び，
 十分大きな \(n\) について
 \[
   d_{\mu_n,\beta}\ge d_*,
@@ -379,7 +361,6 @@ narrow convergenceから
 </p>
 </article>
 </div>
-
 <h2>6．trajectory translation modulus</h2>
 <div class="news">
 <article class="news-item">
@@ -421,14 +402,13 @@ translation groupのstrong continuityにより
 </p>
 </article>
 </div>
-
 <h2>7．transport planでdelay massを対応付ける</h2>
 <div class="news">
 <article class="news-item">
 <p>
 \(\mu,\nu\) を同じmass
 \[
-  M:=\mu([0,\tau])=\nu([0,\tau])>0
+  M:=\mu([0,\tau])=\nu([0,\tau])&gt;0
 \tag{19}
 \]
 をもつ非負測度とします．
@@ -466,7 +446,6 @@ transport planは，\(\mu\) のdelay location \(s\) にあるmassを，
 </p>
 </article>
 </div>
-
 <h2>8．transport-modulus kernel stability</h2>
 <div class="news">
 <article class="news-item">
@@ -522,7 +501,6 @@ kernel perturbationの影響を評価できます．
 </p>
 </article>
 </div>
-
 <h2>9．fractional regularityからWasserstein rateへ</h2>
 <div class="news">
 <article class="news-item">
@@ -567,7 +545,6 @@ reference trajectoryの時間正則性指数 \(\theta\) も反映します．
 </p>
 </article>
 </div>
-
 <h2>10．joined trajectoryのregularityは接合点で決まる</h2>
 <div class="news">
 <article class="news-item">
@@ -585,22 +562,22 @@ joined trajectory
 全体が \(H^\theta(-\tau,T;V)\) に属することです．
 </p>
 <table style="width:100%; border-collapse:collapse; margin:14px 0;">
-  <tr>
-    <th style="border:1px solid #777; padding:7px;">regularity</th>
-    <th style="border:1px solid #777; padding:7px;">\(t=0\) で必要な条件</th>
-  </tr>
-  <tr>
-    <td style="border:1px solid #777; padding:7px;">\(0&lt;\theta&lt;1/2\)</td>
-    <td style="border:1px solid #777; padding:7px;">trace compatibilityは不要．jumpも許される．</td>
-  </tr>
-  <tr>
-    <td style="border:1px solid #777; padding:7px;">\(1/2&lt;\theta\le1\)</td>
-    <td style="border:1px solid #777; padding:7px;">\(\psi(0-)=u(0+)\) in \(V\)</td>
-  </tr>
-  <tr>
-    <td style="border:1px solid #777; padding:7px;">\(\theta=1/2\)</td>
-    <td style="border:1px solid #777; padding:7px;">pointwise matchingではなくcross-interface integralが有限</td>
-  </tr>
+<tr>
+<th style="border:1px solid #777; padding:7px;">regularity</th>
+<th style="border:1px solid #777; padding:7px;">\(t=0\) で必要な条件</th>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">\(0&lt;\theta&lt;1/2\)</td>
+<td style="border:1px solid #777; padding:7px;">trace compatibilityは不要．jumpも許される．</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">\(1/2&lt;\theta\le1\)</td>
+<td style="border:1px solid #777; padding:7px;">\(\psi(0-)=u(0+)\) in \(V\)</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">\(\theta=1/2\)</td>
+<td style="border:1px solid #777; padding:7px;">pointwise matchingではなくcross-interface integralが有限</td>
+</tr>
 </table>
 <p>
 borderline \(\theta=1/2\) では，
@@ -627,7 +604,6 @@ regularityを上げてalgebraic rateを得ようとしたときに初めて，
 </p>
 </article>
 </div>
-
 <h2>11．dataからLipschitz rateを確認する</h2>
 <div class="news">
 <article class="news-item">
@@ -679,12 +655,11 @@ regularityを上げてalgebraic rateを得ようとしたときに初めて，
 </p>
 </article>
 </div>
-
 <h2>12．fixed positive lagへのdistributed-to-discrete concentration</h2>
 <div class="news">
 <article class="news-item">
 <p>
-\(\tau_d\in(0,\tau)\)，\(m>0\) とし，
+\(\tau_d\in(0,\tau)\)，\(m&gt;0\) とし，
 \(\eta\ge0\)，
 \[
   \int_{-1}^{1}\eta(z)\,dz=1
@@ -738,7 +713,6 @@ principal-part delayを含むenergy spaceで定量化したものです．
 </p>
 </article>
 </div>
-
 <h2>13．moving multiple delays</h2>
 <div class="news">
 <article class="news-item">
@@ -755,9 +729,9 @@ principal-part delayを含むenergy spaceで定量化したものです．
 \tag{37}
 \]
 \[
-  m_j>0,
+  m_j&gt;0,
   \qquad
-  \tau_{j,n}\longrightarrow\tau_j>0
+  \tau_{j,n}\longrightarrow\tau_j&gt;0
 \]
 を考えます．各atomを対応するatomへ運べば
 \[
@@ -772,12 +746,12 @@ principal-part delayを含むenergy spaceで定量化したものです．
 従って，reference trajectoryが \(H^\theta\)-extensionをもつなら
 \[
 \begin{aligned}
-  &
+  &amp;
   \|u_{\mu_n}-u_\mu\|_{W(0,T)}
   +
   \|u_{\mu_n}-u_\mu\|_{C([0,T];H)}
   \\
-  &\qquad\le
+  &amp;\qquad\le
   C
   \left(
     \sum_{j=1}^{J}
@@ -793,7 +767,6 @@ atomの位置誤差を，解誤差へ直接変換できます．
 </p>
 </article>
 </div>
-
 <h2>14．finite-atomic approximationを具体的に作る</h2>
 <div class="news">
 <article class="news-item">
@@ -868,7 +841,6 @@ solution estimateへ入る量は，まずdelay massのtransport costです．
 </p>
 </article>
 </div>
-
 <h2>15．kernel errorとstate-discretisation errorを分離する</h2>
 <div class="news">
 <article class="news-item">
@@ -878,9 +850,9 @@ solution estimateへ入る量は，まずdelay massのtransport costです．
 \[
 \begin{aligned}
   \|u_\mu-U_{h,k,N}\|
-  \le{}&
+  \le{}&amp;
   \|u_\mu-u_{\mu_N}\|\\
-  &+
+  &amp;+
   \|u_{\mu_N}-U_{h,k,N}\|.
 \end{aligned}
 \tag{45}
@@ -916,7 +888,6 @@ kernel model reductionとFEM・時間積分の誤差を混同せずに評価で�
 </p>
 </article>
 </div>
-
 <h2>16．spatial Galerkin semidiscretisationへの一様移行</h2>
 <div class="news">
 <article class="news-item">
@@ -924,7 +895,7 @@ kernel model reductionとFEM・時間積分の誤差を混同せずに評価で�
 有限次元空間 \(V_h\) 上で，離散形式が
 mesh parameterに依存しない有界性とcoercivityを満たし，
 \[
-  \alpha_{0,h}\ge\alpha_* >0,
+  \alpha_{0,h}\ge\alpha_* &gt;0,
 \tag{47}
 \]
 \[
@@ -934,7 +905,7 @@ mesh parameterに依存しない有界性とcoercivityを満たし，
   -
   \Lambda_{1,h}\kappa_\mu(\beta)
   \ge
-  d_*>0
+  d_*&gt;0
 \tag{48}
 \]
 を一様に満たすとします．
@@ -955,12 +926,11 @@ finite-atomic familyに対して一様に評価する作業が別に必要です
 </p>
 </article>
 </div>
-
 <h2>17．positive lagとzero delayは同じ極限ではない</h2>
 <div class="news">
 <article class="news-item">
 <p>
-fixed positive lag \(\tau_d>0\) への集中では，
+fixed positive lag \(\tau_d&gt;0\) への集中では，
 kernel massが原点から離れているため，
 一つの指数重みで一様なstability marginを確保できます．
 </p>
@@ -979,7 +949,7 @@ kernel massが原点から離れているため，
 \tag{49}
 \]
 \[
-  \frac{\Lambda_1M}{\alpha_0}>1
+  \frac{\Lambda_1M}{\alpha_0}&gt;1
 \]
 なら，一様なmarginを得るために必要なweightは
 \(\tau_d^{-1}\)-scaleで発散します．
@@ -994,14 +964,14 @@ principal-part delayではclass-level threshold
 が現れます．
 </p>
 <ul>
-  <li>
+<li>
     \(\Lambda_1M/\alpha_0&lt;1\)：massだけに依存するunweighted boundをdelay locationに一様に保てる．
   </li>
-  <li>
+<li>
     \(\Lambda_1M/\alpha_0=1\)：各固定scalar modeはspectrally stableでも，small-delayとhigh-frequencyを同時に取るとcoercive space-time normの一様性を失う．
   </li>
-  <li>
-    \(\Lambda_1M/\alpha_0>1\)：一様に有界なデータから，\(\exp(cT/\tau_d)\)-scaleで成長するsolution familyが生じ得る．
+<li>
+    \(\Lambda_1M/\alpha_0&gt;1\)：一様に有界なデータから，\(\exp(cT/\tau_d)\)-scaleで成長するsolution familyが生じ得る．
   </li>
 </ul>
 <p>
@@ -1011,7 +981,6 @@ principal-part delayではclass-level threshold
 </p>
 </article>
 </div>
-
 <h2>18．fractional exponentはresidual mechanismではsharpである</h2>
 <div class="news">
 <article class="news-item">
@@ -1033,7 +1002,6 @@ full solution errorについて必ず同じlower boundが成立する，とい�
 </p>
 </article>
 </div>
-
 <h2>19．delay atomsとProny modesを混同しない</h2>
 <div class="news">
 <article class="news-item">
@@ -1071,8 +1039,8 @@ delay measureの有限原子化
 原子が置かれる変数が異なります．
 </p>
 <ul>
-  <li>delay atom：lag location \(s\) 上の原子．</li>
-  <li>Prony mode：relaxation rate \(\gamma\) 上の原子．</li>
+<li>delay atom：lag location \(s\) 上の原子．</li>
+<li>Prony mode：relaxation rate \(\gamma\) 上の原子．</li>
 </ul>
 <p>
 この区別は，第8回以降でdelay quadratureとinternal-variable discretisationを
@@ -1080,7 +1048,6 @@ delay measureの有限原子化
 </p>
 </article>
 </div>
-
 <h2>Conclusion</h2>
 <div class="news">
 <article class="news-item">
@@ -1118,7 +1085,8 @@ space-time discretisation errorから分離できます．
 zero delayは瞬時作用へ移る特異境界です．
 </p>
 <div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
-<b>次回：</b>第8回：離散内部変数でcross-term cancellationを保存する（構想中）<br>
+
+<a href="./unresolved-memory-08.html">第8回：離散内部変数でcross-term cancellationを保存する</a><br/>
 Prony近似または有限緩和モードに対して，
 連続extended energyのcoupling cancellationを時間・空間離散後にも再現する条件を整理します．
 </div>
@@ -1134,21 +1102,16 @@ Prony近似または有限緩和モードに対して，
 </p>
 </article>
 </div>
-
 </div>
 </article>
 </div>
 </main>
-
 </div>
 </div>
-
 <footer class="site-footer">
-  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
 </footer>
-
-<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
-<script src="../../js/utility.js" charset="utf-8"></script>
-
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
 </body>
 </html>
