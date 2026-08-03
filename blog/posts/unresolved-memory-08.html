@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+
+<html class="col1" lang="ja">
+<head>
+<script async="" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<title>第8回：離散内部変数でcross-term cancellationを保存する | ISHIZAKA Hiroki Website</title>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="IE=edge" http-equiv="X-UA-Compatible"/>
+<meta content="石坂宏樹,Hiroki Ishizaka,structure-preserving discretisation,internal variables,cross-term cancellation,BDF1,BDF2,G-stability,convolution quadrature,Prony kernel,Crouzeix-Raviart" name="keywords"/>
+<meta content="completely monotone memoryを有限個の内部変数へ近似し，BDF1・BDF2と空間Galerkin法によって連続系のcross-term cancellationとgraph energyを離散的に保存する設計原理を解説します．" name="description"/>
+<link href="../../css/base.css" rel="stylesheet"/>
+<link href="../../css/rwd.css" rel="stylesheet"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="apple-touch-icon"/>
+<link href="../../favicon.ico" rel="apple-touch-icon-precomposed"/>
+<link href="../../favicon.ico" rel="icon"/>
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script charset="utf-8" src="../../js/jquery.js"></script>
+<script charset="utf-8" src="../../js/jquery-migrate.js"></script>
+</head>
+<body class="page">
+<!--▼サイトヘッダー-->
+<header class="site-header" id="top">
+<div class="site-header-in">
+<div class="site-header-conts">
+<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+</div>
+</div>
+<nav class="global-nav">
+<div class="global-nav-in">
+<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu">
+<li><a href="../../">Home</a></li>
+<li><a href="../../publications/">Publications</a></li>
+<li><a href="../../research/">Research</a></li>
+<li><a href="../../fem/">Research Visions</a></li>
+<li><a href="../../suppl/">Supplementary Visions</a></li>
+<li><a href="../../blog/">Blog</a></li>
+<li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+<li><a href="../../links/">Links</a></li>
+</ul>
+</div>
+</nav>
+</header>
+<!--▲サイトヘッダー-->
+<div class="main-body">
+<div class="main-body-in">
+<nav class="breadcrumbs">
+<ol class="breadcrumbs-in" itemscope="" itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope="" itemtype="http://schema.org/ListItem">
+<a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a>
+<meta content="1" itemprop="position"/>
+</li>
+<li itemprop="itemListElement" itemscope="" itemtype="http://schema.org/ListItem">
+<a href="../" itemprop="item"><span itemprop="name">Blog</span></a>
+<meta content="2" itemprop="position"/>
+</li>
+<li class="bcl-last">Blog post from 2026</li>
+</ol>
+</nav>
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+<h1 class="section-title">第8回：離散内部変数でcross-term cancellationを保存する</h1>
+<p class="news-date"><time datetime="2026-08-03">3rd August 2026</time></p>
+<h2>Introduction：安定性を生む代数を離散化する</h2>
+<div class="news"><article class="news-item">
+<p>
+第6回では，物理変数 \(u\) と内部変数 \(\zeta\) を一つの拡張状態にまとめると，
+memory couplingがenergy identityの中で正確に相殺されることを見ました．
+数値法でも，連続方程式の各項を個別に近似するだけでは不十分です．
+</p>
+\[
+  -a_1(J\zeta,u)
+  +\langle \zeta,Eu\rangle_{\mathcal K}
+  =0
+\]
+<p>
+というcross-term cancellationを離散系で失えば，graph-space stabilityも失われます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>今回の中心原理</b><br/>
+物理方程式と内部変数方程式で，同じtime level，同じ空間形式，同じmode weightを使う．<br/>
+すると，continuous coupling cancellationが完全離散energy identityにも残る．
+</div>
+<p>
+今回はfinite Prony approximationに対するBDF1・BDF2 schemeを用いて，
+この構造を具体的に導きます．ここで示すのは離散energyを支える代数です．
+異方性CR法の完全な誤差評価や三つの極限の可換性は，この構造を基礎として別途証明する課題です．
+</p>
+</article></div>
+<h2>1．連続系で保存すべきenergy</h2>
+<div class="news"><article class="news-item">
+<p>completely monotone kernelを</p>
+\[
+  k(t)=\int_{[0,\infty)}e^{-\lambda t}\,d\nu(\lambda)
+\tag{1}
+\]
+<p>と表し，</p>
+\[
+  \partial_tu+A_0u+A_1\xi=f,
+  \qquad
+  \xi=\int_{[0,\infty)}\zeta(\lambda)\,d\nu(\lambda),
+\tag{2}
+\]
+\[
+  \partial_t\zeta(\lambda)+\lambda\zeta(\lambda)=u
+\tag{3}
+\]
+<p>を考えます．物理方程式を \(u\) で，内部変数方程式を \(\zeta(\lambda)\) でテストすると，</p>
+\[
+\begin{aligned}
+  \frac{d}{dt}\Biggl[
+    &amp;\frac12\|u\|_H^2
+    +\frac12\int_{[0,\infty)}
+      a_1(\zeta(\lambda),\zeta(\lambda))\,d\nu(\lambda)
+  \Biggr]
+  \\
+  &amp;+a_0(u,u)
+  +\int_{[0,\infty)}
+    \lambda a_1(\zeta(\lambda),\zeta(\lambda))\,d\nu(\lambda)
+  =(f,u)_H.
+\end{aligned}
+\tag{4}
+\]
+<p>
+完全離散法の目標は式 (4) の形だけを模倣することではなく，
+この式を成立させたadjoint couplingを保存することです．
+</p>
+</article></div>
+<h2>2．finite Prony approximation</h2>
+<div class="news"><article class="news-item">
+<p>Bernstein measureを正の有限原子測度</p>
+\[
+  \nu_L=\sum_{\ell=1}^{L}c_\ell\delta_{\lambda_\ell},
+  \qquad c_\ell&gt;0,
+  \qquad \lambda_\ell\ge0
+\tag{5}
+\]
+<p>で近似すると，</p>
+\[
+  k_L(t)=\sum_{\ell=1}^{L}c_\ell e^{-\lambda_\ell t}
+\tag{6}
+\]
+<p>となります．各modeに</p>
+\[
+  \partial_t\zeta_\ell+\lambda_\ell\zeta_\ell=u,
+  \qquad \zeta_\ell(0)=0,
+\tag{7}
+\]
+<p>を割り当て，</p>
+\[
+  \xi_L=\sum_{\ell=1}^{L}c_\ell\zeta_\ell
+\tag{8}
+\]
+<p>
+とします．正のweight \(c_\ell\) により，
+\(\sum_\ell c_\ell a_1(\zeta_\ell,\zeta_\ell)\) は非負のmemory energyになります．
+</p>
+</article></div>
+<h2>3．空間Galerkin系</h2>
+<div class="news"><article class="news-item">
+<p>
+有限次元空間 \(V_h\) と対称非負な離散形式 \(a_{0,h}\)，\(a_{1,h}\) を用います．
+semidiscrete systemは
+</p>
+\[
+\begin{aligned}
+  (\partial_tu_h,v_h)_H
+  +a_{0,h}(u_h,v_h)
+  +\sum_{\ell=1}^{L}c_\ell a_{1,h}(\zeta_{\ell,h},v_h)
+  =(f,v_h)_H,
+\end{aligned}
+\tag{9}
+\]
+\[
+  a_{1,h}(\partial_t\zeta_{\ell,h},\chi_h)
+  +\lambda_\ell a_{1,h}(\zeta_{\ell,h},\chi_h)
+  =a_{1,h}(u_h,\chi_h)
+\tag{10}
+\]
+<p>
+です．両方の方程式で同じ \(a_{1,h}\) を使うことが，
+離散adjoint relationを作ります．片側だけに異なるquadratureやprojectionを入れると，
+相殺は一般に残りません．
+</p>
+</article></div>
+<h2>4．BDF1 schemeとcross-term cancellation</h2>
+<div class="news"><article class="news-item">
+<p>一様時間刻みで</p>
+\[
+  \delta_ty^n=\frac{y^n-y^{n-1}}{\Delta t}
+\tag{11}
+\]
+<p>とし，</p>
+\[
+\begin{aligned}
+  (\delta_tu_h^n,v_h)_H
+  +a_{0,h}(u_h^n,v_h)
+  +\sum_{\ell=1}^{L}c_\ell a_{1,h}(\zeta_{\ell,h}^n,v_h)
+  =(f^n,v_h)_H,
+\end{aligned}
+\tag{12}
+\]
+\[
+  a_{1,h}(\delta_t\zeta_{\ell,h}^n,\chi_h)
+  +\lambda_\ell a_{1,h}(\zeta_{\ell,h}^n,\chi_h)
+  =a_{1,h}(u_h^n,\chi_h)
+\tag{13}
+\]
+<p>
+とします．式 (12) を \(u_h^n\) で，式 (13) を
+\(c_\ell\zeta_{\ell,h}^n\) でテストして足すと，
+</p>
+\[
+  \sum_{\ell=1}^{L}c_\ell a_{1,h}(\zeta_{\ell,h}^n,u_h^n)
+  -\sum_{\ell=1}^{L}c_\ell a_{1,h}(u_h^n,\zeta_{\ell,h}^n)
+  =0.
+\tag{14}
+\]
+<p>
+この相殺には瞬時coercivity constantを使いません．
+必要なのは同じtime level，同じspatial form，同じmode weightです．
+</p>
+</article></div>
+<h2>5．BDF1の離散graph-energy identity</h2>
+<div class="news"><article class="news-item">
+<p>離散energyを</p>
+\[
+  \mathcal E_h^n
+  :=\frac12\|u_h^n\|_H^2
+  +\frac12\sum_{\ell=1}^{L}c_\ell
+    a_{1,h}(\zeta_{\ell,h}^n,\zeta_{\ell,h}^n)
+\tag{15}
+\]
+<p>とすると，</p>
+\[
+\begin{aligned}
+  \mathcal E_h^n-\mathcal E_h^{n-1}
+  &amp;+\frac12\|u_h^n-u_h^{n-1}\|_H^2
+  \\
+  &amp;+\frac12\sum_{\ell=1}^{L}c_\ell
+  a_{1,h}(\zeta_{\ell,h}^n-\zeta_{\ell,h}^{n-1},
+          \zeta_{\ell,h}^n-\zeta_{\ell,h}^{n-1})
+  \\
+  &amp;+\Delta t\,a_{0,h}(u_h^n,u_h^n)
+  \\
+  &amp;+\Delta t\sum_{\ell=1}^{L}c_\ell\lambda_\ell
+  a_{1,h}(\zeta_{\ell,h}^n,\zeta_{\ell,h}^n)
+  \\
+  &amp;=\Delta t\,(f^n,u_h^n)_H.
+\end{aligned}
+\tag{16}
+\]
+<p>
+無外力なら \(\mathcal E_h^n\le\mathcal E_h^{n-1}\) です．
+しかも式 (16) は \(a_{0,h}\) の正の下界で割っていません．
+従って，瞬時拡散が退化しても離散memory energyは残ります．
+</p>
+</article></div>
+<h2>6．BDF2ではG-energyを使う</h2>
+<div class="news"><article class="news-item">
+<p>BDF2差分を</p>
+\[
+  D_2y^n=\frac{3y^n-4y^{n-1}+y^{n-2}}{2\Delta t}
+\tag{17}
+\]
+<p>とします．恒等式</p>
+\[
+\begin{aligned}
+  4\Delta t\,(D_2y^n,y^n)
+  ={}&amp;\|y^n\|^2+\|2y^n-y^{n-1}\|^2
+  \\
+  &amp;-\|y^{n-1}\|^2-\|2y^{n-1}-y^{n-2}\|^2
+  \\
+  &amp;+\|y^n-2y^{n-1}+y^{n-2}\|^2
+\end{aligned}
+\tag{18}
+\]
+<p>
+が成り立つため，BDF2では一時刻のnormではなく，two-step G-energyが自然です．
+</p>
+<p>対称非負形式 \(b\) に対して</p>
+\[
+  \mathcal G_b(x,y)
+  :=\frac14\{b(x,x)+b(2x-y,2x-y)\}
+\tag{19}
+\]
+<p>と定めます．</p>
+</article></div>
+<h2>7．BDF2の離散energy law</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (12)，(13) の \(\delta_t\) を両方とも \(D_2\) に置き換えます．
+同じ時刻 \(n\) でcouplingを評価するため，cross termsはBDF1と同様に相殺します．
+</p>
+<p>BDF2 graph energyを</p>
+\[
+\begin{aligned}
+  \mathcal E_{G,h}^n
+  :={}&amp;\mathcal G_{(\cdot,\cdot)_H}(u_h^n,u_h^{n-1})
+  \\
+  &amp;+\sum_{\ell=1}^{L}c_\ell
+  \mathcal G_{a_{1,h}}(\zeta_{\ell,h}^n,\zeta_{\ell,h}^{n-1})
+\end{aligned}
+\tag{20}
+\]
+<p>とすると，</p>
+\[
+\begin{aligned}
+  \mathcal E_{G,h}^n-\mathcal E_{G,h}^{n-1}
+  &amp;+\frac14\|u_h^n-2u_h^{n-1}+u_h^{n-2}\|_H^2
+  \\
+  &amp;+\frac14\sum_{\ell=1}^{L}c_\ell
+  a_{1,h}(\Delta_2\zeta_{\ell,h}^n,\Delta_2\zeta_{\ell,h}^n)
+  \\
+  &amp;+\Delta t\,a_{0,h}(u_h^n,u_h^n)
+  \\
+  &amp;+\Delta t\sum_{\ell=1}^{L}c_\ell\lambda_\ell
+  a_{1,h}(\zeta_{\ell,h}^n,\zeta_{\ell,h}^n)
+  \\
+  &amp;=\Delta t\,(f^n,u_h^n)_H,
+\end{aligned}
+\tag{21}
+\]
+<p>
+ここで
+\(\Delta_2\zeta_{\ell,h}^n
+=\zeta_{\ell,h}^n-2\zeta_{\ell,h}^{n-1}+\zeta_{\ell,h}^{n-2}\) です．
+無外力ならG-energyは非増加です．
+</p>
+</article></div>
+<h2>8．BDF2の開始値はenergy stabilityとは別問題</h2>
+<div class="news"><article class="news-item">
+<p>
+BDF2は二つの初期levelを必要とします．zero prehistoryなら
+\(\zeta_{\ell,h}^0=0\) ですが，第一stepの構成は別に指定しなければなりません．
+BDF1 startは自然ですが，globalな二次精度には，
+初期正則性，kernelの原点特異性，starting correctionを調べる必要があります．
+</p>
+<div style="padding:12px; margin:14px 0; border:2px solid #666666;">
+<b>区別すべき二つの主張</b><br/>
+式 (21) はdiscrete energy stabilityを与える．<br/>
+二次精度convergenceはconsistencyとregularityを含む別の定理である．
+</div>
+</article></div>
+<h2>9．内部変数を消去するとBDF convolution quadratureになる</h2>
+<div class="news"><article class="news-item">
+<p>BDFの生成多項式は</p>
+\[
+  \delta_1(\xi)=1-\xi,
+  \qquad
+  \delta_2(\xi)=\frac32-2\xi+\frac12\xi^2.
+\tag{22}
+\]
+<p>finite Prony kernelのLaplace transformは</p>
+\[
+  \widehat k_L(z)=\sum_{\ell=1}^{L}\frac{c_\ell}{z+\lambda_\ell}.
+\tag{23}
+\]
+<p>
+内部変数schemeを生成関数で書くと，\(q\in\{1,2\}\) に対して
+</p>
+\[
+  \left(\frac{\delta_q(\xi)}{\Delta t}+\lambda_\ell\right)
+  Z_\ell(\xi)=U(\xi).
+\tag{24}
+\]
+<p>従って</p>
+\[
+  \sum_{\ell=1}^{L}c_\ell Z_\ell(\xi)
+  =\widehat k_L\left(\frac{\delta_q(\xi)}{\Delta t}\right)U(\xi).
+\tag{25}
+\]
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+\[
+  \boxed{
+  \text{BDF-CQによる離散畳み込み}
+  =
+  \text{BDF内部変数を消去したscheme}
+  }
+\]
+</div>
+<p>
+finite Prony kernelでは，CQとinternal-variable methodは別の方法ではなく，
+同じ離散memory operatorの二つの表現です．
+</p>
+</article></div>
+<h2>10．一般kernelでは三つの誤差を分離する</h2>
+<div class="news"><article class="news-item">
+<p>一般のcompletely monotone kernelでは</p>
+\[
+  \widehat k(z)=\int_{[0,\infty)}\frac{1}{z+\lambda}\,d\nu(\lambda).
+\tag{26}
+\]
+<p>
+BDF-CQは \(\widehat k(\delta_q(\xi)/\Delta t)\) を用いてmemory operator全体を離散化します．
+一方，\(\lambda\)-積分を正のquadratureで近似すればfinite internal-state algorithmになります．
+</p>
+\[
+\begin{aligned}
+  \text{total error}
+  \le{}&amp;\text{relaxation-spectrum quadrature error}
+  \\
+  &amp;+\text{space discretisation error}
+  \\
+  &amp;+\text{time discretisation error}.
+\end{aligned}
+\tag{27}
+\]
+<p>
+第7回のfinite-atomic approximationはlag variable上の原子化でした．
+今回はrelaxation-rate variable上の原子化です．
+同じ「原子近似」でも，近似する変数は異なります．
+</p>
+</article></div>
+<h2>11．vanishing-coercivity robustness</h2>
+<div class="news"><article class="news-item">
+<p>瞬時形式を</p>
+\[
+  a_{0,h}^{\varepsilon}=a_{0,h}+\varepsilon a_{v,h},
+  \qquad \varepsilon\ge0
+\tag{28}
+\]
+<p>
+とします．式 (16)，(21) では \(a_{0,h}^{\varepsilon}(u_h^n,u_h^n)\) は
+非負のdissipationとして現れますが，energy identityを閉じるために
+そのcoercivity constantで割る必要はありません．
+</p>
+<p>
+従って離散graph energyのstabilityは \(\varepsilon\downarrow0\) でも同じ形を保ちます．
+ただし，\(\varepsilon\)-一様なerror rateには，projection error，nonconforming consistency，
+極限解の追加regularityを別に調べる必要があります．
+</p>
+</article></div>
+<h2>12．異方性Crouzeix–Raviart法への接続</h2>
+<div class="news"><article class="news-item">
+<p>CR空間ではbroken form</p>
+\[
+  a_{i,h}(w_h,v_h)
+  :=\sum_{K\in\mathcal T_h}
+    \int_K A_i\nabla_hw_h\cdot\nabla_hv_h\,dx
+\tag{29}
+\]
+<p>
+を物理方程式と内部変数方程式で共通に使えば，cross-term cancellationの代数は残ります．
+ただし，時間方向のenergy algebraと空間方向の解析は分けて考える必要があります．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">課題</th><th style="border:1px solid #777; padding:7px;">支配する構造</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">memory couplingの相殺</td><td style="border:1px solid #777; padding:7px;">同じ \(a_{1,h}\)，time level，mode weight</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">空間安定性</td><td style="border:1px solid #777; padding:7px;">離散Poincaré・Sobolev型不等式</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">異方性誤差</td><td style="border:1px solid #777; padding:7px;">semi-regularityと方向別補間評価</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">局所保存・certificate</td><td style="border:1px solid #777; padding:7px;">CR–RT reconstruction</td></tr>
+</table>
+<p>
+CR–RT reconstructionは局所保存と誤差保証に重要ですが，
+cross-term cancellation自体は，まず共通のbroken formによって作られます．
+</p>
+</article></div>
+<h2>13．実装ではenergy residualを監査する</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (16) または式 (21) の左辺から右辺を引いた量を
+energy residual \(\mathfrak R_{\mathrm{en}}^n\) とします．
+正しく実装されていれば，
+</p>
+\[
+  |\mathfrak R_{\mathrm{en}}^n|
+  \approx
+  \text{linear solver tolerance}+
+  \text{round-off error}.
+\tag{30}
+\]
+<p>residualが大きい場合は，</p>
+<ul>
+<li>mode weight \(c_\ell\) の掛け忘れ</li>
+<li>物理式と内部式で異なるmatrixを使用</li>
+<li>coupling time levelのずれ</li>
+<li>initial memoryの不整合</li>
+</ul>
+<p>
+などを疑えます．離散energy identityは証明の道具であると同時に，コードのcertificateです．
+</p>
+</article></div>
+<h2>14．今回確立したことと今後の証明課題</h2>
+<div class="news"><article class="news-item">
+<h3>今回，代数的に確認したこと</h3>
+<ul>
+<li>正のfinite Prony approximationは非負の離散memory energyを作る．</li>
+<li>BDF1では通常のgraph energyに対するexact balanceが成り立つ．</li>
+<li>BDF2ではtwo-step G-energyに対するexact balanceが成り立つ．</li>
+<li>同じtime level・spatial form・mode weightによりcross termsが相殺する．</li>
+<li>finite Prony kernelではBDF-CQとBDF internal-variable schemeが代数的に同値である．</li>
+</ul>
+<h3>別途必要な解析</h3>
+<ul>
+<li>一般kernelに対するrelaxation-spectrum quadrature error．</li>
+<li>BDF2 starting correctionを含む二次精度評価．</li>
+<li>異方性CR法のconsistency errorと補間誤差．</li>
+<li>kernel近似・空間離散・時間離散の極限の可換性．</li>
+<li>vanishing-coercivity parameterに一様な完全離散error bound．</li>
+</ul>
+<p>
+従って，本記事は完成したfully discrete convergence theoremを主張するものではありません．
+その定理を成立させるために保存すべき離散構造を特定したものです．
+</p>
+</article></div>
+<h2>Conclusion</h2>
+<div class="news"><article class="news-item">
+<p>
+structure-preserving discretisationで重要なのは，連続energy estimateの最終形だけを模倣することではなく，
+そのestimateを成立させたcoupling algebraを離散系でも一致させることです．
+</p>
+\[
+  \text{continuous adjoint coupling}
+  \longrightarrow
+  \text{discrete adjoint coupling}
+  \longrightarrow
+  \text{discrete graph-energy law}
+\]
+<p>
+finite Prony approximationに対し，物理変数と内部変数を同じBDF formulaで更新し，
+同じ \(a_{1,h}\) と同じ正のweightを使えば，cross-term cancellationは完全離散後にも残ります．
+BDF1では一時刻energyが，BDF2ではtwo-step G-energyが自然です．
+</p>
+<p>
+またfinite Prony kernelでは，内部変数を消去したschemeがBDF convolution quadratureと一致します．
+CQとinternal-variable methodは競合する方法ではなく，同じ離散memory operatorの異なる状態表現です．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>次回：</b>第9回：BDFとconvolution quadratureは何を離散化しているのか（構想中）<br/>
+Laplace-domain transfer functionへBDF symbolを代入するoperational calculusを出発点に，
+CQ weight，starting correction，kernel singularity，内部変数表示の関係を詳しく整理します．
+</div>
+<p>前の記事：<a href="./unresolved-memory-07.html">第7回：kernel stabilityとfinite-atomic approximation</a></p>
+<p>
+関連ページ：
+<a href="../../publications/">Publications</a>（S3–S5，A3），
+<a href="../../fem/">Research Visions</a>（Vision 11，18），
+<a href="../../suppl/">Supplementary Visions</a>（履歴依存型発展方程式とmemory kernel）
+</p>
+</article></div>
+</div>
+</article>
+</div>
+</main>
+</div>
+</div>
+<footer class="site-footer">
+<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
