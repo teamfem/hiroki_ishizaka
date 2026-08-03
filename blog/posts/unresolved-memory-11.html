@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>第11回：誤差に応じて潜在状態を追加するmodel adaptivity | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,model adaptivity,latent states,error ledger,delay atoms,Prony modes,adaptive finite element method,BDF convolution quadrature,memory equation,unresolved dynamics">
+<meta name="description" content="closure，kernel，space，time，algebraic errorを分離したerror ledgerに基づき，delay atom，Prony mode，空間要素，時間stepを選択的に追加するstructure-preserving model adaptivityを解説します．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../">Home</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../fem/">Research Visions</a></li>
+        <li><a href="../../suppl/">Supplementary Visions</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+        <li><a href="../../links/">Links</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+    <li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a>
+      <meta itemprop="position" content="1">
+    </li>
+    <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../" itemprop="item"><span itemprop="name">Blog</span></a>
+      <meta itemprop="position" content="2">
+    </li>
+    <li class="bcl-last">Blog post from 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第11回：誤差に応じて潜在状態を追加するmodel adaptivity</h1>
+
+<p class="news-date"><time datetime="2026-08-03">3rd August 2026</time></p>
+
+<h2>Introduction：適応化するのはmeshだけではない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第10回では，full dynamicsからcomputer outputまでの誤差を
+\[
+  E_{\mathrm{closure}}
+  +
+  E_{\mathrm{kernel}}
+  +
+  E_{\mathrm{space}}
+  +
+  E_{\mathrm{time}}
+  +
+  E_{\mathrm{alg}}
+\]
+へ分解しました．
+このerror ledgerを作る目的は，誤差を分類して終わることではありません．
+次に何を追加・改善すべきかを決めることです．
+</p>
+<p>
+従来のadaptive FEMでは，主に空間meshを細分します．
+しかしmemory equationでは，誤差の原因が空間解像度とは限りません．
+不足しているのが
+</p>
+<ul>
+  <li>delay locationを表すatomかもしれない．</li>
+  <li>relaxation spectrumを表すProny modeかもしれない．</li>
+  <li>初期層を解像するtime stepかもしれない．</li>
+  <li>そもそもreduced modelに含まれていないhidden mechanismかもしれない．</li>
+</ul>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>model adaptivityの考え方</b><br>
+最も大きいstability-amplified error componentを特定し，
+そのcomponentを減らす状態変数・mesh・time stepだけを追加する．
+</div>
+<p>
+この方法では，delay atomやProny modeも，有限要素の自由度と同じ
+<b>計算上の潜在状態</b>として扱います．
+</p>
+</article>
+</div>
+
+<h2>1．何を「潜在状態」と呼ぶのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+ここでいう潜在状態は，観測対象 \(u\) そのものではないが，
+過去の影響を再現するために計算モデルへ追加する状態です．
+代表的には二種類あります．
+</p>
+
+<h3>1.1 delay atom</h3>
+<p>
+delay measureを
+\[
+  \mu_N
+  =
+  \sum_{j=1}^{N}
+  m_j\delta_{\tau_j}
+\tag{1}
+\]
+と近似すると，
+\[
+  K_{\mu_N}\widetilde u(t)
+  =
+  \sum_{j=1}^{N}
+  m_jA_1\widetilde u(t-\tau_j).
+\tag{2}
+\]
+各 \(\tau_j\) は，過去のどの時刻を参照するかを表す潜在的なhistory channelです．
+</p>
+
+<h3>1.2 Prony mode</h3>
+<p>
+completely monotone kernelを
+\[
+  k_L(t)
+  =
+  \sum_{\ell=1}^{L}
+  c_\ell e^{-\lambda_\ell t},
+  \qquad
+  c_\ell>0
+\tag{3}
+\]
+と近似すると，各modeは
+\[
+  \partial_t\zeta_\ell
+  +
+  \lambda_\ell\zeta_\ell
+  =
+  u
+\tag{4}
+\]
+という内部状態をもちます．
+\(\lambda_\ell\) は緩和時間scaleを表します．
+</p>
+<p>
+delay atomはlag variable上の潜在状態，Prony modeはrelaxation-rate variable上の潜在状態です．
+両者を区別したままadaptivityを設計する必要があります．
+</p>
+</article>
+</div>
+
+<h2>2．適応化の対象は五種類ある</h2>
+<div class="news">
+<article class="news-item">
+<p>
+計算configurationを
+\[
+  \mathfrak C
+  =
+  \bigl(
+    \mathcal M_N,\,
+    \mathcal P_L,\,
+    \mathcal T_h,\,
+    \mathcal I_{\Delta t},\,
+    \mathrm{tol}_{\mathrm{alg}}
+  \bigr)
+\tag{5}
+\]
+と書きます．
+</p>
+<ul>
+  <li>
+    \(\mathcal M_N\)：delay atoms \((m_j,\tau_j)\) の集合．
+  </li>
+  <li>
+    \(\mathcal P_L\)：Prony modes \((c_\ell,\lambda_\ell)\) の集合．
+  </li>
+  <li>
+    \(\mathcal T_h\)：空間mesh．
+  </li>
+  <li>
+    \(\mathcal I_{\Delta t}\)：時間分割．
+  </li>
+  <li>
+    \(\mathrm{tol}_{\mathrm{alg}}\)：weight計算とlinear solverの精度．
+  </li>
+</ul>
+<p>
+一回のadaptive stepでは，これらを同時にすべて増やすのではなく，
+error ledgerに従って一部だけを更新します．
+</p>
+</article>
+</div>
+
+<h2>3．raw indicatorではなくstability-adjusted indicatorを比較する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+各残差indicatorを
+\[
+  \eta_{\mathrm{closure}},
+  \quad
+  \eta_{\mathrm{lag}},
+  \quad
+  \eta_{\mathrm{relax}},
+  \quad
+  \eta_{\mathrm{space}},
+  \quad
+  \eta_{\mathrm{time}},
+  \quad
+  \eta_{\mathrm{alg}}
+\tag{6}
+\]
+とします．
+</p>
+<p>
+しかし，残差の大きさだけではsolution errorへの影響を比較できません．
+例えばkernel residualはweighted stability margin
+\[
+  d_{\mu,\beta}
+  =
+  \alpha_0-\Lambda_1\kappa_\mu(\beta)
+\tag{7}
+\]
+によって増幅されます．
+</p>
+<p>
+そこで
+\[
+  \widehat\eta_i
+  :=
+  C_i^{\mathrm{stab}}\eta_i
+\tag{8}
+\]
+というstability-adjusted indicatorを用います．
+目標は
+\[
+  \|u-\widetilde U\|_{\mathfrak X}
+  \le
+  \sum_i\widehat\eta_i
+\tag{9}
+\]
+です．
+</p>
+<div style="padding:12px; margin:14px 0; border:2px solid #666666;">
+<b>適応化で比較する量</b><br>
+残差そのものではなく，
+その残差が解へ与える影響を含んだ \(\widehat\eta_i\) を比較する．
+</div>
+</article>
+</div>
+
+<h2>4．基本的なadaptive loop</h2>
+<div class="news">
+<article class="news-item">
+<p>
+model adaptivityの基本loopは
+</p>
+\[
+  \textsf{SOLVE}
+  \longrightarrow
+  \textsf{ESTIMATE}
+  \longrightarrow
+  \textsf{MARK}
+  \longrightarrow
+  \textsf{ENRICH}
+\tag{10}
+\]
+<p>
+です．具体的には次のようになります．
+</p>
+<ol>
+  <li>
+    現在のconfiguration \(\mathfrak C_m\) でstructure-preserving schemeを解く．
+  </li>
+  <li>
+    error ledger
+    \[
+      \widehat\eta_{\mathrm{closure}}^{(m)},
+      \widehat\eta_{\mathrm{lag}}^{(m)},
+      \widehat\eta_{\mathrm{relax}}^{(m)},
+      \widehat\eta_{\mathrm{space}}^{(m)},
+      \widehat\eta_{\mathrm{time}}^{(m)},
+      \widehat\eta_{\mathrm{alg}}^{(m)}
+    \]
+    を計算する．
+  </li>
+  <li>
+    全誤差に占める割合が大きいcomponentをmarkする．
+  </li>
+  <li>
+    対応するatom，mode，element，time intervalだけを追加・細分する．
+  </li>
+  <li>
+    stability marginと離散energy lawを再確認する．
+  </li>
+</ol>
+</article>
+</div>
+
+<h2>5．delay-atom adaptivity</h2>
+<div class="news">
+<article class="news-item">
+<p>
+非負delay measure \(\mu\) を区間分割
+\[
+  [0,\tau]
+  =
+  \bigcup_{j=1}^{N}I_j
+\]
+上で原子化するとします．
+各区間のmassを
+\[
+  m_j:=\mu(I_j)
+\]
+とし，代表点を \(\tau_j\in I_j\) とすると，
+local transport costは
+\[
+  \eta_{\mathrm{lag},j}
+  :=
+  \int_{I_j}|s-\tau_j|\,d\mu(s).
+\tag{11}
+\]
+</p>
+<p>
+全体として
+\[
+  W_1(\mu_N,\mu)
+  \le
+  \sum_{j=1}^{N}\eta_{\mathrm{lag},j}.
+\tag{12}
+\]
+reference trajectoryが \(H^\theta\)-regularなら，
+\[
+  \widehat\eta_{\mathrm{lag},j}
+  :=
+  C_{\mathrm{ker}}
+  \eta_{\mathrm{lag},j}^{\theta}
+\tag{13}
+\]
+をlocal model indicatorとして使えます．
+</p>
+<p>
+大きい \(\eta_{\mathrm{lag},j}\) をもつ区間を二分し，
+各subintervalのmassとbarycentreから新しいatomsを作ります．
+これにより，historyのどのlag regionを追加解像すべきかを選べます．
+</p>
+</article>
+</div>
+
+<h2>6．delay atomを追加するときに保存すべきもの</h2>
+<div class="news">
+<article class="news-item">
+<p>
+atom refinementは単なるpoint insertionではありません．
+少なくとも次を保存します．
+</p>
+<ul>
+  <li>
+    <b>mass preservation：</b>
+    \[
+      \mu_N([0,\tau])
+      =
+      \mu([0,\tau]).
+    \]
+  </li>
+  <li>
+    <b>positivity：</b>
+    非負kernelを近似するときは \(m_j\ge0\) を保つ．
+  </li>
+  <li>
+    <b>retarded support：</b>
+    瞬時作用として扱わない限り \(\tau_j>0\) を保つ．
+  </li>
+  <li>
+    <b>uniform stability margin：</b>
+    refinement後も
+    \[
+      d_{\mu_N,\beta}\ge d_*>0
+    \]
+    を確認する．
+  </li>
+</ul>
+<p>
+特に原点近傍へatomを追加すると，weighted marginが急速に悪化し得ます．
+zero-delay boundaryでは，atom refinementではなく
+instantaneous formへのrenormalisationを検討すべきです．
+</p>
+</article>
+</div>
+
+<h2>7．trajectory-awareなatom配置</h2>
+<div class="news">
+<article class="news-item">
+<p>
+measureだけを見たtransport costでは，
+同じ距離の移動をすべて同じ重さで数えます．
+しかし，reference trajectory \(G\) があるlag rangeでほとんど変化しないなら，
+その範囲を細かく分割する必要はありません．
+</p>
+<p>
+第7回のtranslation modulus
+\[
+  \omega_G(r)
+  :=
+  \sup_{|h|\le r}
+  \|G(\cdot-h)-G\|_{L^2(\mathbb R;V)}
+\tag{14}
+\]
+を使い，
+\[
+  \eta_{\mathrm{lag},j}^{G}
+  :=
+  \int_{I_j}
+  \omega_G(|s-\tau_j|)\,d\mu(s)
+\tag{15}
+\]
+とすれば，trajectory-awareなmarkingができます．
+</p>
+<p>
+これは「kernelをよく近似するatom配置」ではなく，
+「現在のsolution trajectoryに対するhistory operatorをよく近似するatom配置」です．
+</p>
+</article>
+</div>
+
+<h2>8．Prony-mode adaptivity</h2>
+<div class="news">
+<article class="news-item">
+<p>
+relaxation spectrum \(\nu\) を
+\[
+  \nu_L
+  =
+  \sum_{\ell=1}^{L}
+  c_\ell\delta_{\lambda_\ell}
+\tag{16}
+\]
+へ近似するとき，transfer-function residualは
+\[
+  \mathcal R_L(z)
+  :=
+  \widehat k(z)
+  -
+  \sum_{\ell=1}^{L}
+  \frac{c_\ell}{z+\lambda_\ell}.
+\tag{17}
+\]
+</p>
+<p>
+計算で重要なfrequency region \(\Gamma\) を選び，
+例えば
+\[
+  \eta_{\mathrm{relax}}
+  :=
+  \sup_{z\in\Gamma}
+  w(z)|\mathcal R_L(z)|
+\tag{18}
+\]
+を用いることができます．
+\(w(z)\) はproblemのresolventやtarget normを反映するweightです．
+</p>
+<p>
+localisationには，relaxation-rate axisをcells \(J_\ell\) へ分け，
+各cellがtransfer-function residualへ与える寄与を評価します．
+大きいcellを分割し，新しいpositive modeを追加します．
+</p>
+<div style="padding:12px; margin:14px 0; border:2px solid #666666;">
+<b>現在の位置付け</b><br>
+lag-measure approximationにはWasserstein stability theoremがある．<br>
+一般Bernstein measureに対するsharpで完全なProny-mode estimatorは，
+今後構築すべき研究課題である．
+</div>
+</article>
+</div>
+
+<h2>9．Prony refinementでもpositivityを壊さない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第8回の離散graph energyは
+\[
+  \sum_{\ell=1}^{L}
+  c_\ell
+  a_{1,h}(\zeta_{\ell,h},\zeta_{\ell,h})
+\tag{19}
+\]
+を使います．
+従ってadaptive fittingで
+\[
+  c_\ell&lt;0
+\]
+を許すと，transfer functionのfitが改善してもenergy normを失う可能性があります．
+</p>
+<p>
+structure-preserving Prony adaptivityでは
+</p>
+<ul>
+  <li>\(c_\ell>0\) を保つ．</li>
+  <li>\(\lambda_\ell\ge0\) を保つ．</li>
+  <li>必要ならtotal Bernstein massを保存する．</li>
+  <li>追加後もBDF1またはBDF2の同じmode equationを使う．</li>
+</ul>
+<p>
+ことが必要です．
+モデルの近似精度だけでなく，energy certificateの可用性もrefinement constraintになります．
+</p>
+</article>
+</div>
+
+<h2>10．space adaptivity</h2>
+<div class="news">
+<article class="news-item">
+<p>
+空間誤差が支配的なら，通常のmesh refinementへ進みます．
+Crouzeix–Raviart法では概念的に
+\[
+  \eta_{\mathrm{space}}^2
+  =
+  \sum_{K\in\mathcal T_h}
+  \eta_K^2
+  +
+  \sum_{F\in\mathcal F_h}
+  \eta_F^2
+\tag{20}
+\]
+とします．
+</p>
+<ul>
+  <li>\(\eta_K\)：element residualとflux imbalance．</li>
+  <li>\(\eta_F\)：nonconforming jumpまたはface consistency residual．</li>
+  <li>CR–RT reconstruction：局所保存fluxと計算可能なcertificate．</li>
+</ul>
+<p>
+異方性meshでは，単純なdiameterだけでなく，
+element directions，semi-regularity parameter，方向別補間誤差を反映して
+refinement directionを決めます．
+</p>
+<p>
+memory equationでは，physical variableとすべてのinternal variablesに
+同じmeshを使えばcross-term cancellationを保ちやすくなります．
+異なるmeshを使う場合には，coupling transfer operatorsの離散adjoint性が必要です．
+</p>
+</article>
+</div>
+
+<h2>11．time adaptivity</h2>
+<div class="news">
+<article class="news-item">
+<p>
+time errorが支配的なら，
+time reconstruction residualを各区間
+\[
+  I_n=(t_{n-1},t_n]
+\]
+で評価し，
+\[
+  \eta_{\mathrm{time}}^2
+  =
+  \sum_n\eta_{\mathrm{time},n}^2
+\tag{21}
+\]
+とします．
+</p>
+<p>
+小さくすべきtime intervalsは，必ずしもsolution amplitudeが大きい場所ではありません．
+</p>
+<ul>
+  <li>初期層がある \(t=0\) 近傍．</li>
+  <li>forcingが急変する時刻．</li>
+  <li>memory stateが急速に立ち上がる時刻．</li>
+  <li>off-grid delayが参照するhistoryに大きな変化がある区間．</li>
+</ul>
+<p>
+variable-step BDF・CQでは，constant-step generating functionによる
+単純なhidden-state identityをそのまま使えません．
+従ってtime adaptivityを導入するときには，
+可変step methodのstabilityと離散energy lawを別途証明する必要があります．
+</p>
+</article>
+</div>
+
+<h2>12．algebraic adaptivity</h2>
+<div class="news">
+<article class="news-item">
+<p>
+linear solver residualが
+space-time discretisation errorより十分小さいなら，
+solver toleranceをさらに厳しくする意味はありません．
+</p>
+<p>
+例えば
+\[
+  \widehat\eta_{\mathrm{alg}}
+  \le
+  \gamma_{\mathrm{alg}}
+  \left(
+    \widehat\eta_{\mathrm{kernel}}
+    +
+    \widehat\eta_{\mathrm{space}}
+    +
+    \widehat\eta_{\mathrm{time}}
+  \right),
+\tag{22}
+\]
+\[
+  0&lt;\gamma_{\mathrm{alg}}&lt;1
+\]
+を満たす範囲でlinear solveを止めます．
+</p>
+<p>
+第8回のenergy residual
+\[
+  \mathfrak R_{\mathrm{en}}^n
+\]
+が大きい場合には，linear residualだけでなく，
+CQ weight precision，mode weights，coupling matrices，time levelsの整合性を調べます．
+</p>
+</article>
+</div>
+
+<h2>13．closure errorが支配的なら離散自由度を増やさない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+最も重要な分岐は
+\[
+  \widehat\eta_{\mathrm{closure}}
+  \gg
+  \widehat\eta_{\mathrm{kernel}}
+  +
+  \widehat\eta_{\mathrm{space}}
+  +
+  \widehat\eta_{\mathrm{time}}
+\tag{23}
+\]
+の場合です．
+このとき，meshやmodeを増やしてもfull dynamicsとのずれはほとんど改善しません．
+</p>
+<p>
+必要なのは
+</p>
+<ul>
+  <li>新しいhidden mechanismをreduced modelへ追加する．</li>
+  <li>zero prehistory仮定を見直す．</li>
+  <li>unresolved forcingを追加する．</li>
+  <li>観測dataからkernelを再同定する．</li>
+  <li>full modelまたは実験dataとのvalidationを行う．</li>
+</ul>
+<p>
+ことです．
+これがmesh adaptivityとmodel adaptivityの最も大きな違いです．
+</p>
+</article>
+</div>
+
+<h2>14．marking strategy</h2>
+<div class="news">
+<article class="news-item">
+<p>
+全indicatorの和を
+\[
+  \widehat\eta_{\mathrm{tot}}
+  :=
+  \sum_i\widehat\eta_i
+\tag{24}
+\]
+とします．
+component markingには，例えば
+\[
+  \widehat\eta_i
+  \ge
+  \vartheta_{\mathrm{comp}}
+  \max_j\widehat\eta_j
+\tag{25}
+\]
+を満たすcomponentを選ぶ方法があります．
+</p>
+<p>
+component内部ではDörfler型markingを使い，
+local indicatorsの集合 \(\mathcal M\) を
+\[
+  \sum_{\chi\in\mathcal M}\eta_\chi^2
+  \ge
+  \vartheta_{\mathrm{loc}}
+  \sum_{\chi}\eta_\chi^2
+\tag{26}
+\]
+となるよう選びます．
+</p>
+<p>
+\(\chi\) は，状況に応じて
+</p>
+<ul>
+  <li>delay interval \(I_j\)</li>
+  <li>relaxation-rate cell \(J_\ell\)</li>
+  <li>mesh element \(K\)</li>
+  <li>time interval \(I_n\)</li>
+</ul>
+<p>
+を表します．
+</p>
+</article>
+</div>
+
+<h2>15．一回のadaptive update</h2>
+<div class="news">
+<article class="news-item">
+<p>
+一回のupdateを概念的に書くと
+\[
+  \mathfrak C_m
+  \longmapsto
+  \mathfrak C_{m+1}
+\tag{27}
+\]
+であり，次の分岐を使います．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+  <tr>
+    <th style="border:1px solid #777; padding:7px;">dominant indicator</th>
+    <th style="border:1px solid #777; padding:7px;">adaptive action</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">closure</td>
+    <td style="border:1px solid #777; padding:7px;">reduced modelまたはdata assimilationを更新</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">lag kernel</td>
+    <td style="border:1px solid #777; padding:7px;">marked lag cellsを分割し，delay atomsを追加</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">relaxation spectrum</td>
+    <td style="border:1px solid #777; padding:7px;">marked rate cellsへpositive Prony modesを追加</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">space</td>
+    <td style="border:1px solid #777; padding:7px;">marked elementsを方向適応的に細分</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">time</td>
+    <td style="border:1px solid #777; padding:7px;">marked time intervalsを細分</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">algebraic</td>
+    <td style="border:1px solid #777; padding:7px;">weight precisionまたはsolver toleranceを改善</td>
+  </tr>
+</table>
+</article>
+</div>
+
+<h2>16．refinement後に必ずstructure auditを行う</h2>
+<div class="news">
+<article class="news-item">
+<p>
+adaptive enrichmentによってerror indicatorが減っても，
+energy structureを壊してはいけません．
+各update後に次を監査します．
+</p>
+<ol>
+  <li>
+    delay・Prony weightsのpositivity．
+  </li>
+  <li>
+    total massまたは必要なmomentの保存．
+  </li>
+  <li>
+    原点のatomとinstantaneous termの分離．
+  </li>
+  <li>
+    physical equationとinternal equationsで同じ \(a_{1,h}\) を使用．
+  </li>
+  <li>
+    coupling operatorsの離散adjoint relation．
+  </li>
+  <li>
+    weighted stability marginまたはgraph-energy coercivity．
+  </li>
+  <li>
+    BDF1/BDF2 energy residualのsmallness．
+  </li>
+</ol>
+<p>
+このauditを通らないenrichmentは，fit errorを減らしても
+structure-preserving model adaptivityとは呼べません．
+</p>
+</article>
+</div>
+
+<h2>17．coarseningも必要である</h2>
+<div class="news">
+<article class="news-item">
+<p>
+潜在状態を追加し続けるだけでは，model complexityは単調に増加します．
+長時間計算やparameter studyではcoarseningも必要です．
+</p>
+<p>
+候補となる基準は
+</p>
+<ul>
+  <li>長時間にわたりindicator contributionが小さいdelay atomをmergeする．</li>
+  <li>近接したrelaxation ratesをpositive mass-preserving ruleで統合する．</li>
+  <li>inactiveなmesh regionをcoarsenする．</li>
+  <li>solutionが滑らかなtime regionでstepを大きくする．</li>
+</ul>
+<p>
+ことです．
+</p>
+<p>
+ただし，coarsening errorも同じledgerへ追加し，
+coarsening前後のsolution perturbationをcertifyしなければなりません．
+</p>
+</article>
+</div>
+
+<h2>18．goal-oriented model adaptivity</h2>
+<div class="news">
+<article class="news-item">
+<p>
+解全体ではなく目的量
+\[
+  \mathcal J(u)
+\]
+だけを正確にしたい場合，
+各model componentのimportanceはdual solutionによって変わります．
+</p>
+<p>
+goal-oriented indicatorは概念的に
+\[
+  \eta_i^{\mathcal J}
+  =
+  \langle R_i,Z\rangle
+\tag{28}
+\]
+です．ここで \(R_i\) は
+closure，kernel，space，time，algebraic residualのいずれかで，
+\(Z\) はdual weightです．
+</p>
+<p>
+すると，solution normでは重要でない長いlagが，
+特定のterminal outputには重要である場合があります．
+逆に，大きなstate errorを作るmodeが，目的量にはほとんど影響しないこともあります．
+</p>
+<p>
+DWRをmodel hierarchy全体へ拡張することは，
+verified outputとunresolved dynamicsを結ぶ重要な研究方向です．
+</p>
+</article>
+</div>
+
+<h2>19．model adaptivityの収束に必要なもの</h2>
+<div class="news">
+<article class="news-item">
+<p>
+adaptive loopが経験的に働くだけでなく，
+数学的に収束するためには，少なくとも次が必要です．
+</p>
+<ul>
+  <li>
+    <b>reliability：</b>
+    total errorがindicatorの和で上から評価される．
+  </li>
+  <li>
+    <b>local efficiency：</b>
+    indicatorが実際の局所誤差を過度に過大評価しない．
+  </li>
+  <li>
+    <b>estimator reduction：</b>
+    marked componentをrefineすると対応indicatorが減少する．
+  </li>
+  <li>
+    <b>quasi-orthogonality：</b>
+    successive approximationsのerror interactionを制御できる．
+  </li>
+  <li>
+    <b>uniform stability：</b>
+    atom数，mode数，mesh，time stepに対してstability constantが発散しない．
+  </li>
+</ul>
+<p>
+adaptive FEMではこれらの枠組みが発展していますが，
+delay atoms・Prony modes・CR–CQ discretisationを同時に含む
+model adaptivityについては，新しい理論が必要です．
+</p>
+</article>
+</div>
+
+<h2>20．研究programmeとしての最小構成</h2>
+<div class="news">
+<article class="news-item">
+<p>
+実際に論文として進めるなら，最初からすべてのcomponentを扱う必要はありません．
+次の段階が現実的です．
+</p>
+<ol>
+  <li>
+    <b>Stage I：</b>
+    kernelを固定し，structure-preserving CR–BDF1/BDF2 schemeと
+    graph-energy error estimateを確立する．
+  </li>
+  <li>
+    <b>Stage II：</b>
+    finite delay atomsに対するWasserstein kernel errorと
+    state-discretisation errorを一つのboundへ統合する．
+  </li>
+  <li>
+    <b>Stage III：</b>
+    lag cells・mesh elements・time intervalsの三方向adaptivityを構築する．
+  </li>
+  <li>
+    <b>Stage IV：</b>
+    positive Prony-mode adaptivityとrelaxation-spectrum errorを加える．
+  </li>
+  <li>
+    <b>Stage V：</b>
+    closure indicatorとgoal-oriented model enrichmentへ拡張する．
+  </li>
+</ol>
+<p>
+この順序なら，既に確立しているweighted stability，
+Wasserstein kernel error，graph-energy structure，
+異方性CR解析を順番に接続できます．
+</p>
+</article>
+</div>
+
+<h2>21．何が現在の定理で，何が構想なのか</h2>
+<div class="news">
+<article class="news-item">
+<h3>現在の理論で支えられている部分</h3>
+<ul>
+  <li>measure-valued delayのweighted well-posedness．</li>
+  <li>asymmetric residual principle．</li>
+  <li>lag-measure approximationに対するWasserstein stability．</li>
+  <li>finite-atomic approximationとstate-discretisation errorの分離．</li>
+  <li>continuous graph-space stabilityとcross-term cancellation．</li>
+  <li>finite Prony modelに対するBDF1・BDF2の離散energy algebra．</li>
+</ul>
+
+<h3>今後証明すべき部分</h3>
+<ul>
+  <li>fully discrete CR–CQ a posteriori estimatorのreliabilityとefficiency．</li>
+  <li>adaptive delay-atom refinementのestimator reduction．</li>
+  <li>positive Prony-mode residual estimator．</li>
+  <li>variable-step CQのstructure-preserving energy law．</li>
+  <li>複数componentを同時にrefineするadaptive loopの収束・準最適性．</li>
+  <li>closure errorを観測dataからcertifyする方法．</li>
+</ul>
+<p>
+従って，本記事は完成済みのadaptive theoremを主張するものではありません．
+既存の連続・離散構造を，実行可能な研究programmeへ組み替えたものです．
+</p>
+</article>
+</div>
+
+<h2>Conclusion：見えない状態を，必要な分だけ追加する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+model adaptivityは，有限要素meshを細かくするだけの方法ではありません．
+error ledgerを通して，現在の計算に不足している情報が
+</p>
+<ul>
+  <li>過去のどのdelay locationにあるのか，</li>
+  <li>どのrelaxation time scaleにあるのか，</li>
+  <li>空間のどのelementにあるのか，</li>
+  <li>時間のどのintervalにあるのか，</li>
+  <li>あるいはmodelの外側にあるのか，</li>
+</ul>
+<p>
+を判定し，必要な状態だけを追加します．
+</p>
+\[
+  \text{error localisation}
+  \longrightarrow
+  \text{selective state enrichment}
+  \longrightarrow
+  \text{structure audit}
+  \longrightarrow
+  \text{certified reduction}
+\]
+<p>
+delay atoms，Prony modes，finite-element unknownsは，
+すべて「見えない影響を表すために導入された計算状態」です．
+重要なのは，状態数を増やすことではなく，
+観測量と誤差に応じて必要な状態だけを選び，
+positive weights，causality，cross-term cancellation，
+stability marginを壊さずに追加することです．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>連載の到達点</b><br>
+未解像状態の消去からmemory kernelを導き，
+measure-valued delay，weighted well-posedness，positive-type memory，
+graph-space stability，kernel approximation，BDF-CQ，error decompositionを経て，
+誤差に応じて潜在状態を更新するmodel adaptivityへ到達しました．
+</div>
+<p>
+前の記事：
+<a href="./unresolved-memory-10.html">第10回：model-reduction errorをどう分解するか</a>
+</p>
+<p>
+連載一覧：
+<a href="../">Blog「履歴依存型発展方程式：memory kernelと構造保存完全離散化」</a>
+</p>
+<p>
+関連ページ：
+<a href="../../publications/">Publications</a>（S3–S5，A3），
+<a href="../../fem/">Research Visions</a>（Vision 11，18），
+<a href="../../suppl/">Supplementary Visions</a>（履歴依存型発展方程式とmemory kernel）
+</p>
+</article>
+</div>
+
+</div>
+</article>
+</div>
+</main>
+
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
