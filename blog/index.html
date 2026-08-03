@@ -7,8 +7,8 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <meta content="IE=edge" http-equiv="X-UA-Compatible"/>
-<meta content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,anisotropic FEM,anisotropic mesh,mesh regularity,semi-regularity,Shishkin mesh,Bakhvalov mesh,Crouzeix-Raviart,Raviart-Thomas,Nedelec,de Rham,discrete maximum principle,maximum norm,history-dependent PDE,exact-curved FEM,certified computation,AI4Math" name="keywords"/>
-<meta content="Research notes on anisotropic finite element geometry, mesh regularity and semi-regularity, layer-adapted meshes, CR-RT methods, discrete maximum principles, maximum-norm estimates, Nedelec and de Rham complexes, history-dependent PDEs, exact-curved geometry, and certified computation" name="description"/>
+<meta content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,anisotropic FEM,anisotropic mesh,mesh regularity,semi-regularity,Shishkin mesh,Bakhvalov mesh,Crouzeix-Raviart,Raviart-Thomas,Nedelec,de Rham,discrete maximum principle,maximum norm,history-dependent PDE,exact-curved FEM,certified computation,AI4Math,Babuska paradox,plate paradox,spectral pollution,locking,numerical analysis paradoxes" name="keywords"/>
+<meta content="Research notes on numerical analysis, classical paradoxes and modern research questions, anisotropic finite element geometry, CR-RT methods, history-dependent PDEs, exact-curved geometry, and certified computation" name="description"/>
 <link href="../css/base.css" rel="stylesheet"/>
 <link href="../css/rwd.css" rel="stylesheet"/>
 <link href="../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
@@ -113,10 +113,41 @@
 <p>
 癌・歯周病，PINNs，学習支援型適応化などは，Coreで得られた理論を展開する
 Applications and Research Expansionsとして分けて掲載します．
+これとは別に，現在のCore研究に限定せず，数値解析・応用数学の古典的な逆説，反例，失敗例を取り上げ，
+そこから現代的な研究課題を抽出する独立系列も掲載します．
 準備中の記事には架空の日付や仮リンクを付けず，「構想中」と表示します．
 <br/>
 This page is updated periodically.<br/>
 (3rd August 2026 <span class="cat cat001">Update</span>)
+</p>
+</article>
+</div>
+<h2>From Classical Paradoxes to Modern Research Questions</h2>
+<h3>古典的パラドックスから現代の研究課題へ</h3>
+<div class="news">
+<article class="news-item">
+<p>
+この系列では，現在のCore研究に直接限定せず，数値解析・近似理論・偏微分方程式に現れる
+パラドックス，反例，偽収束，設計上の障壁を取り上げます．
+各記事は，古典的現象の解説で終わらず，現代の計算法，幾何表現，非線形問題，
+データ駆動型計算へ接続できる研究の問いを最後に整理します．
+</p>
+<div class="news-cont">
+<b>公開済み・構想中の記事</b>
+<ol>
+<li><a href="./posts/paradoxes-pitfalls-01.html">第1回：領域が収束しても解は正しく収束しない――バブシュカ・パラドックス</a>
+<div class="news-date"><time datetime="2026-08-03">3rd August 2026</time></div></li>
+<li>第2回：安定なのに過度に硬くなる――ロッキング現象（構想中）</li>
+<li>第3回：存在しない固有値へ収束する――スペクトル汚染（構想中）</li>
+<li>第4回：固有値は安定でも解は一時的に増幅する――非正規作用素と擬スペクトル（構想中）</li>
+<li>第5回：高次精度と単調性は両立するか――Godunovの障壁（構想中）</li>
+<li>第6回：離散化誤差より前に問題が変わる――variational crimes（構想中）</li>
+<li>第7回：解像度を上げても振動が消えない――Gibbs現象（構想中）</li>
+<li>第8回：誤差が減ったように見える瞬間――逆問題のsemi-convergence（構想中）</li>
+</ol>
+</div>
+<p>
+各回の共通の問いは，<b>「計算が収束していることは，正しい問題を解いている保証になるか」</b>です．
 </p>
 </article>
 </div>
