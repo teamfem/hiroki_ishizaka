@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>第9回：BDFとconvolution quadratureは何を離散化しているのか | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,convolution quadrature,BDF1,BDF2,operational calculus,Laplace transform,transfer function,internal variables,completely monotone kernel,starting correction">
+<meta name="description" content="BDF convolution quadratureを単なる履歴積分の数値積分ではなく，Laplace-domain transfer functionへBDF symbolを代入する離散operational calculusとして説明し，CQ weights，内部変数表示，G-stability，starting correctionとの関係を整理します．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../">Home</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../fem/">Research Visions</a></li>
+        <li><a href="../../suppl/">Supplementary Visions</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+        <li><a href="../../links/">Links</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+    <li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a>
+      <meta itemprop="position" content="1">
+    </li>
+    <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../" itemprop="item"><span itemprop="name">Blog</span></a>
+      <meta itemprop="position" content="2">
+    </li>
+    <li class="bcl-last">Blog post from 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第9回：BDFとconvolution quadratureは何を離散化しているのか</h1>
+
+<p class="news-date"><time datetime="2026-08-03">3rd August 2026</time></p>
+
+<h2>Introduction：CQはkernelを格子点で積分する方法ではない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+memory term
+\[
+  (k*u)(t)
+  =
+  \int_0^t k(t-s)u(s)\,ds
+\]
+を見ると，時間区間を分割して台形則や長方形則を適用したくなります．
+しかし，convolution quadrature（CQ）の出発点は，この積分を直接近似することではありません．
+</p>
+<p>
+CQが離散化するのは，Laplace領域における
+\[
+  \widehat k(z)
+\]
+というtransfer function，より正確には
+\[
+  \widehat k(\partial_t)
+\]
+として表されるcausal operatorです．
+時間微分 \(\partial_t\) をBDF symbolで置き換えることにより，
+kernelの作用全体を離散化します．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>今回の結論</b><br>
+BDF convolution quadratureは，
+\[
+  \partial_t
+  \quad\longmapsto\quad
+  \frac{\delta_q(\xi)}{\Delta t}
+\]
+という置換をtransfer functionの内部で行う離散operational calculusである．
+</div>
+<p>
+この見方を採ると，CQ weights，内部変数，A-stability，G-stability，
+starting correction，kernel singularityが一つの構造として理解できます．
+</p>
+</article>
+</div>
+
+<h2>1．causal convolutionはtransfer functionで特徴付けられる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+causal kernel \(k\) のLaplace transformを
+\[
+  \widehat k(z)
+  :=
+  \int_0^\infty e^{-zt}k(t)\,dt,
+  \qquad
+  \operatorname{Re}z>0
+\tag{1}
+\]
+とします．
+</p>
+<p>
+指数入力
+\[
+  u(t)=e^{zt}u_*
+\]
+を形式的に考えると，十分過去から作用している定常的なconvolution operatorは
+\[
+  k*u
+  =
+  \widehat k(z)e^{zt}u_*
+\]
+と応答します．
+つまり \(\widehat k(z)\) は，時間周波数 \(z\) に対するmemory operatorの応答です．
+</p>
+<p>
+このため，causal convolutionを
+\[
+  K(\partial_t)u
+  :=
+  k*u,
+  \qquad
+  K(z):=\widehat k(z)
+\tag{2}
+\]
+と記述できます．
+CQはこのoperator-valued notationを離散化します．
+</p>
+</article>
+</div>
+
+<h2>2．第2回のdynamic Schur complementとの関係</h2>
+<div class="news">
+<article class="news-item">
+<p>
+未解像状態
+\[
+  \partial_tz+Cz=Du
+\]
+を消去すると，
+\[
+  K(t)=Be^{-tC}D
+\]
+というmemory kernelが現れました．
+Laplace領域では
+\[
+  \widehat K(z)
+  =
+  B(zI+C)^{-1}D.
+\tag{3}
+\]
+</p>
+<p>
+これはdynamic Schur complementです．
+従ってCQは，単なるscalar kernelだけでなく，
+\[
+  B(zI+C)^{-1}D
+\]
+のようなoperator-valued transfer functionにも適用できます．
+CQが離散化しているのは，未解像generatorのresolventを含む縮約作用素全体です．
+</p>
+</article>
+</div>
+
+<h2>3．BDF symbolは時間微分の離散transfer functionである</h2>
+<div class="news">
+<article class="news-item">
+<p>
+一様時間刻み
+\[
+  t_n=n\Delta t
+\]
+を取り，BDF1・BDF2の生成多項式を
+\[
+  \delta_1(\xi)=1-\xi,
+\tag{4}
+\]
+\[
+  \delta_2(\xi)
+  =
+  \frac32-2\xi+\frac12\xi^2
+\tag{5}
+\]
+とします．
+</p>
+<p>
+離散指数列
+\[
+  u^n=e^{zt_n}u_*
+\]
+にBDFを作用させると，時間微分 \(z\) の代わりに
+\[
+  \frac{\delta_q(e^{-z\Delta t})}{\Delta t}
+\tag{6}
+\]
+が現れます．
+\(\Delta t\downarrow0\) では
+\[
+  \frac{\delta_q(e^{-z\Delta t})}{\Delta t}
+  =
+  z+O(\Delta t^q),
+  \qquad
+  q\in\{1,2\},
+\tag{7}
+\]
+です．
+</p>
+<p>
+従ってBDF symbol
+\[
+  \frac{\delta_q(\xi)}{\Delta t}
+\]
+は，Laplace variable \(z\)，すなわち時間微分 \(\partial_t\) の離散版です．
+</p>
+</article>
+</div>
+
+<h2>4．CQ weightsの定義</h2>
+<div class="news">
+<article class="news-item">
+<p>
+BDF convolution quadratureのweights
+\[
+  \omega_n^{(q)},
+  \qquad
+  n\ge0
+\]
+は，生成関数
+\[
+  \widehat k
+  \left(
+    \frac{\delta_q(\xi)}{\Delta t}
+  \right)
+  =
+  \sum_{n=0}^{\infty}
+  \omega_n^{(q)}\xi^n
+\tag{8}
+\]
+によって定義されます．
+</p>
+<p>
+離散convolution operatorは
+\[
+  (K_{\Delta t}^{(q)}v)^n
+  :=
+  \sum_{j=0}^{n}
+  \omega_{n-j}^{(q)}v^j.
+\tag{9}
+\]
+</p>
+<div style="padding:12px; margin:14px 0; border:2px solid #666666;">
+<b>重要な点</b><br>
+\(\omega_n^{(q)}\) は一般に
+\(k(n\Delta t)\Delta t\) ではない．<br>
+kernel valuesを数値積分して作るのではなく，
+transfer functionへBDF symbolを代入した後のTaylor係数である．
+</div>
+<p>
+従って，kernelが弱特異でも，Laplace transformが扱えれば
+CQ weightsを定義できます．
+</p>
+</article>
+</div>
+
+<h2>5．CQは何を近似しているのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+連続operatorは
+\[
+  \widehat k(\partial_t)
+\]
+であり，BDF-CQは
+\[
+  \widehat k
+  \left(
+    \frac{\delta_q(\mathsf S)}{\Delta t}
+  \right)
+\tag{10}
+\]
+と読むことができます．
+ここで \(\mathsf S\) は一step backward shiftです．
+</p>
+<p>
+つまり，近似の順序は
+</p>
+\[
+  \text{kernelを時間格子で標本化}
+  \quad\text{ではなく}\quad
+  \partial_t
+  \longmapsto
+  \frac{\delta_q(\mathsf S)}{\Delta t}
+  \longmapsto
+  \widehat k
+  \left(
+    \frac{\delta_q(\mathsf S)}{\Delta t}
+  \right)
+\tag{11}
+\]
+<p>
+です．
+このoperational calculusが，CQを通常のtime quadratureと区別します．
+</p>
+</article>
+</div>
+
+<h2>6．一つの指数kernelで確認する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\[
+  k_\lambda(t)=e^{-\lambda t},
+  \qquad
+  \lambda\ge0
+\]
+なら
+\[
+  \widehat k_\lambda(z)
+  =
+  \frac{1}{z+\lambda}.
+\tag{12}
+\]
+CQ generating functionは
+\[
+  \frac{1}{
+    \delta_q(\xi)/\Delta t+\lambda
+  }.
+\tag{13}
+\]
+</p>
+<p>
+一方，内部変数
+\[
+  \partial_t\zeta+\lambda\zeta=v,
+  \qquad
+  \zeta(0)=0
+\tag{14}
+\]
+をBDFで離散化すると
+\[
+  \overline\partial_{\Delta t}^{(q)}
+  \zeta^n
+  +
+  \lambda\zeta^n
+  =
+  v^n.
+\tag{15}
+\]
+生成関数を取れば
+\[
+  Z(\xi)
+  =
+  \frac{1}{
+    \delta_q(\xi)/\Delta t+\lambda
+  }
+  V(\xi).
+\tag{16}
+\]
+</p>
+<p>
+式 (13) と式 (16) は同じです．
+従って，一つの指数kernelに対するBDF-CQは，
+一つのrelaxation ODEを同じBDFで離散化したものと完全に一致します．
+</p>
+</article>
+</div>
+
+<h2>7．finite Prony kernelは有限個のlocal recursionになる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\[
+  k_L(t)
+  =
+  \sum_{\ell=1}^{L}
+  c_\ell e^{-\lambda_\ell t},
+  \qquad
+  c_\ell>0
+\tag{17}
+\]
+なら
+\[
+  \widehat k_L(z)
+  =
+  \sum_{\ell=1}^{L}
+  \frac{c_\ell}{z+\lambda_\ell}.
+\tag{18}
+\]
+</p>
+<p>
+各mode
+\[
+  \overline\partial_{\Delta t}^{(q)}
+  \zeta_\ell^n
+  +
+  \lambda_\ell\zeta_\ell^n
+  =
+  v^n
+\tag{19}
+\]
+を更新すれば
+\[
+  (K_{\Delta t,L}^{(q)}v)^n
+  =
+  \sum_{\ell=1}^{L}
+  c_\ell\zeta_\ell^n.
+\tag{20}
+\]
+</p>
+<p>
+直接convolutionを計算するとhistory lengthとともにcostが増えますが，
+finite Prony realisationでは各stepで \(L\) 個のlocal stateを更新すればよく，
+\(N\) stepsに対して基本costは \(O(LN)\) です．
+</p>
+</article>
+</div>
+
+<h2>8．一般のcompletely monotone kernelにもhidden internal variablesがある</h2>
+<div class="news">
+<article class="news-item">
+<p>
+completely monotone kernelは
+\[
+  k(t)
+  =
+  \int_{[0,\infty)}
+  e^{-\lambda t}\,d\nu(\lambda)
+\tag{21}
+\]
+と表され，
+\[
+  \widehat k(z)
+  =
+  \int_{[0,\infty)}
+  \frac{1}{z+\lambda}\,d\nu(\lambda).
+\tag{22}
+\]
+</p>
+<p>
+有限Bernstein mass
+\[
+  M_0:=\nu([0,\infty))&lt;\infty
+\tag{23}
+\]
+のもとで，式 (8) に式 (22) を代入すると
+\[
+\begin{aligned}
+  \widehat k
+  \left(
+    \frac{\delta_q(\xi)}{\Delta t}
+  \right)
+  &amp;=
+  \int_{[0,\infty)}
+  \frac{1}{
+    \delta_q(\xi)/\Delta t+\lambda
+  }
+  \,d\nu(\lambda).
+\end{aligned}
+\tag{24}
+\]
+</p>
+<p>
+従って
+\[
+  (K_{\Delta t}^{(q)}v)^n
+  =
+  \int_{[0,\infty)}
+  \zeta^n(\lambda)\,d\nu(\lambda),
+\tag{25}
+\]
+\[
+  \overline\partial_{\Delta t}^{(q)}
+  \zeta^n(\lambda)
+  +
+  \lambda\zeta^n(\lambda)
+  =
+  v^n.
+\tag{26}
+\]
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>hidden internal-variable identity</b><br>
+一般のcompletely monotone kernelに対するBDF-CQは，
+有限Prony近似をしなくても，
+\(\nu\)-連続個のBDF内部変数を重ね合わせたものと正確に一致する．
+</div>
+<p>
+implementationではCQ weightsを使い，
+energy proofではhidden internal variablesを使うことができます．
+これは近似的な解釈ではなく，有限 \(M_0\) のもとでのexact identityです．
+</p>
+</article>
+</div>
+
+<h2>9．BDF1・BDF2だけが現れる理由</h2>
+<div class="news">
+<article class="news-item">
+<p>
+BDF-CQ自体は高次BDFからも形式的に構成できます．
+しかし，unconditionalなgraph-energy identityを得るには，
+time-stepping methodのA-stability，等価にG-stabilityが必要です．
+</p>
+<p>
+BDF familyでA-stableなのはorders 1 and 2だけです．
+これはDahlquistのsecond barrierと整合します．
+従って
+\[
+  q\in\{1,2\}
+\]
+という制限は，単なる計算上の選択ではなく，
+unconditional graph-energy lawをもつBDF法のcharacterisationです．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+  <tr>
+    <th style="border:1px solid #777; padding:7px;">method</th>
+    <th style="border:1px solid #777; padding:7px;">natural energy</th>
+    <th style="border:1px solid #777; padding:7px;">unconditional graph-energy identity</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">BDF1</td>
+    <td style="border:1px solid #777; padding:7px;">one-step standard energy</td>
+    <td style="border:1px solid #777; padding:7px;">yes</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">BDF2</td>
+    <td style="border:1px solid #777; padding:7px;">two-step G-energy</td>
+    <td style="border:1px solid #777; padding:7px;">yes</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">higher BDF</td>
+    <td style="border:1px solid #777; padding:7px;">一般に同じunconditional G-energyはない</td>
+    <td style="border:1px solid #777; padding:7px;">no</td>
+  </tr>
+</table>
+</article>
+</div>
+
+<h2>10．BDF2 weightsの各項が正である必要はない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+positive-type kernelだから
+\[
+  \omega_n^{(2)}\ge0
+\]
+がすべての \(n\) で必要だと思うかもしれません．
+しかし，structure-preserving analysisは
+coefficientwise positivityを仮定しません．
+</p>
+<p>
+必要なのは，weight列が作るquadratic formのpositivityです．
+hidden internal-variable representationとBDF2のG-stabilityにより，
+各weightの符号を個別に調べなくても，
+two-step memory graph energyを制御できます．
+</p>
+<div style="padding:12px; margin:14px 0; border:2px solid #666666;">
+<b>区別</b><br>
+各CQ weightが非負であること：coefficientwise property．<br>
+離散convolutionが非負のenergy quadratic formを作ること：structural property．
+</div>
+<p>
+後者がenergy analysisに必要な性質です．
+</p>
+</article>
+</div>
+
+<h2>11．zeroth CQ weightが各time stepを解けるようにする</h2>
+<div class="news">
+<article class="news-item">
+<p>
+zeroth weightは
+\[
+  \omega_0^{(q)}
+  =
+  \widehat k
+  \left(
+    \frac{\delta_q(0)}{\Delta t}
+  \right)
+  =
+  \int_{[0,\infty)}
+  \frac{1}{
+    \delta_q(0)/\Delta t+\lambda
+  }
+  \,d\nu(\lambda).
+\tag{27}
+\]
+</p>
+<p>
+\[
+  \delta_1(0)=1,
+  \qquad
+  \delta_2(0)=\frac32,
+\]
+かつ \(\nu\) は非負なので，非自明kernelに対して
+\[
+  \omega_0^{(q)}>0.
+\tag{28}
+\]
+</p>
+<p>
+memory equationをfully discrete化すると，現在値 \(u_h^n\) には
+\[
+  \omega_0^{(q)}a_{1,h}(u_h^n,v_h)
+\]
+が作用します．
+\(a_{1,h}\) がcoerciveなら，この正のzeroth weightが
+各time stepの離散elliptic problemにcoercivityを与えます．
+</p>
+<p>
+従って，瞬時形式 \(a_{0,h}\) が非負に退化していても，
+各stepのsolvabilityにその正のlower boundを使う必要はありません．
+</p>
+</article>
+</div>
+
+<h2>12．fractional kernelでは何が起こるか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\[
+  k_\alpha(t)
+  =
+  \frac{t^{-\alpha}}{\Gamma(1-\alpha)},
+  \qquad
+  0&lt;\alpha&lt;1
+\]
+では
+\[
+  \widehat k_\alpha(z)
+  =
+  z^{\alpha-1}.
+\tag{29}
+\]
+従ってBDF-CQ weightsは
+\[
+  \left(
+    \frac{\delta_q(\xi)}{\Delta t}
+  \right)^{\alpha-1}
+  =
+  \sum_{n=0}^{\infty}
+  \omega_{\alpha,n}^{(q)}\xi^n
+\tag{30}
+\]
+から生成されます．
+</p>
+<p>
+時間kernelは \(t=0\) で弱特異ですが，
+CQはkernel valueを直接積分せず，transfer functionのfractional powerを使うため，
+同じ定義が可能です．
+</p>
+<p>
+ただし，fractional kernelではBernstein mass \(M_0\) が無限大なので，
+第6回・第8回で使ったfinite-mass memory graph spaceへ
+そのまま入るわけではありません．
+CQの定義可能性と，finite-\(M_0\) graph-energy certificateの成立は別問題です．
+</p>
+</article>
+</div>
+
+<h2>13．uncorrected CQとstarting correction</h2>
+<div class="news">
+<article class="news-item">
+<p>
+BDFのformal orderが \(q\) でも，
+non-smooth initial dataや \(t=0\) で特異なkernelに対して，
+uncorrected CQが常にglobal order \(q\) を達成するとは限りません．
+初期層によりorder reductionが起こり得ます．
+</p>
+<p>
+starting correctionは，最初の数stepのweightsや右辺を修正し，
+低正則性データに対する高次精度を回復するために使われます．
+しかし，causal weightsを変更すると，
+</p>
+\[
+  \text{CQ}
+  =
+  \text{modewise BDF internal variables}
+\tag{31}
+\]
+<p>
+というexact identityが同じ形では残らない可能性があります．
+その結果，第8回のmodewise graph-energy identityも再検討が必要です．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>構造と精度のtrade-off</b><br>
+uncorrected CQ：exact hidden-state identityとgraph energyを優先．<br>
+starting-corrected CQ：non-smooth dataに対する高次精度を優先するが，energy構造を再設計する必要がある．
+</div>
+<p>
+現在のstructure-preserving programmeでは，まずuncorrected BDF1・BDF2を用いて
+coercivity-robustな離散構造を確立し，corrected variantsは別問題として扱います．
+</p>
+</article>
+</div>
+
+<h2>14．CQと通常のtime quadratureの違い</h2>
+<div class="news">
+<article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+  <tr>
+    <th style="border:1px solid #777; padding:7px;">観点</th>
+    <th style="border:1px solid #777; padding:7px;">direct time quadrature</th>
+    <th style="border:1px solid #777; padding:7px;">convolution quadrature</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">出発点</td>
+    <td style="border:1px solid #777; padding:7px;">時間積分 \(\int_0^t k(t-s)u(s)\,ds\)</td>
+    <td style="border:1px solid #777; padding:7px;">transfer function \(\widehat k(z)\)</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">weights</td>
+    <td style="border:1px solid #777; padding:7px;">kernel valuesと積分公式から構成</td>
+    <td style="border:1px solid #777; padding:7px;">\(\widehat k(\delta_q(\xi)/\Delta t)\) の係数</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">弱特異kernel</td>
+    <td style="border:1px solid #777; padding:7px;">特異積分への個別処理が必要</td>
+    <td style="border:1px solid #777; padding:7px;">Laplace transformを通して統一的に定義</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">stability inheritance</td>
+    <td style="border:1px solid #777; padding:7px;">quadratureごとに解析</td>
+    <td style="border:1px solid #777; padding:7px;">underlying time integratorのA-stabilityと結び付く</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">hidden-state interpretation</td>
+    <td style="border:1px solid #777; padding:7px;">通常は直接見えない</td>
+    <td style="border:1px solid #777; padding:7px;">completely monotone kernelではBDF内部変数とexactly一致</td>
+  </tr>
+</table>
+</article>
+</div>
+
+<h2>15．implementationはweights，proofはinternal variables</h2>
+<div class="news">
+<article class="news-item">
+<p>
+一般kernelに対する実装では
+\[
+  (K_{\Delta t}^{(q)}v)^n
+  =
+  \sum_{j=0}^{n}
+  \omega_{n-j}^{(q)}v^j
+\]
+を用いるのが直接的です．
+weightsはcontour integral，FFT-based coefficient extraction，
+または専用recursionで計算できます．
+</p>
+<p>
+一方，energy proofでは
+\[
+  (K_{\Delta t}^{(q)}v)^n
+  =
+  \int_{[0,\infty)}
+  \zeta^n(\lambda)\,d\nu(\lambda)
+\]
+を用いると，continuous theoryと同じcross-term cancellationが見えます．
+</p>
+<p>
+従って役割分担は
+</p>
+\[
+  \boxed{
+  \text{implementation uses CQ weights}
+  \qquad
+  \text{proof uses hidden internal variables}
+  }
+\tag{32}
+\]
+<p>
+です．
+finite positive Prony approximationを採用する場合には，
+proofで使った内部状態をそのままimplementationにも使えます．
+</p>
+</article>
+</div>
+
+<h2>16．CQ weightの計算誤差も独立した誤差源である</h2>
+<div class="news">
+<article class="news-item">
+<p>
+理論上のCQ weightsを数値的に計算する場合，
+fully discrete errorには
+</p>
+\[
+\begin{aligned}
+  \text{total error}
+  \le{}&amp;
+  \text{space discretisation error}
+  \\
+  &amp;+
+  \text{BDF-CQ consistency error}
+  \\
+  &amp;+
+  \text{starting error}
+  \\
+  &amp;+
+  \text{CQ-weight computation error}
+  \\
+  &amp;+
+  \text{linear solver error}.
+\end{aligned}
+\tag{33}
+\]
+<p>
+が現れます．
+さらにpositive Prony realisationを用いるなら，
+relaxation-spectrum quadrature errorも加わります．
+</p>
+<p>
+どのerrorをmodel-reduction errorと呼び，
+どのerrorをstate-discretisation errorと呼ぶかを明確に分けることが，
+次回の課題です．
+</p>
+</article>
+</div>
+
+<h2>17．異方性CR法との接続</h2>
+<div class="news">
+<article class="news-item">
+<p>
+CQは時間方向のmemory operatorを離散化します．
+異方性Crouzeix–Raviart法は空間方向の非適合近似です．
+両者を結び付けるときには，同じbroken form
+\[
+  a_{1,h}
+\]
+をprincipal memory termとhidden internal-variable equationsに使います．
+</p>
+<p>
+すると要素形状にかかわらずcoupling cancellationは代数的に成立します．
+その後に，semi-regularity，CR–RT relation，離散Poincaré inequalityを用いて，
+nonconforming consistencyと異方性補間誤差を評価します．
+</p>
+<p>
+時間構造と空間幾何の役割は
+</p>
+<ul>
+  <li>BDF-CQとG-stability：離散memory graph energyを作る．</li>
+  <li>共通の \(a_{1,h}\)：cross-term cancellationを保存する．</li>
+  <li>CR–RT anisotropic analysis：空間consistency errorを制御する．</li>
+</ul>
+<p>
+と分離できます．
+</p>
+</article>
+</div>
+
+<h2>18．CQが保存するもの，保存しないもの</h2>
+<div class="news">
+<article class="news-item">
+<h3>構造的に保存されるもの</h3>
+<ul>
+  <li>BDF time integratorのcausality．</li>
+  <li>completely monotone kernelのhidden relaxation structure．</li>
+  <li>BDF1のstandard graph energy．</li>
+  <li>BDF2のG-type graph energy．</li>
+  <li>同じ離散形式を用いたときのcross-term cancellation．</li>
+</ul>
+
+<h3>自動的には保存されないもの</h3>
+<ul>
+  <li>各BDF2 CQ weightのcoefficientwise positivity．</li>
+  <li>non-smooth dataに対するformal order \(q\)．</li>
+  <li>starting correction後のexact modewise energy identity．</li>
+  <li>kernel approximation，space discretisation，time discretisationの各極限の可換性．</li>
+  <li>fractional kernelに対するfinite-\(M_0\) graph-space certificate．</li>
+</ul>
+</article>
+</div>
+
+<h2>19．今回の問いへの答え</h2>
+<div class="news">
+<article class="news-item">
+<p>
+「BDFとconvolution quadratureは何を離散化しているのか」という問いには，
+三段階で答えられます．
+</p>
+<ol>
+  <li>
+    <b>operator level：</b>
+    causal convolution operator
+    \(\widehat k(\partial_t)\) を離散化している．
+  </li>
+  <li>
+    <b>Laplace-domain level：</b>
+    transfer function
+    \(\widehat k(z)\) の \(z\) を
+    \(\delta_q(\xi)/\Delta t\) へ置き換えている．
+  </li>
+  <li>
+    <b>hidden-state level：</b>
+    completely monotone kernelを構成する各relaxation modeを
+    同じBDF法で離散化し，それらをBernstein measureで重ね合わせている．
+  </li>
+</ol>
+<p>
+この三つは別々の説明ではなく，同じCQ operatorの三つの表現です．
+</p>
+</article>
+</div>
+
+<h2>Conclusion</h2>
+<div class="news">
+<article class="news-item">
+<p>
+BDF convolution quadratureは，履歴積分を格子点上で直接積分する方法ではありません．
+Laplace-domain transfer functionへBDF symbolを代入し，
+causal operator全体を離散化するoperational calculusです．
+</p>
+\[
+  \widehat k(\partial_t)
+  \quad\longrightarrow\quad
+  \widehat k
+  \left(
+    \frac{\delta_q(\mathsf S)}{\Delta t}
+  \right)
+\]
+<p>
+completely monotone kernelでは，この離散operatorは
+BDFで更新されたhidden internal variablesの連続的重ね合わせと正確に一致します．
+このidentityが，第8回のcross-term cancellationと離散graph-energy lawの根拠です．
+</p>
+<p>
+BDF1・BDF2が特別なのは，orders 1 and 2だからだけではありません．
+BDF familyの中でA-stable，従ってG-stableであり，
+unconditionalなgraph-energy identityを支えられる方法だからです．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>次回：</b>第10回：model-reduction errorをどう分解するか（構想中）<br>
+lag measureのfinite-atomic approximation，relaxation spectrumのProny approximation，
+space-time discretisation，solver toleranceを分離し，
+どの誤差をどのnormでcertifyすべきかを整理します．
+</div>
+<p>
+前の記事：
+<a href="./unresolved-memory-08.html">第8回：離散内部変数でcross-term cancellationを保存する</a>
+</p>
+<p>
+関連ページ：
+<a href="../../publications/">Publications</a>（S3–S5，A3），
+<a href="../../fem/">Research Visions</a>（Vision 11，18），
+<a href="../../suppl/">Supplementary Visions</a>（履歴依存型発展方程式とmemory kernel）
+</p>
+</article>
+</div>
+
+</div>
+</article>
+</div>
+</main>
+
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
