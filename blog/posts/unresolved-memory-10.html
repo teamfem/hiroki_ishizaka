@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>第10回：model-reduction errorをどう分解するか | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,model reduction error,kernel approximation error,state discretisation error,finite atomic approximation,Prony approximation,Crouzeix-Raviart,BDF convolution quadrature,error decomposition">
+<meta name="description" content="未解像ダイナミクスから得られるmemory modelについて，closure，kernel approximation，space discretisation，time discretisation，algebraic errorを区別し，共通normで評価するerror ledgerを整理します．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../">Home</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../fem/">Research Visions</a></li>
+        <li><a href="../../suppl/">Supplementary Visions</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+        <li><a href="../../links/">Links</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+    <li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a>
+      <meta itemprop="position" content="1">
+    </li>
+    <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../" itemprop="item"><span itemprop="name">Blog</span></a>
+      <meta itemprop="position" content="2">
+    </li>
+    <li class="bcl-last">Blog post from 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第10回：model-reduction errorをどう分解するか</h1>
+
+<p class="news-date"><time datetime="2026-08-03">3rd August 2026</time></p>
+
+<h2>Introduction：細かいメッシュだけでは正しい答えにならない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+有限要素メッシュを細かくし，時間刻みを小さくすれば，
+選んだ方程式の離散解はその方程式の厳密解へ近づきます．
+しかし，その方程式自体が未解像状態を不適切に消去したモデルなら，
+離散化誤差をどれだけ小さくしても元の現象には近づきません．
+</p>
+<p>
+memory modelでは，少なくとも次の異なる近似が重なります．
+</p>
+<ul>
+  <li>full dynamicsからreduced memory equationを作る近似．</li>
+  <li>memory kernelまたはdelay lawを有限次元化する近似．</li>
+  <li>空間を有限要素法で近似する誤差．</li>
+  <li>時間をBDF・CQで近似する誤差．</li>
+  <li>CQ weightsと線形方程式を有限精度で計算する誤差．</li>
+</ul>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>今回の中心原理</b><br>
+model errorとstate-discretisation errorを一つの「数値誤差」にまとめない．<br>
+各近似段階の前後に中間問題を置き，同じtarget normでtelescoping decompositionを作る．
+</div>
+<p>
+この分解によって，どの誤差が支配的かを判断でき，
+不要なmesh refinementや過剰なlinear solveを避けられます．
+</p>
+</article>
+</div>
+
+<h2>1．full modelから計算結果までの階層</h2>
+<div class="news">
+<article class="news-item">
+<p>
+full stateを
+\[
+  X(t)=(u(t),z(t))
+\]
+とし，観測・計算したいresolved componentを
+\[
+  PX(t)=u(t)
+\]
+とします．
+計算までの階層を次のように書きます．
+</p>
+\[
+\begin{aligned}
+  \text{full dynamics }X
+  &amp;\longrightarrow
+  \text{exact reduced trajectory }u^{\mathrm{red}}
+  \\
+  &amp;\longrightarrow
+  \text{approximated-kernel solution }u^{K_N}
+  \\
+  &amp;\longrightarrow
+  \text{spatially discrete solution }u_h^{K_N}
+  \\
+  &amp;\longrightarrow
+  \text{fully discrete solution }U_{h,\Delta t,N}
+  \\
+  &amp;\longrightarrow
+  \text{computed solution }\widetilde U_{h,\Delta t,N}.
+\end{aligned}
+\tag{1}
+\]
+<p>
+各矢印が一つの誤差源です．
+重要なのは，すべての中間問題を明示することです．
+中間問題を定義しなければ，
+「kernel error」と「FEM error」を数学的に分離できません．
+</p>
+</article>
+</div>
+
+<h2>2．exact eliminationなら最初のmodel-reduction errorは零になり得る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第2回で扱った線形拡張系
+\[
+\begin{aligned}
+  \partial_tu+Au+Bz&amp;=f,\\
+  \partial_tz+Cz&amp;=Du+g
+\end{aligned}
+\]
+から \(z\) をvariation of constantsで厳密に消去すると，
+\[
+  K(t)=Be^{-tC}D
+\]
+をもつmemory equationが得られます．
+</p>
+<p>
+初期未解像状態に由来する
+\[
+  r_{z_0}(t)=Be^{-tC}z_0
+\]
+と，未解像側のforcingを正しく残すなら，
+</p>
+\[
+  PX=u^{\mathrm{red}}
+\tag{2}
+\]
+<p>
+であり，この段階のreduction errorは零です．
+</p>
+<p>
+一方，次の場合にはclosure errorが生じます．
+</p>
+<ul>
+  <li>初期未解像状態 \(z_0\) の寄与を捨てる．</li>
+  <li>prehistoryを実際とは異なるzero historyへ置き換える．</li>
+  <li>nonlinear hidden dynamicsを線形kernelで近似する．</li>
+  <li>一部のunresolved forcingを無視する．</li>
+  <li>観測から同定したkernelが真のreduced operatorと一致しない．</li>
+</ul>
+<p>
+従って，model reductionという語を
+「kernelを有限個のmodeへ近似すること」だけに限定してはいけません．
+full modelからreduced equationを作る段階にも独立したerrorがあります．
+</p>
+</article>
+</div>
+
+<h2>3．exact telescoping decomposition</h2>
+<div class="news">
+<article class="news-item">
+<p>
+共通のnorm \(\|\cdot\|_{\mathfrak X}\) を選びます．
+式 (1) の中間解を用いると，恒等的に
+\[
+\begin{aligned}
+  PX-\widetilde U_{h,\Delta t,N}
+  ={}&amp;
+  \bigl(PX-u^{\mathrm{red}}\bigr)
+  \\
+  &amp;+
+  \bigl(u^{\mathrm{red}}-u^{K_N}\bigr)
+  \\
+  &amp;+
+  \bigl(u^{K_N}-u_h^{K_N}\bigr)
+  \\
+  &amp;+
+  \bigl(u_h^{K_N}-U_{h,\Delta t,N}\bigr)
+  \\
+  &amp;+
+  \bigl(U_{h,\Delta t,N}
+       -\widetilde U_{h,\Delta t,N}\bigr).
+\end{aligned}
+\tag{3}
+\]
+</p>
+<p>
+三角不等式から
+\[
+\begin{aligned}
+  \|PX-\widetilde U_{h,\Delta t,N}\|_{\mathfrak X}
+  \le{}&amp;
+  E_{\mathrm{closure}}
+  +
+  E_{\mathrm{kernel}}
+  \\
+  &amp;+
+  E_{\mathrm{space}}
+  +
+  E_{\mathrm{time}}
+  +
+  E_{\mathrm{alg}}.
+\end{aligned}
+\tag{4}
+\]
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+  <tr>
+    <th style="border:1px solid #777; padding:7px;">error component</th>
+    <th style="border:1px solid #777; padding:7px;">比較する二つの問題</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">\(E_{\mathrm{closure}}\)</td>
+    <td style="border:1px solid #777; padding:7px;">full resolved stateとexact reduced model</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">\(E_{\mathrm{kernel}}\)</td>
+    <td style="border:1px solid #777; padding:7px;">exact kernelと近似kernel</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">\(E_{\mathrm{space}}\)</td>
+    <td style="border:1px solid #777; padding:7px;">近似kernelの連続問題とspace semidiscretisation</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">\(E_{\mathrm{time}}\)</td>
+    <td style="border:1px solid #777; padding:7px;">semidiscrete trajectoryとBDF・CQ solution</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">\(E_{\mathrm{alg}}\)</td>
+    <td style="border:1px solid #777; padding:7px;">exact discrete solutionとcomputer output</td>
+  </tr>
+</table>
+</article>
+</div>
+
+<h2>4．誤差を足す前にtarget normを固定する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+異なるnormで得たboundをそのまま足すことはできません．
+最初に最終的なtarget normを決める必要があります．
+</p>
+<h3>coercive instantaneous regime</h3>
+<p>
+第4回・第7回の理論では，例えば
+\[
+  \mathfrak X
+  =
+  L_\beta^2(0,T;V),
+\tag{5}
+\]
+または
+\[
+  \mathfrak X
+  =
+  W(0,T)\cap C([0,T];H)
+\tag{6}
+\]
+を使います．
+</p>
+<h3>degenerate instantaneous regime</h3>
+<p>
+第6回の問題では，物理変数だけの
+\(L^2(0,T;V)\)-normを一様に制御できないため，
+\[
+  \mathfrak X
+  =
+  C([0,T];\mathcal W)
+\tag{7}
+\]
+というmemory graph normを使います．
+</p>
+<div style="padding:12px; margin:14px 0; border:2px solid #666666;">
+<b>注意</b><br>
+coercive problemの \(L_\beta^2(0,T;V)\)-errorと，
+degenerate problemのgraph-energy errorを，
+同じ数値として無条件に比較してはいけない．
+</div>
+</article>
+</div>
+
+<h2>5．raw residualではなくstability-amplified errorを見る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+各errorは一般に
+\[
+  \text{error}
+  \le
+  \text{stability factor}
+  \times
+  \text{residual}
+\tag{8}
+\]
+という形になります．
+</p>
+<p>
+measure-valued delayのkernel perturbationでは，
+\[
+  d_{\mu,\beta}
+  :=
+  \alpha_0-\Lambda_1\kappa_\mu(\beta)>0
+\]
+のとき
+\[
+  \|u_\mu-u_\nu\|_{L_\beta^2(0,T;V)}
+  \le
+  \frac{
+    \|K_{\mu-\nu}\widetilde u_\nu\|_{L_\beta^2(0,T;V^*)}
+  }{
+    d_{\mu,\beta}
+  }.
+\tag{9}
+\]
+</p>
+<p>
+同じkernel residualでも，
+\(d_{\mu,\beta}\) が小さければsolution errorは大きく増幅されます．
+従って，誤差指標はresidualの大きさだけでなく，
+stability marginを必ず含める必要があります．
+</p>
+</article>
+</div>
+
+<h2>6．lag-measure approximation errorは現在の理論で分離できる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+delay law \(\mu\) を有限原子測度
+\[
+  \mu_N
+  =
+  \sum_{j=1}^{N}
+  m_j\delta_{\tau_j}
+\tag{10}
+\]
+へ置き換えます．
+同じmassをもつ非負測度で，joined limit trajectoryが
+\(H^\theta(\mathbb R;V)\)-extensionをもつなら，
+第7回のWasserstein estimateから
+\[
+  \|u_\mu-u_{\mu_N}\|_{\mathfrak X}
+  \le
+  C_{\mathrm{ker}}
+  W_1(\mu_N,\mu)^\theta,
+  \qquad
+  0&lt;\theta\le1.
+\tag{11}
+\]
+</p>
+<p>
+従って
+\[
+  E_{\mathrm{kernel}}^{\mathrm{lag}}
+  :=
+  C_{\mathrm{ker}}
+  W_1(\mu_N,\mu)^\theta
+\tag{12}
+\]
+を，lag-measure model-reduction errorとして独立に記録できます．
+</p>
+<p>
+等分割mass lumpingでは
+\[
+  W_1(\mu_N,\mu)
+  \le
+  \frac{M\tau}{N},
+\tag{13}
+\]
+なので
+\[
+  E_{\mathrm{kernel}}^{\mathrm{lag}}
+  =
+  O(N^{-\theta})
+\tag{14}
+\]
+です．
+この項は空間mesh size \(h\) や時間刻み \(\Delta t\) とは独立に評価されます．
+</p>
+</article>
+</div>
+
+<h2>7．Paper IIで確立されている二項分解</h2>
+<div class="news">
+<article class="news-item">
+<p>
+有限原子kernel \(\mu_N\) に対するfully discrete approximationを
+\(U_{h,\Delta t,N}\) とすると，
+現在のcontinuous kernel-stability theoryから
+\[
+\begin{aligned}
+  \|u_\mu-U_{h,\Delta t,N}\|_{\mathfrak X}
+  \le{}&amp;
+  C W_1(\mu_N,\mu)^\theta
+  \\
+  &amp;+
+  \|u_{\mu_N}-U_{h,\Delta t,N}\|_{\mathfrak X}
+\end{aligned}
+\tag{15}
+\]
+という分解が得られます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+\[
+  \boxed{
+  \text{total error}
+  \le
+  \text{kernel-transport error}
+  +
+  \text{state-discretisation error}
+  }
+\tag{16}
+\]
+</div>
+<p>
+第一項は既にWasserstein distanceで制御されています．
+第二項をspace errorとtime errorへさらに分解し，
+そのconstantをatomic kernel familyに対して一様に保つことが
+fully discrete sequelの中心課題です．
+</p>
+</article>
+</div>
+
+<h2>8．delay atomsとProny modesには別々のmodel errorがある</h2>
+<div class="news">
+<article class="news-item">
+<p>
+第7回で近似したのはdelay location \(s\) 上の測度
+\[
+  \mu(ds)
+\]
+です．一方，第8回・第9回のProny approximationは，
+relaxation rate \(\lambda\) 上のBernstein measure
+\[
+  \nu(d\lambda)
+\]
+を
+\[
+  \nu_L
+  =
+  \sum_{\ell=1}^{L}
+  c_\ell\delta_{\lambda_\ell}
+\tag{17}
+\]
+へ近似します．
+</p>
+<p>
+従ってkernel model errorには
+\[
+  E_{\mathrm{kernel}}
+  =
+  E_{\mathrm{lag}}
+  +
+  E_{\mathrm{relax}}
+\tag{18}
+\]
+という二つの方向があり得ます．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+  <tr>
+    <th style="border:1px solid #777; padding:7px;">approximation</th>
+    <th style="border:1px solid #777; padding:7px;">原子を置く変数</th>
+    <th style="border:1px solid #777; padding:7px;">縮約後の表現</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">finite delay quadrature</td>
+    <td style="border:1px solid #777; padding:7px;">lag \(s\)</td>
+    <td style="border:1px solid #777; padding:7px;">shifted states \(u(t-\tau_j)\)</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">finite Prony approximation</td>
+    <td style="border:1px solid #777; padding:7px;">relaxation rate \(\lambda\)</td>
+    <td style="border:1px solid #777; padding:7px;">local internal variables \(\zeta_\ell\)</td>
+  </tr>
+</table>
+<p>
+両者を同じ \(N\) で表し，一つの「kernel discretisation」と呼ぶと，
+どの変数を改善すべきか分からなくなります．
+</p>
+</article>
+</div>
+
+<h2>9．Prony approximationでは何を残差として測るか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+exact memory kernel \(k\) とProny approximation \(k_L\) を考えます．
+coercive regimeでは，reference solution \(u_{k_L}\) に沿った
+\[
+  R_{\mathrm{relax},L}(t)
+  :=
+  A_1\bigl[(k-k_L)*u_{k_L}\bigr](t)
+\tag{19}
+\]
+をkernel residualとし，
+\[
+  \|u_k-u_{k_L}\|_{\mathfrak X}
+  \le
+  C_{\mathrm{stab}}
+  \|R_{\mathrm{relax},L}\|_{\mathfrak Y}
+\tag{20}
+\]
+という形を目標にできます．
+</p>
+<p>
+Laplace領域では
+\[
+  \widehat k(z)-\widehat k_L(z)
+  =
+  \int_{[0,\infty)}
+  \frac{1}{z+\lambda}
+  \,d(\nu-\nu_L)(\lambda)
+\tag{21}
+\]
+がtransfer-function errorです．
+</p>
+<p>
+ただし，現在のlag-measure論文が直接確立しているのは
+delay variable上のWasserstein estimateです．
+一般Bernstein measureに対するsharpなProny error bound，
+特にdegenerate graph normでの一様estimateは，
+別途構築すべき解析課題です．
+ここでは式 (19) をerror ledger上の独立項として置き，
+未証明の普遍rateは仮定しません．
+</p>
+</article>
+</div>
+
+<h2>10．space errorはbest approximationだけではない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+kernelを固定した連続解 \(u^{K_N}\) とspace semidiscrete solution
+\(u_h^{K_N}\) の差を考えます．
+conforming methodではbest approximationを中心に評価できますが，
+Crouzeix–Raviart法ではnonconforming consistencyも現れます．
+概念的には
+\[
+  E_{\mathrm{space}}
+  \le
+  E_{\mathrm{approx}}
+  +
+  E_{\mathrm{cons}}.
+\tag{22}
+\]
+</p>
+<p>
+異方性CR法では
+</p>
+<ul>
+  <li>方向別補間誤差</li>
+  <li>semi-regular mesh parameter</li>
+  <li>broken gradient norm</li>
+  <li>face jumpまたはconsistency residual</li>
+  <li>必要に応じたCR–RT reconstruction</li>
+</ul>
+<p>
+がspace errorを構成します．
+memory termがあるから異方性補間理論が消えるわけではなく，
+各time levelまたはtime integralの中で同じ空間誤差を評価します．
+</p>
+<p>
+Paper IIで確立されているのは，
+kernel-transport constantがconforming・CR semidiscretisation後も
+mesh-independentに保たれることです．
+\(u_{\mu_N}-u_{h,\mu_N}\) の完全なspace consistency estimateは
+独立した数値解析層です．
+</p>
+</article>
+</div>
+
+<h2>11．time errorをさらに分ける</h2>
+<div class="news">
+<article class="news-item">
+<p>
+BDF・CQによるtime errorは一項ではありません．
+少なくとも
+\[
+  E_{\mathrm{time}}
+  \le
+  E_{\mathrm{BDF/CQ}}
+  +
+  E_{\mathrm{start}}
+  +
+  E_{\mathrm{delay\mbox{-}interp}}
+\tag{23}
+\]
+と分けます．
+</p>
+<ul>
+  <li>
+    \(E_{\mathrm{BDF/CQ}}\)：smooth partに対するtime-stepping consistency error．
+  </li>
+  <li>
+    \(E_{\mathrm{start}}\)：初期層，non-smooth data，starting procedureによる誤差．
+  </li>
+  <li>
+    \(E_{\mathrm{delay\mbox{-}interp}}\)：delay atomがtime grid上にない場合のoff-grid history interpolation error．
+  </li>
+</ul>
+<p>
+Prony internal-variable methodではoff-grid delay interpolationは現れませんが，
+relaxation-spectrum approximation errorが別に現れます．
+delay-variable discretisationとrelaxation-variable discretisationで，
+time algorithmの誤差構造も異なります．
+</p>
+</article>
+</div>
+
+<h2>12．CQ weight computationとlinear solver error</h2>
+<div class="news">
+<article class="news-item">
+<p>
+理論上のfully discrete solution
+\(U_{h,\Delta t,N}\) と，
+実際にcomputerが返す
+\(\widetilde U_{h,\Delta t,N}\) は同じではありません．
+</p>
+<p>
+algebraic errorを
+\[
+  E_{\mathrm{alg}}
+  \le
+  E_{\mathrm{weight}}
+  +
+  E_{\mathrm{solve}}
+  +
+  E_{\mathrm{round}}
+\tag{24}
+\]
+と分けます．
+</p>
+<ul>
+  <li>
+    \(E_{\mathrm{weight}}\)：contour integral・FFT・Prony fittingなどによるCQ weightの計算誤差．
+  </li>
+  <li>
+    \(E_{\mathrm{solve}}\)：各time stepのlinear systemを有限toleranceで止める誤差．
+  </li>
+  <li>
+    \(E_{\mathrm{round}}\)：長時間history accumulationとfloating-point roundingの影響．
+  </li>
+</ul>
+<p>
+第8回で定義したenergy residual
+\[
+  \mathfrak R_{\mathrm{en}}^n
+\]
+は，これらの実装誤差がcontinuous structureをどの程度壊したかを監査する指標になります．
+</p>
+</article>
+</div>
+
+<h2>13．誤差指標と厳密な上界を区別する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+実際の計算では
+\[
+  \eta_{\mathrm{closure}},
+  \quad
+  \eta_{\mathrm{kernel}},
+  \quad
+  \eta_{\mathrm{space}},
+  \quad
+  \eta_{\mathrm{time}},
+  \quad
+  \eta_{\mathrm{alg}}
+\tag{25}
+\]
+というindicatorを作ります．
+しかし，すべてが自動的にrigorous upper boundになるわけではありません．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+  <tr>
+    <th style="border:1px solid #777; padding:7px;">component</th>
+    <th style="border:1px solid #777; padding:7px;">計算可能性</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">lag-kernel error</td>
+    <td style="border:1px solid #777; padding:7px;">\(\mu\) が既知なら \(W_1(\mu_N,\mu)\) から評価可能</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">space-time residual</td>
+    <td style="border:1px solid #777; padding:7px;">equilibrated reconstruction等によりcertificate化可能</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">algebraic residual</td>
+    <td style="border:1px solid #777; padding:7px;">solver residualとenergy balanceから直接計算可能</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">closure error</td>
+    <td style="border:1px solid #777; padding:7px;">full model・追加観測・validation dataがなければ一般に計算不能</td>
+  </tr>
+</table>
+<p>
+closure errorが未知なのに，
+FEM residualだけを小さくして「全誤差が保証された」と主張してはいけません．
+</p>
+</article>
+</div>
+
+<h2>14．output errorも同じ階層で分ける</h2>
+<div class="news">
+<article class="news-item">
+<p>
+目的量
+\[
+  \mathcal J(u)
+\]
+を評価したい場合も，同じ中間問題を使います．
+線形functionalなら
+\[
+\begin{aligned}
+  |\mathcal J(PX)-\mathcal J(\widetilde U)|
+  \le{}&amp;
+  |\mathcal J(PX-u^{\mathrm{red}})|
+  \\
+  &amp;+
+  |\mathcal J(u^{\mathrm{red}}-u^{K_N})|
+  \\
+  &amp;+
+  |\mathcal J(u^{K_N}-u_h^{K_N})|
+  \\
+  &amp;+
+  |\mathcal J(u_h^{K_N}-U)|
+  \\
+  &amp;+
+  |\mathcal J(U-\widetilde U)|.
+\end{aligned}
+\tag{26}
+\]
+</p>
+<p>
+単純には
+\[
+  |\mathcal J(v)|
+  \le
+  \|\mathcal J\|_{\mathfrak X^*}
+  \|v\|_{\mathfrak X}
+\]
+を使えます．
+よりsharpなoutput estimateには，DWRやdual problemを各層へ適用する必要があります．
+</p>
+<p>
+特にkernel errorもgoal-orientedに評価すれば，
+「解全体を近似するためのkernel」と
+「特定のoutputを正確にするためのkernel」が異なる可能性があります．
+</p>
+</article>
+</div>
+
+<h2>15．error budgetを設定する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+全許容誤差を \(\mathrm{TOL}\) とし，
+\[
+  \mathrm{TOL}
+  =
+  \mathrm{TOL}_{\mathrm{closure}}
+  +
+  \mathrm{TOL}_{\mathrm{kernel}}
+  +
+  \mathrm{TOL}_{\mathrm{space}}
+  +
+  \mathrm{TOL}_{\mathrm{time}}
+  +
+  \mathrm{TOL}_{\mathrm{alg}}
+\tag{27}
+\]
+と配分します．
+</p>
+<p>
+目標は，各componentを同じ大きさへ機械的に揃えることではなく，
+costとreducibilityを考えて配分することです．例えば
+</p>
+<ul>
+  <li>kernel errorが支配的なら，mesh refinementを止めてatomまたはmodeを増やす．</li>
+  <li>space errorが支配的なら，\(N\) や \(L\) を固定してmeshを改善する．</li>
+  <li>time errorが支配的なら，\(\Delta t\) またはstarting treatmentを改善する．</li>
+  <li>algebraic errorが十分小さければ，solver toleranceをさらに厳しくしない．</li>
+  <li>closure errorが不明なら，追加観測またはfull-model comparisonを優先する．</li>
+</ul>
+</article>
+</div>
+
+<h2>16．一様なstability constantがなければ極限を交換できない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+fully discrete programmeでは
+\[
+  N\to\infty,
+  \qquad
+  h\to0,
+  \qquad
+  \Delta t\to0
+\]
+という複数の極限があります．
+</p>
+<p>
+形式的に各誤差が0へ行っても，constantが他のparameterに依存して発散すれば，
+極限順序を交換できません．
+必要なのは
+\[
+  \|u_\mu-U_{h,\Delta t,N}\|_{\mathfrak X}
+  \le
+  C
+  \left[
+    W_1(\mu_N,\mu)^\theta
+    +
+    \eta_h
+    +
+    \eta_{\Delta t}
+  \right]
+\tag{28}
+\]
+を，\(C\) が \(h,\Delta t,N\) に依存しない形で示すことです．
+</p>
+<p>
+Paper IIはkernel-transport estimateが
+conformingおよびCR spatial semidiscretisationへ
+mesh-uniformに移ることを示しています．
+しかし，space consistencyとtime steppingを含む
+完全離散uniform estimateは今後の数値解析課題です．
+</p>
+</article>
+</div>
+
+<h2>17．zero-delay boundaryでは通常のerror budgetが壊れる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+positive lagに集中するatomic familyでは，一つのweightと一つのstability marginを
+一様に選べます．
+一方，delay massが原点へ近づくと
+\[
+  \kappa_{M\delta_{\tau_d}}(\beta)
+  =
+  Me^{-\beta\tau_d}
+\tag{29}
+\]
+であり，subcritical thresholdを越えるfamilyでは
+一様なmarginのための \(\beta\) が
+\(\tau_d^{-1}\)-scaleで発散します．
+</p>
+<p>
+従って，\(W_1(M\delta_{\tau_d},M\delta_0)\) が小さいだけでは，
+uniform solution errorは保証されません．
+原点では \(M\delta_0\) をinstantaneous operatorへ吸収し，
+比較する中間問題自体をrenormaliseする必要があります．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>教訓</b><br>
+model distanceが小さいことと，solution distanceが小さいことは同じではない．<br>
+両者を結ぶstability constantが一様であることを確認しなければならない．
+</div>
+</article>
+</div>
+
+<h2>18．実際のerror ledger</h2>
+<div class="news">
+<article class="news-item">
+<p>
+一回の計算について，次の表を保存します．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+  <tr>
+    <th style="border:1px solid #777; padding:7px;">項目</th>
+    <th style="border:1px solid #777; padding:7px;">使用parameter</th>
+    <th style="border:1px solid #777; padding:7px;">indicator / bound</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">closure</td>
+    <td style="border:1px solid #777; padding:7px;">hidden model，prehistory，identified parameters</td>
+    <td style="border:1px solid #777; padding:7px;">validation mismatchまたはfull-model residual</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">lag kernel</td>
+    <td style="border:1px solid #777; padding:7px;">atom数 \(N\)，位置 \(\tau_j\)，mass \(m_j\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(C_{\mathrm{ker}}W_1(\mu_N,\mu)^\theta\)</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">relaxation spectrum</td>
+    <td style="border:1px solid #777; padding:7px;">mode数 \(L\)，\(\lambda_\ell,c_\ell\)</td>
+    <td style="border:1px solid #777; padding:7px;">transfer-functionまたはmemory residual</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">space</td>
+    <td style="border:1px solid #777; padding:7px;">mesh \(\mathcal T_h\)</td>
+    <td style="border:1px solid #777; padding:7px;">element residual，jump，CR–RT reconstruction</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">time</td>
+    <td style="border:1px solid #777; padding:7px;">\(\Delta t\)，BDF order，starting rule</td>
+    <td style="border:1px solid #777; padding:7px;">time reconstruction residual</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">algebraic</td>
+    <td style="border:1px solid #777; padding:7px;">solver tolerance，weight precision</td>
+    <td style="border:1px solid #777; padding:7px;">linear residual，energy residual</td>
+  </tr>
+</table>
+<p>
+このledgerを比較すれば，計算costをどこへ追加すべきかが分かります．
+</p>
+</article>
+</div>
+
+<h2>19．現在確立されていることと今後の課題</h2>
+<div class="news">
+<article class="news-item">
+<h3>現在の連続理論が与えるもの</h3>
+<ul>
+  <li>weighted well-posednessとasymmetric residual principle．</li>
+  <li>total variation・narrow・Wassersteinによるlag-kernel stability．</li>
+  <li>finite-atomic delay approximationの \(W_1^\theta\)-error．</li>
+  <li>kernel errorとstate-discretisation errorの二項分離．</li>
+  <li>kernel estimateのmesh-uniform spatial Galerkin transfer．</li>
+</ul>
+
+<h3>数値論文で新たに必要なもの</h3>
+<ul>
+  <li>CR spatial consistencyと異方性補間errorの完全評価．</li>
+  <li>BDF1・BDF2・CQ time errorのkernel-family一様評価．</li>
+  <li>off-grid delay interpolationとstarting errorの分離．</li>
+  <li>relaxation-spectrum Prony approximationの定量的residual bound．</li>
+  <li>graph normにおけるvanishing-coercivity robust error estimate．</li>
+  <li>各componentを計算可能にするa posteriori certificate．</li>
+</ul>
+<p>
+従って，式 (4) は研究programme全体の設計図です．
+すべての項に既に完成したsharp theoremがある，という主張ではありません．
+</p>
+</article>
+</div>
+
+<h2>Conclusion</h2>
+<div class="news">
+<article class="news-item">
+<p>
+model-reduction errorを正しく扱うには，
+full modelとcomputed solutionの間に中間問題を置き，
+各近似段階を別々に比較する必要があります．
+</p>
+\[
+\begin{aligned}
+  \text{total error}
+  \le{}&amp;
+  \text{closure error}
+  +
+  \text{kernel error}
+  \\
+  &amp;+
+  \text{space error}
+  +
+  \text{time error}
+  +
+  \text{algebraic error}.
+\end{aligned}
+\]
+<p>
+exact state eliminationならclosure errorは零になり得ますが，
+initial hidden stateやprehistoryを捨てれば再びmodel errorが生じます．
+lag-measure approximationについてはWasserstein stabilityが
+kernel errorを独立に制御します．
+一方，Prony approximation，fully discrete CR–CQ error，
+graph-space certificateには追加の解析が必要です．
+</p>
+<p>
+最も重要なのは，すべてのerrorを同じtarget normで測り，
+stability amplificationを含むindicatorとして管理することです．
+これによって，mesh，time step，delay atoms，relaxation modes，
+solver toleranceのどれを改善すべきか判断できます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>次回：</b>第11回：誤差に応じて潜在状態を追加するmodel adaptivity（構想中）<br>
+error ledgerから支配的なcomponentを判定し，
+delay atom，Prony mode，空間要素，時間stepを選択的に追加する適応化戦略を整理します．
+</div>
+<p>
+前の記事：
+<a href="./unresolved-memory-09.html">第9回：BDFとconvolution quadratureは何を離散化しているのか</a>
+</p>
+<p>
+関連ページ：
+<a href="../../publications/">Publications</a>（S3–S5，A3），
+<a href="../../fem/">Research Visions</a>（Vision 11，18），
+<a href="../../suppl/">Supplementary Visions</a>（履歴依存型発展方程式とmemory kernel）
+</p>
+</article>
+</div>
+
+</div>
+</article>
+</div>
+</main>
+
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
