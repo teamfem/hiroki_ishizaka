@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>第7回：kernel stabilityとfinite-atomic approximation | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,kernel stability,measure-valued delay,finite-atomic approximation,Wasserstein distance,translation modulus,distributed-to-discrete concentration,kernel quadrature,asymmetric residual">
+<meta name="description" content="measure-valued delay lawの摂動をasymmetric residualへ還元し，total variation，narrow convergence，translation modulus，Wasserstein距離によるkernel stabilityとfinite-atomic approximationを解説します．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../">Home</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../fem/">Research Visions</a></li>
+        <li><a href="../../suppl/">Supplementary Visions</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+        <li><a href="../../links/">Links</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+    <li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a>
+      <meta itemprop="position" content="1">
+    </li>
+    <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+      <a href="../" itemprop="item"><span itemprop="name">Blog</span></a>
+      <meta itemprop="position" content="2">
+    </li>
+    <li class="bcl-last">Blog post from 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第7回：kernel stabilityとfinite-atomic approximation</h1>
+
+<p class="news-date"><time datetime="2026-08-03">3rd August 2026</time></p>
+
+<h2>Introduction：kernelも離散化変数である</h2>
+<div class="news">
+<article class="news-item">
+<p>
+これまでの数値解析では，方程式の係数やmemory kernelを固定し，
+その方程式の解を空間・時間方向に離散化することが一般的でした．
+しかし，memory kernelそのものが未解像ダイナミクスから導出・同定・近似されるなら，
+kernelも誤差をもつモデル変数です．
+</p>
+<p>
+例えば分布遅延
+\[
+  \int_{[0,\tau]}A_1\widetilde u(t-s)\,d\mu(s)
+\]
+を，有限個の遅延位置
+\[
+  \mu_N=\sum_{j=1}^{N}w_j\delta_{s_j}
+\]
+で置き換えると，
+\[
+  \int_{[0,\tau]}A_1\widetilde u(t-s)\,d\mu_N(s)
+  =
+  \sum_{j=1}^{N}w_jA_1\widetilde u(t-s_j)
+\]
+になります．計算は有限個の履歴値だけで済みますが，
+解 \(u_{\mu_N}\) が元の解 \(u_\mu\) にどの程度近いかを示さなければなりません．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>今回の中心問題</b><br>
+delay law \(\mu\) を別の測度 \(\nu\) へ置き換えたとき，
+kernel errorをsolution errorへどう伝播させるか．
+</div>
+<p>
+その鍵は，二つの解の差を直接比較するのではなく，
+<b>kernel differenceを一つのreference trajectoryに作用させたresidual</b>
+へ還元することです．
+</p>
+</article>
+</div>
+
+<h2>1．今回扱うのはcoercive instantaneous regime</h2>
+<div class="news">
+<article class="news-item">
+<p>
+実Hilbert空間のGelfand triple
+\[
+  V\hookrightarrow H\cong H^*\hookrightarrow V^*
+\]
+上で，
+\[
+  \partial_tu_\mu+A_0u_\mu+K_\mu\widetilde u_\mu=f,
+  \qquad
+  u_\mu(0)=u_0
+\tag{1}
+\]
+を考えます．ここで
+\[
+  (K_\mu g)(t)
+  :=
+  \int_{[0,\tau]}A_1g(t-s)\,d\mu(s).
+\tag{2}
+\]
+</p>
+<p>
+双線形形式 \(a_0,a_1\) は
+\[
+  |a_i(w,v)|
+  \le
+  \Lambda_i\|w\|_V\|v\|_V,
+  \qquad
+  i\in\{0,1\},
+\tag{3}
+\]
+\[
+  a_0(v,v)
+  \ge
+  \alpha_0\|v\|_V^2,
+  \qquad
+  \alpha_0>0
+\tag{4}
+\]
+を満たすとします．
+</p>
+<p>
+今回は第6回のdegenerate graph-space regimeではなく，
+瞬時形式 \(a_0\) がcoerciveな場合です．
+kernelは有限符号付き測度でもよく，
+\(a_1\) の対称性やpositivityはkernel stabilityに必要ありません．
+ただし，optimal transportとWasserstein距離を使う部分では，
+同じmassをもつ非負測度に制限します．
+</p>
+</article>
+</div>
+
+<h2>2．asymmetric residual principle</h2>
+<div class="news">
+<article class="news-item">
+<p>
+同じデータ \((u_0,f,\psi)\) に対する二つの解
+\(u_\mu\)，\(u_\nu\) を考え，
+\[
+  e:=u_\mu-u_\nu
+\]
+と置きます．差の方程式は
+\[
+  \partial_te+A_0e+K_\mu E^+e
+  =
+  -K_{\mu-\nu}\widetilde u_\nu,
+  \qquad
+  e(0)=0.
+\tag{5}
+\]
+ここで \(E^+e\) は \((0,T)\) 上の軌道の零拡張です．
+</p>
+<p>
+指数重み \(\beta\ge0\) に対して
+\[
+  \kappa_\mu(\beta)
+  :=
+  \int_{[0,\tau]}e^{-\beta s}\,d|\mu|(s),
+\tag{6}
+\]
+\[
+  d_{\mu,\beta}
+  :=
+  \alpha_0-\Lambda_1\kappa_\mu(\beta)
+\tag{7}
+\]
+とします．
+\[
+  d_{\mu,\beta}>0
+\tag{8}
+\]
+なら，第4回のweighted estimateから
+\[
+  \|u_\mu-u_\nu\|_{L^2_\beta(0,T;V)}
+  \le
+  \frac{
+    \|K_{\mu-\nu}\widetilde u_\nu\|_{L^2_\beta(0,T;V^*)}
+  }{
+    d_{\mu,\beta}
+  }.
+\tag{9}
+\]
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 2px solid #666666;">
+<b>asymmetricである理由</b><br>
+左辺の安定性marginは \(\mu\) が決める．<br>
+右辺のkernel residualはreference solution \(u_\nu\) に沿って評価する．
+</div>
+<p>
+この非対称性は欠点ではありません．
+近似解 \(u_{\mu_N}\) と極限解 \(u_\mu\) を比較するとき，
+regularityが分かっている極限軌道をreference trajectoryに選び，
+近似kernel側には一様なweighted marginを確保できます．
+</p>
+</article>
+</div>
+
+<h2>3．kernelを比較する四つの方法</h2>
+<div class="news">
+<article class="news-item">
+<p>
+式 (9) は，kernel residualさえ評価できれば，
+どのkernel topologyにも対応できます．
+目的に応じた役割分担は次の通りです．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+  <tr>
+    <th style="border:1px solid #777; padding:7px;">kernel comparison</th>
+    <th style="border:1px solid #777; padding:7px;">trajectory assumption</th>
+    <th style="border:1px solid #777; padding:7px;">consequence</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">total variation</td>
+    <td style="border:1px solid #777; padding:7px;">\(\widetilde u_\nu\in L^2(-\tau,T;V)\)</td>
+    <td style="border:1px solid #777; padding:7px;">signed kernelに対するLipschitz estimate</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">narrow convergence</td>
+    <td style="border:1px solid #777; padding:7px;">\(L^2\)-translation continuity</td>
+    <td style="border:1px solid #777; padding:7px;">非負kernelのqualitative strong convergence</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">transport modulus</td>
+    <td style="border:1px solid #777; padding:7px;">\(G\in L^2(\mathbb R;V)\)</td>
+    <td style="border:1px solid #777; padding:7px;">軌道固有の定量評価</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">Wasserstein distance</td>
+    <td style="border:1px solid #777; padding:7px;">\(G\in H^\theta(\mathbb R;V)\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(W_1^\theta\)-rate</td>
+  </tr>
+</table>
+<p>
+一つの距離ですべてを扱おうとすると，重要な極限を見失います．
+特に，distributed kernelからDirac原子への集中はtotal variationでは近づきません．
+</p>
+</article>
+</div>
+
+<h2>4．total variationはsigned kernelの係数摂動を捉える</h2>
+<div class="news">
+<article class="news-item">
+<p>
+history operatorの基本評価から
+\[
+\begin{aligned}
+  \|K_{\mu-\nu}\widetilde u_\nu\|_{L^2(0,T;V^*)}
+  \le{}&
+  \Lambda_1
+  \|\mu-\nu\|_{\mathcal M([0,\tau])}\\
+  &\times
+  \|\widetilde u_\nu\|_{L^2(-\tau,T;V)}.
+\end{aligned}
+\tag{10}
+\]
+従って，式 (9) と組み合わせれば
+\[
+  \|u_\mu-u_\nu\|_{L^2_\beta(0,T;V)}
+  \le
+  \frac{\Lambda_1}{
+    d_{\mu,\beta}
+  }
+  \|\mu-\nu\|_{\mathcal M}
+  \|\widetilde u_\nu\|_{L^2(-\tau,T;V)}.
+\tag{11}
+\]
+</p>
+<p>
+この評価は符号付き測度に使えます．
+同じ遅延位置にある係数を変更する場合や，
+signed feedbackを強い測度normで比較する場合に適しています．
+</p>
+<p>
+しかし，質量 \(m\) の絶対連続測度 \(\mu_\varepsilon\) が
+\(m\delta_{\tau_d}\) へ集中しても，両者は互いに特異なので
+\[
+  \|\mu_\varepsilon-m\delta_{\tau_d}\|_{\mathcal M}
+  =
+  2m.
+\tag{12}
+\]
+total variationではdistributed-to-discrete concentrationを検出できません．
+</p>
+</article>
+</div>
+
+<h2>5．narrow convergenceは集中を捉えるがrateを与えない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+非負測度に対し，
+\[
+  \mu_n\rightharpoonup\mu
+\]
+を
+\[
+  \int_{[0,\tau]}\varphi\,d\mu_n
+  \longrightarrow
+  \int_{[0,\tau]}\varphi\,d\mu
+  \qquad
+  \text{for every }\varphi\in C([0,\tau])
+\tag{13}
+\]
+で定めます．
+</p>
+<p>
+\(\mu_n\) と \(\mu\) が非負で，
+\(\mu(\{0\})=0\) なら，一つの指数重み \(\beta\) と
+一つのmargin \(d_*>0\) を選び，
+十分大きな \(n\) について
+\[
+  d_{\mu_n,\beta}\ge d_*,
+  \qquad
+  d_{\mu,\beta}\ge d_*
+\tag{14}
+\]
+とできます．
+</p>
+<p>
+固定したjoined trajectoryの時間平行移動は
+\(L^2(\mathbb R;V)\) でstrongly continuousなので，
+narrow convergenceから
+\[
+  u_{\mu_n}\longrightarrow u_\mu
+  \quad
+  \text{in }
+  W(0,T)\cap C([0,T];H)
+\tag{15}
+\]
+が得られます．
+</p>
+<p>
+ただし，\(L^2\)-unit ball上には共通のtranslation modulusがありません．
+従って，narrow convergenceだけから普遍的な代数rateを出すことはできません．
+</p>
+</article>
+</div>
+
+<h2>6．trajectory translation modulus</h2>
+<div class="news">
+<article class="news-item">
+<p>
+joined reference trajectory \(\widetilde u_\nu\) を
+\(G\in L^2(\mathbb R;V)\) へ拡張し，
+\[
+  \omega_G(r)
+  :=
+  \sup_{|h|\le r}
+  \|G(\cdot-h)-G\|_{L^2(\mathbb R;V)},
+  \qquad
+  r\ge0
+\tag{16}
+\]
+と定めます．
+</p>
+<p>
+translation groupのstrong continuityにより
+\[
+  \omega_G(r)\longrightarrow0
+  \qquad
+  (r\downarrow0).
+\tag{17}
+\]
+また
+\[
+  0\le\omega_G(r)
+  \le
+  2\|G\|_{L^2(\mathbb R;V)}.
+\tag{18}
+\]
+</p>
+<p>
+\(\omega_G\) は，delay locationを \(h\) だけ動かしたときに，
+そのreference trajectoryがどれだけ変化するかを直接測ります．
+時間正則性をpower lawへ押し込まず，
+実際の軌道が持つtranslation behaviourを保持する量です．
+</p>
+</article>
+</div>
+
+<h2>7．transport planでdelay massを対応付ける</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(\mu,\nu\) を同じmass
+\[
+  M:=\mu([0,\tau])=\nu([0,\tau])>0
+\tag{19}
+\]
+をもつ非負測度とします．
+\(\Pi(\mu,\nu)\) を，第一周辺測度が \(\mu\)，第二周辺測度が \(\nu\)
+である非負測度の集合とします．
+</p>
+<p>
+equal-mass 1-Wasserstein costを
+\[
+  W_1(\mu,\nu)
+  :=
+  \inf_{\pi\in\Pi(\mu,\nu)}
+  \int_{[0,\tau]^2}|s-r|\,d\pi(s,r)
+\tag{20}
+\]
+とし，trajectory-dependent costを
+\[
+  C_G(\mu,\nu)
+  :=
+  \inf_{\pi\in\Pi(\mu,\nu)}
+  \int_{[0,\tau]^2}
+  \omega_G(|s-r|)\,d\pi(s,r)
+\tag{21}
+\]
+と定めます．
+</p>
+<p>
+transport planは，\(\mu\) のdelay location \(s\) にあるmassを，
+\(\nu\) のdelay location \(r\) へ対応付けます．
+その一組が作るhistory residualは
+\[
+  G(\cdot-s)-G(\cdot-r)
+\]
+であり，その大きさを \(\omega_G(|s-r|)\) で測ります．
+</p>
+</article>
+</div>
+
+<h2>8．transport-modulus kernel stability</h2>
+<div class="news">
+<article class="news-item">
+<p>
+式 (9) とtransport couplingを組み合わせると，
+\[
+  \|u_\mu-u_\nu\|_{L^2_\beta(0,T;V)}
+  \le
+  \frac{\Lambda_1}{
+    d_{\mu,\beta}
+  }
+  C_G(\mu,\nu).
+\tag{22}
+\]
+さらに
+\[
+  \|u_\mu-u_\nu\|_{W(0,T)}
+  +
+  \|u_\mu-u_\nu\|_{C([0,T];H)}
+  \le
+  C_{\mathrm{stab}}\,C_G(\mu,\nu),
+\tag{23}
+\]
+ここで \(C_{\mathrm{stab}}\) は
+\(\alpha_0,\Lambda_0,\Lambda_1,\beta,T,d_{\mu,\beta}\)
+に依存します．
+</p>
+<p>
+もしあるcouplingが
+\[
+  |s-r|\le\varepsilon
+\]
+の範囲だけでmassを運ぶなら，
+\[
+  C_G(\mu,\nu)
+  \le
+  M\omega_G(\varepsilon).
+\tag{24}
+\]
+従って，
+\[
+  \|u_\mu-u_\nu\|
+  \le
+  C M\omega_G(\varepsilon).
+\tag{25}
+\]
+</p>
+<p>
+この評価はpower lawを仮定しません．
+数値的にreference trajectoryが得られているなら，
+そのtranslation differenceを直接計測して
+kernel perturbationの影響を評価できます．
+</p>
+</article>
+</div>
+
+<h2>9．fractional regularityからWasserstein rateへ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(0&lt;\theta\le1\) とし，
+\[
+  G\in H^\theta(\mathbb R;V)
+\]
+なら，fractional translation estimate
+\[
+  \|G(\cdot-s)-G(\cdot-r)\|_{L^2(\mathbb R;V)}
+  \le
+  C_\theta
+  |s-r|^\theta
+  \|G\|_{H^\theta(\mathbb R;V)}
+\tag{26}
+\]
+が成り立ちます．
+</p>
+<p>
+これを式 (22) に代入し，transport planにJensenの不等式を使うと，
+\[
+\boxed{
+  \|u_\mu-u_\nu\|_{L^2_\beta(0,T;V)}
+  \le
+  \frac{
+    C_\theta\Lambda_1M^{1-\theta}
+  }{
+    d_{\mu,\beta}
+  }
+  W_1(\mu,\nu)^\theta
+  \|G\|_{H^\theta(\mathbb R;V)}
+  }
+\tag{27}
+\]
+を得ます．
+</p>
+<p>
+従って，kernel approximationのrateは
+delay massのtransport distanceだけでは決まらず，
+reference trajectoryの時間正則性指数 \(\theta\) も反映します．
+</p>
+</article>
+</div>
+
+<h2>10．joined trajectoryのregularityは接合点で決まる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Wasserstein rateで必要なのは，
+過去履歴 \(\psi\) と未知軌道 \(u\) を別々に評価することではなく，
+joined trajectory
+\[
+  \widetilde u
+  =
+  \psi\,\mathbf 1_{(-\tau,0)}
+  +
+  u\,\mathbf 1_{(0,T)}
+\]
+全体が \(H^\theta(-\tau,T;V)\) に属することです．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+  <tr>
+    <th style="border:1px solid #777; padding:7px;">regularity</th>
+    <th style="border:1px solid #777; padding:7px;">\(t=0\) で必要な条件</th>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">\(0&lt;\theta&lt;1/2\)</td>
+    <td style="border:1px solid #777; padding:7px;">trace compatibilityは不要．jumpも許される．</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">\(1/2&lt;\theta\le1\)</td>
+    <td style="border:1px solid #777; padding:7px;">\(\psi(0-)=u(0+)\) in \(V\)</td>
+  </tr>
+  <tr>
+    <td style="border:1px solid #777; padding:7px;">\(\theta=1/2\)</td>
+    <td style="border:1px solid #777; padding:7px;">pointwise matchingではなくcross-interface integralが有限</td>
+  </tr>
+</table>
+<p>
+borderline \(\theta=1/2\) では，
+\[
+  \int_{-\tau}^{0}
+  \int_{0}^{T}
+  \frac{
+    \|u(t)-\psi(s)\|_V^2
+  }{
+    (t-s)^2
+  }
+  \,dt\,ds
+  &lt;\infty
+\tag{28}
+\]
+が正確な追加条件です．
+</p>
+<p>
+qualitativeなtransport-modulus estimateには
+\(L^2(\mathbb R;V)\)-extensionだけあればよく，
+零拡張を使えるため，このinterface compatibilityは不要です．
+regularityを上げてalgebraic rateを得ようとしたときに初めて，
+接合点の構造が現れます．
+</p>
+</article>
+</div>
+
+<h2>11．dataからLipschitz rateを確認する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(\theta=1\) のLipschitz rateを得るための一つの具体的条件は，
+\[
+  u_0\in V,
+  \qquad
+  f\in H^1(0,T;V^*),
+  \qquad
+  \psi\in H^1(-\tau,0;V),
+\tag{29}
+\]
+\[
+  \psi(0-)=u_0
+  \quad\text{in }V,
+\tag{30}
+\]
+および
+\[
+  w_0
+  :=
+  f(0)-A_0u_0
+  -
+  \int_{[0,\tau]}
+  A_1\psi(-s)\,d\nu(s)
+  \in H.
+\tag{31}
+\]
+</p>
+<p>
+このときreference solutionは
+\[
+  u_\nu\in H^1(0,T;V),
+  \qquad
+  \partial_tu_\nu\in W(0,T)
+\tag{32}
+\]
+を満たし，joined trajectoryは
+\(H^1(\mathbb R;V)\)-extensionをもちます．
+従って式 (27) は
+\[
+  \|u_\mu-u_\nu\|
+  \le
+  C W_1(\mu,\nu)
+\tag{33}
+\]
+というLipschitz estimateになります．
+</p>
+</article>
+</div>
+
+<h2>12．fixed positive lagへのdistributed-to-discrete concentration</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(\tau_d\in(0,\tau)\)，\(m>0\) とし，
+\(\eta\ge0\)，
+\[
+  \int_{-1}^{1}\eta(z)\,dz=1
+\]
+を満たすmollifierを用いて
+\[
+  d\mu_\varepsilon(s)
+  :=
+  \frac{m}{\varepsilon}
+  \eta\left(
+    \frac{s-\tau_d}{\varepsilon}
+  \right)\,ds,
+  \qquad
+  \nu:=m\delta_{\tau_d}
+\tag{34}
+\]
+とします．
+</p>
+<p>
+\(\mu_\varepsilon\) のmassを
+\(\tau_d\) へ運ぶcouplingは
+\[
+  |s-\tau_d|\le\varepsilon
+\]
+に支持されます．
+さらに，\(\tau_d\) が原点から正の距離にあるため，
+十分小さい \(\varepsilon\) に対して一つのweightで
+一様なmarginを確保できます．
+</p>
+<p>
+従って，
+\[
+  \|u_{\mu_\varepsilon}-u_{m\delta_{\tau_d}}\|
+  \le
+  C\omega_G(\varepsilon)
+  \longrightarrow0.
+\tag{35}
+\]
+reference trajectoryが \(H^\theta\)-regularなら
+\[
+  \|u_{\mu_\varepsilon}-u_{m\delta_{\tau_d}}\|
+  \le
+  C\varepsilon^\theta.
+\tag{36}
+\]
+</p>
+<p>
+これは「滑らかなdistributed delayを狭くすれば，
+対応するdiscrete delay evolutionへ近づく」という直観を，
+principal-part delayを含むenergy spaceで定量化したものです．
+</p>
+</article>
+</div>
+
+<h2>13．moving multiple delays</h2>
+<div class="news">
+<article class="news-item">
+<p>
+有限原子kernel
+\[
+  \mu_n
+  =
+  \sum_{j=1}^{J}m_j\delta_{\tau_{j,n}},
+  \qquad
+  \mu
+  =
+  \sum_{j=1}^{J}m_j\delta_{\tau_j},
+\tag{37}
+\]
+\[
+  m_j>0,
+  \qquad
+  \tau_{j,n}\longrightarrow\tau_j>0
+\]
+を考えます．各atomを対応するatomへ運べば
+\[
+  W_1(\mu_n,\mu)
+  \le
+  \sum_{j=1}^{J}
+  m_j|\tau_{j,n}-\tau_j|.
+\tag{38}
+\]
+</p>
+<p>
+従って，reference trajectoryが \(H^\theta\)-extensionをもつなら
+\[
+\begin{aligned}
+  &
+  \|u_{\mu_n}-u_\mu\|_{W(0,T)}
+  +
+  \|u_{\mu_n}-u_\mu\|_{C([0,T];H)}
+  \\
+  &\qquad\le
+  C
+  \left(
+    \sum_{j=1}^{J}
+    m_j|\tau_{j,n}-\tau_j|
+  \right)^\theta.
+\end{aligned}
+\tag{39}
+\]
+</p>
+<p>
+atomの位置誤差を，解誤差へ直接変換できます．
+一つのatomを複数の近接atomへ分割する近似も同じtransport argumentで扱えます．
+</p>
+</article>
+</div>
+
+<h2>14．finite-atomic approximationを具体的に作る</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(\mu\in\mathcal M_0^+([0,\tau])\) のmassを
+\[
+  M:=\mu([0,\tau])
+\]
+とします．
+\[
+  h_N:=\frac{\tau}{N}
+\]
+とし，
+\[
+  I_{N,1}:=[0,h_N],
+  \qquad
+  I_{N,k}:=((k-1)h_N,kh_N],
+  \quad
+  2\le k\le N
+\tag{40}
+\]
+へ分割します．各区間のmassを右端
+\[
+  x_{N,k}:=kh_N
+\]
+へ移して
+\[
+  \mu_N
+  :=
+  \sum_{k=1}^{N}
+  \mu(I_{N,k})\delta_{x_{N,k}}
+\tag{41}
+\]
+と定めます．
+</p>
+<p>
+すべてのatomは \((0,\tau]\) にあり，
+\(\mu_N\) と \(\mu\) のmassは同じです．
+各区間内の移動距離は高々 \(h_N\) なので
+\[
+  W_1(\mu_N,\mu)
+  \le
+  Mh_N
+  =
+  \frac{M\tau}{N}.
+\tag{42}
+\]
+</p>
+<p>
+従って
+\[
+  u_{\mu_N}
+  \longrightarrow
+  u_\mu
+  \quad
+  \text{in }
+  W(0,T)\cap C([0,T];H),
+\tag{43}
+\]
+また \(H^\theta\)-regularityがあれば
+\[
+  \|u_{\mu_N}-u_\mu\|
+  =
+  O(N^{-\theta}).
+\tag{44}
+\]
+</p>
+<p>
+これは最も単純なmass-lumping constructionです．
+より洗練された原子配置も可能ですが，
+solution estimateへ入る量は，まずdelay massのtransport costです．
+</p>
+</article>
+</div>
+
+<h2>15．kernel errorとstate-discretisation errorを分離する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(U_{h,k,N}\) を，有限原子kernel \(\mu_N\) に対する
+空間・時間離散解とします．三角不等式により
+\[
+\begin{aligned}
+  \|u_\mu-U_{h,k,N}\|
+  \le{}&
+  \|u_\mu-u_{\mu_N}\|\\
+  &+
+  \|u_{\mu_N}-U_{h,k,N}\|.
+\end{aligned}
+\tag{45}
+\]
+</p>
+<p>
+第一項はkernel approximation errorで，
+\[
+  \|u_\mu-u_{\mu_N}\|
+  \le
+  C W_1(\mu_N,\mu)^\theta.
+\tag{46}
+\]
+第二項は，有限delay problemに対する
+space-time state-discretisation errorです．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+\[
+  \boxed{
+  \text{total error}
+  \le
+  \text{kernel-transport error}
+  +
+  \text{state-discretisation error}
+  }
+\]
+</div>
+<p>
+この分解によって，
+kernel model reductionとFEM・時間積分の誤差を混同せずに評価できます．
+完全離散解析で残る課題は，第二項のconstantを
+\(\mu_N\) の集中に対して一様に保つことです．
+</p>
+</article>
+</div>
+
+<h2>16．spatial Galerkin semidiscretisationへの一様移行</h2>
+<div class="news">
+<article class="news-item">
+<p>
+有限次元空間 \(V_h\) 上で，離散形式が
+mesh parameterに依存しない有界性とcoercivityを満たし，
+\[
+  \alpha_{0,h}\ge\alpha_* >0,
+\tag{47}
+\]
+\[
+  d_{\mu,h,\beta}
+  :=
+  \alpha_{0,h}
+  -
+  \Lambda_{1,h}\kappa_\mu(\beta)
+  \ge
+  d_*>0
+\tag{48}
+\]
+を一様に満たすとします．
+さらにreference semidiscrete trajectoryの
+\(H^\theta\)-extension normが一様に有界なら，
+同じWasserstein estimateをmesh-independent constantで得られます．
+</p>
+<p>
+標準conforming FEMだけでなく，
+uniform discrete Poincaré inequalityをもつ
+Crouzeix–Raviart semidiscretisationにも適用できます．
+従って，kernel-transport errorは空間離散後も独立した誤差成分として残ります．
+</p>
+<p>
+ただし，これは完全離散誤差をすべて証明したという意味ではありません．
+nonconforming consistency errorとtime-stepping errorを，
+finite-atomic familyに対して一様に評価する作業が別に必要です．
+</p>
+</article>
+</div>
+
+<h2>17．positive lagとzero delayは同じ極限ではない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+fixed positive lag \(\tau_d>0\) への集中では，
+kernel massが原点から離れているため，
+一つの指数重みで一様なstability marginを確保できます．
+</p>
+<p>
+一方，
+\[
+  \mu_{\tau_d}=M\delta_{\tau_d},
+  \qquad
+  \tau_d\downarrow0
+\]
+では，
+\[
+  \kappa_{\mu_{\tau_d}}(\beta)
+  =
+  Me^{-\beta\tau_d}.
+\tag{49}
+\]
+\[
+  \frac{\Lambda_1M}{\alpha_0}>1
+\]
+なら，一様なmarginを得るために必要なweightは
+\(\tau_d^{-1}\)-scaleで発散します．
+</p>
+<p>
+この損失はproofのartifactではありません．
+principal-part delayではclass-level threshold
+\[
+  \frac{\Lambda_1M}{\alpha_0}
+\tag{50}
+\]
+が現れます．
+</p>
+<ul>
+  <li>
+    \(\Lambda_1M/\alpha_0&lt;1\)：massだけに依存するunweighted boundをdelay locationに一様に保てる．
+  </li>
+  <li>
+    \(\Lambda_1M/\alpha_0=1\)：各固定scalar modeはspectrally stableでも，small-delayとhigh-frequencyを同時に取るとcoercive space-time normの一様性を失う．
+  </li>
+  <li>
+    \(\Lambda_1M/\alpha_0>1\)：一様に有界なデータから，\(\exp(cT/\tau_d)\)-scaleで成長するsolution familyが生じ得る．
+  </li>
+</ul>
+<p>
+従って，positive-lag concentrationの一様estimateを
+そのまま原点まで延長することはできません．
+原点の極限では \(M\delta_0\) を瞬時形式へ吸収するrenormalisationが必要です．
+</p>
+</article>
+</div>
+
+<h2>18．fractional exponentはresidual mechanismではsharpである</h2>
+<div class="news">
+<article class="news-item">
+<p>
+式 (27) の指数 \(\theta\) は，
+bounded \(H^\theta(\mathbb R;V)\)-sets上で
+translation differenceを一様に制御する指数として最適です．
+高周波trajectoryを使うと，
+\[
+  \|G(\cdot-h)-G\|_{L^2}
+\]
+を \(h^{\theta+\varepsilon}\) で一様に評価することはできません．
+</p>
+<p>
+ただし，これは
+<b>translation-to-residual stepのsharpness</b>です．
+parabolic resolventが特定のデータに追加の時間平滑化を与える可能性があるため，
+full solution errorについて必ず同じlower boundが成立する，という主張ではありません．
+</p>
+</article>
+</div>
+
+<h2>19．delay atomsとProny modesを混同しない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+delay measureの有限原子化
+\[
+  \mu_N
+  =
+  \sum_{j=1}^{N}w_j\delta_{s_j}
+\]
+は
+\[
+  K_{\mu_N}\widetilde u(t)
+  =
+  \sum_{j=1}^{N}
+  w_jA_1\widetilde u(t-s_j)
+\tag{51}
+\]
+という<b>shifted statesの有限和</b>を作ります．
+</p>
+<p>
+一方，Prony kernel
+\[
+  k(t)
+  =
+  \sum_{\ell=1}^{L}
+  c_\ell e^{-\gamma_\ell t}
+\tag{52}
+\]
+は，relaxation-rate variable \(\gamma\) 上の原子測度に対応し，
+内部変数ODEの有限系を作ります．
+</p>
+<p>
+両方とも「有限個の原子」を使いますが，
+原子が置かれる変数が異なります．
+</p>
+<ul>
+  <li>delay atom：lag location \(s\) 上の原子．</li>
+  <li>Prony mode：relaxation rate \(\gamma\) 上の原子．</li>
+</ul>
+<p>
+この区別は，第8回以降でdelay quadratureとinternal-variable discretisationを
+比較するときに重要になります．
+</p>
+</article>
+</div>
+
+<h2>Conclusion</h2>
+<div class="news">
+<article class="news-item">
+<p>
+kernel stabilityの出発点は，
+二つのsolution operatorsを直接比較することではなく，
+kernel differenceを一つのjoined reference trajectoryに作用させた
+asymmetric residualへ還元することです．
+</p>
+<p>
+\[
+  \text{kernel perturbation}
+  \longrightarrow
+  \text{history residual on one trajectory}
+  \longrightarrow
+  \text{solution perturbation}
+\]
+</p>
+<p>
+total variationはsigned coefficient perturbationを，
+narrow convergenceはqualitative concentrationを，
+transport modulusはtrajectory-dependent rateを，
+Wasserstein distanceはfractional regularityに応じた
+\(W_1^\theta\)-rateを与えます．
+</p>
+<p>
+finite-atomic approximationでは
+\[
+  W_1(\mu_N,\mu)\longrightarrow0
+\]
+を確保することで，
+kernel model reduction errorを
+space-time discretisation errorから分離できます．
+ただし，一様性が保たれるのは原点から離れたpositive-delay regimeであり，
+zero delayは瞬時作用へ移る特異境界です．
+</p>
+<div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
+<b>次回：</b>第8回：離散内部変数でcross-term cancellationを保存する（構想中）<br>
+Prony近似または有限緩和モードに対して，
+連続extended energyのcoupling cancellationを時間・空間離散後にも再現する条件を整理します．
+</div>
+<p>
+前の記事：
+<a href="./unresolved-memory-06.html">第6回：graph-space well-posednessとは何か</a>
+</p>
+<p>
+関連ページ：
+<a href="../../publications/">Publications</a>（S3–S5，A3），
+<a href="../../fem/">Research Visions</a>（Vision 11，18），
+<a href="../../suppl/">Supplementary Visions</a>（履歴依存型発展方程式とmemory kernel）
+</p>
+</article>
+</div>
+
+</div>
+</article>
+</div>
+</main>
+
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
