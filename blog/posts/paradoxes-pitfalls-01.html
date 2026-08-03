@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>領域が収束しても解は正しく収束しない――バブシュカ・パラドックス | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Babuska paradox,Babuška paradox,バブシュカパラドックス,plate paradox,有限要素法,domain approximation,plate bending,curved boundary,数値解析">
+<meta name="description" content="曲線領域を多角形領域で近似すると，領域は収束しても単純支持板の解が別の極限問題へ収束し得る．バブシュカ・パラドックスの仕組み，単位円板の具体例，回避法，現代的な研究課題を解説する．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li><a href="../../">Home</a></li>
+				<li><a href="../../publications/">Publications</a></li>
+				<li><a href="../../research/">Research</a></li>
+				<li><a href="../../fem/">Research Visions</a></li>
+				<li><a href="../../suppl/">Supplementary Visions</a></li>
+				<li><a href="../../blog/">Blog</a></li>
+				<li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+				<li><a href="../../links/">Links</a></li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼パンくずリスト-->
+	<nav class="breadcrumbs">
+		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a>
+				<meta itemprop="position" content="1">
+			</li>
+			<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+				<a href="../" itemprop="item"><span itemprop="name">Blog</span></a>
+				<meta itemprop="position" content="2">
+			</li>
+			<li class="bcl-last">バブシュカ・パラドックス</li>
+		</ol>
+	</nav>
+	<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">領域が収束しても解は正しく収束しない<br>――バブシュカ・パラドックス</h1>
+
+<p>
+<b>古典的パラドックスから現代の研究課題へ　第1回</b><br>
+<time datetime="2026-08-03">3rd August 2026</time>
+</p>
+
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+<p>
+曲線で囲まれた領域を，多角形で近似する．辺を細かくすれば多角形は元の領域へ近づくので，
+その上で計算した解も正しい解へ近づくように思われます．ところが，単純支持された薄板の曲げ問題では，
+多角形領域上の解が安定に収束しながら，元の曲線領域上の解とは異なる解へ収束することがあります．
+これが<b>バブシュカ・パラドックス</b>，あるいは<b>plate paradox</b>です．
+</p>
+<div style="padding: 10px; margin-bottom: 10px; border: 5px double #333333; text-align:center;">
+<p style="margin:0;">
+領域は収束する：
+\[
+  \omega_m \longrightarrow \omega
+\]
+しかし，解は正しい解へ収束しない：
+\[
+  u_m \longrightarrow u_\infty,
+  \qquad
+  u_\infty\neq u.
+\]
+</p>
+</div>
+<p>
+重要なのは，「数値解が発散する」のではない点です．計算は安定に見え，メッシュを細かくすると値も落ち着きます．
+それでも，<b>別の境界値問題の解へ収束している</b>可能性があります．
+</p>
+</article>
+</div>
+
+<h2>1．どのような問題で起こるのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+\(\omega\subset\mathbb{R}^2\)を滑らかな曲線境界をもつ領域とし，
+\(\omega_m\)をその内部に作った多角形領域とします．典型例は，円板\(\omega\)を，
+頂点が円周上にある正多角形\(\omega_m\)で近似する場合です．
+</p>
+<div style="display:flex; gap:10px; flex-wrap:wrap; align-items:stretch; justify-content:center; margin:12px 0;">
+<div style="flex:1 1 180px; min-width:180px; border:1px solid #999; padding:12px; text-align:center;">
+<b>曲線領域</b><br>
+\(\omega\)<br>
+円板など
+</div>
+<div style="align-self:center; font-size:1.5em;">\(\longleftarrow\)</div>
+<div style="flex:1 1 180px; min-width:180px; border:1px solid #999; padding:12px; text-align:center;">
+<b>多角形領域</b><br>
+\(\omega_m\)<br>
+辺の数を増やす
+</div>
+</div>
+<p>
+対象はKirchhoff–Love型の薄板曲げ問題です．境界上で板のたわみをゼロにする
+単純支持条件を考えます．二階方程式のPoisson問題では，多角形近似が直ちにこの種の異常を生むわけではありません．
+問題は，四階問題の自然境界条件に<b>境界曲率</b>が現れることにあります．
+</p>
+</article>
+</div>
+
+<h2>2．変分問題に境界曲率が隠れている</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Poisson比を\(\sigma\in[0,1)\)，荷重を\(f\)とします．単純支持板の変位\(u\)は，概略的には
+</p>
+\[
+  V(\omega):=H^2(\omega)\cap H_0^1(\omega)
+\]
+<p>
+上で，次のエネルギーを最小にする関数として定められます．
+</p>
+\[
+  I_\omega(v)
+  :=\frac{\sigma}{2}\int_\omega |\Delta v|^2\,dx
+   +\frac{1-\sigma}{2}\int_\omega |D^2v|^2\,dx
+   -\int_\omega fv\,dx.
+\]
+<p>
+ここで\(v=0\)は境界上のたわみを固定しますが，法線微分までは固定しません．
+滑らかな境界に対してEuler–Lagrange方程式を書くと，
+</p>
+\[
+  \Delta^2u=f \quad\text{in }\omega,
+\]
+\[
+  u=0,
+  \qquad
+  \Delta u-(1-\sigma)\kappa\,\partial_nu=0
+  \quad\text{on }\partial\omega
+\]
+<p>
+となります．\(\kappa\)は境界曲率，\(\partial_nu\)は外向き法線微分です．
+したがって，この問題の境界条件は，境界の位置だけでなく，<b>曲率そのもの</b>に依存しています．
+</p>
+</article>
+</div>
+
+<h2>3．多角形化すると曲率項はどこへ行くのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+多角形の各辺では曲率はゼロです．曲率は頂点に集中した特異な量として現れます．
+ところが，適合的な近似空間で多角形境界全体に\(u_m=0\)を強く課すと，
+隣接する二辺が交わる頂点では勾配も強く拘束されます．その結果，本来は曲線境界上に残る
+\(\kappa\partial_nu\)の効果が，極限で正しく再現されません．
+</p>
+<p>
+多角形上の問題を細分化していくと，極限はしばしば
+</p>
+\[
+  \Delta^2u_\infty=f \quad\text{in }\omega,
+  \qquad
+  u_\infty=\Delta u_\infty=0
+  \quad\text{on }\partial\omega
+\]
+<p>
+というNavier型境界条件をもつ問題になります．これは，元の曲線領域上の単純支持条件
+</p>
+\[
+  u=0,
+  \qquad
+  \Delta u-(1-\sigma)\kappa\partial_nu=0
+\]
+<p>
+とは一般に異なります．つまり，領域近似の極限と，境界値問題を解く操作が可換ではありません．
+</p>
+<div style="padding:10px; margin-bottom:10px; border:1px solid #999;">
+<b>極限の非可換性</b>
+\[
+  \lim_{m\to\infty}
+  \bigl(\text{多角形 }\omega_m\text{ 上で解く}\bigr)
+  \neq
+  \bigl(\text{極限領域 }\omega\text{ 上で解く}\bigr).
+\]
+</div>
+</article>
+</div>
+
+<h2>4．単位円板では中心変位が明確に異なる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+単位円板\(\omega=B_1(0)\)，一様荷重\(f=1\)，\(\sigma=0\)を考えます．
+半径を\(r=|x|\)とすると，正しい単純支持板の解は
+</p>
+\[
+  u(r)=\frac{5-6r^2+r^4}{64}
+\]
+<p>
+です．一方，多角形領域上の完全な境界拘束から得られる誤った極限解は
+</p>
+\[
+  u_\infty(r)=\frac{3-4r^2+r^4}{64}
+\]
+<p>
+です．特に中心では
+</p>
+\[
+  u(0)=\frac{5}{64},
+  \qquad
+  u_\infty(0)=\frac{3}{64}.
+\]
+<p>
+両者の差は，丸め誤差や高次項ではありません．誤った中心変位は正しい値の\(60\%\)です．
+メッシュをさらに細かくしても，誤った方法は\(3/64\)へ，より美しく収束していきます．
+</p>
+</article>
+</div>
+
+<h2>5．これは何が原因ではないのか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+バブシュカ・パラドックスを「曲線を直線で近似したため精度が少し落ちた」と理解すると，本質を外します．
+</p>
+<ul>
+<li><b>単なるメッシュ不足ではありません．</b>細分化しても誤差が消えず，別の極限へ向かいます．</li>
+<li><b>単なる線形代数的不安定性ではありません．</b>離散問題は安定に解け，収束グラフも整って見えます．</li>
+<li><b>有限要素空間の近似次数だけの問題ではありません．</b>高次の適合要素でも，境界条件を全面的に実現すると誤収束し得ます．</li>
+<li><b>領域のHausdorff距離だけでは十分ではありません．</b>境界作用素が要求する法線・曲率・トレース空間まで整合させる必要があります．</li>
+</ul>
+<p>
+本質は，<b>幾何近似，許容関数空間，境界条件，変分極限の整合性</b>です．
+</p>
+</article>
+</div>
+
+<h2>6．どのように回避できるのか</h2>
+<div class="news">
+<article class="news-item">
+<h3>6.1　曲率を近似できる境界を使う</h3>
+<p>
+区分的二次曲線などを用いて境界曲率を関数として近似すれば，直線辺だけを用いる場合に失われる曲率情報を回復できます．
+ただし，「幾何次数を上げれば常に安全」とは限らず，境界条件と変分形式との整合性を確認する必要があります．
+</p>
+<h3>6.2　適合要素では境界条件を緩和する</h3>
+<p>
+多角形境界の全辺上で\(u_h=0\)を強制する代わりに，境界頂点など，元の曲線境界との整合性を保つ部分だけで条件を課します．
+近年の解析では，このようなnodal supportが，正しい変分極限を得るための本質的条件として整理されています．
+</p>
+<h3>6.3　非適合法・DG法の柔軟性を利用する</h3>
+<p>
+標準的な非適合有限要素法や不連続Galerkin法は，境界条件を連続適合空間ほど強く実現しないため，
+適切な離散Hessianと安定化を備えた場合に正しい極限へ収束できます．
+ここでは「非適合だから精度が低い」のではなく，<b>必要な幾何学的自由度を残すことが利点</b>になります．
+</p>
+<h3>6.4　修正境界条件・penalty法を用いる</h3>
+<p>
+境界条件をpenaltyとして弱く課す方法や，頂点に集中する曲率効果を補正する方法も提案されています．
+ただし，penalty parameterを大きくすればよいという単純な話ではなく，極限問題の整合性を解析する必要があります．
+</p>
+</article>
+</div>
+
+<h2>7．現代的な研究課題</h2>
+<div class="news">
+<article class="news-item">
+<p>
+以下は，すべてが未解決であると断定するものではありません．古典的なパラドックスを，現在の計算数学から再検討するときの
+<b>研究の問い</b>です．
+</p>
+
+<h3>7.1　一般の高次・曲線・spline幾何に対する必要十分条件</h3>
+<p>
+多角形から区分的高次曲線，isoparametric要素，NURBS，曲線Virtual Elementへ進むとき，
+正しい極限を保証する最小条件は何でしょうか．境界位置，法線，曲率，Jacobian，トレース空間のうち，
+どの量をどの位相で収束させれば十分なのかを，Mosco収束や\(\Gamma\)-収束によって統一できる可能性があります．
+</p>
+
+<h3>7.2　CutFEM・unfitted FEM・level-set geometry</h3>
+<p>
+背景格子と物理境界が一致しない方法では，境界は零レベル集合や局所再構成によって表されます．
+Nitsche項，ghost penalty，法線近似，曲率近似を組み合わせたとき，離散エネルギーが正しい境界値問題へ収束するための条件は何か．
+これは「メッシュが境界に適合しない」現代的手法におけるplate paradoxの再検討です．
+</p>
+
+<h3>7.3　非線形板・殻・foldingモデル</h3>
+<p>
+2026年には，バブシュカ・パラドックスが，Gauss曲率ゼロを課す非線形bending–foldingモデルにも現れることが示されました．
+線形理論だけの古い例外ではありません．大変形殻，折紙構造，塑性ヒンジ，接触を含むモデルで，
+幾何近似がどの拘束や解分枝を選択するかは，さらに検討する価値があります．
+</p>
+
+<h3>7.4　固有値・振動・長時間計算</h3>
+<p>
+静的作用素が誤った極限へ収束するなら，固有振動数，モード形状，時間発展も誤った作用素に支配される可能性があります．
+領域近似誤差がスペクトル近似やエネルギー保存へ与える影響を，静的誤差とは別に評価する必要があります．
+</p>
+
+<h3>7.5　幾何誤差を含むgoal-oriented certificate</h3>
+<p>
+通常のa posteriori誤差評価は，固定された連続問題に対する離散化誤差を測ります．
+しかしバブシュカ・パラドックスでは，離散問題そのものが別の極限を選びます．したがって，
+</p>
+\[
+  \text{total error}
+  =\text{PDE discretisation error}
+   +\text{geometry/model error}
+   +\text{boundary-realisation error}
+\]
+<p>
+という分解を，計算可能なcertificateへ落とし込めるかが問題になります．
+</p>
+
+<h3>7.6　データ駆動型領域表現における「誤った極限」</h3>
+<p>
+PINNsやneural operatorsでは，領域境界を点群，signed distance function，implicit neural representationで与える場合があります．
+境界lossが小さくなることと，曲率を含む境界作用素が正しく近似されることは同じではありません．
+学習点数を増やしたときに，損失は収束しても異なる境界値問題を学習する可能性を，どの収束概念で排除できるでしょうか．
+</p>
+
+<div style="padding:10px; margin-top:12px; border:5px double #333333;">
+<b>最小研究課題としての切り出し方</b>
+<ul>
+<li><b>対象：</b>単位円板上の単純支持板，\(f=1\)，\(\sigma=0\)．</li>
+<li><b>基準値：</b>中心変位\(u(0)=5/64\)．誤った極限値は\(3/64\)．</li>
+<li><b>比較：</b>直線境界，高次曲線境界，境界条件の全面実現，nodal realization，非適合法，DG法．</li>
+<li><b>理論目標：</b>離散エネルギーの\(\Gamma\)-収束または許容空間のMosco収束．</li>
+<li><b>計算目標：</b>通常の誤差だけでなく，「どの連続問題へ収束しているか」を診断する．</li>
+</ul>
+</div>
+</article>
+</div>
+
+<h2>8．数値解析上の教訓</h2>
+<div class="news">
+<article class="news-item">
+<p>
+バブシュカ・パラドックスは，「曲線境界では高次要素を使おう」という技術的注意だけではありません．
+それは，数値計算の信頼性について，より根本的な区別を要求します．
+</p>
+<div style="padding:10px; margin-bottom:10px; border:1px solid #999;">
+<p style="margin:0;"><b>数値列が収束すること</b>と，<b>意図した数学的問題の解へ収束すること</b>は，同じではない．</p>
+</div>
+<p>
+有限要素空間だけでなく，領域，境界作用素，拘束条件，数値積分，安定化を含む
+<b>離散問題全体の極限</b>を調べなければなりません．
+この視点は，古典的な板曲げ問題を越えて，曲面PDE，unfitted methods，非線形殻，逆問題，
+データ駆動型PDE計算にも通じる研究原理です．
+</p>
+</article>
+</div>
+
+<h2>References</h2>
+<div class="news">
+<article class="news-item">
+<ol>
+<li>
+I. Babuška,
+“Stability of the domain in relation to the main problems of the theory of partial differential equations, especially in connection with the elasticity theory, I–II,”
+<cite>Czechoslovak Mathematical Journal</cite>, 11 (1961), 76–105 and 165–203.
+<a href="https://eudml.org/doc/12060" target="_blank" rel="noopener">Part I</a>，
+<a href="https://eudml.org/doc/12068" target="_blank" rel="noopener">Part II</a>．
+</li>
+<li>
+I. Babuška,
+“Die Stabilität mit Rücksicht auf das Definitionsgebiet und die Frage der Formulierung des Plattenproblems,”
+<cite>Aplikace matematiky</cite>, 7 (1962), 463–467.
+<a href="https://eudml.org/doc/14244" target="_blank" rel="noopener">EuDML</a>．
+</li>
+<li>
+I. Babuška and J. Pitkäranta,
+“The Plate Paradox for Hard and Soft Simple Support,”
+<cite>SIAM Journal on Mathematical Analysis</cite>, 21 (1990), 551–576.
+<a href="https://doi.org/10.1137/0521030" target="_blank" rel="noopener">DOI</a>．
+</li>
+<li>
+S. Bartels and P. Tscherner,
+“Necessary and sufficient conditions for avoiding Babuška’s paradox on simplicial meshes,”
+<cite>IMA Journal of Numerical Analysis</cite>, 45 (2025), 1300–1319.
+<a href="https://doi.org/10.1093/imanum/drae050" target="_blank" rel="noopener">DOI</a>，
+<a href="https://arxiv.org/abs/2401.05897" target="_blank" rel="noopener">arXiv</a>．
+</li>
+<li>
+S. Bartels, A. Bonito, P. Hornung and M. Neunteufel,
+“Babuška’s paradox in a nonlinear bending-folding model,”
+<cite>Interfaces and Free Boundaries</cite>, published online first (2026).
+<a href="https://doi.org/10.4171/IFB/566" target="_blank" rel="noopener">DOI</a>．
+</li>
+</ol>
+</article>
+</div>
+
+<p><a href="../">Blog一覧へ戻る</a></p>
+
+<!--section-in-->
+</div>
+</article>
+</div>
+</main>
+<!--▲メインコンテンツ-->
+
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
