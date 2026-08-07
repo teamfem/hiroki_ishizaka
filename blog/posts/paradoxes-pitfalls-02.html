@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,有限要素法,Finite Element Method,最大角条件,maximum angle condition,maximal angle condition,Babuska Aziz,Babuška–Aziz,異方性メッシュ,anisotropic mesh,circumradius condition,semi-regularity,a posteriori error estimator,false convergence">
-<meta name="description" content="Apel–Eckardt–Haubner–Kempfの論文を基に，最大角条件を破るBabuška–Azizメッシュ上で，有限要素解同士は近づいても厳密解へ収束しない現象を検証する．circumradius，semi-regular parameter，事後誤差評価，fine-mesh referenceの危険性を整理する．">
+<meta name="description" content="Apel–Eckardt–Haubner–Kempfの論文を基に，最大角条件を破るBabuška–Azizメッシュ上で，有限要素解同士は近づいても厳密解へ収束しない現象を検証する．circumradius，semi-regular parameter，最小角・最大角・異方性の違い，事後誤差評価，fine-mesh referenceの危険性を整理する．">
 
 <link rel="stylesheet" href="../../css/base.css">
 <link rel="stylesheet" href="../../css/rwd.css">
@@ -247,6 +247,124 @@ Apel–Eckardt–Haubner–Kempfが改めて強調したのは，
 <p>
 したがって，最大角条件は「最弱の条件」ではありません．しかし，
 <b>特殊事情を仮定せずに有限要素計算を安全に進めるための，簡潔で堅牢な十分条件</b>として，現在でも重要です．
+</p>
+
+<h3>1.5　異方性メッシュでは「最小角」「最大角」「異方性」を分けて考える</h3>
+<p>
+ここは特に注意が必要です．<b>異方性メッシュであることと，最大角条件を破ることは同じではありません．</b>
+この区別を曖昧にすると，細長い要素を見ただけで「危険なメッシュ」と判断したり，逆に
+「異方性メッシュでは角度条件は不要」と誤解したりします．
+</p>
+<p>
+二次元三角形では，最小角条件はshape-regularityと本質的に同じ強さを持ちます．
+最小角を一様に正から離すと，極端なaspect ratioを持つ細長い三角形は排除されます．
+したがって，境界層や方向性の強い解に合わせて非常に細長い要素を使う古典的な異方性有限要素法では，
+最小角条件を満たさないこと自体は珍しくありません．
+</p>
+<p>
+一方，最大角条件はこれより弱く，
+</p>
+\[
+  	heta_{\max,T}\leq\gamma_0<\pi
+\]
+<p>
+だけを要求します．例えば，幅に比べて高さが非常に小さい長方形を対角線で二分してできる直角三角形は，
+最小角が0へ近づき，aspect ratioは発散しても，最大角は\(\pi/2\)付近に保たれます．
+この意味で，<b>最大角条件はかなり強い異方性を許す条件</b>です．
+</p>
+
+<div style="overflow-x:auto; margin:12px 0;">
+<table style="border-collapse:collapse; width:100%; min-width:680px;">
+<tr>
+<th style="border:1px solid #999; padding:8px;">見る量</th>
+<th style="border:1px solid #999; padding:8px;">何を排除するか</th>
+<th style="border:1px solid #999; padding:8px;">異方性要素との関係</th>
+</tr>
+<tr>
+<td style="border:1px solid #999; padding:8px;"><b>最小角条件</b></td>
+<td style="border:1px solid #999; padding:8px;">小さい角が0へ近づく退化</td>
+<td style="border:1px solid #999; padding:8px;">強いaspect ratioを持つ要素を基本的に排除する．二次元ではshape-regularityと同程度の条件．</td>
+</tr>
+<tr>
+<td style="border:1px solid #999; padding:8px;"><b>最大角条件</b></td>
+<td style="border:1px solid #999; padding:8px;">最大角が\(\pi\)へ近づく扁平化</td>
+<td style="border:1px solid #999; padding:8px;">最小角が0へ近づく細長い要素を許す．異方性解析の標準的な安全条件．</td>
+</tr>
+<tr>
+<td style="border:1px solid #999; padding:8px;"><b>aspect ratio</b></td>
+<td style="border:1px solid #999; padding:8px;">方向ごとのスケール差を測る</td>
+<td style="border:1px solid #999; padding:8px;">大きいこと自体は非収束を意味しない．解の方向性に合えば有効である．</td>
+</tr>
+<tr>
+<td style="border:1px solid #999; padding:8px;"><b>\(H_T/h_T\)</b></td>
+<td style="border:1px solid #999; padding:8px;">最大角型の退化を角度を直接使わず測る</td>
+<td style="border:1px solid #999; padding:8px;">二次元ではcircumradius型量に対応し，二・三次元でsemi-regularityは最大角条件と対応する．</td>
+</tr>
+</table>
+</div>
+
+<p>
+したがって，異方性メッシュは少なくとも
+</p>
+\[
+  	ext{aspect ratioの大きさ},\qquad
+  	ext{最小角},\qquad
+  	ext{最大角},\qquad
+  rac{H_T}{h_T},\qquad
+  	ext{mesh topology}
+\]
+<p>
+を分けて分類する必要があります．さらに，単一要素の形だけではなく，
+<b>これらの量が精密化に伴ってどう変化するか</b>も重要です．
+</p>
+
+<h3>1.6　semi-regularityと，それより弱い収束条件を区別する</h3>
+<p>
+本サイトの<a href="../">Blog</a>にある
+<b>「異方性有限要素法の幾何学的基礎」</b>では，この区別を独立した系列として整理しています．
+特に，<a href="./anisotropic-geometry-01.html">なぜ幾何条件が必要なのか</a>，
+<a href="./anisotropic-geometry-02.html">正則性と準正則性を角度を使わずに表す</a>，
+<a href="./anisotropic-geometry-03.html">異方性メッシュの二つの現れ方</a>，
+<a href="./anisotropic-geometry-06.html">長方形の三角形分割を幾何指標で調べる</a>
+と本記事は直接つながっています．
+</p>
+<p>
+この系列で用いているsemi-regular conditionは，概念的には
+</p>
+\[
+  rac{H_T}{h_T}\leq C
+  \qquad	ext{uniformly in }T	ext{ and }h
+\]
+<p>
+という条件です．二次元では\(H_T\)はcircumradiusと同程度のflatness parameterであり，
+\(H_T/h_T\)の一様有界性は最大角条件と同値です．三次元についても，対応する幾何量によるsemi-regular conditionが
+最大角条件と同値になることが知られています．
+</p>
+<p>
+しかし，本記事のBabuška–Aziz型メッシュで重要なのは，さらに弱い状況です．
+最大角条件，すなわち\(H_T/h_T\)の一様有界性を失っていても，
+</p>
+\[
+  H(h):=\max_{T\in\mathcal T_h}H_T\longrightarrow0
+\]
+<p>
+のように，<b>誤差評価に直接現れる幾何因子そのものが0へ向かう</b>なら，特定の問題・有限要素法では収束が残る場合があります．
+逆に，\(H_T/h_T\)が発散することだけを見て非収束と判断することも，
+\(H(h)	o0\)を確認せずに「最大角条件は不要」と判断することも適切ではありません．
+</p>
+<div style="padding:10px; margin-bottom:10px; border:5px double #333333;">
+<p style="margin:0;">
+<b>異方性メッシュの分類で分けるべき三つのレベル</b><br><br>
+(1) <b>shape-regular / minimum-angle level：</b> 強い異方性そのものを排除する．<br>
+(2) <b>semi-regular / maximum-angle level：</b> 強いaspect ratioを許しつつ，標準理論を安全側で保証する．<br>
+(3) <b>maximum-angleを越える level：</b> \(H_T/h_T\)は発散しても，\(H_T	o0\)や特殊なpatch構造・相殺により収束が残る場合がある．ただし，別の極限へ収束する場合もあり，個別解析が不可欠である．
+</p>
+</div>
+<p>
+この三段階を区別すると，Babuška–Aziz反例の位置づけが明確になります．
+反例が示しているのは「異方性メッシュが危険」ということではなく，
+<b>最大角条件を越えた領域では，局所的な細長さだけでなく，退化速度とメッシュ全体の接続構造まで見なければ収束を判定できない</b>，
+ということです．
 </p>
 </article>
 </div>
@@ -1279,6 +1397,7 @@ Babuška–Aziz型メッシュでは，最大角が\(\pi\)へ近づく要素が�
 </div>
 <p>
 最大角条件を外すこと自体は可能です．ただし，その場合には，
+<a href="../">「異方性有限要素法の幾何学的基礎」</a>で整理しているように，最小角条件，最大角条件，semi-regularity，aspect ratio，\(H_T\)の極限，mesh topologyを区別したうえで，
 </p>
 <ul>
 <li>そのメッシュ族に固有の対称性や相殺，</li>
