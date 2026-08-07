@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>有限要素解は収束しているのに正解へ収束しない――最大角条件とBabuška–Aziz反例 | ISHIZAKA Hiroki Website</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,有限要素法,Finite Element Method,最大角条件,maximum angle condition,maximal angle condition,Babuska Aziz,Babuška–Aziz,異方性メッシュ,anisotropic mesh,circumradius condition,semi-regularity,a posteriori error estimator,false convergence">
+<meta name="description" content="Apel–Eckardt–Haubner–Kempfの論文を基に，最大角条件を破るBabuška–Azizメッシュ上で，有限要素解同士は近づいても厳密解へ収束しない現象を検証する．circumradius，semi-regular parameter，事後誤差評価，fine-mesh referenceの危険性を整理する．">
+
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon" href="../../favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="../../js/html5.js"></script>
+<![endif]-->
+<script src="../../js/jquery.js" charset="utf-8"></script>
+<script src="../../js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="page">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+<div class="site-header-in">
+<div class="site-header-conts">
+<p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+</div>
+</div>
+
+<!--▼グローバルナビ-->
+<nav class="global-nav">
+<div class="global-nav-in">
+<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu">
+<li><a href="../../">Home</a></li>
+<li><a href="../../publications/">Publications</a></li>
+<li><a href="../../research/">Research</a></li>
+<li><a href="../../fem/">Research Visions</a></li>
+<li><a href="../../suppl/">Supplementary Visions</a></li>
+<li><a href="../../blog/">Blog</a></li>
+<li><a href="../../geo/">History of Geometric Conditions in FEM</a></li>
+<li><a href="../../links/">Links</a></li>
+</ul>
+</div>
+</nav>
+<!--▲グローバルナビ-->
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+<!--▼パンくずリスト-->
+<nav class="breadcrumbs">
+<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+<a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a>
+<meta itemprop="position" content="1">
+</li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+<a href="../" itemprop="item"><span itemprop="name">Blog</span></a>
+<meta itemprop="position" content="2">
+</li>
+<li class="bcl-last">最大角条件とBabuška–Aziz反例</li>
+</ol>
+</nav>
+<!--▲パンくずリスト-->
+
+<!--▼メインコンテンツ-->
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">有限要素解は収束しているのに正解へ収束しない<br>――最大角条件とBabuška–Aziz反例</h1>
+
+<p>
+<b>古典的パラドックスから現代の研究課題へ　第2回</b><br>
+<time datetime="2026-08-07">7th August 2026</time>
+</p>
+
+<h2>Introduction</h2>
+<div class="news">
+<article class="news-item">
+<p>
+有限要素法でメッシュを細かくし，粗いメッシュの解と細かいメッシュの解が近づいていれば，
+計算は正しい解へ収束しているように見えます．しかし，その二つの数値解が
+<b>同じ誤った極限</b>へ向かっているなら，数値解同士の差は小さくなっても，厳密解との差は消えません．
+</p>
+<div style="padding:10px; margin-bottom:10px; border:5px double #333333; text-align:center;">
+<p style="margin:0;">
+数値解同士は近づく：
+\[
+  \lVert u_{h_{\mathrm{fine}}-u_h\rVert_{H^1(\Omega)}\longrightarrow0,
+\]
+それでも，厳密解には近づかない：
+\[
+  u_h\longrightarrow\widetilde u,
+  \qquad
+  \widetilde u\neq u.
+\]
+</p>
+</div>
+<p>
+Thomas Apel，Leon Eckardt，Christof Haubner，Volker Kempfによる
+<i>The maximal angle condition on finite elements: useful or not?</i>は，
+この危険をBabuška–Aziz型メッシュ上の数値実験で明確に示しています．
+本稿では，最大角条件が「必要か不要か」という二者択一ではなく，
+<b>どのメッシュ族で，どの誤差指標を用いて，何への収束を確認しているのか</b>を検証します．
+</p>
+</article>
+</div>
+
+<h2>1．最大角条件は「必要条件」ではない</h2>
+<div class="news">
+<article class="news-item">
+<p>
+二次元の三角形要素\(T\)の最大内角を\(\theta_{\max,T}\)とします．
+メッシュ族\(\{\mathcal T}_h\}\)が最大角条件を満たすとは，ある\(\gamma_0<\pi\)が存在して，
+</p>
+\[
+  \theta_{\max,T}\leq\gamma_0
+  \qquad
+  \forall T\in{\mathcal T}_h,
+  \quad\forall h
+\]
+<p>
+となることです．最小角を一様に正から離すshape-regularityより弱く，
+細長い三角形を許しますが，角が\(\pi\)へ近づくほど潰れた三角形は排除します．
+一次Lagrange補間については，この条件の下で
+</p>
+\[
+  |u-I_hu|_{H^1(\Omega)}
+  \leq C h |u|_{H^2(\Omega)}
+\]
+<p>
+という標準的な一様評価が得られ，Céaの補題を通じて有限要素誤差も制御できます．
+</p>
+<p>
+ただし，最大角条件を破っていても収束するメッシュ族は存在します．
+良い粗視メッシュをさらに細分した場合，問題の方向別正則性に合わせたgraded meshを使う場合，
+標準節点補間とは異なる近似作用素が有効な場合などです．したがって，
+</p>
+<div style="padding:10px; margin-bottom:10px; border:1px solid #999;">
+<b>最大角条件は，一般に収束の十分条件であって必要条件ではありません．</b><br>
+しかし，「必要でない」ことは，「どのように破っても安全」という意味ではありません．
+</div>
+</article>
+</div>
+
+<h2>2．検証するPoisson問題</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Babuška–Aziz／Oswaldの反例で用いられる基本問題は，単位正方形
+\(\Omega=(0,1)^2\)上のPoisson方程式です．上下端は周期的に同一視し，
+左右端に零Dirichlet条件を課します．
+</p>
+\[
+  -\Delta u=1 \quad\text{in }\Omega,
+\]
+\[
+  u(0,y)=u(1,y)=0,
+  \qquad
+  u(x,0)=u(x,1),
+  \qquad
+  \partial_yu(x,0)=\partial_yu(x,1).
+\]
+<p>
+厳密解は\(y\)に依存しない二次関数
+</p>
+\[
+  u(x,y)=\frac12x(1-x)
+\]
+<p>
+です．解は滑らかで，領域も単純です．したがって，非収束の原因を
+解の特異性や曲線境界へ押しつけることはできません．原因は，メッシュ族の幾何と接続にあります．
+</p>
+</article>
+</div>
+
+<h2>3．Babuška–Aziz型メッシュ</h2>
+<div class="news">
+<article class="news-item">
+<p>
+論文の記号に合わせ，長手方向の代表的な分割数を\(m\)，
+短手方向の分割数を
+</p>
+\[
+  n=m^\beta,
+  \qquad \beta\geq1
+\]
+<p>
+とします．各三角形の代表的な長さは
+</p>
+\[
+  h_x\asymp m^{-1},
+  \qquad
+  h_y\asymp n^{-1}=m^{-\beta}
+\]
+<p>
+です．上下にずらした節点列を交互に結ぶことで，長い辺を底辺とする非常に扁平な三角形が
+帯状に連なります．次図は模式図であり，実際の検証では周期境界を含む節点同一視も行います．
+</p>
+<div style="text-align:center; margin:14px 0;">
+<svg viewBox="0 0 800 310" role="img" aria-labelledby="mesh-title mesh-desc" style="width:100%; max-width:800px; height:auto; background:#fff; border:1px solid #999;">
+<title id="mesh-title">Babuška–Aziz型メッシュの模式図</title>
+<desc id="mesh-desc">水平方向の幅に比べて高さが非常に小さい，交互に並ぶ扁平三角形のメッシュ族</desc>
+<g stroke="#333" stroke-width="1.15" fill="none"><line x1="55.0" y1="30.0" x2="55" y2="53.5" />
+<line x1="55.0" y1="30.0" x2="124.0" y2="53.5" />
+<line x1="55.0" y1="30.0" x2="193.0" y2="30.0" />
+<line x1="55" y1="53.5" x2="55.0" y2="77.0" />
+<line x1="55" y1="53.5" x2="124.0" y2="53.5" />
+<line x1="55" y1="53.5" x2="193.0" y2="30.0" />
+<line x1="55" y1="53.5" x2="193.0" y2="77.0" />
+<line x1="55.0" y1="77.0" x2="55" y2="100.5" />
+<line x1="55.0" y1="77.0" x2="124.0" y2="53.5" />
+<line x1="55.0" y1="77.0" x2="124.0" y2="100.5" />
+<line x1="55.0" y1="77.0" x2="193.0" y2="77.0" />
+<line x1="55" y1="100.5" x2="55.0" y2="124.0" />
+<line x1="55" y1="100.5" x2="124.0" y2="100.5" />
+<line x1="55" y1="100.5" x2="193.0" y2="77.0" />
+<line x1="55" y1="100.5" x2="193.0" y2="124.0" />
+<line x1="55.0" y1="124.0" x2="55" y2="147.5" />
+<line x1="55.0" y1="124.0" x2="124.0" y2="100.5" />
+<line x1="55.0" y1="124.0" x2="124.0" y2="147.5" />
+<line x1="55.0" y1="124.0" x2="193.0" y2="124.0" />
+<line x1="55" y1="147.5" x2="55.0" y2="171.0" />
+<line x1="55" y1="147.5" x2="124.0" y2="147.5" />
+<line x1="55" y1="147.5" x2="193.0" y2="124.0" />
+<line x1="55" y1="147.5" x2="193.0" y2="171.0" />
+<line x1="55.0" y1="171.0" x2="55" y2="194.5" />
+<line x1="55.0" y1="171.0" x2="124.0" y2="147.5" />
+<line x1="55.0" y1="171.0" x2="124.0" y2="194.5" />
+<line x1="55.0" y1="171.0" x2="193.0" y2="171.0" />
+<line x1="55" y1="194.5" x2="55.0" y2="218.0" />
+<line x1="55" y1="194.5" x2="124.0" y2="194.5" />
+<line x1="55" y1="194.5" x2="193.0" y2="171.0" />
+<line x1="55" y1="194.5" x2="193.0" y2="218.0" />
+<line x1="55.0" y1="218.0" x2="55" y2="241.5" />
+<line x1="55.0" y1="218.0" x2="124.0" y2="194.5" />
+<line x1="55.0" y1="218.0" x2="124.0" y2="241.5" />
+<line x1="55.0" y1="218.0" x2="193.0" y2="218.0" />
+<line x1="55" y1="241.5" x2="55.0" y2="265.0" />
+<line x1="55" y1="241.5" x2="124.0" y2="241.5" />
+<line x1="55" y1="241.5" x2="193.0" y2="218.0" />
+<line x1="55" y1="241.5" x2="193.0" y2="265.0" />
+<line x1="55.0" y1="265.0" x2="124.0" y2="241.5" />
+<line x1="55.0" y1="265.0" x2="193.0" y2="265.0" />
+<line x1="124.0" y1="53.5" x2="193.0" y2="30.0" />
+<line x1="124.0" y1="53.5" x2="193.0" y2="77.0" />
+<line x1="124.0" y1="53.5" x2="262.0" y2="53.5" />
+<line x1="124.0" y1="100.5" x2="193.0" y2="77.0" />
+<line x1="124.0" y1="100.5" x2="193.0" y2="124.0" />
+<line x1="124.0" y1="100.5" x2="262.0" y2="100.5" />
+<line x1="124.0" y1="147.5" x2="193.0" y2="124.0" />
+<line x1="124.0" y1="147.5" x2="193.0" y2="171.0" />
+<line x1="124.0" y1="147.5" x2="262.0" y2="147.5" />
+<line x1="124.0" y1="194.5" x2="193.0" y2="171.0" />
+<line x1="124.0" y1="194.5" x2="193.0" y2="218.0" />
+<line x1="124.0" y1="194.5" x2="262.0" y2="194.5" />
+<line x1="124.0" y1="241.5" x2="193.0" y2="218.0" />
+<line x1="124.0" y1="241.5" x2="193.0" y2="265.0" />
+<line x1="124.0" y1="241.5" x2="262.0" y2="241.5" />
+<line x1="193.0" y1="30.0" x2="262.0" y2="53.5" />
+<line x1="193.0" y1="30.0" x2="331.0" y2="30.0" />
+<line x1="193.0" y1="77.0" x2="262.0" y2="53.5" />
+<line x1="193.0" y1="77.0" x2="262.0" y2="100.5" />
+<line x1="193.0" y1="77.0" x2="331.0" y2="77.0" />
+<line x1="193.0" y1="124.0" x2="262.0" y2="100.5" />
+<line x1="193.0" y1="124.0" x2="262.0" y2="147.5" />
+<line x1="193.0" y1="124.0" x2="331.0" y2="124.0" />
+<line x1="193.0" y1="171.0" x2="262.0" y2="147.5" />
+<line x1="193.0" y1="171.0" x2="262.0" y2="194.5" />
+<line x1="193.0" y1="171.0" x2="331.0" y2="171.0" />
+<line x1="193.0" y1="218.0" x2="262.0" y2="194.5" />
+<line x1="193.0" y1="218.0" x2="262.0" y2="241.5" />
+<line x1="193.0" y1="218.0" x2="331.0" y2="218.0" />
+<line x1="193.0" y1="265.0" x2="262.0" y2="241.5" />
+<line x1="193.0" y1="265.0" x2="331.0" y2="265.0" />
+<line x1="262.0" y1="53.5" x2="331.0" y2="30.0" />
+<line x1="262.0" y1="53.5" x2="331.0" y2="77.0" />
+<line x1="262.0" y1="53.5" x2="400.0" y2="53.5" />
+<line x1="262.0" y1="100.5" x2="331.0" y2="77.0" />
+<line x1="262.0" y1="100.5" x2="331.0" y2="124.0" />
+<line x1="262.0" y1="100.5" x2="400.0" y2="100.5" />
+<line x1="262.0" y1="147.5" x2="331.0" y2="124.0" />
+<line x1="262.0" y1="147.5" x2="331.0" y2="171.0" />
+<line x1="262.0" y1="147.5" x2="400.0" y2="147.5" />
+<line x1="262.0" y1="194.5" x2="331.0" y2="171.0" />
+<line x1="262.0" y1="194.5" x2="331.0" y2="218.0" />
+<line x1="262.0" y1="194.5" x2="400.0" y2="194.5" />
+<line x1="262.0" y1="241.5" x2="331.0" y2="218.0" />
+<line x1="262.0" y1="241.5" x2="331.0" y2="265.0" />
+<line x1="262.0" y1="241.5" x2="400.0" y2="241.5" />
+<line x1="331.0" y1="30.0" x2="400.0" y2="53.5" />
+<line x1="331.0" y1="30.0" x2="469.0" y2="30.0" />
+<line x1="331.0" y1="77.0" x2="400.0" y2="53.5" />
+<line x1="331.0" y1="77.0" x2="400.0" y2="100.5" />
+<line x1="331.0" y1="77.0" x2="469.0" y2="77.0" />
+<line x1="331.0" y1="124.0" x2="400.0" y2="100.5" />
+<line x1="331.0" y1="124.0" x2="400.0" y2="147.5" />
+<line x1="331.0" y1="124.0" x2="469.0" y2="124.0" />
+<line x1="331.0" y1="171.0" x2="400.0" y2="147.5" />
+<line x1="331.0" y1="171.0" x2="400.0" y2="194.5" />
+<line x1="331.0" y1="171.0" x2="469.0" y2="171.0" />
+<line x1="331.0" y1="218.0" x2="400.0" y2="194.5" />
+<line x1="331.0" y1="218.0" x2="400.0" y2="241.5" />
+<line x1="331.0" y1="218.0" x2="469.0" y2="218.0" />
+<line x1="331.0" y1="265.0" x2="400.0" y2="241.5" />
+<line x1="331.0" y1="265.0" x2="469.0" y2="265.0" />
+<line x1="400.0" y1="53.5" x2="469.0" y2="30.0" />
+<line x1="400.0" y1="53.5" x2="469.0" y2="77.0" />
+<line x1="400.0" y1="53.5" x2="538.0" y2="53.5" />
+<line x1="400.0" y1="100.5" x2="469.0" y2="77.0" />
+<line x1="400.0" y1="100.5" x2="469.0" y2="124.0" />
+<line x1="400.0" y1="100.5" x2="538.0" y2="100.5" />
+<line x1="400.0" y1="147.5" x2="469.0" y2="124.0" />
+<line x1="400.0" y1="147.5" x2="469.0" y2="171.0" />
+<line x1="400.0" y1="147.5" x2="538.0" y2="147.5" />
+<line x1="400.0" y1="194.5" x2="469.0" y2="171.0" />
+<line x1="400.0" y1="194.5" x2="469.0" y2="218.0" />
+<line x1="400.0" y1="194.5" x2="538.0" y2="194.5" />
+<line x1="400.0" y1="241.5" x2="469.0" y2="218.0" />
+<line x1="400.0" y1="241.5" x2="469.0" y2="265.0" />
+<line x1="400.0" y1="241.5" x2="538.0" y2="241.5" />
+<line x1="469.0" y1="30.0" x2="538.0" y2="53.5" />
+<line x1="469.0" y1="30.0" x2="607.0" y2="30.0" />
+<line x1="469.0" y1="77.0" x2="538.0" y2="53.5" />
+<line x1="469.0" y1="77.0" x2="538.0" y2="100.5" />
+<line x1="469.0" y1="77.0" x2="607.0" y2="77.0" />
+<line x1="469.0" y1="124.0" x2="538.0" y2="100.5" />
+<line x1="469.0" y1="124.0" x2="538.0" y2="147.5" />
+<line x1="469.0" y1="124.0" x2="607.0" y2="124.0" />
+<line x1="469.0" y1="171.0" x2="538.0" y2="147.5" />
+<line x1="469.0" y1="171.0" x2="538.0" y2="194.5" />
+<line x1="469.0" y1="171.0" x2="607.0" y2="171.0" />
+<line x1="469.0" y1="218.0" x2="538.0" y2="194.5" />
+<line x1="469.0" y1="218.0" x2="538.0" y2="241.5" />
+<line x1="469.0" y1="218.0" x2="607.0" y2="218.0" />
+<line x1="469.0" y1="265.0" x2="538.0" y2="241.5" />
+<line x1="469.0" y1="265.0" x2="607.0" y2="265.0" />
+<line x1="538.0" y1="53.5" x2="607.0" y2="30.0" />
+<line x1="538.0" y1="53.5" x2="607.0" y2="77.0" />
+<line x1="538.0" y1="53.5" x2="676.0" y2="53.5" />
+<line x1="538.0" y1="100.5" x2="607.0" y2="77.0" />
+<line x1="538.0" y1="100.5" x2="607.0" y2="124.0" />
+<line x1="538.0" y1="100.5" x2="676.0" y2="100.5" />
+<line x1="538.0" y1="147.5" x2="607.0" y2="124.0" />
+<line x1="538.0" y1="147.5" x2="607.0" y2="171.0" />
+<line x1="538.0" y1="147.5" x2="676.0" y2="147.5" />
+<line x1="538.0" y1="194.5" x2="607.0" y2="171.0" />
+<line x1="538.0" y1="194.5" x2="607.0" y2="218.0" />
+<line x1="538.0" y1="194.5" x2="676.0" y2="194.5" />
+<line x1="538.0" y1="241.5" x2="607.0" y2="218.0" />
+<line x1="538.0" y1="241.5" x2="607.0" y2="265.0" />
+<line x1="538.0" y1="241.5" x2="676.0" y2="241.5" />
+<line x1="607.0" y1="30.0" x2="676.0" y2="53.5" />
+<line x1="607.0" y1="30.0" x2="745.0" y2="30.0" />
+<line x1="607.0" y1="30.0" x2="745" y2="53.5" />
+<line x1="607.0" y1="77.0" x2="676.0" y2="53.5" />
+<line x1="607.0" y1="77.0" x2="676.0" y2="100.5" />
+<line x1="607.0" y1="77.0" x2="745" y2="53.5" />
+<line x1="607.0" y1="77.0" x2="745.0" y2="77.0" />
+<line x1="607.0" y1="77.0" x2="745" y2="100.5" />
+<line x1="607.0" y1="124.0" x2="676.0" y2="100.5" />
+<line x1="607.0" y1="124.0" x2="676.0" y2="147.5" />
+<line x1="607.0" y1="124.0" x2="745" y2="100.5" />
+<line x1="607.0" y1="124.0" x2="745.0" y2="124.0" />
+<line x1="607.0" y1="124.0" x2="745" y2="147.5" />
+<line x1="607.0" y1="171.0" x2="676.0" y2="147.5" />
+<line x1="607.0" y1="171.0" x2="676.0" y2="194.5" />
+<line x1="607.0" y1="171.0" x2="745" y2="147.5" />
+<line x1="607.0" y1="171.0" x2="745.0" y2="171.0" />
+<line x1="607.0" y1="171.0" x2="745" y2="194.5" />
+<line x1="607.0" y1="218.0" x2="676.0" y2="194.5" />
+<line x1="607.0" y1="218.0" x2="676.0" y2="241.5" />
+<line x1="607.0" y1="218.0" x2="745" y2="194.5" />
+<line x1="607.0" y1="218.0" x2="745.0" y2="218.0" />
+<line x1="607.0" y1="218.0" x2="745" y2="241.5" />
+<line x1="607.0" y1="265.0" x2="676.0" y2="241.5" />
+<line x1="607.0" y1="265.0" x2="745" y2="241.5" />
+<line x1="607.0" y1="265.0" x2="745.0" y2="265.0" />
+<line x1="676.0" y1="53.5" x2="745.0" y2="30.0" />
+<line x1="676.0" y1="53.5" x2="745" y2="53.5" />
+<line x1="676.0" y1="53.5" x2="745.0" y2="77.0" />
+<line x1="676.0" y1="100.5" x2="745.0" y2="77.0" />
+<line x1="676.0" y1="100.5" x2="745" y2="100.5" />
+<line x1="676.0" y1="100.5" x2="745.0" y2="124.0" />
+<line x1="676.0" y1="147.5" x2="745.0" y2="124.0" />
+<line x1="676.0" y1="147.5" x2="745" y2="147.5" />
+<line x1="676.0" y1="147.5" x2="745.0" y2="171.0" />
+<line x1="676.0" y1="194.5" x2="745.0" y2="171.0" />
+<line x1="676.0" y1="194.5" x2="745" y2="194.5" />
+<line x1="676.0" y1="194.5" x2="745.0" y2="218.0" />
+<line x1="676.0" y1="241.5" x2="745.0" y2="218.0" />
+<line x1="676.0" y1="241.5" x2="745" y2="241.5" />
+<line x1="676.0" y1="241.5" x2="745.0" y2="265.0" />
+<line x1="745.0" y1="30.0" x2="745" y2="53.5" />
+<line x1="745" y1="53.5" x2="745.0" y2="77.0" />
+<line x1="745.0" y1="77.0" x2="745" y2="100.5" />
+<line x1="745" y1="100.5" x2="745.0" y2="124.0" />
+<line x1="745.0" y1="124.0" x2="745" y2="147.5" />
+<line x1="745" y1="147.5" x2="745.0" y2="171.0" />
+<line x1="745.0" y1="171.0" x2="745" y2="194.5" />
+<line x1="745" y1="194.5" x2="745.0" y2="218.0" />
+<line x1="745.0" y1="218.0" x2="745" y2="241.5" />
+<line x1="745" y1="241.5" x2="745.0" y2="265.0" /></g>
+<rect x="55" y="30" width="690" height="235" fill="none" stroke="#111" stroke-width="2"/>
+<g font-size="17" fill="#111">
+<text x="360" y="298">長手方向：\(h_x\asymp m^{-1}\)</text>
+<text x="8" y="155" transform="rotate(-90 18 155)">短手方向：\(h_y\asymp n^{-1}\)</text>
+</g>
+</svg>
+</div>
+<p>
+\(\beta>1\)では\(h_y/h_x\to0\)となり，最大内角は\(\pi\)へ近づきます．
+重要なのは，悪い要素が少数だけ孤立しているのではなく，
+<b>交互に向きを変えながら領域全体を覆う帯</b>を形成することです．
+この接続構造が，局所的な扁平さを大域的な近似障害へ変えます．
+</p>
+</article>
+</div>
+
+<h2>4．circumradiusが臨界指数を見せる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+底辺が\(h_x\)，高さが\(h_y\)程度の扁平な二等辺三角形では，外接円半径\(R_T\)は
+</p>
+\[
+  R_T\asymp\frac{h_x^2}{h_y}
+  \asymp\frac{n}{m^2}
+  =m^{\beta-2}
+\]
+<p>
+となります．したがって，最大角条件が既に破れている\(\beta>1\)の範囲でも，
+\(R_T\)の極限は三つに分かれます．
+</p>
+<div style="overflow-x:auto; margin:12px 0;">
+<table style="border-collapse:collapse; width:100%; min-width:620px;">
+<thead>
+<tr>
+<th style="border:1px solid #999; padding:8px;">範囲</th>
+<th style="border:1px solid #999; padding:8px;">\(R_T\asymp m^{\beta-2}\)</th>
+<th style="border:1px solid #999; padding:8px;">期待される挙動</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border:1px solid #999; padding:8px;">\(1<\beta<2\)</td>
+<td style="border:1px solid #999; padding:8px;">\(R_T\to0\)</td>
+<td style="border:1px solid #999; padding:8px;">最大角条件は破るが，収束し得る</td>
+</tr>
+<tr>
+<td style="border:1px solid #999; padding:8px;">\(\beta=2\)</td>
+<td style="border:1px solid #999; padding:8px;">\(R_T\asymp1\)</td>
+<td style="border:1px solid #999; padding:8px;">臨界．誤差が零へ行かない</td>
+</tr>
+<tr>
+<td style="border:1px solid #999; padding:8px;">\(\beta>2\)</td>
+<td style="border:1px solid #999; padding:8px;">\(R_T\to\infty\)</td>
+<td style="border:1px solid #999; padding:8px;">強い非収束が起こり得る</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>
+ここで既に，最大角条件が必要条件ではない理由と，条件を無視すると危険な理由が同時に見えます．
+最大角条件は\(\beta>1\)で破れますが，有限要素収束の臨界は\(\beta=2\)に現れます．
+</p>
+</article>
+</div>
+
+<h2>5．有限要素誤差の臨界則</h2>
+<div class="news">
+<article class="news-item">
+<p>
+OswaldによるBabuška–Azizメッシュの再解析では，一次適合有限要素近似\(u_h\)について，
+エネルギー誤差が本質的に
+</p>
+\[
+  \lVert u-u_h\rVert_{H^1(\Omega)}
+  \asymp
+  \min\left\{1,\frac{n}{m^2}\right\}
+\]
+<p>
+で支配されることが示されます．\(n=m^\beta\)を代入すると，
+</p>
+\[
+  \lVert u-u_h\rVert_{H^1(\Omega)}
+  \asymp
+  \min\left\{1,m^{\beta-2}\right\}.
+\]
+<p>
+したがって，\(\beta<2\)では遅くても誤差は零へ向かいます．
+一方，\(\beta\geq2\)では誤差は零へ向かわず，有限要素空間を増やし続けても
+正しい解を近似できません．これは単に節点補間が悪いだけではなく，
+<b>有限要素空間におけるbest approximationそのものが失敗する</b>現象です．
+</p>
+</article>
+</div>
+
+<h2>6．「収束している」の主語を確認する</h2>
+<div class="news">
+<article class="news-item">
+<p>
+Apelらが強調するのは，\(u_h\)が無秩序に発散するとは限らないことです．
+数値解列は
+</p>
+\[
+  u_h\longrightarrow\widetilde u
+\]
+<p>
+と落ち着いて見えます．しかし，その極限が厳密解\(u\)とは限りません．
+ここで，十分細かい同じメッシュ族上の解を\(u_{\mathrm{fine}\)とすると，
+</p>
+\[
+  \lVert u_{\mathrm{fine}-u_h\rVert_{H^1(\Omega)}
+  \approx
+  \lVert\widetilde u-u_h\rVert_{H^1(\Omega)}
+  \longrightarrow0
+\]
+<p>
+となります．この量だけを見れば，きれいな収束次数さえ観測できます．
+しかし，測っているのは\(u\)への誤差ではなく，誤った極限\(\widetilde u\)への距離です．
+</p>
+<div style="display:flex; gap:10px; flex-wrap:wrap; margin:14px 0;">
+<div style="flex:1 1 220px; border:1px solid #999; padding:10px;">
+<b>厳密解が既知</b><br>
+\(\lVert u-u_h\rVert\)<br>
+正しい非収束を検出する．
+</div>
+<div style="flex:1 1 220px; border:1px solid #999; padding:10px;">
+<b>信頼できる事後評価</b><br>
+\(\eta_h\approx\lVert u-u_h\rVert\)<br>
+誤差が消えないことを示す．
+</div>
+<div style="flex:1 1 220px; border:1px solid #999; padding:10px;">
+<b>同じ族のfine solution</b><br>
+\(\lVert u_{\mathrm{fine}-u_h\rVert\)<br>
+偽の収束を示し得る．
+</div>
+</div>
+</article>
+</div>
+
+<h2>7．事後誤差評価量は何を検出したか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+論文では，異方性メッシュ向けに要素・辺の長さを注意深く選んだ残差型評価量を用いています．
+模式的には
+</p>
+\[
+  \eta_h^2
+  =
+  \sum_{T\in{\mathcal T}_h}
+  h_T^2\lVert f+\Delta u_h\rVert_{L^2(T)}^2
+  +
+  \sum_{E\in{\mathcal E}_h}
+  h_E\lVert[\partial_nu_h]\rVert_{L^2(E)}^2
+\]
+<p>
+という要素残差と法線微分jumpの和です．ここでの\(h_T\)，\(h_E\)は，
+異方性を無視して単にdiameterを入れればよいわけではありません．
+Apelらの計算では，この評価量のeffectivity index
+</p>
+\[
+  \frac{\eta_h}{\lVert u-u_h\rVert_{H^1(\Omega)}}
+\]
+<p>
+が安定し，真の誤差が零へ行かないことを追跡しました．
+一方，同一メッシュ族のfine solutionとの差は減少し，反対の結論を与えました．
+</p>
+<div style="padding:10px; margin-bottom:10px; border:1px solid #999;">
+<b>検証の教訓：</b>
+参照解を細かくするだけでは不十分です．参照計算が正しい極限へ向かうこと，または
+誤差評価量のreliabilityが対象メッシュ族で保証されることが必要です．
+</div>
+</article>
+</div>
+
+<h2>8．\(H_T/h_T\)で見ると何が分かるか</h2>
+<div class="news">
+<article class="news-item">
+<p>
+私たちの異方性補間理論では，三角形のflatnessを表す量として\(H_T\)を用い，
+</p>
+\[
+  A_T:=\frac{H_T}{h_T}
+\]
+<p>
+をsemi-regular parameterとします．二次元では，\(H_T\)は外接円半径\(R_T\)と同値な量であり，
+\(A_T\)の一様有界性は最大角条件と同値です．Babuška–Aziz型要素では
+</p>
+\[
+  h_T\asymp m^{-1},
+  \qquad
+  H_T\asymp R_T\asymp\frac{n}{m^2},
+  \qquad
+  \frac{H_T}{h_T}\asymp\frac{n}{m}=m^{\beta-1}.
+\]
+<p>
+したがって，\(\beta>1\)では\(H_T/h_T\to\infty\)となり，semi-regularityは破れます．
+しかし，\(H_T\to0\)自体は\(\beta<2\)なら成立します．ここから，二つの異なる問いを区別できます．
+</p>
+<ul>
+<li><b>一様な最適次数評価を保証できるか：</b>\(H_T/h_T\)の有界性が安全な十分条件になる．</li>
+<li><b>この特定のメッシュ族で誤差が零へ行くか：</b>\(H_T\to0\)の速度や大域的接続も関係する．</li>
+</ul>
+<p>
+最大角条件を破る要素が存在するという局所情報だけで，収束・非収束のどちらも断定できません．
+逆に，aspect ratioが大きいというだけでも不十分です．
+必要なのは，幾何因子の大きさ，その細分化に対する極限，悪い要素の接続構造を同時に見ることです．
+</p>
+<p>
+なお，私たちの2021年の一般理論では任意要素上の幾何因子を明示する局所評価を導きましたが，
+標準的な異方性評価やRaviart–Thomas補間の大域安定性には追加条件が必要であることを，
+後続の論文で修正・明確化しています．この反例は，幾何因子を残した評価と，
+因子を一様定数へ吸収した評価を区別しなければならない理由を端的に示します．
+</p>
+</article>
+</div>
+
+<h2>9．再現計算で最低限確認する量</h2>
+<div class="news">
+<article class="news-item">
+<p>
+この検証は，外部有限要素パッケージを使わなくてもNumPyとSciPyで実装できます．
+再現計算では，単に数値解の図を描くのではなく，次の七項目を同時に保存する必要があります．
+</p>
+<ol>
+<li>交互にずらした節点列からBabuška–Aziz型三角形分割を生成する．</li>
+<li>上下端の周期自由度を同一視し，左右端に零Dirichlet条件を課す．</li>
+<li>一次Lagrange要素の剛性行列と荷重ベクトルを組み立てる．</li>
+<li>厳密解から\(H^1\)誤差を直接計算する．</li>
+<li>各要素の\(\theta_{\max,T}\)，\(R_T\)，\(H_T\)，\(H_T/h_T\)を計算する．</li>
+<li>異方性を考慮した残差型事後誤差評価量とeffectivity indexを計算する．</li>
+<li>同一メッシュ族のfine solutionとの差を計算し，真の誤差と比較する．</li>
+</ol>
+<p>
+特に，\(\beta=1.5,2,3\)を比較すると，最大角条件の破れと有限要素収束の臨界が
+同じではないことが確認できます．
+</p>
+<pre style="overflow-x:auto; padding:10px; border:1px solid #999;"><code>for beta in (1.5, 2.0, 3.0):
+    for m in refinement_levels:
+        n = round(m**beta)
+        mesh = babuska_aziz_mesh(m, n)
+        uh = solve_p1_poisson(mesh, periodic_y=True)
+
+        true_error = h1_error(uh, exact_solution)
+        estimator  = anisotropic_residual_estimator(uh)
+        geometry   = max_angle_circumradius_HT(mesh)
+        fine_gap   = compare_with_same_family_fine_solution(uh)
+</code></pre>
+<p>
+ここで\(fine\_gap\)だけを収束判定に使わないことが，本記事の最重要点です．
+</p>
+</article>
+</div>
+
+<h2>10．現代の研究課題</h2>
+<div class="news">
+<article class="news-item">
+<h3>10.1　局所条件からmesh topologyへ</h3>
+<p>
+同じ扁平三角形でも，孤立している場合と，交互の帯として長く連結する場合では影響が異なります．
+最大角や外接円半径だけでなく，悪い要素のcluster size，band length，patch connectivityを含む
+必要条件・十分条件の隙間は，現在も完全には閉じていません．
+</p>
+
+<h3>10.2　異方性a posteriori estimatorのreliability</h3>
+<p>
+誤差評価量が数値解と同じ誤った極限を追跡してしまってはcertificateになりません．
+要素残差，flux jump，equilibrated fluxのどれが，最大角条件を破るメッシュ上でも
+幾何に頑健な上界・下界を与えるかを整理する必要があります．
+</p>
+
+<h3>10.3　\(L^\infty\)誤差とDMP</h3>
+<p>
+エネルギー誤差が収束しても，pointwise errorや離散最大値原理は別の幾何・接続条件に依存します．
+同じ局所要素形状を持つメッシュでも，対角線の向きやpatch topologyにより\(L^\infty\)収束次数が変わり得ます．
+</p>
+
+<h3>10.4　非適合・混合有限要素では何が変わるか</h3>
+<p>
+本反例は適合一次Lagrange要素のものです．Crouzeix–Raviart要素，Raviart–Thomas要素，
+Nédélec要素では，自由度，Piola変換，可換性，離散Poincaré・Sobolev不等式が異なります．
+最大角条件の役割を要素族ごとに分けて検証する必要があります．
+</p>
+
+<h3>10.5　AI生成メッシュと偽のreference solution</h3>
+<p>
+学習型メッシュ生成やsurrogate modelでは，高解像度計算を教師データとして使います．
+しかし教師計算が同じ不適切なメッシュ族上で作られていれば，モデルは誤った極限を高精度に学習します．
+幾何certificateと独立な誤差保証を教師データ作成に組み込むことが必要です．
+</p>
+</article>
+</div>
+
+<h2>11．結論</h2>
+<div class="news">
+<article class="news-item">
+<div style="padding:10px; margin-bottom:10px; border:5px double #333333;">
+<p style="margin:0;">
+最大角条件は，有限要素収束の必要条件ではありません．<br>
+しかし，条件を破るメッシュ族が自動的に安全になるわけでもありません．<br><br>
+<b>数値解同士の差が小さくなることは，厳密解へ近づいている証明ではない．</b><br>
+確認すべきなのは，幾何因子，mesh topology，真の誤差または信頼できるcertificateです．
+</p>
+</div>
+<p>
+Babuška–Aziz反例は，古い特殊例ではありません．
+高解像度計算をreferenceとする検証，異方性適応メッシュ，学習型計算法に対しても，
+「何への収束を測っているのか」という現在的な問いを突きつけています．
+</p>
+</article>
+</div>
+
+<h2>References</h2>
+<div class="news">
+<article class="news-item">
+<ol>
+<li>
+T. Apel，L. Eckardt，C. Haubner，V. Kempf，
+<i>The maximal angle condition on finite elements: useful or not?</i>，
+PAMM 20 (2020)，e202000116．
+<a href="https://doi.org/10.1002/pamm.202000116">DOI</a>
+</li>
+<li>
+I. Babuška，A. K. Aziz，
+<i>On the angle condition in the finite element method</i>，
+SIAM Journal on Numerical Analysis 13 (1976)，214–226．
+<a href="https://doi.org/10.1137/0713021">DOI</a>
+</li>
+<li>
+P. Oswald，
+<i>Divergence of FEM: Babuška–Aziz triangulations revisited</i>，
+Applications of Mathematics 60 (2015)，473–484．
+<a href="https://doi.org/10.1007/s10492-015-0107-5">DOI</a>
+</li>
+<li>
+A. Hannukainen，S. Korotov，M. Křížek，
+<i>The maximum angle condition is not necessary for convergence of the finite element method</i>，
+Numerische Mathematik 120 (2012)，79–88．
+<a href="https://doi.org/10.1007/s00211-011-0403-2">DOI</a>
+</li>
+<li>
+K. Kobayashi，T. Tsuchiya，
+<i>A Babuška–Aziz type proof of the circumradius condition</i>，
+Japan Journal of Industrial and Applied Mathematics 31 (2014)，193–210．
+<a href="https://doi.org/10.1007/s13160-013-0128-y">DOI</a>
+</li>
+<li>
+H. Ishizaka，K. Kobayashi，T. Tsuchiya，
+<i>General theory of interpolation error estimates on anisotropic meshes</i>，
+Japan Journal of Industrial and Applied Mathematics 38 (2021)，163–191．
+<a href="https://doi.org/10.1007/s13160-020-00433-z">DOI</a>
+</li>
+<li>
+H. Ishizaka，K. Kobayashi，T. Tsuchiya，
+<i>Anisotropic interpolation error estimates using a new geometric parameter</i>，
+Japan Journal of Industrial and Applied Mathematics 40 (2023)，475–512．
+<a href="https://doi.org/10.1007/s13160-022-00535-w">DOI</a>
+</li>
+<li>
+V. Kučera，
+<i>On necessary and sufficient conditions for finite element convergence</i>，
+preprint，2016．
+<a href="https://arxiv.org/abs/1601.02942">arXiv</a>
+</li>
+</ol>
+</article>
+</div>
+
+<div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-top:18px;">
+<p><a href="./paradoxes-pitfalls-01.html">← 第1回：バブシュカ・パラドックス</a></p>
+<p><a href="../">Blog indexへ戻る</a></p>
+</div>
+
+<!--section-in-->
+</div>
+</article>
+</div>
+</main>
+<!--▲メインコンテンツ-->
+
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="../../js/utility.js" charset="utf-8"></script>
+
+</body>
+</html>
