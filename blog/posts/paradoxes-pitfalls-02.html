@@ -787,7 +787,7 @@ Apelらが強調するのは，\(u_h\)が無秩序に発散するとは限らな
   h_T^2\lVert f+\Delta u_h\rVert_{L^2(T)}^2
   +
   \sum_{E\in{\mathcal E}_h}
-  h_E\lVert[\partial_nu_h]\rVert_{L^2(E)}^2
+  h_E\lVert[\partial_n u_h]\rVert_{L^2(E)}^2
 \]
 <p>
 という要素残差と法線微分jumpの和です．ここでの\(h_T\)，\(h_E\)は，
@@ -851,65 +851,276 @@ Apelらの計算では，この評価量のeffectivity index
 </article>
 </div>
 
-<h2>9．完全コードで確認する量</h2>
+<h2>9．数値計算では何が起きているのか</h2>
 <div class="news">
 <article class="news-item">
 <p>
-この検証は，外部有限要素パッケージを使わず，NumPy，SciPy，Matplotlibだけで実行できます．
-Appendix 1のコードは，処理順だけを示す擬似コードではなく，次の計算をすべて実装した一つの実行可能ファイルです．
+ここでは，Appendix 1 の完全コードを実際に実行して得られる結果を，
+<b>「どの数値を見れば，収束しているのか，していないのかが分かるのか」</b>という順序で整理します．
+出力される量は多いですが，最初に見るべき量は次の四つだけです．
+</p>
+<table style="border-collapse:collapse; width:100%; margin:12px 0;">
+<thead>
+<tr>
+<th style="border:1px solid #999; padding:8px;">量</th>
+<th style="border:1px solid #999; padding:8px;">意味</th>
+<th style="border:1px solid #999; padding:8px;">何を判断するか</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border:1px solid #999; padding:8px;">\(\lvert u-u_h\rvert_{H^1(\Omega)}\)</td>
+<td style="border:1px solid #999; padding:8px;">厳密解との差</td>
+<td style="border:1px solid #999; padding:8px;"><b>これが零へ行くかどうかが本当の収束判定</b></td>
+</tr>
+<tr>
+<td style="border:1px solid #999; padding:8px;">\(\max u_h\)</td>
+<td style="border:1px solid #999; padding:8px;">数値解の大きさ</td>
+<td style="border:1px solid #999; padding:8px;">厳密解の最大値 \(\max u=1/8=0.125\) に近づくか</td>
+</tr>
+<tr>
+<td style="border:1px solid #999; padding:8px;">\(\lvert u_{\mathrm{fine}}-I_{\mathrm{fine}}u_h\rvert_{H^1(\Omega)}\)</td>
+<td style="border:1px solid #999; padding:8px;">同じメッシュ族の粗い解とfine solutionとの差</td>
+<td style="border:1px solid #999; padding:8px;">小さくなっても，厳密解への収束は保証しない</td>
+</tr>
+<tr>
+<td style="border:1px solid #999; padding:8px;">\(\max_T R_T\)</td>
+<td style="border:1px solid #999; padding:8px;">メッシュ退化を表す幾何量</td>
+<td style="border:1px solid #999; padding:8px;">\(R_T\to0\)，\(R_T\asymp1\)，\(R_T\to\infty\) のどの領域にいるか</td>
+</tr>
+</tbody>
+</table>
+<p>
+今回の厳密解は
+</p>
+\[
+  u(x,y)=\frac12x(1-x),
+  \qquad
+  \max_{\Omega}u=\frac18=0.125,
+\]
+<p>
+であり，その\(H^1\)半ノルムは
+</p>
+\[
+  \lvert u\rvert_{H^1(\Omega)}
+  =\left(\int_0^1\left(\frac12-x\right)^2\,dx\right)^{1/2}
+  =\frac1{\sqrt{12}}
+  \approx0.288675.
+\]
+<p>
+この二つの値，\(0.125\)と\(0.288675\)を覚えておくと，以下の数値結果が読みやすくなります．
+</p>
+
+<h3>9.1　\(\beta=1.5\)：最大角条件を失っても，この族では正しく収束する</h3>
+<p>
+まず
+\[
+  n=m^{1.5}
+\]
+とした場合です．理論上は
+\[
+  \lvert u-u_h\rvert_{H^1(\Omega)}
+  \asymp m^{-1/2}
+\]
+なので，最大角条件を族として失っても，真の誤差は零へ向かうはずです．実際の計算結果は次の通りです．
+</p>
+<table style="border-collapse:collapse; width:100%; margin:12px 0;">
+<thead><tr>
+<th style="border:1px solid #999; padding:8px;">\(m\)</th>
+<th style="border:1px solid #999; padding:8px;">\(n\)</th>
+<th style="border:1px solid #999; padding:8px;">\(\lvert u-u_h\rvert_{H^1}\)</th>
+<th style="border:1px solid #999; padding:8px;">\(\max u_h\)</th>
+<th style="border:1px solid #999; padding:8px;">最大角</th>
+<th style="border:1px solid #999; padding:8px;">\(\max R_T\)</th>
+</tr></thead>
+<tbody>
+<tr><td style="border:1px solid #999; padding:8px;">4</td><td style="border:1px solid #999; padding:8px;">8</td><td style="border:1px solid #999; padding:8px;">0.07583</td><td style="border:1px solid #999; padding:8px;">0.12240</td><td style="border:1px solid #999; padding:8px;">90.00°</td><td style="border:1px solid #999; padding:8px;">0.1250</td></tr>
+<tr><td style="border:1px solid #999; padding:8px;">8</td><td style="border:1px solid #999; padding:8px;">24</td><td style="border:1px solid #999; padding:8px;">0.05100</td><td style="border:1px solid #999; padding:8px;">0.12313</td><td style="border:1px solid #999; padding:8px;">112.62°</td><td style="border:1px solid #999; padding:8px;">0.06771</td></tr>
+<tr><td style="border:1px solid #999; padding:8px;">16</td><td style="border:1px solid #999; padding:8px;">64</td><td style="border:1px solid #999; padding:8px;">0.03274</td><td style="border:1px solid #999; padding:8px;">0.12410</td><td style="border:1px solid #999; padding:8px;">126.87°</td><td style="border:1px solid #999; padding:8px;">0.03906</td></tr>
+<tr><td style="border:1px solid #999; padding:8px;">24</td><td style="border:1px solid #999; padding:8px;">118</td><td style="border:1px solid #999; padding:8px;">0.02631</td><td style="border:1px solid #999; padding:8px;">0.12438</td><td style="border:1px solid #999; padding:8px;">135.73°</td><td style="border:1px solid #999; padding:8px;">0.02984</td></tr>
+</tbody>
+</table>
+<p>
+ここでは最大角が次第に大きくなっていますが，\(\max R_T\)は\(0\)へ減少しています．
+それと同時に，真の\(H^1\)誤差も\(0.0758\to0.0263\)と減少し，
+\(\max u_h\)は厳密解の最大値\(0.125\)へ近づいています．
+</p>
+<div style="padding:10px; margin-bottom:10px; border:1px solid #999;">
+<b>このケースの結論：</b><br>
+最大角条件を満たさないメッシュ族だからといって，必ず非収束になるわけではありません．
+\(\beta=1.5\)では最大角は悪化しますが，\(R_T\to0\)であり，実際に有限要素解は厳密解へ収束しています．
+</div>
+
+<h3>9.2　\(\beta=2\)：臨界領域では，メッシュを細かくしても誤差が残る</h3>
+<p>
+次に
+\[
+  n=m^2
+\]
+とします．この場合は
+\[
+  R_T\asymp1
+\]
+となる臨界領域です．計算結果を見ると，真の誤差が途中からほとんど減らなくなります．
+</p>
+<table style="border-collapse:collapse; width:100%; margin:12px 0;">
+<thead><tr>
+<th style="border:1px solid #999; padding:8px;">\(m\)</th>
+<th style="border:1px solid #999; padding:8px;">\(n\)</th>
+<th style="border:1px solid #999; padding:8px;">\(\lvert u-u_h\rvert_{H^1}\)</th>
+<th style="border:1px solid #999; padding:8px;">\(\max u_h\)</th>
+<th style="border:1px solid #999; padding:8px;">fine-solution gap</th>
+<th style="border:1px solid #999; padding:8px;">\(\max R_T\)</th>
+</tr></thead>
+<tbody>
+<tr><td style="border:1px solid #999; padding:8px;">4</td><td style="border:1px solid #999; padding:8px;">16</td><td style="border:1px solid #999; padding:8px;">0.11801</td><td style="border:1px solid #999; padding:8px;">0.11103</td><td style="border:1px solid #999; padding:8px;">0.2337</td><td style="border:1px solid #999; padding:8px;">0.1563</td></tr>
+<tr><td style="border:1px solid #999; padding:8px;">8</td><td style="border:1px solid #999; padding:8px;">64</td><td style="border:1px solid #999; padding:8px;">0.11084</td><td style="border:1px solid #999; padding:8px;">0.11021</td><td style="border:1px solid #999; padding:8px;">0.1671</td><td style="border:1px solid #999; padding:8px;">0.1328</td></tr>
+<tr><td style="border:1px solid #999; padding:8px;">16</td><td style="border:1px solid #999; padding:8px;">256</td><td style="border:1px solid #999; padding:8px;">0.10892</td><td style="border:1px solid #999; padding:8px;">0.11001</td><td style="border:1px solid #999; padding:8px;">0.09896</td><td style="border:1px solid #999; padding:8px;">0.1270</td></tr>
+<tr><td style="border:1px solid #999; padding:8px;">24</td><td style="border:1px solid #999; padding:8px;">576</td><td style="border:1px solid #999; padding:8px;">0.10856</td><td style="border:1px solid #999; padding:8px;">0.10998</td><td style="border:1px solid #999; padding:8px;">0.04836</td><td style="border:1px solid #999; padding:8px;">0.1259</td></tr>
+</tbody>
+</table>
+<p>
+\(m=8\)以降を見ると，真の\(H^1\)誤差は\(0.1108,0.1089,0.1086\)で，ほぼ一定です．
+つまり，要素数を大幅に増やしているのに，厳密解への距離はほとんど縮まっていません．
+また，\(\max u_h\)も約\(0.110\)で止まり，厳密解の最大値\(0.125\)へ近づきません．
+</p>
+<p>
+一方，fine-solution gapは\(0.2337\to0.0484\)と減っています．
+したがって，粗い解とfine solutionだけを比べると「順調に収束している」と判断してしまう可能性があります．
+しかし，真の誤差を見れば，すでに\(\beta=2\)で収束が止まっていることが分かります．
+</p>
+<div style="padding:10px; margin-bottom:10px; border:1px solid #999;">
+<b>このケースの結論：</b><br>
+\(\beta=2\)は臨界です．\(R_T\)が零へ行かず，真の誤差も零へ行きません．
+「メッシュサイズが小さくなっている」ことと「有限要素解が厳密解へ収束する」ことは同じではありません．
+</div>
+
+<h3>9.3　\(\beta=3\)：真の誤差は悪化するのに，fine solutionとの差は小さくなる</h3>
+<p>
+最も分かりやすい反例が
+\[
+  n=m^3
+\]
+です．この場合，\(R_T\)は増大し，最大角は急速に\(180^\circ\)へ近づきます．
+</p>
+<table style="border-collapse:collapse; width:100%; margin:12px 0;">
+<thead><tr>
+<th style="border:1px solid #999; padding:8px;">\(m\)</th>
+<th style="border:1px solid #999; padding:8px;">\(n\)</th>
+<th style="border:1px solid #999; padding:8px;">\(\lvert u-u_h\rvert_{H^1}\)</th>
+<th style="border:1px solid #999; padding:8px;">\(\max u_h\)</th>
+<th style="border:1px solid #999; padding:8px;">fine-solution gap</th>
+<th style="border:1px solid #999; padding:8px;">最大角</th>
+<th style="border:1px solid #999; padding:8px;">\(\max R_T\)</th>
+</tr></thead>
+<tbody>
+<tr><td style="border:1px solid #999; padding:8px;">2</td><td style="border:1px solid #999; padding:8px;">8</td><td style="border:1px solid #999; padding:8px;">0.19834</td><td style="border:1px solid #999; padding:8px;">0.08028</td><td style="border:1px solid #999; padding:8px;">2.569</td><td style="border:1px solid #999; padding:8px;">126.87°</td><td style="border:1px solid #999; padding:8px;">0.3125</td></tr>
+<tr><td style="border:1px solid #999; padding:8px;">4</td><td style="border:1px solid #999; padding:8px;">64</td><td style="border:1px solid #999; padding:8px;">0.24626</td><td style="border:1px solid #999; padding:8px;">0.03683</td><td style="border:1px solid #999; padding:8px;">0.9498</td><td style="border:1px solid #999; padding:8px;">165.75°</td><td style="border:1px solid #999; padding:8px;">0.5078</td></tr>
+<tr><td style="border:1px solid #999; padding:8px;">8</td><td style="border:1px solid #999; padding:8px;">512</td><td style="border:1px solid #999; padding:8px;">0.27543</td><td style="border:1px solid #999; padding:8px;">0.01179</td><td style="border:1px solid #999; padding:8px;">0.2164</td><td style="border:1px solid #999; padding:8px;">176.42°</td><td style="border:1px solid #999; padding:8px;">1.001</td></tr>
+<tr><td style="border:1px solid #999; padding:8px;">12</td><td style="border:1px solid #999; padding:8px;">1728</td><td style="border:1px solid #999; padding:8px;">0.28250</td><td style="border:1px solid #999; padding:8px;">0.00553</td><td style="border:1px solid #999; padding:8px;">0.06590</td><td style="border:1px solid #999; padding:8px;">178.41°</td><td style="border:1px solid #999; padding:8px;">1.500</td></tr>
+</tbody>
+</table>
+<p>
+ここでは，二つの量が<b>逆方向</b>へ動いていることが最重要です．
+</p>
+<ul>
+<li>真の誤差：\(0.198\to0.283\)と<b>増加</b>している．</li>
+<li>fine-solution gap：\(2.569\to0.0659\)と<b>急速に減少</b>している．</li>
+</ul>
+<p>
+したがって，fine solutionとの差だけを見ると，計算は非常によく収束しているように見えます．
+しかし，厳密解との差を見ると，実際には逆に悪化しています．これが本記事で最も重要な「偽収束」です．
+</p>
+<p>
+さらに，\(\max u_h\)は
+\[
+  0.0803\to0.0368\to0.0118\to0.00553
+\]
+と零へ近づいています．一方，厳密解の最大値は\(0.125\)です．
+また真の\(H^1\)誤差は\(0.288675=\lvert u\rvert_{H^1(\Omega)}\)へ近づいています．
+この計算結果は，この強く退化した族では数値解そのものが零に近い状態へ押しつぶされていることを示しています．
+</p>
+<div style="padding:10px; margin-bottom:10px; border:3px double #333333;">
+<b>ここで見るべき対比</b><br><br>
+メッシュを細かくする<br>
+\(\Downarrow\)<br>
+fine solutionとの差は小さくなる<br>
+\(\Downarrow\)<br>
+一見すると「収束」<br><br>
+しかし同時に<br><br>
+\(\lvert u-u_h\rvert_{H^1}\)は零へ行かない<br>
+\(\max u_h\)も厳密解の\(0.125\)へ行かない<br><br>
+したがって，<b>収束しているのは厳密解\(u\)への距離ではない</b>．
+</div>
+
+<h3>9.4　三つの\(\beta\)を並べると臨界が見える</h3>
+<table style="border-collapse:collapse; width:100%; margin:12px 0;">
+<thead><tr>
+<th style="border:1px solid #999; padding:8px;">領域</th>
+<th style="border:1px solid #999; padding:8px;">幾何量</th>
+<th style="border:1px solid #999; padding:8px;">真の誤差</th>
+<th style="border:1px solid #999; padding:8px;">数値的に見える現象</th>
+</tr></thead>
+<tbody>
+<tr><td style="border:1px solid #999; padding:8px;">\(\beta=1.5<2\)</td><td style="border:1px solid #999; padding:8px;">\(R_T\to0\)</td><td style="border:1px solid #999; padding:8px;">零へ減少</td><td style="border:1px solid #999; padding:8px;">最大角は悪化するが正しく収束</td></tr>
+<tr><td style="border:1px solid #999; padding:8px;">\(\beta=2\)</td><td style="border:1px solid #999; padding:8px;">\(R_T\asymp1\)</td><td style="border:1px solid #999; padding:8px;">正の値で停滞</td><td style="border:1px solid #999; padding:8px;">臨界的な非収束</td></tr>
+<tr><td style="border:1px solid #999; padding:8px;">\(\beta=3>2\)</td><td style="border:1px solid #999; padding:8px;">\(R_T\to\infty\)</td><td style="border:1px solid #999; padding:8px;">\(\lvert u\rvert_{H^1}\)付近へ増加</td><td style="border:1px solid #999; padding:8px;">fine solutionとの差だけは減るという偽収束</td></tr>
+</tbody>
+</table>
+<p>
+この比較から，この記事の主張を一文でまとめると次のようになります．
+</p>
+<div style="padding:10px; margin-bottom:10px; border:5px double #333333;">
+<b>最大角条件を破ったという事実だけでは収束・非収束は決まらない．
+このBabuška–Aziz型メッシュでは，\(R_T\)の極限，すなわち\(n/m^2\)の大きさが臨界を捉え，
+\(\beta=2\)を境に真の有限要素誤差の挙動が変わる．</b>
+</div>
+
+<h3>9.5　fine-solution gapの数値は「誤差」ではない</h3>
+<p>
+上の表で使ったfine solutionは，\(\beta=1.5,2\)では\(m_{\mathrm{fine}}=32\)，
+\(\beta=3\)では計算量を抑えるため\(m_{\mathrm{fine}}=17\)です．
+したがってfine-solution gapの絶対値や見かけの減少率を，厳密な収束次数として解釈してはいけません．
+この量を載せる目的はただ一つ，<b>同じ不適切なメッシュ族のfine solutionとの差が減っても，
+真の誤差は減らない場合がある</b>ことを確認するためです．
+</p>
+<p>
+特に\(\beta=3\)では，真の誤差が増加しているのと同時にfine-solution gapが減少しています．
+この逆向きの挙動こそが，fine solutionを無条件にreference solutionとして使う危険性を最も明瞭に示しています．
+</p>
+
+<h3>9.6　残差指標は補助出力として扱う</h3>
+<p>
+Appendixのコードは，デバッグと比較のために標準的なdiameter/edge-length重みを使った残差指標も出力します．
+ただし，これはApelらが用いた異方性事後誤差評価量そのものではありません．
+したがって，本記事の収束・非収束の結論にはこの残差指標を使いません．
+結論は，厳密解から直接計算した\(H^1\)半ノルム誤差，\(\max u_h\)，fine-solution gap，
+および\(R_T\)の挙動から判断しています．
+</p>
+
+<h3>9.7　完全コードの実行</h3>
+<p>
+Appendix 1のコードは，NumPy，SciPy，Matplotlibだけで動作します．現在の版では，
+上で示した\(\beta=1.5\)，\(\beta=2\)，\(\beta=3\)の三つをすべて実行するようにしてあります．
+処理内容は次の通りです．
 </p>
 <ol>
-<li>偶数行と奇数行で節点数が異なるstaggered-rowメッシュを生成する．</li>
-<li>要素面積の総和，向き，節点番号，上端・下端の周期対応を自動検査する．</li>
-<li>上下端の対応自由度を同一視し，左右端に零Dirichlet条件を課す．</li>
-<li>一次Lagrange要素の剛性行列と荷重ベクトルを疎行列として組み立てる．</li>
-<li>
-厳密解
-\[
-  u(x,y)=\frac12x(1-x)
-\]
-から，\(L^2\)誤差，\(H^1\)半ノルム誤差，full \(H^1\)誤差を直接計算する．
-</li>
-<li>
-各要素の最大角，外接円半径\(R_T\)，直径，最小高度，および
-\[
-  H_{T0}:=\frac{h_T^2}{|T|}\min_{E\subset\partial T}|E|
-\]
-と\(H_{T0}/h_T\)を計算する．二次元では\(H_{T0}\)は\(H_T\)および\(R_T\)と同値です．
-</li>
-<li>同じメッシュ族のfine solutionへ粗い解を節点補間し，
-\[
-  \lvert u_{\mathrm{fine}}-I_{\mathrm{fine}}u_h\rvert_{H^1(\Omega)}
-\]
-を計算する．</li>
-<li>真の誤差，fine-solution gap，幾何量を表と両対数グラフに出力する．</li>
+<li>staggered-row型Babuška–Azizメッシュを生成する．</li>
+<li>要素面積，向き，上下端の周期対応を検査する．</li>
+<li>上下端の周期自由度を同一視し，左右端に零Dirichlet条件を課す．</li>
+<li>P1有限要素の剛性行列・荷重ベクトルを疎行列として組み立てる．</li>
+<li>厳密解との差から\(L^2\)，\(H^1\)半ノルム，full \(H^1\)誤差を計算する．</li>
+<li>最大角，外接円半径\(R_T\)，\(H_{T0}/h_T\)などの幾何量を計算する．</li>
+<li>粗い解をfine meshへ補間してfine-solution gapを計算する．</li>
+<li>表と両対数グラフを出力する．</li>
 </ol>
-<div style="padding:10px; margin-bottom:10px; border:1px solid #999;">
-<b>事後誤差評価量についての注意：</b><br>
-Apelらの短い論文は残差評価量の形を示していますが，異方性重み\(h_T\)，\(h_E\)の厳密な定義は
-Kunertの別論文を参照しています．したがって，AppendixのコードはApelらのTable 1の評価量を
-数値的に同一に再現したとは主張しません．コード中では，比較可能な補助量として
-\(h_T=\operatorname{diam}(T)\)，\(h_E=|E|\)を用いた完全に定義された残差指標を計算します．
-本記事の中心的な検証量は，厳密解から計算する\(H^1\)半ノルム誤差と，
-同一メッシュ族のfine-solution gapの対比です．
-</div>
 <p>
-標準設定では\(\beta=3\)，\(m=2,4,8,12\)を計算し，fine solutionには\(m_{\mathrm{fine}}=17\)を使います．
-原論文と同じ\(m_{\mathrm{fine}}=31\)へ変更することもできますが，
-\(n=31^3=29791\)となり，節点数とメモリ使用量が大きくなります．
-</p>
-<pre style="overflow-x:auto; padding:10px; border:1px solid #999;"><code>results_beta_3 = run_experiment(
-    beta=3.0,
-    m_values=(2, 4, 8, 12),
-    reference_m=17,
-)
-</code></pre>
-<p>
-期待される挙動は，\(\beta=3\)で真の\(H^1\)半ノルム誤差が零へ向かわない一方，
-fine-solution gapが減少することです．\(\beta=1.5\)と\(\beta=2\)の呼び出しもコード末尾に用意しています．
+原論文と同じ\(m_{\mathrm{fine}}=31\)を\(\beta=3\)で使うと，\(n=31^3=29791\)となるため，
+通常のPCでは計算量がかなり大きくなります．そのため，ブログの標準設定では\(m_{\mathrm{fine}}=17\)としています．
 </p>
 </article>
 </div>
+
 
 <h2>10．現代の研究課題</h2>
 <div class="news">
@@ -1609,6 +1820,7 @@ def run_experiment(
             "L2_error": l2_error,
             "H1_semi_error": h1_semi_error,
             "H1_error": h1_error,
+            "max_uh": float(np.max(solution.values)),
             "residual_indicator": estimator,
             "indicator_effectivity": estimator / h1_semi_error,
             "fine_gap": fine_gap,
@@ -1623,8 +1835,8 @@ def run_experiment(
 
 def print_results(results: list[dict[str, float]]) -&gt; None:
     header = (
-        " beta    m      n     nodes   |e|_H1      eta_res    eta/err    "
-        "fine_gap    max_angle    max_R      max_H0/h"
+        " beta    m      n     nodes   |e|_H1      max(u_h)    fine_gap    "
+        "max_angle    max_R      eta_res    eta/err    max_H0/h"
     )
     print(header)
     print("-" * len(header))
@@ -1635,11 +1847,12 @@ def print_results(results: list[dict[str, float]]) -&gt; None:
             f"{int(row['n']):6d} "
             f"{int(row['nodes']):9d} "
             f"{row['H1_semi_error']:10.3e} "
-            f"{row['residual_indicator']:10.3e} "
-            f"{row['indicator_effectivity']:9.3f} "
+            f"{row['max_uh']:10.3e} "
             f"{row['fine_gap']:10.3e} "
             f"{row['max_angle_deg']:10.4f} "
             f"{row['max_circumradius']:10.3e} "
+            f"{row['residual_indicator']:10.3e} "
+            f"{row['indicator_effectivity']:9.3f} "
             f"{row['max_H0_over_h']:10.3e}"
         )
 
@@ -1673,23 +1886,35 @@ if __name__ == "__main__":
     # A small mesh for visual inspection.
     plot_mesh(babuska_aziz_mesh(m=6, n=18))
 
-    # Default experiment. beta=3 clearly shows convergence toward the wrong
-    # limit: the exact H1 error does not vanish, while the same-family fine gap
-    # decreases. The original paper used m_ref=31; reference_m=17 is a lighter
-    # default suitable for an ordinary laptop or Colab session.
+    # Three regimes are run explicitly so that the tables in the blog can be
+    # reproduced without editing the program.
+    #
+    # beta = 1.5 : the maximal angle condition is violated, but the true H1
+    #              error still tends to zero.
+    results_beta_15 = run_experiment(
+        beta=1.5,
+        m_values=(4, 8, 16, 24),
+        reference_m=32,
+    )
+
+    # beta = 2.0 : critical regime.  The circumradius remains O(1), and the
+    #              true H1 error levels off instead of tending to zero.
+    results_beta_2 = run_experiment(
+        beta=2.0,
+        m_values=(4, 8, 16, 24),
+        reference_m=32,
+    )
+
+    # beta = 3.0 : strong failure.  The numerical solution becomes very small,
+    #              the true H1 error approaches |u|_{H1}=1/sqrt(12), while the
+    #              gap to a fixed fine solution from the same mesh family
+    #              decreases.  The original paper used m_ref=31; reference_m=17
+    #              is a lighter default for a laptop or Colab session.
     results_beta_3 = run_experiment(
         beta=3.0,
         m_values=(2, 4, 8, 12),
         reference_m=17,
     )
-
-    # To inspect the threshold, uncomment the following calls.
-    # results_beta_15 = run_experiment(
-    #     beta=1.5, m_values=(4, 8, 16, 24), reference_m=32
-    # )
-    # results_beta_2 = run_experiment(
-    #     beta=2.0, m_values=(4, 8, 16, 24), reference_m=32
-    # )
 </code></pre>
 </div>
 </details>
