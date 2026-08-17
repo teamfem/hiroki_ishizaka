@@ -26,4 +26,4 @@ jobs:
           git commit -m 'Activate dedicated social card across the site'
           git push
 
-# rerun after adding metadata support for detailed archive pages
+# final rerun limited to sitemap pages
