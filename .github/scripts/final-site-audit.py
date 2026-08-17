@@ -56,7 +56,7 @@ for title,paths in titles.items():
 
 # Normal public HTML should be represented in sitemap, except deliberate exceptions.
 exclude={'404.html'}
-for p in ROOT.glob('google*.html'): exclude.add(p.as_posix())
+for p in ROOT.rglob('google*.html'): exclude.add(p.as_posix())
 for p in ROOT.rglob('*.html'):
     if '.github' in p.parts: continue
     s=p.as_posix()
