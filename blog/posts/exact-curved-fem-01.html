@@ -15,8 +15,8 @@ window.MathJax = {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
-<meta name="description" content="有限要素法で「丸い領域」を丸いまま扱いたいについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Exact-curved FEM,curved domain,geometric error,Gmsh,FEniCSx,finite element method">
+<meta name="description" content="曲線領域を多角形化したときの幾何誤差と有限要素近似誤差を分け，Exact-curved FEMで曲線境界をそのまま扱う考え方をGmsh/FEniCSxとともに整理します．">
 <link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-01.html">
 
 <link rel="stylesheet" href="../../css/base.css">
@@ -40,7 +40,7 @@ window.MathJax = {
       "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-01.html#article",
       "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-01.html",
       "headline": "第1回：有限要素法で「丸い領域」を丸いまま扱いたい",
-      "description": "有限要素法で「丸い領域」を丸いまま扱いたいについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．",
+      "description": "曲線領域を多角形化したときの幾何誤差と有限要素近似誤差を分け，Exact-curved FEMで曲線境界をそのまま扱う考え方をGmsh/FEniCSxとともに整理します．",
       "author": {
         "@id": "https://teamfem.github.io/hiroki_ishizaka/#person"
       },
@@ -57,7 +57,7 @@ window.MathJax = {
       "articleSection": "Exact-curved FEM",
       "genre": "Research note",
       "image": "https://teamfem.github.io/hiroki_ishizaka/head_image.png",
-      "keywords": "石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法"
+      "keywords": "石坂宏樹,Hiroki Ishizaka,Exact-curved FEM,curved domain,geometric error,Gmsh,FEniCSx,finite element method"
     },
     {
       "@type": "BreadcrumbList",
@@ -129,7 +129,7 @@ window.MathJax = {
 <meta property="og:site_name" content="Hiroki Ishizaka">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="有限要素法で「丸い領域」を丸いまま扱いたい | Hiroki Ishizaka">
-<meta property="og:description" content="有限要素法で「丸い領域」を丸いまま扱いたいについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．">
+<meta property="og:description" content="曲線領域を多角形化したときの幾何誤差と有限要素近似誤差を分け，Exact-curved FEMで曲線境界をそのまま扱う考え方をGmsh/FEniCSxとともに整理します．">
 <meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-01.html">
 <meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/head_image.png">
 <meta property="og:image:alt" content="Hiroki Ishizaka — Numerical Analysis · PDEs · FEM">
@@ -137,7 +137,7 @@ window.MathJax = {
 <meta name="twitter:site" content="@teamfem16key">
 <meta name="twitter:creator" content="@teamfem16key">
 <meta name="twitter:title" content="有限要素法で「丸い領域」を丸いまま扱いたい | Hiroki Ishizaka">
-<meta name="twitter:description" content="有限要素法で「丸い領域」を丸いまま扱いたいについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．">
+<meta name="twitter:description" content="曲線領域を多角形化したときの幾何誤差と有限要素近似誤差を分け，Exact-curved FEMで曲線境界をそのまま扱う考え方をGmsh/FEniCSxとともに整理します．">
 <meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/head_image.png">
 <meta name="twitter:image:alt" content="Hiroki Ishizaka — Numerical Analysis · PDEs · FEM">
 </head>
@@ -229,7 +229,7 @@ window.MathJax = {
 
 <h1 class="section-title">第1回：有限要素法で「丸い領域」を丸いまま扱いたい</h1>
 <!---->
-<h2>Introduction</h2>
+<h2>はじめに――有限要素法で曲線領域を「曲がったまま」扱うとは何か</h2>
 <div class="news">
 <article class="news-item">
 <p>
@@ -256,6 +256,12 @@ window.MathJax = {
 の数値実験部分を，実装ノートとして補足するシリーズの第1回である．論文本文では理論と結果を中心にまとめたため，ブログでは，Gmsh/FEniCSx で曲線幾何をどう扱うか，geometry order と有限要素次数の違いは何か，UFL の <code>grad</code> と <code>dx</code> の内部で何が起きているかを，できるだけ丁寧に記録していく．
 </p>
 </article>
+</div>
+
+<!-- curved-search-entry-related -->
+<div style="padding:12px 15px;margin:14px 0 22px;border:1px solid #dfe6ef;border-radius:14px;background:#f7f9fc;">
+<b>関連して読む</b>
+<ul><li><a href="exact-curved-fem-02.html">曲線要素写像を affine core と curved correction に分ける</a></li><li><a href="exact-curved-fem-03.html">Gmsh の geometry order は有限要素次数ではない</a></li><li><a href="../../publications/#preprints">Current preprints</a></li><li><a href="../../fem/#vision10">Vision 10：Exact-curved geometry programme</a></li></ul>
 </div>
 
 <h2>直線メッシュと曲線メッシュ</h2>

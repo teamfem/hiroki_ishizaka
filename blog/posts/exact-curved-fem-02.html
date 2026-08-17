@@ -7,8 +7,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
-<meta name="description" content="曲線要素写像を affine core と curved correction に分けるについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Exact-curved FEM,affine core,curved correction,element map,anisotropic finite elements,curved elements">
+<meta name="description" content="曲線要素写像を F_K=Psi_K∘Phi_TK と分解し，affine coreが担うスケール・向き・異方性と，curved correctionが担う曲線幾何を分離して解析する考え方を解説します．">
 <link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-02.html">
 
 <link rel="stylesheet" href="../../css/base.css">
@@ -32,7 +32,7 @@
       "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-02.html#article",
       "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-02.html",
       "headline": "第2回：曲線要素写像を affine core と curved correction に分ける",
-      "description": "曲線要素写像を affine core と curved correction に分けるについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．",
+      "description": "曲線要素写像を F_K=Psi_K∘Phi_TK と分解し，affine coreが担うスケール・向き・異方性と，curved correctionが担う曲線幾何を分離して解析する考え方を解説します．",
       "author": {
         "@id": "https://teamfem.github.io/hiroki_ishizaka/#person"
       },
@@ -49,7 +49,7 @@
       "articleSection": "Exact-curved FEM",
       "genre": "Research note",
       "image": "https://teamfem.github.io/hiroki_ishizaka/head_image.png",
-      "keywords": "石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法"
+      "keywords": "石坂宏樹,Hiroki Ishizaka,Exact-curved FEM,affine core,curved correction,element map,anisotropic finite elements,curved elements"
     },
     {
       "@type": "BreadcrumbList",
@@ -121,7 +121,7 @@
 <meta property="og:site_name" content="Hiroki Ishizaka">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="曲線要素写像を affine core と curved correction に分ける | Hiroki Ishizaka">
-<meta property="og:description" content="曲線要素写像を affine core と curved correction に分けるについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．">
+<meta property="og:description" content="曲線要素写像を F_K=Psi_K∘Phi_TK と分解し，affine coreが担うスケール・向き・異方性と，curved correctionが担う曲線幾何を分離して解析する考え方を解説します．">
 <meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-02.html">
 <meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/head_image.png">
 <meta property="og:image:alt" content="Hiroki Ishizaka — Numerical Analysis · PDEs · FEM">
@@ -129,7 +129,7 @@
 <meta name="twitter:site" content="@teamfem16key">
 <meta name="twitter:creator" content="@teamfem16key">
 <meta name="twitter:title" content="曲線要素写像を affine core と curved correction に分ける | Hiroki Ishizaka">
-<meta name="twitter:description" content="曲線要素写像を affine core と curved correction に分けるについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．">
+<meta name="twitter:description" content="曲線要素写像を F_K=Psi_K∘Phi_TK と分解し，affine coreが担うスケール・向き・異方性と，curved correctionが担う曲線幾何を分離して解析する考え方を解説します．">
 <meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/head_image.png">
 <meta name="twitter:image:alt" content="Hiroki Ishizaka — Numerical Analysis · PDEs · FEM">
 </head>
@@ -221,7 +221,7 @@
 
 <h1 class="section-title">第2回：曲線要素写像を affine core と curved correction に分ける</h1>
 <!---->
-<h2>Introduction</h2>
+<h2>はじめに――曲線要素写像を affine core と curved correction に分ける理由</h2>
 <div class="news">
 <article class="news-item">
 <p>
@@ -240,6 +240,12 @@ F_K=\Psi_K\circ\Phi_{T_K}.
 ここで，\(\Phi_{T_K}\) は参照三角形から affine core への写像であり，\(\Psi_K\) は affine core から曲線要素への写像である．この分解により，アフィンなスケーリングと曲線幾何の効果を分けて考えることができる．
 </p>
 </article>
+</div>
+
+<!-- curved-search-entry-related -->
+<div style="padding:12px 15px;margin:14px 0 22px;border:1px solid #dfe6ef;border-radius:14px;background:#f7f9fc;">
+<b>関連して読む</b>
+<ul><li><a href="exact-curved-fem-01.html">曲線領域を丸いまま扱うという出発点</a></li><li><a href="exact-curved-fem-06.html">Exact-curved FEMs と isoparametric FEMs の違い</a></li><li><a href="../../research/#fem-summary">FEM research architecture</a></li><li><a href="../../fem/#vision10">Vision 10：Exact-curved geometry programme</a></li></ul>
 </div>
 
 <h2>三つの要素：参照三角形，affine core，曲線要素</h2>

@@ -7,8 +7,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法">
-<meta name="description" content="Exact-curved FEMs と isoparametric FEMs は何が違うのかについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Exact-curved FEM,isoparametric FEM,affine core,curved correction,curved elements,finite element analysis">
+<meta name="description" content="Exact-curved FEMとisoparametric FEMを比較し，実装は似ていても，affine coreとcurved correctionを分離して要素の異方性と境界曲率を別々に解析する点を整理します．">
 <link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-06.html">
 
 <link rel="stylesheet" href="../../css/base.css">
@@ -32,7 +32,7 @@
       "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-06.html#article",
       "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-06.html",
       "headline": "第6回：Exact-curved FEMs と isoparametric FEMs は何が違うのか",
-      "description": "Exact-curved FEMs と isoparametric FEMs は何が違うのかについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．",
+      "description": "Exact-curved FEMとisoparametric FEMを比較し，実装は似ていても，affine coreとcurved correctionを分離して要素の異方性と境界曲率を別々に解析する点を整理します．",
       "author": {
         "@id": "https://teamfem.github.io/hiroki_ishizaka/#person"
       },
@@ -49,7 +49,7 @@
       "articleSection": "Exact-curved FEM",
       "genre": "Research note",
       "image": "https://teamfem.github.io/hiroki_ishizaka/head_image.png",
-      "keywords": "石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法"
+      "keywords": "石坂宏樹,Hiroki Ishizaka,Exact-curved FEM,isoparametric FEM,affine core,curved correction,curved elements,finite element analysis"
     },
     {
       "@type": "BreadcrumbList",
@@ -121,7 +121,7 @@
 <meta property="og:site_name" content="Hiroki Ishizaka">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="Exact-curved FEMs と isoparametric FEMs は何が違うのか | Hiroki Ishizaka">
-<meta property="og:description" content="Exact-curved FEMs と isoparametric FEMs は何が違うのかについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．">
+<meta property="og:description" content="Exact-curved FEMとisoparametric FEMを比較し，実装は似ていても，affine coreとcurved correctionを分離して要素の異方性と境界曲率を別々に解析する点を整理します．">
 <meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-06.html">
 <meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/head_image.png">
 <meta property="og:image:alt" content="Hiroki Ishizaka — Numerical Analysis · PDEs · FEM">
@@ -129,7 +129,7 @@
 <meta name="twitter:site" content="@teamfem16key">
 <meta name="twitter:creator" content="@teamfem16key">
 <meta name="twitter:title" content="Exact-curved FEMs と isoparametric FEMs は何が違うのか | Hiroki Ishizaka">
-<meta name="twitter:description" content="Exact-curved FEMs と isoparametric FEMs は何が違うのかについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．">
+<meta name="twitter:description" content="Exact-curved FEMとisoparametric FEMを比較し，実装は似ていても，affine coreとcurved correctionを分離して要素の異方性と境界曲率を別々に解析する点を整理します．">
 <meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/head_image.png">
 <meta name="twitter:image:alt" content="Hiroki Ishizaka — Numerical Analysis · PDEs · FEM">
 </head>
@@ -221,7 +221,7 @@
 
 <h1 class="section-title">第6回：Exact-curved FEMs と isoparametric FEMs は何が違うのか</h1>
 <!---->
-<h2>Introduction</h2>
+<h2>はじめに――Exact-curved FEM と isoparametric FEM は何が違うのか</h2>
 <div class="news">
 <article class="news-item">
 <p>
@@ -265,6 +265,12 @@ F_K=\Psi_K\circ\Phi_{T_K}
 を分けて考える．この分け方が，isoparametric FEM との大きな違いである．
 </p>
 </article>
+</div>
+
+<!-- curved-search-entry-related -->
+<div style="padding:12px 15px;margin:14px 0 22px;border:1px solid #dfe6ef;border-radius:14px;background:#f7f9fc;">
+<b>関連して読む</b>
+<ul><li><a href="exact-curved-fem-02.html">affine core と curved correction の分解</a></li><li><a href="exact-curved-fem-05.html">単位円上の数値比較</a></li><li><a href="../../fem/#vision10">Vision 10：Exact-curved geometry programme</a></li><li><a href="../../publications/#preprints">Current preprints</a></li></ul>
 </div>
 
 <h2>まず isoparametric FEM とは何か</h2>
