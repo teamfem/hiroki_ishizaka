@@ -2,125 +2,25 @@ FULL-SITE SEO AUDIT
 ===================
 Sitemap URLs: 67
 Parsed pages: 67
-Critical issues: 63
-Warnings: 42
+Critical issues: 0
+Warnings: 4
 
 CRITICAL ISSUES
 ---------------
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/paradoxes-pitfalls-01.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/paradoxes-pitfalls-02.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-01.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-02.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-03.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-04.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-05.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-06.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-07.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-08.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-09.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-10.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-11.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-12.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-01.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-02.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-03.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-04.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-05.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-06.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-07.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-08.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-09.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-10.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-11.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-01.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-02.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-03.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-04.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-05.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-06.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-01.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/disease-progression-math-01.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/dental-math-01.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/dental-math-02.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-01.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-02.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-03.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-04.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-05.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-06.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-07.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article16apr26.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article18apr26.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26_2.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article15apr26.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26_3.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article21apr26.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article08may26.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article08may26_2.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article08may26_3.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article09may26.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_2.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_3.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_4.html
-MISSING CANONICAL | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_5.html
-DUPLICATE TITLE | Blog post from 28th May 2026 | ISHIZAKA Hiroki Website | https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-01.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-02.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-03.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-04.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-05.html
-DUPLICATE TITLE | Blog post from 27th June 2026 | ISHIZAKA Hiroki Website | https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-01.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-02.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-03.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-04.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-05.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-06.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-07.html
-DUPLICATE TITLE | Blog post from 20 April 2026 | ISHIZAKA Hiroki Website | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26_2.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26_3.html
-DUPLICATE TITLE | Blog post from 8th May 2026 | ISHIZAKA Hiroki Website | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article08may26.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article08may26_2.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article08may26_3.html
-DUPLICATE TITLE | Blog post from 10th May 2026 | ISHIZAKA Hiroki Website | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_2.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_3.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_4.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_5.html
+None
 
 WARNINGS
 --------
-TITLE LENGTH 74 | https://teamfem.github.io/hiroki_ishizaka/ | Hiroki Ishizaka | Certified FEM & Stable Reduction for Unresolved Dynamics
-DESCRIPTION LENGTH 183 | https://teamfem.github.io/hiroki_ishizaka/blog/ | Research notes on anisotropic finite element geometry, unresolved dynamics and memory, exact-curved FEM, certified computation, numerical-analysis paradoxes and computational methods.
-DESCRIPTION LENGTH 183 | https://teamfem.github.io/hiroki_ishizaka/geo/ | A historical map of geometric conditions in finite element analysis: angle conditions, shape regularity, anisotropic interpolation, semi-regularity and computable flatness parameters.
-TITLE LENGTH 104 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/paradoxes-pitfalls-02.html | 有限要素解は収束しているのに正解へ収束しない――最大角条件とBabuška–Aziz反例 | ISHIZAKA Hiroki WebsiteBabuška–Aziz型staggered-rowメッシュの模式図
-TITLE LENGTH 90 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-03.html | 異方性メッシュの二つの現れ方：相似縮小とgraded mesh | ISHIZAKA Hiroki Website細長い三角形の相似縮小方向別細分化率が異なるgraded mesh
-TITLE LENGTH 97 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-05.html | graded mesh，quasi-uniformity，shape regularityの違い | ISHIZAKA Hiroki Websitepower gradingによる一次元メッシュ
-TITLE LENGTH 75 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-01.html | 第1回：未解像ダイナミクスと履歴依存型発展方程式 — 記憶をどう安定にモデル化・同定・離散化するか | ISHIZAKA Hiroki Website
-TITLE LENGTH 73 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-04.html | 第4回：指数重みでmeasure-valued delayのwell-posednessを得る | ISHIZAKA Hiroki Website
-TITLE LENGTH 74 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-07.html | 第7回：kernel stabilityとfinite-atomic approximation | ISHIZAKA Hiroki Website
-DESCRIPTION LENGTH 181 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-09.html | BDF convolution quadratureを単なる履歴積分の数値積分ではなく，Laplace-domain transfer functionへBDF symbolを代入する離散operational calculusとして説明し，CQ weights，内部変数表示，G-stability，starting correctionとの関係を整理します．
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-01.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-02.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-03.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-04.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-05.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-06.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-01.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 48 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/dental-math-01.html | 虫歯・歯周病を反応拡散，曲面・異方性FEM，力学連成，逆問題，誤差保証の視点から考える研究構想．
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-01.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-02.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-03.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-04.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-05.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-06.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-07.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article16apr26.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article18apr26.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26_2.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article15apr26.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26_3.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article21apr26.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article08may26.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article08may26_2.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article08may26_3.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article09may26.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_2.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_3.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_4.html | Mathematics for Trustworthy Simulation
-DESCRIPTION LENGTH 38 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_5.html | Mathematics for Trustworthy Simulation
-DUPLICATE DESCRIPTION | https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-01.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-02.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-03.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-04.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-05.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-06.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-01.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-01.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-02.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-03.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-04.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-05.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-06.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-07.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article16apr26.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article18apr26.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26_2.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article15apr26.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26_3.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article21apr26.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article08may26.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article08may26_2.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article08may26_3.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article09may26.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_2.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_3.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_4.html ; https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_5.html
+TITLE LENGTH 97 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/paradoxes-pitfalls-02.html | 有限要素解は収束しているのに正解へ収束しない ――最大角条件とBabuška–Aziz反例 | Hiroki IshizakaBabuška–Aziz型staggered-rowメッシュの模式図
+TITLE LENGTH 82 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-03.html | 異方性メッシュの二つの現れ方：相似縮小とgraded mesh | Hiroki Ishizaka細長い三角形の相似縮小方向別細分化率が異なるgraded mesh
+TITLE LENGTH 89 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-05.html | graded mesh，quasi-uniformity，shape regularityの違い | Hiroki Ishizakapower gradingによる一次元メッシュ
+TITLE LENGTH 73 | https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_5.html | CIP法の二つの顔：Constrained Interpolation Profile と Continuous Interior Penalty
 
 PAGE INVENTORY
 --------------
 URL: https://teamfem.github.io/hiroki_ishizaka/
 FILE: index.html
-TITLE: Hiroki Ishizaka | Certified FEM & Stable Reduction for Unresolved Dynamics
+TITLE: Hiroki Ishizaka | Certified FEM & Stable Reduction Theory
 DESCRIPTION: Hiroki Ishizaka: certified finite element analysis under computable geometric conditions and stable reduction theory for unresolved dynamics.
 CANONICAL: https://teamfem.github.io/hiroki_ishizaka/
 H1: ['Mathematics makesthe invisible visible.']
@@ -161,7 +61,7 @@ ROBOTS:
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/
 FILE: blog/index.html
 TITLE: Blog | Hiroki Ishizaka
-DESCRIPTION: Research notes on anisotropic finite element geometry, unresolved dynamics and memory, exact-curved FEM, certified computation, numerical-analysis paradoxes and computational methods.
+DESCRIPTION: Research notes on anisotropic finite element geometry, unresolved dynamics with memory, exact-curved FEM, certified computation and numerical methods.
 CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/
 H1: ['Ideas, calculations,counterexamples and open questions.']
 ROBOTS: 
@@ -169,7 +69,7 @@ ROBOTS:
 URL: https://teamfem.github.io/hiroki_ishizaka/geo/
 FILE: geo/index.html
 TITLE: History of Geometric Conditions in FEM | Hiroki Ishizaka
-DESCRIPTION: A historical map of geometric conditions in finite element analysis: angle conditions, shape regularity, anisotropic interpolation, semi-regularity and computable flatness parameters.
+DESCRIPTION: A historical map of geometric conditions in finite element analysis, from classical angle conditions to anisotropic interpolation and computable semi-regular geometry.
 CANONICAL: https://teamfem.github.io/hiroki_ishizaka/geo/
 H1: ['From angle conditionsto computable geometry.']
 ROBOTS: 
@@ -192,464 +92,464 @@ ROBOTS:
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/paradoxes-pitfalls-01.html
 FILE: blog/posts/paradoxes-pitfalls-01.html
-TITLE: 領域が収束しても解は正しく収束しない――バブシュカ・パラドックス | ISHIZAKA Hiroki Website
+TITLE: 領域が収束しても解は正しく収束しない ――バブシュカ・パラドックス | Hiroki Ishizaka
 DESCRIPTION: 曲線領域を多角形領域で近似すると，領域は収束しても単純支持板の解が別の極限問題へ収束し得る．バブシュカ・パラドックスの仕組み，Rannacher以降の有限要素研究，exact-curved FEMとの接点，難易度別の現代的研究課題を解説する．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/paradoxes-pitfalls-01.html
 H1: ['領域が収束しても解は正しく収束しない――バブシュカ・パラドックス']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/paradoxes-pitfalls-02.html
 FILE: blog/posts/paradoxes-pitfalls-02.html
-TITLE: 有限要素解は収束しているのに正解へ収束しない――最大角条件とBabuška–Aziz反例 | ISHIZAKA Hiroki WebsiteBabuška–Aziz型staggered-rowメッシュの模式図
+TITLE: 有限要素解は収束しているのに正解へ収束しない ――最大角条件とBabuška–Aziz反例 | Hiroki IshizakaBabuška–Aziz型staggered-rowメッシュの模式図
 DESCRIPTION: Apel–Eckardt–Haubner–Kempfの論文を基に，最大角条件を破るBabuška–Azizメッシュ上で，有限要素解同士は近づいても厳密解へ収束しない現象を検証する．circumradius，semi-regular parameter，最小角・最大角・異方性の違い，事後誤差評価，fine-mesh referenceの危険性を整理する．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/paradoxes-pitfalls-02.html
 H1: ['有限要素解は収束しているのに正解へ収束しない――最大角条件とBabuška–Aziz反例']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-01.html
 FILE: blog/posts/anisotropic-geometry-01.html
-TITLE: 有限要素法ではなぜメッシュの幾何条件が必要なのか | ISHIZAKA Hiroki Website
+TITLE: 有限要素法ではなぜメッシュの幾何条件が必要なのか | Hiroki Ishizaka
 DESCRIPTION: 有限要素法の誤差評価と安定性にメッシュの幾何条件が必要となる理由を，石坂宏樹の異方性補間・CR–RT・semi-regularity研究を基礎に，参照要素写像，メッシュ族の一様性，幾何パラメータの観点から説明します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-01.html
 H1: ['有限要素法ではなぜメッシュの幾何条件が必要なのか']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-02.html
 FILE: blog/posts/anisotropic-geometry-02.html
-TITLE: 正則性と準正則性を角度を使わずに表す | ISHIZAKA Hiroki Website
+TITLE: 正則性と準正則性を角度を使わずに表す | Hiroki Ishizaka
 DESCRIPTION: 正則性と準正則性を，最小角・最大角を直接測らず，単体の直径，面積・体積，標準辺長から作るQ_TとH_T/h_Tによって表します．石坂宏樹の異方性補間理論とmaximum-angle conditionとの同値性を基礎に解説します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-02.html
 H1: ['正則性と準正則性を角度を使わずに表す']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-03.html
 FILE: blog/posts/anisotropic-geometry-03.html
-TITLE: 異方性メッシュの二つの現れ方：相似縮小とgraded mesh | ISHIZAKA Hiroki Website細長い三角形の相似縮小方向別細分化率が異なるgraded mesh
+TITLE: 異方性メッシュの二つの現れ方：相似縮小とgraded mesh | Hiroki Ishizaka細長い三角形の相似縮小方向別細分化率が異なるgraded mesh
 DESCRIPTION: 異方性メッシュにおける二つの典型的な現れ方，固定された細長い形状の相似縮小と，位置・細分化レベル・特異摂動パラメータに応じて局所幅を変えるgraded meshを区別します．Q_TとH_T/h_Tを用いて，形状の固定，サイズの非一様性，異方性の増大を整理します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-03.html
 H1: ['異方性メッシュの二つの現れ方：相似縮小とgraded mesh']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-04.html
 FILE: blog/posts/anisotropic-geometry-04.html
-TITLE: 相似縮小された細長い要素は非正則なのか | ISHIZAKA Hiroki Website
+TITLE: 相似縮小された細長い要素は非正則なのか | Hiroki Ishizaka
 DESCRIPTION: 固定された細長い三角形を相似縮小したメッシュ族が正則かを，Q_TとH_T/h_Tの尺度不変性から判定します．細長い一要素，メッシュ族の正則性，異方性パラメータに関する一様性を区別します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-04.html
 H1: ['相似縮小された細長い要素は非正則なのか']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-05.html
 FILE: blog/posts/anisotropic-geometry-05.html
-TITLE: graded mesh，quasi-uniformity，shape regularityの違い | ISHIZAKA Hiroki Websitepower gradingによる一次元メッシュ
+TITLE: graded mesh，quasi-uniformity，shape regularityの違い | Hiroki Ishizakapower gradingによる一次元メッシュ
 DESCRIPTION: graded mesh，quasi-uniformity，shape regularityを区別し，局所サイズの非一様性と要素形状の異方性が独立した概念であることを，power gradingとQ_T，H_T/h_Tを用いて説明します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-05.html
 H1: ['graded mesh，quasi-uniformity，shape regularityの違い']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-06.html
 FILE: blog/posts/anisotropic-geometry-06.html
-TITLE: 長方形の三角形分割をQ_TとH_T/h_Tで調べる | ISHIZAKA Hiroki Website
+TITLE: 長方形の三角形分割を\(Q_T\)と\(H_T/h_T\)で調べる | Hiroki Ishizaka
 DESCRIPTION: 辺長h_x，h_yの長方形を対角線で二分して得られる直角三角形について，Q_T=h_T^2/|T|_2とH_T/h_Tを厳密に計算します．アスペクト比が発散すると正則性は失われる一方，準正則性は保たれることを示します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-06.html
 H1: ['長方形の三角形分割を\\(Q_T\\)と\\(H_T/h_T\\)で調べる']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-07.html
 FILE: blog/posts/anisotropic-geometry-07.html
-TITLE: Shishkin meshは正則か，準正則か | ISHIZAKA Hiroki Website
+TITLE: Shishkin meshは正則か，準正則か | Hiroki Ishizaka
 DESCRIPTION: Shishkin meshの遷移点と二種類の局所メッシュ幅を明示し，長方形セルの三角形分割についてQ_TとH_T/h_Tを計算します．固定した摂動パラメータに対する正則性と，パラメータ一様な準正則性を区別します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-07.html
 H1: ['Shishkin meshは正則か，準正則か']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-08.html
 FILE: blog/posts/anisotropic-geometry-08.html
-TITLE: Bakhvalov meshの滑らかなgradingと幾何条件 | ISHIZAKA Hiroki Website
+TITLE: Bakhvalov meshの滑らかなgradingと幾何条件 | Hiroki Ishizaka
 DESCRIPTION: Bakhvalov meshとBakhvalov-type meshを区別し，対数型の格子生成関数から局所幅を計算して，二次元三角形分割の正則性と準正則性をQ_TとH_T/h_Tで判定します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-08.html
 H1: ['Bakhvalov meshの滑らかなgradingと幾何条件']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-09.html
 FILE: blog/posts/anisotropic-geometry-09.html
-TITLE: Bakhvalov–Shishkin meshとS-type mesh：最適性と幾何条件 | ISHIZAKA Hiroki Website
+TITLE: Bakhvalov–Shishkin meshとS-type mesh：最適性と幾何条件 | Hiroki Ishizaka
 DESCRIPTION: Bakhvalov–Shishkin meshをS-type meshの枠組みで定義し，生成関数phiとmesh-characterizing function psi，局所メッシュ幅，S-typeとしての最適性，およびQ_TとH_T/h_Tによる幾何条件を整理します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-09.html
 H1: ['Bakhvalov–Shishkin meshとS-type mesh：最適性と幾何条件']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-10.html
 FILE: blog/posts/anisotropic-geometry-10.html
-TITLE: 代表的なlayer-adapted meshの幾何条件を比較する | ISHIZAKA Hiroki Website
+TITLE: 代表的なlayer-adapted meshの幾何条件を比較する | Hiroki Ishizaka
 DESCRIPTION: Shishkin，Bakhvalov系，Bakhvalov–Shishkin，S-type meshを，遷移点，局所幅，quasi-uniformity，Q_T，H_T/h_T，誤差解析上の特徴という共通軸で比較します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-10.html
 H1: ['代表的なlayer-adapted meshの幾何条件を比較する']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-11.html
 FILE: blog/posts/anisotropic-geometry-11.html
-TITLE: 三次元layer-adapted meshを四面体分割すると何が起こるか | ISHIZAKA Hiroki Website
+TITLE: 三次元layer-adapted meshを四面体分割すると何が起こるか | Hiroki Ishizaka
 DESCRIPTION: 三次元の直方体型layer-adapted cellを四面体分割し，構造化Kuhn型分割では準正則性が保たれること，sliver型四面体では失われることをQ_T，R_T/h_T，H_T/h_Tで調べます．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-11.html
 H1: ['三次元layer-adapted meshを四面体分割すると何が起こるか']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-12.html
 FILE: blog/posts/anisotropic-geometry-12.html
-TITLE: 幾何条件から補間・DMP・L∞解析へ何が引き継げるか | ISHIZAKA Hiroki Website
+TITLE: 幾何条件から補間・DMP・\(L^\infty\)解析へ何が引き継げるか | Hiroki Ishizaka
 DESCRIPTION: 準正則性から補間，Raviart–Thomas補間，離散Sobolev不等式へ何が引き継げるかを整理し，DMPとL∞解析には行列符号・metric angle・Green関数・mesh gradingなど別の条件が必要であることを説明します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-geometry-12.html
 H1: ['幾何条件から補間・DMP・\\(L^\\infty\\)解析へ何が引き継げるか']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-01.html
 FILE: blog/posts/unresolved-memory-01.html
-TITLE: 第1回：未解像ダイナミクスと履歴依存型発展方程式 — 記憶をどう安定にモデル化・同定・離散化するか | ISHIZAKA Hiroki Website
+TITLE: 未解像ダイナミクスと履歴依存型発展方程式 — 記憶をどう安定にモデル化・同定・離散化するか | Hiroki Ishizaka
 DESCRIPTION: 未解像ダイナミクスから生じる履歴依存型方程式を，measure-valued delay，Volterra memory，内部変数，kernel stability，構造保存完全離散化の観点から整理します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-01.html
 H1: ['第1回：未解像ダイナミクスと履歴依存型発展方程式 — 記憶をどう安定にモデル化・同定・離散化するか']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-02.html
 FILE: blog/posts/unresolved-memory-02.html
-TITLE: 第2回：未解像状態を消去すると，なぜmemoryが現れるのか | ISHIZAKA Hiroki Website
+TITLE: 未解像状態を消去すると，なぜmemoryが現れるのか | Hiroki Ishizaka
 DESCRIPTION: 時間局所的な拡張系から未解像状態を消去し，memory kernel K(t)=Be^{-tC}Dとdynamic Schur complementが現れる仕組みを導出します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-02.html
 H1: ['第2回：未解像状態を消去すると，なぜmemoryが現れるのか']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-03.html
 FILE: blog/posts/unresolved-memory-03.html
-TITLE: 第3回：measure-valued delayで分布遅延・原子遅延・混合遅延を統一する | ISHIZAKA Hiroki Website
+TITLE: measure-valued delayで分布遅延・原子遅延・混合遅延を統一する | Hiroki Ishizaka
 DESCRIPTION: 有限Borel測度を用いて分布遅延・離散遅延・混合遅延を統一し，平方可積分な履歴に対する代表元非依存のhistory operator，原点の原子，total variationとnarrow convergenceの違いを解説します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-03.html
 H1: ['第3回：measure-valued delayで分布遅延・原子遅延・混合遅延を統一する']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-04.html
 FILE: blog/posts/unresolved-memory-04.html
-TITLE: 第4回：指数重みでmeasure-valued delayのwell-posednessを得る | ISHIZAKA Hiroki Website
+TITLE: 指数重みでmeasure-valued delayのwell-posednessを得る | Hiroki Ishizaka
 DESCRIPTION: 指数重みとweighted variation massを用いて，原点に原子をもたない任意の有限符号付きmeasure-valued delayに対する有限時間well-posednessを導く仕組みを解説します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-04.html
 H1: ['第4回：指数重みでmeasure-valued delayのwell-posednessを得る']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-05.html
 FILE: blog/posts/unresolved-memory-05.html
-TITLE: 第5回：positive-type memoryとcoercivity gap | ISHIZAKA Hiroki Website
+TITLE: positive-type memoryとcoercivity gap | Hiroki Ishizaka
 DESCRIPTION: completely monotone kernelが与えるmemory dissipationの非負性と，瞬時energyに対するcoercivityを区別し，memory coercivity symbol，高周波no-go theorem，finite-horizon profile，critical horizonを解説します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-05.html
 H1: ['第5回：positive-type memoryとcoercivity gap']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-06.html
 FILE: blog/posts/unresolved-memory-06.html
-TITLE: 第6回：graph-space well-posednessとは何か | ISHIZAKA Hiroki Website
+TITLE: graph-space well-posednessとは何か | Hiroki Ishizaka
 DESCRIPTION: 瞬時拡散がcoercivityを失うmemory equationに対して，物理変数と内部変数からなる拡張状態空間を構成し，m-dissipativity，memory graph space，Hadamard well-posedness，vanishing-coercivity stabilityを解説します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-06.html
 H1: ['第6回：graph-space well-posednessとは何か']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-07.html
 FILE: blog/posts/unresolved-memory-07.html
-TITLE: 第7回：kernel stabilityとfinite-atomic approximation | ISHIZAKA Hiroki Website
-DESCRIPTION: measure-valued delay lawの摂動をasymmetric residualへ還元し，total variation，narrow convergence，translation modulus，Wasserstein距離によるkernel stabilityとfinite-atomic approximationを解説します．
-CANONICAL: 
+TITLE: kernel stabilityとfinite-atomic approximation | Hiroki Ishizaka
+DESCRIPTION: kernel stabilityとfinite-atomic approximationについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-07.html
 H1: ['第7回：kernel stabilityとfinite-atomic approximation']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-08.html
 FILE: blog/posts/unresolved-memory-08.html
-TITLE: 第8回：離散内部変数でcross-term cancellationを保存する | ISHIZAKA Hiroki Website
-DESCRIPTION: completely monotone memoryを有限個の内部変数へ近似し，BDF1・BDF2と空間Galerkin法によって連続系のcross-term cancellationとgraph energyを離散的に保存する設計原理を解説します．
-CANONICAL: 
+TITLE: 離散内部変数でcross-term cancellationを保存する | Hiroki Ishizaka
+DESCRIPTION: 離散内部変数でcross-term cancellationを保存するについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-08.html
 H1: ['第8回：離散内部変数でcross-term cancellationを保存する']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-09.html
 FILE: blog/posts/unresolved-memory-09.html
-TITLE: 第9回：BDFとconvolution quadratureは何を離散化しているのか | ISHIZAKA Hiroki Website
-DESCRIPTION: BDF convolution quadratureを単なる履歴積分の数値積分ではなく，Laplace-domain transfer functionへBDF symbolを代入する離散operational calculusとして説明し，CQ weights，内部変数表示，G-stability，starting correctionとの関係を整理します．
-CANONICAL: 
+TITLE: BDFとconvolution quadratureは何を離散化しているのか | Hiroki Ishizaka
+DESCRIPTION: BDFとconvolution quadratureは何を離散化しているのかについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-09.html
 H1: ['第9回：BDFとconvolution quadratureは何を離散化しているのか']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-10.html
 FILE: blog/posts/unresolved-memory-10.html
-TITLE: 第10回：model-reduction errorをどう分解するか | ISHIZAKA Hiroki Website
+TITLE: model-reduction errorをどう分解するか | Hiroki Ishizaka
 DESCRIPTION: 未解像ダイナミクスから得られるmemory modelについて，closure，kernel approximation，space discretisation，time discretisation，algebraic errorを区別し，共通normで評価するerror ledgerを整理します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-10.html
 H1: ['第10回：model-reduction errorをどう分解するか']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-11.html
 FILE: blog/posts/unresolved-memory-11.html
-TITLE: 第11回：誤差に応じて潜在状態を追加するmodel adaptivity | ISHIZAKA Hiroki Website
+TITLE: 誤差に応じて潜在状態を追加するmodel adaptivity | Hiroki Ishizaka
 DESCRIPTION: closure，kernel，space，time，algebraic errorを分離したerror ledgerに基づき，delay atom，Prony mode，空間要素，時間stepを選択的に追加するstructure-preserving model adaptivityを解説します．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-11.html
 H1: ['第11回：誤差に応じて潜在状態を追加するmodel adaptivity']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-01.html
 FILE: blog/posts/exact-curved-fem-01.html
-TITLE: Blog post from 28th May 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: 有限要素法で「丸い領域」を丸いまま扱いたい | Hiroki Ishizaka
+DESCRIPTION: 有限要素法で「丸い領域」を丸いまま扱いたいについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-01.html
 H1: ['第1回：有限要素法で「丸い領域」を丸いまま扱いたい']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-02.html
 FILE: blog/posts/exact-curved-fem-02.html
-TITLE: Blog post from 28th May 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: 曲線要素写像を affine core と curved correction に分ける | Hiroki Ishizaka
+DESCRIPTION: 曲線要素写像を affine core と curved correction に分けるについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-02.html
 H1: ['第2回：曲線要素写像を affine core と curved correction に分ける']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-03.html
 FILE: blog/posts/exact-curved-fem-03.html
-TITLE: Blog post from 28th May 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: Gmsh の geometry order は有限要素次数ではない | Hiroki Ishizaka
+DESCRIPTION: Gmsh の geometry order は有限要素次数ではないについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-03.html
 H1: ['第3回：Gmsh の geometry order は有限要素次数ではない']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-04.html
 FILE: blog/posts/exact-curved-fem-04.html
-TITLE: Blog post from 28th May 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: UFL の grad と dx の中で何が起きているか | Hiroki Ishizaka
+DESCRIPTION: UFL の grad と dx の中で何が起きているかについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-04.html
 H1: ['第4回：UFL の grad と dx の中で何が起きているか']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-05.html
 FILE: blog/posts/exact-curved-fem-05.html
-TITLE: Blog post from 28th May 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: 単位円上の Poisson 問題で曲線メッシュを比較する | Hiroki Ishizaka
+DESCRIPTION: 単位円上の Poisson 問題で曲線メッシュを比較するについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-05.html
 H1: ['第5回：単位円上の Poisson 問題で曲線メッシュを比較する']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-06.html
 FILE: blog/posts/exact-curved-fem-06.html
-TITLE: Blog post from 1st June 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: Exact-curved FEMs と isoparametric FEMs は何が違うのか | Hiroki Ishizaka
+DESCRIPTION: Exact-curved FEMs と isoparametric FEMs は何が違うのかについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/exact-curved-fem-06.html
 H1: ['第6回：Exact-curved FEMs と isoparametric FEMs は何が違うのか']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-01.html
 FILE: blog/posts/lean4-01.html
-TITLE: Blog post from 8th June 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: Lean 4 は有限要素法研究に何をもたらすか | Hiroki Ishizaka
+DESCRIPTION: Lean 4 は有限要素法研究に何をもたらすかについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-01.html
 H1: ['第1回：Lean 4 は有限要素法研究に何をもたらすか']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/disease-progression-math-01.html
 FILE: blog/posts/disease-progression-math-01.html
-TITLE: 癌と歯周病はなぜ同じ数理構造で考えられるのか | ISHIZAKA Hiroki Website
+TITLE: 癌と歯周病はなぜ同じ数理構造で考えられるのか | Hiroki Ishizaka
 DESCRIPTION: 癌と歯周病に共通する潜在状態・治療履歴・局所微小環境を，履歴依存型モデルとmodel reductionの観点から解説します
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/disease-progression-math-01.html
 H1: ['癌と歯周病はなぜ同じ数理構造で考えられるのか']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/dental-math-01.html
 FILE: blog/posts/dental-math-01.html
-TITLE: 数学で虫歯・歯周病に何ができるか | ISHIZAKA Hiroki Website
-DESCRIPTION: 虫歯・歯周病を反応拡散，曲面・異方性FEM，力学連成，逆問題，誤差保証の視点から考える研究構想．
-CANONICAL: 
+TITLE: 数学で虫歯・歯周病に何ができるか | Hiroki Ishizaka
+DESCRIPTION: 数学で虫歯・歯周病に何ができるかについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/dental-math-01.html
 H1: ['数学で虫歯・歯周病に何ができるか']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/dental-math-02.html
 FILE: blog/posts/dental-math-02.html
-TITLE: 治療履歴から虫歯・歯周病の未来を予測できるか — 非マルコフ型モデルと個別化予防 | ISHIZAKA Hiroki Website
+TITLE: 治療履歴から虫歯・歯周病の未来を予測できるか — 非マルコフ型モデルと個別化予防 | Hiroki Ishizaka
 DESCRIPTION: 過去の検査・治療履歴から虫歯・歯周病の進行リスクを動的に予測し，予測と因果的予防を区別して信頼保証付き歯科意思決定支援へつなぐ研究構想．
-CANONICAL: 
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/dental-math-02.html
 H1: ['治療履歴から虫歯・歯周病の未来を予測できるか — 非マルコフ型モデルと個別化予防']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-01.html
 FILE: blog/posts/pinns-01.html
-TITLE: Blog post from 27th June 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: 1次元 Poisson 問題で PINNs を動かす | Hiroki Ishizaka
+DESCRIPTION: 1次元 Poisson 問題で PINNs を動かすについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-01.html
 H1: ['第1回：1次元 Poisson 問題で PINNs を動かす']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-02.html
 FILE: blog/posts/pinns-02.html
-TITLE: Blog post from 27th June 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: 残差点の配置を変えると何が起きるか | Hiroki Ishizaka
+DESCRIPTION: 残差点の配置を変えると何が起きるかについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-02.html
 H1: ['第2回：残差点の配置を変えると何が起きるか']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-03.html
 FILE: blog/posts/pinns-03.html
-TITLE: Blog post from 27th June 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: どの幾何的量が誤差を支配するか | Hiroki Ishizaka
+DESCRIPTION: どの幾何的量が誤差を支配するかについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-03.html
 H1: ['第3回：どの幾何的量が誤差を支配するか']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-04.html
 FILE: blog/posts/pinns-04.html
-TITLE: Blog post from 27th June 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: PINNs / Deep Ritz / VPINN / WAN を並べて比べる | Hiroki Ishizaka
+DESCRIPTION: PINNs / Deep Ritz / VPINN / WAN を並べて比べるについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-04.html
 H1: ['第4回：PINNs / Deep Ritz / VPINN / WAN を並べて比べる']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-05.html
 FILE: blog/posts/pinns-05.html
-TITLE: Blog post from 27th June 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: コードと数学の辞書 | Hiroki Ishizaka
+DESCRIPTION: コードと数学の辞書について，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-05.html
 H1: ['第5回：コードと数学の辞書']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-06.html
 FILE: blog/posts/pinns-06.html
-TITLE: Blog post from 27th June 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: 私の研究との接続：PINNsはなぜ失敗するのか - 1次元から探る幾何条件の役割 | Hiroki Ishizaka
+DESCRIPTION: 私の研究との接続：PINNsはなぜ失敗するのか - 1次元から探る幾何条件の役割について，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-06.html
 H1: ['第6回：私の研究との接続：PINNsはなぜ失敗するのか - 1次元から探る幾何条件の役割']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-07.html
 FILE: blog/posts/pinns-07.html
-TITLE: Blog post from 27th June 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: 研究ビジョン全体図 — 複数の誤差要因を捕まえ，正しい数値解へ導く AI-based FEM へ | Hiroki Ishizaka
+DESCRIPTION: 研究ビジョン全体図 — 複数の誤差要因を捕まえ，正しい数値解へ導く AI-based FEM へについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/pinns-07.html
 H1: ['第7回：研究ビジョン全体図 — 複数の誤差要因を捕まえ，正しい数値解へ導く AI-based FEM へ']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article16apr26.html
 FILE: blog/posts/article16apr26.html
-TITLE: Blog post from 16 April 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: FEniCSxで学ぶメッシュ分割入門：節点座標・要素接続・境界辺から異方性メッシュへ | Hiroki Ishizaka
+DESCRIPTION: FEniCSxで学ぶメッシュ分割入門：節点座標・要素接続・境界辺から異方性メッシュへについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article16apr26.html
 H1: ['FEniCSxで学ぶメッシュ分割入門：節点座標・要素接続・境界辺から異方性メッシュへ']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article18apr26.html
 FILE: blog/posts/article18apr26.html
-TITLE: Blog post from 18 April 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: 異方性メッシュ族をPythonで再構成する：6つのmesh familyの節点座標・要素接点・境界辺接点表からgood/badを読む
+DESCRIPTION: 異方性メッシュ族をPythonで再構成する：6つのmesh familyの節点座標・要素接点・境界辺接点表からgood/badを読むについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article18apr26.html
 H1: ['異方性メッシュ族をPythonで再構成する：6つのmesh familyの節点座標・要素接点・境界辺接点表からgood/badを読む']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26.html
 FILE: blog/posts/article20apr26.html
-TITLE: Blog post from 20 April 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: FEniCSx用メッシュファイルを取り出す | Hiroki Ishizaka
+DESCRIPTION: FEniCSx用メッシュファイルを取り出すについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26.html
 H1: ['FEniCSx用メッシュファイルを取り出す']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26_2.html
 FILE: blog/posts/article20apr26_2.html
-TITLE: Blog post from 20 April 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: FreeFEM用メッシュファイルを取り出す | Hiroki Ishizaka
+DESCRIPTION: FreeFEM用メッシュファイルを取り出すについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26_2.html
 H1: ['FreeFEM用メッシュファイルを取り出す']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article15apr26.html
 FILE: blog/posts/article15apr26.html
-TITLE: Blog post from 15 April 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: Google Colabで始めるFEniCSx入門：Poisson方程式，誤差評価，log-logプロット
+DESCRIPTION: Google Colabで始めるFEniCSx入門：Poisson方程式，誤差評価，log-logプロットについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article15apr26.html
 H1: ['Google Colabで始めるFEniCSx入門：Poisson方程式，誤差評価，log-logプロット']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26_3.html
 FILE: blog/posts/article20apr26_3.html
-TITLE: Blog post from 20 April 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: Google ColabでFreeFEMを使う：フォルダー作成からPoisson方程式の可視化まで | Hiroki Ishizaka
+DESCRIPTION: Google ColabでFreeFEMを使う：フォルダー作成からPoisson方程式の可視化までについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article20apr26_3.html
 H1: ['Google ColabでFreeFEMを使う：フォルダー作成からPoisson方程式の可視化まで']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article21apr26.html
 FILE: blog/posts/article21apr26.html
-TITLE: Blog post from 21 April 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: Google Colabで始めるFreeFEM入門：Poisson方程式，誤差評価，log-logプロット
+DESCRIPTION: Google Colabで始めるFreeFEM入門：Poisson方程式，誤差評価，log-logプロットについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article21apr26.html
 H1: ['Google Colabで始めるFreeFEM入門：Poisson方程式，誤差評価，log-logプロット']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article08may26.html
 FILE: blog/posts/article08may26.html
-TITLE: Blog post from 8th May 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: 外挿法で円周率を求める | Hiroki Ishizaka
+DESCRIPTION: 外挿法で円周率を求めるについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article08may26.html
 H1: ['外挿法で円周率を求める']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article08may26_2.html
 FILE: blog/posts/article08may26_2.html
-TITLE: Blog post from 8th May 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: 数値微分と外挿法 | Hiroki Ishizaka
+DESCRIPTION: 数値微分と外挿法について，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article08may26_2.html
 H1: ['数値微分と外挿法']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article08may26_3.html
 FILE: blog/posts/article08may26_3.html
-TITLE: Blog post from 8th May 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: Romberg積分入門 | Hiroki Ishizaka
+DESCRIPTION: Romberg積分入門について，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article08may26_3.html
 H1: ['Romberg積分入門']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article09may26.html
 FILE: blog/posts/article09may26.html
-TITLE: Blog post from 9th May 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: ODEにおける外挿法とCrank-Nicolson | Hiroki Ishizaka
+DESCRIPTION: ODEにおける外挿法とCrank-Nicolsonについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article09may26.html
 H1: ['ODEにおける外挿法とCrank-Nicolson']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26.html
 FILE: blog/posts/article10may26.html
-TITLE: Blog post from 10th May 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: FFEMにおけるRitz射影と点値外挿 | Hiroki Ishizaka
+DESCRIPTION: FFEMにおけるRitz射影と点値外挿について，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26.html
 H1: ['FFEMにおけるRitz射影と点値外挿']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_2.html
 FILE: blog/posts/article10may26_2.html
-TITLE: Blog post from 10th May 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: Defect correctionとは何か | Hiroki Ishizaka
+DESCRIPTION: Defect correctionとは何かについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_2.html
 H1: ['Defect correctionとは何か']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_3.html
 FILE: blog/posts/article10may26_3.html
-TITLE: Blog post from 10th May 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: 特異性があると外挿はどうなるか | Hiroki Ishizaka
+DESCRIPTION: 特異性があると外挿はどうなるかについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_3.html
 H1: ['特異性があると外挿はどうなるか']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_4.html
 FILE: blog/posts/article10may26_4.html
-TITLE: Blog post from 10th May 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: 数値実験編：外挿，defect correction，特異性の比較 | Hiroki Ishizaka
+DESCRIPTION: 数値実験編：外挿，defect correction，特異性の比較について，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_4.html
 H1: ['数値実験編：外挿，defect correction，特異性の比較']
 ROBOTS: 
 
 URL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_5.html
 FILE: blog/posts/article10may26_5.html
-TITLE: Blog post from 10th May 2026 | ISHIZAKA Hiroki Website
-DESCRIPTION: Mathematics for Trustworthy Simulation
-CANONICAL: 
+TITLE: CIP法の二つの顔：Constrained Interpolation Profile と Continuous Interior Penalty
+DESCRIPTION: CIP法の二つの顔：Constrained Interpolation Profile と Continuous Interior Penaltyについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．
+CANONICAL: https://teamfem.github.io/hiroki_ishizaka/blog/posts/article10may26_5.html
 H1: ['CIP法の二つの顔：Constrained Interpolation Profile と Continuous Interior Penalty']
 ROBOTS: 
