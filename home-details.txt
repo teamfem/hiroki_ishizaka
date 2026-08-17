@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<meta name="google-site-verification" content="oDwt8186L37cOf9VVCZWRCXMWfvKtBGc9iy6ouKYFXc" />
+
+
+<title>Hiroki Ishizaka | Certified FEM &amp; Stable Reduction for Unresolved Dynamics</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,Certified FEM,Anisotropic Meshes,Unresolved Dynamics,Stable Reduction,Memory Equations,Latent States,Mathematical Structures,Trustworthy Simulation,AI4Math">
+<meta name="description" content="Hiroki Ishizaka: mathematics of invisible structures, certified finite element analysis, and stable reduction theory for unresolved dynamics.">
+
+<link rel="stylesheet" href="./css/base.css">
+<link rel="stylesheet" href="./css/rwd.css">
+
+<link rel="shortcut icon" type="image/x-icon" href="./favicon.ico">
+<link rel="apple-touch-icon" href="./favicon.ico">
+<link rel="apple-touch-icon-precomposed" href="./favicon.ico">
+<link rel="icon" href="./favicon.ico">
+
+<!--[if lt IE 9]>
+<script src="./js/html5.js"></script>
+<![endif]-->
+<script src="./js/jquery.js" charset="utf-8"></script>
+<script src="./js/jquery-migrate.js" charset="utf-8"></script>
+
+</head>
+
+<body class="home">
+
+<!--▼サイトヘッダー-->
+<header id="top" class="site-header">
+	
+	<div class="site-header-in">
+		<div class="site-header-conts">
+			<h1 class="site-title"><a href="./">ISHIZAKA Hiroki Website</a></h1>
+		</div>
+	</div>
+
+	<!--▼グローバルナビ-->
+	<nav class="global-nav">
+		<div class="global-nav-in">
+			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+			<ul id="menu">
+				<li>
+					<a href="./">Home</a>
+				</li>
+			
+				<li><a href="./publications/">Publications</a></li>
+				
+				<li>
+					<a href="./research/">Research</a>
+					<!--
+					<ul>
+						<li><a href="./research/research01/">Research1</a></li>
+						<li><a href="./research/research02/">Research2</a></li>
+					</ul>
+					-->
+				</li>
+				
+				<li>
+					<a href="./fem/">Research Visions</a>
+				</li>
+				
+				<li>
+					<a href="./suppl/">Supplementary Visions</a>
+				</li>
+				
+				<li>
+					<a href="./blog/">Blog</a>
+				</li>
+				
+				<li>
+					<a href="./geo/">History of Geometric Conditions in FEM</a>
+				</li>
+				
+				<li>
+					<a href="./links/">Links</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+	<!--▲グローバルナビ-->
+
+	<div class="main-image">
+		<div class="main-image-in-text wide" style="background-image: url(https://teamfem.github.io/hiroki_ishizaka/head_image.png);">
+			<div class="main-image-in-text-cont">
+			<p class="main-copy">Mathematics makes the invisible visible</p>
+			<p class="sub-copy">Mathematical structures behind error, memory, and unresolved dynamics</p>
+			<p class="sub-copy">Certified finite element analysis &nbsp;|&nbsp; Stable reduction theory for unresolved dynamics</p>
+			</div>
+		</div>
+	</div>
+
+</header>
+<!--▲サイトヘッダー-->
+
+<div class="main-body">
+<div class="main-body-in">
+
+	<!--▼メインコンテンツ-->
+	<main>
+		<div class="main-conts">
+		<section class="section-wrap">
+			<div class="section-in">
+			
+<h2>About me</h2>
+<div class="news">
+<article class="news-item">
+<p style="font-weight:bold; font-size:200%;">ISHIZAKA Hiroki, Ph. D. (Dr.) <br>
+石坂 宏樹</p>
+E-mail: h.ishizaka005[at]gmail.com<br>
+Independent Researcher — Numerical Analysis, Partial Differential Equations, and Finite Element Methods<br>
+AI Evaluator (Mathematics / Reasoning / Numerical Methods)｜Scientific-Computing SME (PDEs &amp; FEMs)<br>
+JP/EN｜日本数学会員｜日本応用数理学会員<br><br>
+
+<h3 class="news-title">Profiles</h3>
+<p class="news-cont">
+<a href="https://www.researchgate.net/profile/Hiroki-Ishizaka" rel="nofollow">ResearchGate</a>
+<a href="https://scholar.google.com/citations?user=kmHMrZIAAAAJ&amp;hl=ja" rel="nofollow">Google Scholar</a>
+<a href="https://researchmap.jp/3dns" rel="nofollow">researchmap</a>
+<a href="https://arxiv.org/search/math?searchtype=author&amp;query=Ishizaka,+H" rel="nofollow">arXiv</a>
+<a href="https://orcid.org/0000-0002-5892-7488" rel="nofollow">ORCID</a>
+<a href="https://sites.google.com/view/hiroki-ishizaka-website/home" rel="nofollow">Slides</a>
+<a href="https://x.com/teamfem16key" rel="nofollow">X</a>
+</p>
+
+<h3>Research philosophy</h3>
+<p>
+<b>Mathematics makes the invisible visible.</b>
+My primary interest is not merely to reproduce visible phenomena by computation.
+I am more interested in identifying and expressing the invisible mathematical structures
+that generate, constrain, or distort what we observe.
+</p>
+
+<p>
+In my research, the “invisible” includes discretisation error, the influence of mesh geometry,
+unresolved scales, latent states, memory, dissipation, and the limits of numerical prediction.
+These effects are not usually observed directly, but mathematics can represent them through
+operators, norms, memory kernels, measures, internal variables, geometric parameters,
+and computable error bounds.
+The aim is to determine what has been omitted, how the omitted structure acts on observable dynamics,
+and which conclusions remain mathematically valid.
+</p>
+
+<p>
+This philosophy leads to two mathematically distinct research programmes:
+</p>
+
+<ol>
+  <li>
+    <b>Certified finite element analysis under computable geometric conditions</b><br>
+    <b>計算可能な幾何条件に基づく，保証付き有限要素解析</b><br>
+    making discretisation error and the hidden influence of mesh geometry quantitatively visible;
+  </li>
+  <li>
+    <b>Stable reduction theory for unresolved dynamics</b><br>
+    <b>未解像ダイナミクスの安定縮約理論</b><br>
+    making the dynamical influence of eliminated scales and latent states visible through memory,
+    internal states, effective dissipation, and nonlocal closure.
+  </li>
+</ol>
+
+<p>
+The two programmes are not the same theory.
+Finite element analysis approximates PDEs in computable spaces,
+whereas stable reduction studies the consequences of eliminating variables or scales.
+Their connection is philosophical rather than merely methodological:
+both seek to reveal effects that approximation can hide.
+<b>Trustworthy simulation is one consequence of this work, not its sole starting point.</b>
+A computation becomes trustworthy when its invisible errors, unresolved influences,
+stability mechanisms, and range of validity have been mathematically represented and controlled.
+</p>
+
+<h3>Programme I — Certified finite element analysis</h3>
+<p>
+A computed finite element field does not by itself reveal why its error has a particular size,
+which geometric defect controls that error, or where the approximation may cease to be reliable.
+A central question in my finite element research is therefore:
+<b>how does the geometry of a computational mesh control approximation, stability, and certification?</b>
+I study computable geometric conditions, including semi-regularity and flatness-type parameters,
+and use them to develop anisotropic error estimates for nonstandard finite elements such as
+Crouzeix–Raviart, Morley, discontinuous Galerkin, Nitsche, and mixed methods.
+</p>
+
+<p>
+The long-term objective is to connect
+</p>
+
+\[
+  \text{scheme design}
+  \;\times\;
+  \text{mesh geometry}
+  \;\times\;
+  \text{error estimation}
+  \;\times\;
+  \text{verification}
+  \;\longrightarrow\;
+  \text{certified computation}.
+\]
+
+<p>
+This includes discrete Sobolev and Korn inequalities, equilibrated fluxes,
+hypercircle-type estimates, dual-weighted residual methods, pressure-robust flow discretisations,
+and computable certificates for quantities of interest.
+</p>
+
+<h3 id="stable-reduction">Programme II — Stable reduction theory for unresolved dynamics</h3>
+<p>
+I use the expression <b>stable reduction theory for unresolved dynamics</b> as an organising name
+for a mathematical programme that brings together memory equations, internal-state representations,
+nonlocal closure, structure-preserving reduction, and stability with respect to resolution and singular limits.
+It is not intended to denote one particular model-order-reduction algorithm.
+Rather, it identifies a common mathematical problem: how can unresolved variables be eliminated
+without erasing, misrepresenting, or destabilising the mechanisms through which they influence observable dynamics?
+</p>
+
+<p>
+Observable variables do not display every mechanism that governs their evolution.
+Eliminating unresolved variables is therefore not the same as setting their influence to zero.
+A reduced model may have fewer variables and still be dynamically wrong if it erases the mechanisms carried by discarded scales.
+Low-amplitude or weakly observed components may still control dissipation, instability, boundary and internal layers,
+scale-to-scale transfer, long-time statistics, or rare events.
+</p>
+
+<p>
+<b>Dimension reduction removes variables. Stable reduction removes variables without erasing their dynamical influence.</b>
+Here, “stable” does not refer only to the stability of a reduced finite-dimensional system.
+It also refers to the controlled transfer of energy, dissipation, causality, constraints,
+memory, and limiting structure from the full dynamics to the reduced description.
+The unresolved influence may survive as operator-valued memory, delayed or history-dependent forcing,
+effective dissipation, spatially nonlocal closure, internal states, or stochastic fluctuation.
+The central problem is therefore to determine what must remain after elimination,
+how accurately it must be represented, and which structural properties of the full dynamics survive reduction.
+</p>
+
+\[
+  \text{full dynamics}
+  \longrightarrow
+  \text{resolved / unresolved decomposition}
+  \longrightarrow
+  \text{elimination with retained influence}
+\]
+\[
+  \longrightarrow
+  \text{memory, internal states, or nonlocal closure}
+  \longrightarrow
+  \text{stable reduced dynamics}.
+\]
+
+<p>
+The objective is stronger than well-posedness of the reduced equation alone.
+A satisfactory reduction should retain, quantify, or correctly approximate the relevant stability,
+dissipation, causality, constraints, and singular-limit structure of the full system.
+It should also reveal when a chosen reduction suppresses an essential phenomenon.
+</p>
+
+<p>
+Current work provides analytical ingredients for this programme through graph-space well-posedness,
+positive-type and measure-valued memory, kernel stability, internal-variable representations,
+and singular limits such as memory concentration and vanishing instantaneous coercivity.
+The next stage is to derive and approximate kernels and closure operators directly from unresolved generators,
+with applications to convection-dominated diffusion, incompressible flow, multiscale systems,
+and data-informed reduced models.
+</p>
+
+<p>
+A further branch of the programme concerns <b>stable reconstruction from partial observations</b>.
+Not every unobserved variable should be eliminated: some latent states are physically or clinically meaningful
+and should remain as reconstruction targets, while finer unresolved variables are compressed into memory,
+effective internal states, nonlocal closure, or stochastic forcing.
+The resulting problem is to determine whether those retained latent states can be recovered stably from
+partial, noisy, and history-dependent observations, and to quantify how observation, kernel, closure,
+and initial-history errors propagate to reconstruction and prediction.
+</p>
+
+\[
+  \text{full dynamics}
+  \longrightarrow
+  \text{stable reduction}
+  \longrightarrow
+  \text{partial observation}
+\]
+\[
+  \longrightarrow
+  \text{latent-state reconstruction}
+  \longrightarrow
+  \text{prediction and intervention}.
+\]
+
+<p>
+This perspective includes, for example, the reconstruction of hidden internal states in multiscale physical systems
+and in disease-progression models, where directly visible measurements may not reveal the internal mechanisms
+that govern future evolution. The mathematical goal is not merely to fit hidden variables,
+but to establish observability, identifiability, stability, and uncertainty bounds for the reconstructed state.
+</p>
+
+<p>
+Central questions include:
+</p>
+<ul>
+  <li>Which unresolved mechanisms must be retained for the reduced model to remain dynamically faithful?</li>
+  <li>Which state space, energy, constraints, and dissipation mechanisms survive elimination?</li>
+  <li>Which latent states should be retained as reconstruction targets rather than eliminated?</li>
+  <li>Under which observability and identifiability conditions can those states be recovered from partial and noisy history-dependent data?</li>
+  <li>How do projection, observation, kernel, closure, and unresolved-initial-state errors propagate to reconstruction and resolved quantities?</li>
+  <li>Do reduction, reconstruction, discretisation, homogenisation, and singular limits commute?</li>
+  <li>How can lost or distorted phenomena be detected, bounded, and corrected?</li>
+</ul>
+
+<p>
+<a href="./fem/#vision18"><b>Research Vision 18: Stable reduction theory for unresolved dynamics</b></a>
+</p>
+
+<h3>Research architecture — G / R / A / V</h3>
+<p>
+The two programmes remain mathematically distinct, but they interact through four research lines.
+The links arise in structure-preserving approximation, multiscale error decomposition,
+and certification of what discretisation or reduction leaves unresolved:
+</p>
+<ul>
+  <li><b>G — Geometry &amp; Anisotropic FEM Theory</b><br>
+  Computable geometric parameters, semi-regular meshes, anisotropic interpolation,
+  nonconforming and mixed elements, discrete functional inequalities, and curved-domain geometry.</li>
+
+  <li><b>R — Reliable PDE Simulation &amp; Reduction</b><br>
+  Time-dependent and history-dependent PDEs, graph-space well-posedness,
+  stable reduction of unresolved dynamics, pressure-robust Stokes/Navier–Stokes methods,
+  and verified or goal-oriented error control.</li>
+
+  <li><b>A — Approximation, Automation &amp; Learning</b><br>
+  Adaptive FEM, mesh and method selection, structure-preserving approximation of memory and internal states,
+  data-informed kernel identification, and connections with PINNs, Deep Ritz, and meshless methods.</li>
+
+  <li><b>V — Verification, Formal Reasoning &amp; AI4Math</b><br>
+  Computable certificates, equilibrated-flux and goal-oriented bounds,
+  reproducible mathematical structure, AI-assisted reasoning, and future formalisation.</li>
+</ul>
+
+<h3>From invisible structure to trustworthy simulation</h3>
+<p>
+Trustworthy simulation is not the starting point of these programmes, but an important consequence.
+A visually plausible computation can still be wrong because discretisation leaves spatial or temporal structure unresolved,
+or because reduction deliberately eliminates variables and scales whose influence remains dynamically important.
+The mathematical task is to expose these hidden omissions and quantify their effects on stability,
+conservation, target quantities, extrapolation, and predictive validity.
+</p>
+
+<p>
+This perspective provides a reliability layer linking PDE analysis, numerical discretisation,
+stable reduction, and verification.
+It is relevant to digital twins, scientific machine learning, and data-informed models,
+where simulations increasingly inform practical decisions but their hidden errors and unresolved mechanisms
+cannot be judged from visual agreement alone.
+</p>
+
+<p>
+Broader contexts include Verification, Validation and Uncertainty Quantification
+(<a href="https://www.asme.org/codes-standards/publications-information/verification-validation-uncertainty" target="_blank">ASME VVUQ</a>),
+physics-informed learning and its failure modes
+(<a href="https://arxiv.org/abs/2109.01050" target="_blank">PINN failure modes</a>),
+and urban or disaster-oriented digital-twin simulation
+(<a href="https://www.city.kobe.lg.jp/a93584/516920176162.html" target="_blank">Kobe digital-twin project</a>).
+</p>
+
+<h3>Near-future directions</h3>
+<p>These directions develop mathematical representations of effects that are present but not directly visible.</p>
+<ul>
+  <li><b>Stable reduction without dynamical erasure:</b> identify which unresolved effects must survive as memory, internal states, effective dissipation, or nonlocal closure, and establish resolution- and singular-limit stability.</li>
+  <li><b>Stable latent-state reconstruction:</b> recover physically or clinically meaningful hidden states from partial, noisy, history-dependent observations, with observability, identifiability, and uncertainty estimates.</li>
+  <li><b>Structure-preserving memory discretisation:</b> combine finite internal states, convolution quadrature, and anisotropic CR–RT approximation.</li>
+  <li><b>Certified error control for decision-making:</b> provide computable error radii and certificates for quantities of interest.</li>
+  <li><b>Reliability layers for surrogates and physics-ML:</b> detect boundary-layer, extrapolation, conservation, and under-resolution failures.</li>
+  <li><b>AI4Math-ready numerical analysis:</b> organise geometric conditions, stability mechanisms, and error certificates in verifiable and reusable forms.</li>
+</ul>
+
+<h3>Website guide</h3>
+<ul>
+  <li><a href="./publications/">Publications</a> lists published and preprint results.</li>
+  <li><a href="./research/">Research</a> summarises completed and current research programmes.</li>
+  <li><a href="./fem/">Research Visions</a> collects open problems, long-term projects, and proposed directions.</li>
+  <li><a href="./geo/">History of Geometric Conditions in FEM</a> develops the geometric background of Line G.</li>
+  <li><a href="./blog/">Blog</a> and <a href="./suppl/">Supplementary Visions</a> contain explanatory and exploratory material.</li>
+</ul>
+
+<p><b><span style="color:red;">
+This site includes open research directions and proposals. Published and preprint results are labelled and linked on the Publications and Research pages.
+</span></b></p>
+
+<br><br>
+<img src="img/B3FA9639-3EF3-4219-8D87-0F18B9C47505_1_105_c.jpeg" width="120" height="120" border="4" alt="Niko-buchi gorge">
+<img src="img/732CF340-2E05-4258-B31F-B65F4A216D2C_1_105_c.jpeg" width="120" height="120" border="4" alt="Takahi submersible bridge">
+<img src="img/39D0B273-F3B6-4A3A-99A6-F0C33483FD5E_1_105_c.jpeg" width="120" height="120" border="4" alt="Cape Sada">
+<img src="img/WP_20151005_011.jpg" width="120" height="120" border="4" alt="Heidelberg University Library">
+<img src="img/mathematikon.jpg" width="120" height="120" border="4" alt="Mathematikon Heidelberg">
+<img src="img/heidelberg_castle.jpg" width="120" height="120" border="4" alt="Heidelberg Castle">
+<img src="img/WP_20151031_003.jpg" width="120" height="120" border="4" alt="Bammental, Germany"><br>
+<p>左から，にこ淵・高樋沈下橋・佐田岬・ハイデルベルク大学図書館・Mathematikon・ハイデルベルク城・ドイツ バンメンタール</p>
+</article>
+</div>
+
+
+<!--About me-->
+
+<!--What's New-->
+<h2>What's New</h2>
+
+<div class="news">
+<article class="news-item">
+
+<h3 class="news-title">"Stable Reduction of Unresolved Dynamics: An Operator-Theoretic Framework." [<a href="" target="_blank">Arxiv</a>]</h3>
+<div class="news-thumb">
+</div>
+<div class="news-date"><time datetime="2026-8-15">15 August 2026</time></div>
+<div class="news-cat">
+<span class="cat cat001">Update</span>
+</div>
+
+<h3 class="news-title">"Exact characterisation of maximum-angle conditions for spherical finite element meshes." [<a href="https://arxiv.org/abs/2608.11353" target="_blank">Arxiv</a>]</h3>
+<div class="news-thumb">
+</div>
+<div class="news-date"><time datetime="2026-8-12">12 August 2026</time></div>
+<div class="news-cat">
+<span class="cat cat001">Update</span>
+</div>
+
+
+<h3 class="news-title">"Weighted well-posedness and kernel stability for coercive evolution equations with measure-valued delays." [<a href="https://arxiv.org/abs/2602.19099" target="_blank">Arxiv</a>]</h3>
+<div class="news-thumb">
+</div>
+<div class="news-date"><time datetime="2026-7-22">22nd July 2026</time></div>
+<div class="news-cat">
+<span class="cat cat001">Update</span>
+</div>
+
+<h3 class="news-title">"Graph-space well-posedness for diffusion equations with degenerate instantaneous diffusion." [<a href="https://arxiv.org/abs/2607.12871" target="_blank">Arxiv</a>]</h3>
+<div class="news-thumb">
+</div>
+<div class="news-date"><time datetime="2026-7-15">15th July 2026</time></div>
+<div class="news-cat">
+<span class="cat cat001">Update</span>
+</div>
+
+<h3 class="news-title">"Coercivity structure of positive-type memory: exact gaps, critical horizons, and singular limits." [<a href="https://arxiv.org/abs/2607.12482" target="_blank">Arxiv</a>]</h3>
+<div class="news-thumb">
+</div>
+<div class="news-date"><time datetime="2026-7-14">14th July 2026</time></div>
+<div class="news-cat">
+<span class="cat cat001">Update</span>
+</div>
+
+<h3 class="news-title">"On discrete Sobolev inequalities for nonconforming finite elements under a semi-regular mesh condition." [<a href="https://arxiv.org/abs/2509.00505" target="_blank">Arxiv</a>]</h3>
+Published
+<div class="news-thumb">
+</div>
+<div class="news-date"><time datetime="2026-6-15">15th June 2026</time></div>
+<div class="news-cat">
+<span class="cat cat001">Information</span>
+</div>
+
+
+<h3 class="news-title">"Low-order CR-RT equilibrated-flux certification for semilinear problems on anisotropic meshes." [<a href="https://arxiv.org/abs/2602.01636" target="_blank">Arxiv</a>]</h3>
+<div class="news-thumb">
+</div>
+<div class="news-date"><time datetime="2026-6-11">11th June 2026</time></div>
+<div class="news-cat">
+<span class="cat cat001">Update</span>
+</div>
+
+<h3 class="news-title">"Exact-curved Lagrange finite elements for the Poisson problem in two dimensions." [<a href="https://arxiv.org/abs/2605.26566" target="_blank">Arxiv</a>]</h3>
+<div class="news-thumb">
+</div>
+<div class="news-date"><time datetime="2026-5-26">26th May 2026</time></div>
+<div class="news-cat">
+<span class="cat cat001">Update</span>
+</div>
+
+<h3 class="news-title">"Nitsche's method under a semi-regular mesh condition." [<a href="https://arxiv.org/abs/2501.06824" target="_blank">Arxiv</a>] </h3> Published
+<div class="news-thumb">
+</div>
+<div class="news-date"><time datetime="2025-6-26">26th June 2025</time></div>
+<div class="news-cat">
+<span class="cat cat001">Information</span>
+</div>
+
+<h3 class="news-title">"Interpolation error analysis using a new geometric
+parameter." [<a href="https://arxiv.org/pdf/2504.16012" target="_blank">Arxiv</a>]</h3>
+<div class="news-thumb">
+</div>
+<div class="news-date"><time datetime="2025-4-23">23rd April 2025</time></div>
+<div class="news-cat">
+<span class="cat cat001">Update</span>
+</div>
+
+<h3 class="news-title">"Anisotropic modified Crouzeix-Raviart finite element method for the stationary Navier-Stokes equation."  [<a href="https://arxiv.org/abs/2304.10214" target="_blank">Arxiv</a>]</h3> Published
+<div class="news-thumb">
+</div>
+<div class="news-date"><time datetime="2025-3-22">22nd March 2025</time></div>
+<div class="news-cat">
+<span class="cat cat001">Information</span>
+</div>
+
+
+<h3 class="news-title">"Morley finite element analysis for fourth-order elliptic equations under a semi-regular mesh condition." [<a href="https://arxiv.org/abs/2302.08719" target="_blank">Arxiv</a>]</h3> Published
+<div class="news-thumb">
+</div>
+<div class="news-date"><time datetime="2024-10-21">21st October 2024</time></div>
+<div class="news-cat">
+<span class="cat cat001">Information</span>
+</div>
+
+
+<h3 class="news-title">"Hybrid weakly over-penalised symmetric interior penalty method on anisotropic meshes." [<a href="https://arxiv.org/abs/2404.15288" target="_blank">Arxiv</a>]</h3> Published
+<div class="news-thumb">
+</div>
+<div class="news-date"><time datetime="2024-7-9">9th July 2024</time></div>
+<div class="news-cat">
+<span class="cat cat001">Information</span>
+</div>
+
+
+	
+</div>
+
+<div class="news-date"><time datetime="2026-8-15">15 August 2026</time></div>
+<div class="news-cat">
+<span class="cat cat001">Last Update</span>
+</div>
+
+
+</article>
+</div>
+<!--What's New-->
+
+
+</div><!--section-in-->
+</section>
+
+		</div>	
+	</main>
+	<!--▲メインコンテンツ-->
+	
+</div><!--main-body-in-->
+</div><!--main-body-->
+
+
+<!--▼サイトフッター-->
+<footer class="site-footer">
+	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<!--▲サイトフッター-->
+
+
+<!--▼ページトップ-->
+<p class="page-top"><a href="#top"><img class="over" src="./images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<!--▲ページトップ-->
+
+<script src="./js/utility.js" charset="utf-8"></script>
+<script src="./js/socialButton.js" charset="utf-8"></script>
+
+<!-- Top page revision: ver16, 2 August 2026 -->
+</body>
+</html>
