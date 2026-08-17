@@ -1,0 +1,17 @@
+name: SEO crawl audit
+
+on:
+  push:
+    paths:
+      - '.github/workflows/seo-crawl-audit.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit sitemap, canonicals and local links
+        run: python .github/scripts/seo-crawl-audit.py
