@@ -1,0 +1,27 @@
+name: Activate dedicated social card
+
+on:
+  push:
+    paths:
+      - '.github/workflows/activate-og-card.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Activate social card
+        run: python .github/scripts/activate-og-card.py
+      - name: Run final site audit
+        run: python .github/scripts/final-site-audit.py
+      - name: Commit updates
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add '*.html' '**/*.html'
+          git commit -m 'Activate dedicated social card across the site'
+          git push
