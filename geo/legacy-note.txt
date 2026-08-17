@@ -1,1 +1,0 @@
-Legacy geometric-conditions source is preserved in repository history and will remain available through the production migration.
