@@ -1,0 +1,118 @@
+name: Repair SEO metadata
+
+on:
+  push:
+    paths:
+      - '.github/workflows/seo-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Repair canonical titles and descriptions
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from urllib.parse import urlparse
+          import xml.etree.ElementTree as ET
+          import re, html
+
+          BASE='https://teamfem.github.io/hiroki_ishizaka/'
+          ns={'s':'http://www.sitemaps.org/schemas/sitemap/0.9'}
+          root=ET.parse('sitemap.xml').getroot()
+          urls=[e.text.strip() for e in root.findall('s:url/s:loc',ns) if e.text]
+
+          def strip_tags(s):
+              s=re.sub(r'<[^>]+>',' ',s,flags=re.S)
+              return ' '.join(html.unescape(s).split())
+
+          def meta_title(h1):
+              core=re.sub(r'^第\s*\d+\s*回[：:]\s*','',h1).strip()
+              suffix=' | Hiroki Ishizaka'
+              return core+suffix if len(core+suffix)<=70 else core
+
+          def generated_desc(h1):
+              core=re.sub(r'^第\s*\d+\s*回[：:]\s*','',h1).strip()
+              if len(core)>105:
+                  core=core[:102].rstrip('，、,:：;-―— ')+'…'
+              return f'{core}について，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．'
+
+          changed=[]
+          for url in urls:
+              p=urlparse(url).path
+              marker='/hiroki_ishizaka/'
+              if marker not in p: continue
+              rel=p.split(marker,1)[1]
+              if not rel.startswith('blog/posts/') or not rel.endswith('.html'):
+                  continue
+              path=Path(rel)
+              if not path.exists(): continue
+              text=path.read_text(encoding='utf-8')
+              m=re.search(r'<h1\b[^>]*>(.*?)</h1>',text,re.S|re.I)
+              if not m: continue
+              h1=strip_tags(m.group(1))
+              title=meta_title(h1)
+              if re.search(r'<title>.*?</title>',text,re.S|re.I):
+                  text=re.sub(r'<title>.*?</title>',f'<title>{html.escape(title)}</title>',text,count=1,flags=re.S|re.I)
+              else:
+                  text=text.replace('<head>','<head>\n<title>'+html.escape(title)+'</title>',1)
+
+              canonical=f'{BASE}{rel}'
+              if re.search(r'<link\s+[^>]*rel=["\']canonical["\'][^>]*>',text,re.I):
+                  text=re.sub(r'<link\s+[^>]*rel=["\']canonical["\'][^>]*>',f'<link rel="canonical" href="{canonical}">',text,count=1,flags=re.I)
+              else:
+                  anchor=re.search(r'<meta\s+name=["\']description["\'][^>]*>',text,re.I)
+                  if anchor:
+                      pos=anchor.end()
+                      text=text[:pos]+f'\n<link rel="canonical" href="{canonical}">'+text[pos:]
+                  else:
+                      text=text.replace('</head>',f'<link rel="canonical" href="{canonical}">\n</head>',1)
+
+              md=re.search(r'<meta\s+name=["\']description["\']\s+content=["\'](.*?)["\']\s*/?>',text,re.I|re.S)
+              current=html.unescape(md.group(1)).strip() if md else ''
+              generic=(not current or current=='Mathematics for Trustworthy Simulation' or len(current)<60 or len(current)>180)
+              if generic:
+                  desc=generated_desc(h1)
+                  tag=f'<meta name="description" content="{html.escape(desc, quote=True)}">'
+                  if md:
+                      text=text[:md.start()]+tag+text[md.end():]
+                  else:
+                      text=text.replace('</head>',tag+'\n</head>',1)
+
+              path.write_text(text,encoding='utf-8')
+              changed.append(str(path))
+
+          # Tighten three principal-page snippets flagged only for length.
+          principal={
+              Path('index.html'):{
+                  'title':'Hiroki Ishizaka | Certified FEM & Stable Reduction Theory'
+              },
+              Path('blog/index.html'):{
+                  'description':'Research notes on anisotropic finite element geometry, unresolved dynamics with memory, exact-curved FEM, certified computation and numerical methods.'
+              },
+              Path('geo/index.html'):{
+                  'description':'A historical map of geometric conditions in finite element analysis, from classical angle conditions to anisotropic interpolation and computable semi-regular geometry.'
+              }
+          }
+          for path,vals in principal.items():
+              if not path.exists(): continue
+              text=path.read_text(encoding='utf-8')
+              if 'title' in vals:
+                  text=re.sub(r'<title>.*?</title>',f'<title>{vals["title"]}</title>',text,count=1,flags=re.S|re.I)
+              if 'description' in vals:
+                  tag=f'<meta name="description" content="{html.escape(vals["description"],quote=True)}">'
+                  text=re.sub(r'<meta\s+name=["\']description["\'][^>]*>',tag,text,count=1,flags=re.I)
+              path.write_text(text,encoding='utf-8')
+          PY
+      - name: Commit repaired metadata
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html blog/index.html geo/index.html blog/posts/*.html
+          git commit -m 'Repair canonical titles and descriptions across Blog'
+          git push
