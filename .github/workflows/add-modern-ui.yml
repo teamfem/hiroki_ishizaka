@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Finalise shared UI and remove preview duplicates
+      - name: Finalise shared modern UI
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -38,6 +38,15 @@ jobs:
                   if '</body>' in text:
                       text = text.replace('</body>', f'<script src="{src}"></script>\n</body>', 1)
                       path.write_text(text, encoding='utf-8')
+
+          utility = Path('js/utility.js')
+          if utility.exists():
+              text = utility.read_text(encoding='utf-8')
+              if "../../js/modern-ui.js" not in text:
+                  needle = "  if(window.MathJax && MathJax.typesetPromise){MathJax.typesetPromise([article]).catch(function(){});}\n})();"
+                  replacement = "  if(!document.querySelector('script[src*=\\\"modern-ui.js\\\"]')){var ui=document.createElement('script');ui.src='../../js/modern-ui.js';document.body.appendChild(ui);}\n\n  if(window.MathJax && MathJax.typesetPromise){MathJax.typesetPromise([article]).catch(function(){});}\n})();"
+                  if needle in text:
+                      utility.write_text(text.replace(needle, replacement, 1), encoding='utf-8')
 
           geo_html = Path('geo/legacy-details.html')
           geo_txt = Path('geo/legacy-details.txt')
@@ -65,7 +74,7 @@ jobs:
               if path.exists():
                   path.unlink()
           PY
-      - name: Commit cleanup
+      - name: Commit changes
         run: |
           if git diff --quiet; then
             echo 'No changes needed.'
@@ -74,5 +83,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m 'Finalise modern site UI and remove preview files'
+          git commit -m 'Apply shared mobile UI to Blog posts'
           git push
