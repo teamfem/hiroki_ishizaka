@@ -1,0 +1,139 @@
+name: Add social metadata
+
+on:
+  push:
+    paths:
+      - '.github/workflows/add-social-meta.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add Open Graph and X Card metadata
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from urllib.parse import urlparse
+          from html.parser import HTMLParser
+          import xml.etree.ElementTree as ET
+          import re, html
+
+          BASE='https://teamfem.github.io/hiroki_ishizaka/'
+          IMAGE=BASE+'head_image.png'
+          SITE='Hiroki Ishizaka'
+          X_HANDLE='@teamfem16key'
+          ns={'s':'http://www.sitemaps.org/schemas/sitemap/0.9'}
+          urls=[e.text.strip() for e in ET.parse('sitemap.xml').getroot().findall('s:url/s:loc',ns) if e.text]
+
+          class HeadParser(HTMLParser):
+              def __init__(self):
+                  super().__init__(convert_charrefs=True)
+                  self.title=''; self.in_title=False
+                  self.description=''; self.canonical=''; self.lang=''
+              def handle_starttag(self,tag,attrs):
+                  a=dict(attrs)
+                  if tag=='html': self.lang=a.get('lang','')
+                  if tag=='title': self.in_title=True
+                  if tag=='meta' and (a.get('name') or '').lower()=='description':
+                      self.description=a.get('content','').strip()
+                  if tag=='link' and (a.get('rel') or '').lower()=='canonical':
+                      self.canonical=a.get('href','').strip()
+              def handle_endtag(self,tag):
+                  if tag=='title': self.in_title=False
+              def handle_data(self,data):
+                  if self.in_title: self.title+=data
+
+          def local_path(url):
+              p=urlparse(url).path
+              marker='/hiroki_ishizaka/'
+              if marker not in p: return None
+              rel=p.split(marker,1)[1]
+              if not rel: return Path('index.html')
+              if rel.endswith('/'): return Path(rel)/'index.html'
+              return Path(rel)
+
+          def strip_existing_social(text):
+              patterns=[
+                  r'\s*<meta\s+property=["\']og:[^>]+>\s*',
+                  r'\s*<meta\s+name=["\']twitter:[^>]+>\s*'
+              ]
+              for pat in patterns:
+                  text=re.sub(pat,'\n',text,flags=re.I)
+              return text
+
+          changed=[]
+          for url in urls:
+              path=local_path(url)
+              if path is None or not path.exists():
+                  continue
+              text=path.read_text(encoding='utf-8')
+              head=text.split('</head>',1)[0] if '</head>' in text else text
+              p=HeadParser(); p.feed(head)
+              title=' '.join(p.title.split())
+              desc=p.description
+              canonical=p.canonical or url
+              lang=(p.lang or '').lower()
+              locale='ja_JP' if lang.startswith('ja') else 'en_GB'
+              rel=urlparse(url).path.split('/hiroki_ishizaka/',1)[1]
+              ogtype='article' if rel.startswith('blog/posts/') else 'website'
+              image_alt='Hiroki Ishizaka — Numerical Analysis · PDEs · FEM'
+              block='\n'.join([
+                  '<!-- Social sharing metadata -->',
+                  f'<meta property="og:type" content="{ogtype}">',
+                  f'<meta property="og:site_name" content="{SITE}">',
+                  f'<meta property="og:locale" content="{locale}">',
+                  f'<meta property="og:title" content="{html.escape(title,quote=True)}">',
+                  f'<meta property="og:description" content="{html.escape(desc,quote=True)}">',
+                  f'<meta property="og:url" content="{html.escape(canonical,quote=True)}">',
+                  f'<meta property="og:image" content="{IMAGE}">',
+                  f'<meta property="og:image:alt" content="{html.escape(image_alt,quote=True)}">',
+                  '<meta name="twitter:card" content="summary_large_image">',
+                  f'<meta name="twitter:site" content="{X_HANDLE}">',
+                  f'<meta name="twitter:creator" content="{X_HANDLE}">',
+                  f'<meta name="twitter:title" content="{html.escape(title,quote=True)}">',
+                  f'<meta name="twitter:description" content="{html.escape(desc,quote=True)}">',
+                  f'<meta name="twitter:image" content="{IMAGE}">',
+                  f'<meta name="twitter:image:alt" content="{html.escape(image_alt,quote=True)}">'
+              ])
+              text=strip_existing_social(text)
+              text=text.replace('</head>',block+'\n</head>',1)
+              path.write_text(text,encoding='utf-8')
+              changed.append(str(path))
+
+          print('Updated social metadata on',len(changed),'pages')
+          PY
+      - name: Validate social metadata
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from urllib.parse import urlparse
+          import xml.etree.ElementTree as ET
+          import re
+          ns={'s':'http://www.sitemaps.org/schemas/sitemap/0.9'}
+          urls=[e.text.strip() for e in ET.parse('sitemap.xml').getroot().findall('s:url/s:loc',ns) if e.text]
+          count=0
+          for url in urls:
+              rel=urlparse(url).path.split('/hiroki_ishizaka/',1)[1]
+              path=Path('index.html') if not rel else (Path(rel)/'index.html' if rel.endswith('/') else Path(rel))
+              text=path.read_text(encoding='utf-8')
+              required=['og:title','og:description','og:url','og:image','twitter:card','twitter:title','twitter:description','twitter:image']
+              missing=[x for x in required if x not in text]
+              if missing:
+                  raise SystemExit(f'{path}: missing {missing}')
+              count+=1
+          if count != len(urls):
+              raise SystemExit(f'Validated {count} of {len(urls)} pages')
+          print('Validated social metadata on',count,'pages')
+          PY
+      - name: Commit social metadata
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html publications/index.html research/index.html fem/index.html suppl/index.html blog/index.html geo/index.html links/index.html contact/index.html blog/posts/*.html
+          git commit -m 'Add Open Graph and X Card metadata across site'
+          git push
