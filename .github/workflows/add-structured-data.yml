@@ -20,7 +20,7 @@ jobs:
           from urllib.parse import urlparse
           from html.parser import HTMLParser
           import xml.etree.ElementTree as ET
-          import json, re, html
+          import json
 
           BASE='https://teamfem.github.io/hiroki_ishizaka/'
           PERSON_ID=BASE+'#person'
@@ -38,19 +38,24 @@ jobs:
           class P(HTMLParser):
               def __init__(self):
                   super().__init__(convert_charrefs=True)
+                  self.in_head=False
                   self.title=''; self.in_title=False
                   self.h1=''; self.in_h1=False; self.h1buf=[]
                   self.description=''; self.canonical=''; self.lang=''
               def handle_starttag(self,tag,attrs):
                   a=dict(attrs)
                   if tag=='html': self.lang=a.get('lang','')
-                  if tag=='title': self.in_title=True
+                  if tag=='head': self.in_head=True
+                  if tag=='title' and self.in_head: self.in_title=True
                   if tag=='h1' and not self.h1:
                       self.in_h1=True; self.h1buf=[]
-                  if tag=='meta' and (a.get('name') or '').lower()=='description': self.description=a.get('content','').strip()
-                  if tag=='link' and (a.get('rel') or '').lower()=='canonical': self.canonical=a.get('href','').strip()
+                  if self.in_head and tag=='meta' and (a.get('name') or '').lower()=='description':
+                      self.description=a.get('content','').strip()
+                  if self.in_head and tag=='link' and (a.get('rel') or '').lower()=='canonical':
+                      self.canonical=a.get('href','').strip()
               def handle_endtag(self,tag):
-                  if tag=='title': self.in_title=False
+                  if tag=='title' and self.in_title: self.in_title=False
+                  if tag=='head': self.in_head=False
                   if tag=='h1' and self.in_h1:
                       self.h1=' '.join(''.join(self.h1buf).split()); self.in_h1=False
               def handle_data(self,data):
@@ -73,6 +78,10 @@ jobs:
               '@type':'WebSite','@id':WEBSITE_ID,'url':BASE,'name':'Hiroki Ishizaka',
               'publisher':{'@id':PERSON_ID},'inLanguage':'en-GB'
           }
+          blog={
+              '@type':'Blog','@id':BLOG_ID,'url':BASE+'blog/','name':'Blog | Hiroki Ishizaka',
+              'publisher':{'@id':PERSON_ID},'isPartOf':{'@id':WEBSITE_ID}
+          }
 
           ns={'s':'http://www.sitemaps.org/schemas/sitemap/0.9'}
           urls=[e.text.strip() for e in ET.parse('sitemap.xml').getroot().findall('s:url/s:loc',ns) if e.text]
@@ -87,12 +96,9 @@ jobs:
               return Path(rel)
 
           def page_type(rel):
-              if rel=='': return 'WebPage'
               if rel=='publications/': return 'CollectionPage'
-              if rel=='blog/': return 'Blog'
               if rel=='contact/': return 'ContactPage'
-              if rel in ('research/','fem/','suppl/','geo/','links/'):
-                  return 'CollectionPage' if rel in ('fem/','suppl/','links/') else 'WebPage'
+              if rel in ('fem/','suppl/','links/'): return 'CollectionPage'
               return 'WebPage'
 
           for url in urls:
@@ -106,7 +112,6 @@ jobs:
               desc=p.description
               lang=p.lang or ('ja' if rel.startswith('blog/posts/') else 'en-GB')
 
-              graph=[]
               if rel=='':
                   graph=[person,website,{
                       '@type':'WebPage','@id':BASE+'#webpage','url':BASE,
@@ -130,26 +135,30 @@ jobs:
                               {'@type':'ListItem','position':2,'name':'Blog','item':BASE+'blog/'},
                               {'@type':'ListItem','position':3,'name':headline,'item':canonical}
                           ]
-                      }
+                      },
+                      person,blog
                   ]
               elif rel=='blog/':
-                  graph=[
-                      {'@type':'Blog','@id':BLOG_ID,'url':canonical,'name':'Blog | Hiroki Ishizaka',
-                       'description':desc,'author':{'@id':PERSON_ID},'publisher':{'@id':PERSON_ID},
-                       'isPartOf':{'@id':WEBSITE_ID},'inLanguage':lang},
-                      person
-                  ]
+                  blog_page=dict(blog)
+                  blog_page['description']=desc
+                  blog_page['author']={'@id':PERSON_ID}
+                  blog_page['inLanguage']=lang
+                  graph=[blog_page,person,website]
               else:
                   graph=[
                       {'@type':page_type(rel),'@id':canonical+'#webpage','url':canonical,
                        'name':' '.join(p.title.split()),'description':desc,
                        'isPartOf':{'@id':WEBSITE_ID},'about':{'@id':PERSON_ID},'inLanguage':lang},
-                      person
+                      person,website
                   ]
 
               data={'@context':'https://schema.org','@graph':graph}
               block='<script id="site-structured-data" type="application/ld+json">\n'+json.dumps(data,ensure_ascii=False,indent=2)+'\n</script>'
-              text=re.sub(r'\n?<script id=["\']site-structured-data["\'] type=["\']application/ld\+json["\]>.*?</script>\n?', '\n', text, flags=re.S|re.I)
+              marker='<script id="site-structured-data" type="application/ld+json">'
+              if marker in text:
+                  start=text.index(marker)
+                  end=text.index('</script>',start)+len('</script>')
+                  text=text[:start].rstrip()+'\n'+text[end:].lstrip('\n')
               text=text.replace('</head>',block+'\n</head>',1)
               path.write_text(text,encoding='utf-8')
           PY
@@ -158,13 +167,17 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import re, json
-          files=list(Path('.').rglob('*.html'))
           found=0
-          for path in files:
+          for path in Path('.').rglob('*.html'):
               text=path.read_text(encoding='utf-8',errors='ignore')
               m=re.search(r'<script id="site-structured-data" type="application/ld\+json">(.*?)</script>',text,re.S)
               if not m: continue
-              json.loads(m.group(1)); found+=1
+              data=json.loads(m.group(1))
+              if data.get('@context')!='https://schema.org':
+                  raise SystemExit(f'Bad context in {path}')
+              if not data.get('@graph'):
+                  raise SystemExit(f'Empty graph in {path}')
+              found+=1
           if found < 67:
               raise SystemExit(f'Expected structured data on at least 67 pages, found {found}')
           print('Validated structured data on',found,'pages')
