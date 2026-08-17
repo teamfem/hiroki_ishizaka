@@ -1,10 +1,37 @@
 from pathlib import Path
 from urllib.parse import urlparse
-import re, xml.etree.ElementTree as ET
+import re, xml.etree.ElementTree as ET, html
 
 OLD='https://teamfem.github.io/hiroki_ishizaka/head_image.png'
 NEW='https://teamfem.github.io/hiroki_ishizaka/og-card.png'
 changed=[]
+
+def get_content_meta(s,name):
+    m=re.search(r'<meta\b(?=[^>]*\bname=["\']'+re.escape(name)+r'["\'])[^>]*\bcontent=["\']([^"\']*)["\'][^>]*>',s,re.I)
+    if not m:
+        m=re.search(r'<meta\b(?=[^>]*\bcontent=["\']([^"\']*)["\'])(?=[^>]*\bname=["\']'+re.escape(name)+r'["\'])[^>]*>',s,re.I)
+    return html.unescape(m.group(1)) if m else ''
+
+def get_canonical(s):
+    m=re.search(r'<link\b(?=[^>]*\brel=["\']canonical["\'])[^>]*\bhref=["\']([^"\']+)["\'][^>]*>',s,re.I)
+    return html.unescape(m.group(1)) if m else ''
+
+def get_title(s):
+    m=re.search(r'<title>(.*?)</title>',s,re.I|re.S)
+    return html.unescape(re.sub(r'\s+',' ',m.group(1)).strip()) if m else ''
+
+def social_block(s,p):
+    title=get_title(s)
+    desc=get_content_meta(s,'description')
+    canonical=get_canonical(s)
+    if not title or not desc or not canonical:
+        raise RuntimeError(f'{p}: cannot construct social metadata')
+    langm=re.search(r'<html\b[^>]*\blang=["\']([^"\']+)',s,re.I)
+    lang=(langm.group(1) if langm else 'en').lower()
+    locale='ja_JP' if lang.startswith('ja') else 'en_GB'
+    typ='article' if p.parts[:2]==('blog','posts') else 'website'
+    e=lambda x: html.escape(x,quote=True)
+    return f'''\n<!-- Social sharing metadata -->\n<meta property="og:type" content="{typ}">\n<meta property="og:site_name" content="Hiroki Ishizaka">\n<meta property="og:locale" content="{locale}">\n<meta property="og:title" content="{e(title)}">\n<meta property="og:description" content="{e(desc)}">\n<meta property="og:url" content="{e(canonical)}">\n<meta property="og:image" content="{NEW}">\n<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n<meta property="og:image:type" content="image/png">\n<meta property="og:image:alt" content="Hiroki Ishizaka — Numerical Analysis · PDEs · FEM">\n<meta name="twitter:card" content="summary_large_image">\n<meta name="twitter:site" content="@teamfem16key">\n<meta name="twitter:creator" content="@teamfem16key">\n<meta name="twitter:title" content="{e(title)}">\n<meta name="twitter:description" content="{e(desc)}">\n<meta name="twitter:image" content="{NEW}">\n<meta name="twitter:image:alt" content="Hiroki Ishizaka — Numerical Analysis · PDEs · FEM">\n'''
 
 for p in sorted(Path('.').rglob('*.html')):
     if '.github' in p.parts or p.name.startswith('google'):
@@ -12,7 +39,13 @@ for p in sorted(Path('.').rglob('*.html')):
     s=p.read_text(encoding='utf-8')
     original=s
     s=s.replace(OLD,NEW)
-    if '<meta property="og:image"' in s and 'property="og:image:width"' not in s:
+    if '<meta property="og:image"' not in s:
+        if '</head>' not in s.lower():
+            raise RuntimeError(f'{p}: head closing tag missing')
+        block=social_block(s,p)
+        pos=s.lower().rfind('</head>')
+        s=s[:pos]+block+s[pos:]
+    elif 'property="og:image:width"' not in s:
         m=re.search(r'<meta property="og:image"[^>]*>',s,re.I)
         if m:
             extra='\n<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">\n<meta property="og:image:type" content="image/png">'
