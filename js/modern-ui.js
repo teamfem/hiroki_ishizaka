@@ -20,7 +20,7 @@
 .mobile-nav-panel-inner{width:min(1160px,100%);margin:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}\
 .mobile-nav-panel a{display:block;padding:11px 13px;border:1px solid #e6ebf1;border-radius:12px;background:#fff;color:#34445a;font-size:.88rem;font-weight:700}\
 .mobile-nav-panel a:hover{color:#245b8a;border-color:#cbd8e5}\
-@media(max-width:820px){.mobile-nav-toggle{display:flex}.site-toplink{right:16px;bottom:16px}.topbar{overflow:visible}}\
+@media(max-width:940px){.topbar .navlinks{display:none}.mobile-nav-toggle{display:flex}.site-toplink{right:16px;bottom:16px}.topbar{overflow:visible}}\
 @media(max-width:520px){.mobile-nav-panel-inner{grid-template-columns:1fr}.mobile-nav-panel{padding-left:12px;padding-right:12px}.site-toplink{right:14px;bottom:14px;width:44px;height:44px}}\
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.site-toplink,.mobile-nav-toggle span{transition:none}}';
     document.head.appendChild(style);
@@ -94,7 +94,7 @@
     toggle.addEventListener('click',function(){panel.classList.contains('is-open')?close():open();});
     inner.addEventListener('click',close);
     document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
-    window.addEventListener('resize',function(){if(window.innerWidth>820)close();},{passive:true});
+    window.addEventListener('resize',function(){if(window.innerWidth>940)close();},{passive:true});
   }
 
   function init(){
