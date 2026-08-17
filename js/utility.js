@@ -1,4 +1,5 @@
-jQuery.noConflict();
+if(window.jQuery){
+  jQuery.noConflict();
 (function($) {
 	
 		//マウスオーバー（ファイルの末尾に「_off」「_on」で切り替え）
@@ -95,6 +96,7 @@ jQuery.noConflict();
 		});
 	
 })(jQuery);
+}
 
 /* Modern Blog post shell -------------------------------------------------- */
 (function(){
