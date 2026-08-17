@@ -37,11 +37,11 @@ jobs:
 
           def generated_desc(h1):
               core=re.sub(r'^第\s*\d+\s*回[：:]\s*','',h1).strip()
+              core=re.sub(r'\\\([^)]*\\\)|\\\[[^]]*\\\]','',core).strip()
               if len(core)>105:
                   core=core[:102].rstrip('，、,:：;-―— ')+'…'
               return f'{core}について，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．'
 
-          changed=[]
           for url in urls:
               p=urlparse(url).path
               marker='/hiroki_ishizaka/'
@@ -56,37 +56,37 @@ jobs:
               if not m: continue
               h1=strip_tags(m.group(1))
               title=meta_title(h1)
+              title_tag=f'<title>{html.escape(title)}</title>'
               if re.search(r'<title>.*?</title>',text,re.S|re.I):
-                  text=re.sub(r'<title>.*?</title>',f'<title>{html.escape(title)}</title>',text,count=1,flags=re.S|re.I)
+                  text=re.sub(r'<title>.*?</title>',lambda _: title_tag,text,count=1,flags=re.S|re.I)
               else:
-                  text=text.replace('<head>','<head>\n<title>'+html.escape(title)+'</title>',1)
+                  text=text.replace('<head>','<head>\n'+title_tag,1)
 
               canonical=f'{BASE}{rel}'
+              canonical_tag=f'<link rel="canonical" href="{canonical}">'
               if re.search(r'<link\s+[^>]*rel=["\']canonical["\'][^>]*>',text,re.I):
-                  text=re.sub(r'<link\s+[^>]*rel=["\']canonical["\'][^>]*>',f'<link rel="canonical" href="{canonical}">',text,count=1,flags=re.I)
+                  text=re.sub(r'<link\s+[^>]*rel=["\']canonical["\'][^>]*>',lambda _: canonical_tag,text,count=1,flags=re.I)
               else:
                   anchor=re.search(r'<meta\s+name=["\']description["\'][^>]*>',text,re.I)
                   if anchor:
                       pos=anchor.end()
-                      text=text[:pos]+f'\n<link rel="canonical" href="{canonical}">'+text[pos:]
+                      text=text[:pos]+'\n'+canonical_tag+text[pos:]
                   else:
-                      text=text.replace('</head>',f'<link rel="canonical" href="{canonical}">\n</head>',1)
+                      text=text.replace('</head>',canonical_tag+'\n</head>',1)
 
               md=re.search(r'<meta\s+name=["\']description["\']\s+content=["\'](.*?)["\']\s*/?>',text,re.I|re.S)
               current=html.unescape(md.group(1)).strip() if md else ''
               generic=(not current or current=='Mathematics for Trustworthy Simulation' or len(current)<60 or len(current)>180)
               if generic:
                   desc=generated_desc(h1)
-                  tag=f'<meta name="description" content="{html.escape(desc, quote=True)}">'
+                  desc_tag=f'<meta name="description" content="{html.escape(desc, quote=True)}">'
                   if md:
-                      text=text[:md.start()]+tag+text[md.end():]
+                      text=text[:md.start()]+desc_tag+text[md.end():]
                   else:
-                      text=text.replace('</head>',tag+'\n</head>',1)
+                      text=text.replace('</head>',desc_tag+'\n</head>',1)
 
               path.write_text(text,encoding='utf-8')
-              changed.append(str(path))
 
-          # Tighten three principal-page snippets flagged only for length.
           principal={
               Path('index.html'):{
                   'title':'Hiroki Ishizaka | Certified FEM & Stable Reduction Theory'
@@ -102,10 +102,11 @@ jobs:
               if not path.exists(): continue
               text=path.read_text(encoding='utf-8')
               if 'title' in vals:
-                  text=re.sub(r'<title>.*?</title>',f'<title>{vals["title"]}</title>',text,count=1,flags=re.S|re.I)
+                  tag=f'<title>{vals["title"]}</title>'
+                  text=re.sub(r'<title>.*?</title>',lambda _: tag,text,count=1,flags=re.S|re.I)
               if 'description' in vals:
                   tag=f'<meta name="description" content="{html.escape(vals["description"],quote=True)}">'
-                  text=re.sub(r'<meta\s+name=["\']description["\'][^>]*>',tag,text,count=1,flags=re.I)
+                  text=re.sub(r'<meta\s+name=["\']description["\'][^>]*>',lambda _: tag,text,count=1,flags=re.I)
               path.write_text(text,encoding='utf-8')
           PY
       - name: Commit repaired metadata
