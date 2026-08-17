@@ -1,0 +1,25 @@
+name: Enhance BlogPosting schema
+
+on:
+  push:
+    paths:
+      - '.github/workflows/enhance-blogposting-schema.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  enhance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enhance and validate BlogPosting metadata
+        run: python .github/scripts/enhance-blogposting-schema.py
+      - name: Commit enhanced article metadata
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add blog/posts/*.html
+          git commit -m 'Add publication dates and series metadata to BlogPosting schema'
+          git push
