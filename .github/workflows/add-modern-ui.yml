@@ -1,4 +1,4 @@
-name: Add modern UI controls
+name: Modern site cleanup
 
 on:
   push:
@@ -9,11 +9,11 @@ permissions:
   contents: write
 
 jobs:
-  update-modern-pages:
+  cleanup-modern-site:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Add shared back-to-top script to modern pages
+      - name: Finalise shared UI and remove preview duplicates
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -33,15 +33,39 @@ jobs:
               if not path.exists():
                   continue
               text = path.read_text(encoding='utf-8')
-              if 'modern.css' not in text or 'modern-ui.js' in text:
-                  continue
-              src = './js/modern-ui.js' if path.parent == Path('.') else '../js/modern-ui.js'
-              marker = '</body>'
-              if marker in text:
-                  text = text.replace(marker, f'<script src="{src}"></script>\n{marker}', 1)
-                  path.write_text(text, encoding='utf-8')
+              if 'modern.css' in text and 'modern-ui.js' not in text:
+                  src = './js/modern-ui.js' if path.parent == Path('.') else '../js/modern-ui.js'
+                  if '</body>' in text:
+                      text = text.replace('</body>', f'<script src="{src}"></script>\n</body>', 1)
+                      path.write_text(text, encoding='utf-8')
+
+          geo_html = Path('geo/legacy-details.html')
+          geo_txt = Path('geo/legacy-details.txt')
+          if geo_html.exists() and not geo_txt.exists():
+              geo_html.rename(geo_txt)
+          geo_index = Path('geo/index.html')
+          if geo_index.exists():
+              text = geo_index.read_text(encoding='utf-8')
+              text = text.replace("./legacy-details.html", "./legacy-details.txt")
+              geo_index.write_text(text, encoding='utf-8')
+
+          previews = [
+              Path('modern-home-preview.html'),
+              Path('research/modern-preview.html'),
+              Path('publications/modern-preview.html'),
+              Path('fem/modern-preview.html'),
+              Path('suppl/modern-preview.html'),
+              Path('blog/modern-preview.html'),
+              Path('geo/modern-preview.html'),
+              Path('links/modern-preview.html'),
+              Path('blog/posts/anisotropic-geometry-01-modern-preview.html'),
+              Path('geo/legacy-note.txt'),
+          ]
+          for path in previews:
+              if path.exists():
+                  path.unlink()
           PY
-      - name: Commit changes
+      - name: Commit cleanup
         run: |
           if git diff --quiet; then
             echo 'No changes needed.'
@@ -49,6 +73,6 @@ jobs:
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html research/index.html publications/index.html fem/index.html suppl/index.html blog/index.html geo/index.html links/index.html
-          git commit -m 'Attach back-to-top control to modern pages'
+          git add -A
+          git commit -m 'Finalise modern site UI and remove preview files'
           git push
