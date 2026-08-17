@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,有限要素法,Finite Element Method,最大角条件,maximum angle condition,maximal angle condition,Babuska Aziz,Babuška–Aziz,異方性メッシュ,anisotropic mesh,circumradius condition,semi-regularity,a posteriori error estimator,false convergence">
-<meta name="description" content="Apel–Eckardt–Haubner–Kempfの論文を基に，最大角条件を破るBabuška–Azizメッシュ上で，有限要素解同士は近づいても厳密解へ収束しない現象を検証する．circumradius，semi-regular parameter，最小角・最大角・異方性の違い，事後誤差評価，fine-mesh referenceの危険性を整理する．">
+<meta name="description" content="最大角条件を破る三角形分割で，有限要素解が見かけ上収束しても真の解へ収束しないBabuška–Aziz反例を解説します．">
 <link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/paradoxes-pitfalls-02.html">
 
 <link rel="stylesheet" href="../../css/base.css">
@@ -32,7 +32,7 @@
       "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/paradoxes-pitfalls-02.html#article",
       "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/paradoxes-pitfalls-02.html",
       "headline": "有限要素解は収束しているのに正解へ収束しない――最大角条件とBabuška–Aziz反例",
-      "description": "Apel–Eckardt–Haubner–Kempfの論文を基に，最大角条件を破るBabuška–Azizメッシュ上で，有限要素解同士は近づいても厳密解へ収束しない現象を検証する．circumradius，semi-regular parameter，最小角・最大角・異方性の違い，事後誤差評価，fine-mesh referenceの危険性を整理する．",
+      "description": "最大角条件を破る三角形分割で，有限要素解が見かけ上収束しても真の解へ収束しないBabuška–Aziz反例を解説します．",
       "author": {
         "@id": "https://teamfem.github.io/hiroki_ishizaka/#person"
       },
@@ -112,7 +112,7 @@
 <meta property="og:site_name" content="Hiroki Ishizaka">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="有限要素解は収束しているのに正解へ収束しない ――最大角条件とBabuška–Aziz反例 | Hiroki Ishizaka">
-<meta property="og:description" content="Apel–Eckardt–Haubner–Kempfの論文を基に，最大角条件を破るBabuška–Azizメッシュ上で，有限要素解同士は近づいても厳密解へ収束しない現象を検証する．circumradius，semi-regular parameter，最小角・最大角・異方性の違い，事後誤差評価，fine-mesh referenceの危険性を整理する．">
+<meta property="og:description" content="最大角条件を破る三角形分割で，有限要素解が見かけ上収束しても真の解へ収束しないBabuška–Aziz反例を解説します．">
 <meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/paradoxes-pitfalls-02.html">
 <meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/head_image.png">
 <meta property="og:image:alt" content="Hiroki Ishizaka — Numerical Analysis · PDEs · FEM">
@@ -120,7 +120,7 @@
 <meta name="twitter:site" content="@teamfem16key">
 <meta name="twitter:creator" content="@teamfem16key">
 <meta name="twitter:title" content="有限要素解は収束しているのに正解へ収束しない ――最大角条件とBabuška–Aziz反例 | Hiroki Ishizaka">
-<meta name="twitter:description" content="Apel–Eckardt–Haubner–Kempfの論文を基に，最大角条件を破るBabuška–Azizメッシュ上で，有限要素解同士は近づいても厳密解へ収束しない現象を検証する．circumradius，semi-regular parameter，最小角・最大角・異方性の違い，事後誤差評価，fine-mesh referenceの危険性を整理する．">
+<meta name="twitter:description" content="最大角条件を破る三角形分割で，有限要素解が見かけ上収束しても真の解へ収束しないBabuška–Aziz反例を解説します．">
 <meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/head_image.png">
 <meta name="twitter:image:alt" content="Hiroki Ishizaka — Numerical Analysis · PDEs · FEM">
 </head>
