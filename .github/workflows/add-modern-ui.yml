@@ -1,0 +1,54 @@
+name: Add modern UI controls
+
+on:
+  push:
+    paths:
+      - '.github/workflows/add-modern-ui.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  update-modern-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add shared back-to-top script to modern pages
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          targets = [
+              Path('index.html'),
+              Path('research/index.html'),
+              Path('publications/index.html'),
+              Path('fem/index.html'),
+              Path('suppl/index.html'),
+              Path('blog/index.html'),
+              Path('geo/index.html'),
+              Path('links/index.html'),
+          ]
+
+          for path in targets:
+              if not path.exists():
+                  continue
+              text = path.read_text(encoding='utf-8')
+              if 'modern.css' not in text or 'modern-ui.js' in text:
+                  continue
+              src = './js/modern-ui.js' if path.parent == Path('.') else '../js/modern-ui.js'
+              marker = '</body>'
+              if marker in text:
+                  text = text.replace(marker, f'<script src="{src}"></script>\n{marker}', 1)
+                  path.write_text(text, encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            echo 'No changes needed.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html research/index.html publications/index.html fem/index.html suppl/index.html blog/index.html geo/index.html links/index.html
+          git commit -m 'Attach back-to-top control to modern pages'
+          git push
