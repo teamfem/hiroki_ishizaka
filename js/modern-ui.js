@@ -26,6 +26,17 @@
     document.head.appendChild(style);
   }
 
+  function ensureContactLink(){
+    var desktop=document.querySelector('.topbar .navlinks');
+    if(!desktop) return;
+    var exists=Array.prototype.some.call(desktop.querySelectorAll('a'),function(a){return a.textContent.trim().toLowerCase()==='contact';});
+    if(exists) return;
+    var link=document.createElement('a');
+    link.href='/hiroki_ishizaka/contact/';
+    link.textContent='Contact';
+    desktop.appendChild(link);
+  }
+
   function initBackToTop(){
     if(document.querySelector('.site-toplink,.article-toplink')) return;
     var button=document.createElement('button');
@@ -88,6 +99,7 @@
 
   function init(){
     addSharedStyles();
+    ensureContactLink();
     initMobileNav();
     initBackToTop();
   }
