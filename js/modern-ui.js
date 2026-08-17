@@ -62,14 +62,28 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
       {href:base+'links/',label:'Links'},
       {href:base+'contact/',label:'Contact'}
     ];
+    var links=desktop.querySelectorAll('a');
+
+    // Static HTML is the source of truth. Rebuild only as a fallback if a
+    // future page is unexpectedly missing navigation entries.
+    if(links.length<items.length){
+      desktop.textContent='';
+      items.forEach(function(item){
+        var link=document.createElement('a');
+        link.href=item.href;
+        link.textContent=item.label;
+        desktop.appendChild(link);
+      });
+      links=desktop.querySelectorAll('a');
+    }
+
     var path=window.location.pathname;
-    desktop.textContent='';
-    items.forEach(function(item){
-      var link=document.createElement('a');
-      link.href=item.href;
-      link.textContent=item.label;
-      if(path.indexOf(item.href)===0) link.setAttribute('aria-current','page');
-      desktop.appendChild(link);
+    links.forEach(function(link){
+      link.removeAttribute('aria-current');
+      try{
+        var target=new URL(link.href,window.location.href).pathname;
+        if(target!==base && path.indexOf(target)===0) link.setAttribute('aria-current','page');
+      }catch(e){}
     });
   }
 
