@@ -4,8 +4,6 @@ import re
 posts=sorted(Path('blog/posts').glob('*.html'))
 changed=0
 
-legacy='''<link rel="stylesheet" href="../../css/base.css">
-<link rel="stylesheet" href="../../css/rwd.css">'''
 modern='''<link rel="stylesheet" href="../../css/modern.css">
 <link rel="stylesheet" href="../../css/blog-post-modern.css">
 <noscript>
@@ -13,13 +11,29 @@ modern='''<link rel="stylesheet" href="../../css/modern.css">
 <link rel="stylesheet" href="../../css/rwd.css">
 </noscript>'''
 
+base_re=re.compile(r'<link\b(?=[^>]*href=["\']\.\./\.\./css/base\.css["\'])[^>]*>\s*',re.I)
+rwd_re=re.compile(r'<link\b(?=[^>]*href=["\']\.\./\.\./css/rwd\.css["\'])[^>]*>\s*',re.I)
+jq_re=re.compile(r'<script\b(?=[^>]*src=["\'][^"\']*/js/(?:jquery|jquery-migrate)\.js["\'])[^>]*>\s*</script>\s*',re.I)
+
 for p in posts:
     text=p.read_text(encoding='utf-8')
     original=text
-    if legacy in text:
-        text=text.replace(legacy,modern,1)
-    elif '../../css/modern.css' not in text or '../../css/blog-post-modern.css' not in text:
-        raise RuntimeError(f'Unexpected stylesheet block in {p}')
+
+    if '../../css/modern.css' not in text or '../../css/blog-post-modern.css' not in text:
+        matches=list(base_re.finditer(text))+list(rwd_re.finditer(text))
+        if not matches:
+            raise RuntimeError(f'Legacy stylesheet markers not found in {p}')
+        first=min(m.start() for m in matches)
+        prefix=text[:first]
+        suffix=text[first:]
+        suffix=base_re.sub('',suffix)
+        suffix=rwd_re.sub('',suffix)
+        text=prefix+modern+'\n'+suffix
+
+    # Some older posts used a different attribute order and escaped the
+    # previous jQuery-removal pass. Modern posts no longer need jQuery.
+    text=jq_re.sub('',text)
+
     if text!=original:
         p.write_text(text,encoding='utf-8')
         changed+=1
@@ -95,6 +109,11 @@ for p in posts:
     if t.count('href="../../css/blog-post-modern.css"')!=1: raise RuntimeError(f'{p}: blog modern CSS count wrong')
     if '<noscript>' not in t or 'href="../../css/base.css"' not in t or 'href="../../css/rwd.css"' not in t:
         raise RuntimeError(f'{p}: no-JS legacy CSS fallback missing')
+    active=re.sub(r'<noscript\b[^>]*>.*?</noscript>','',t,flags=re.I|re.S)
+    if re.search(r'href=["\']\.\./\.\./css/(?:base|rwd)\.css["\']',active,re.I):
+        raise RuntimeError(f'{p}: active legacy stylesheet remains')
+    if re.search(r'<script\b(?=[^>]*src=["\'][^"\']*/js/(?:jquery|jquery-migrate)\.js["\'])',t,re.I):
+        raise RuntimeError(f'{p}: jQuery script remains')
 
 uc=u.read_text(encoding='utf-8')
 for marker in ('var originalTitle=document.title;','publishedDateFromStructuredData','formatISODate(publishedDateFromStructuredData())'):
