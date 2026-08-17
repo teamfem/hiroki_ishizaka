@@ -56,6 +56,8 @@ jobs:
               if not m: continue
               h1=strip_tags(m.group(1))
               title=meta_title(h1)
+              if path.name=='article10may26_5.html':
+                  title='CIP法の二つの顔：Constrained Profile法とInterior Penalty法 | Hiroki Ishizaka'
               title_tag=f'<title>{html.escape(title)}</title>'
               if re.search(r'<title>.*?</title>',text,re.S|re.I):
                   text=re.sub(r'<title>.*?</title>',lambda _: title_tag,text,count=1,flags=re.S|re.I)
