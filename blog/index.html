@@ -1,575 +1,94 @@
 <!DOCTYPE html>
-
-<html class="col1" lang="ja">
+<html lang="en-GB">
 <head>
-<script async="" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<title>Blog | ISHIZAKA Hiroki Website</title>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<meta content="IE=edge" http-equiv="X-UA-Compatible"/>
-<meta content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,anisotropic FEM,anisotropic mesh,mesh regularity,semi-regularity,Shishkin mesh,Bakhvalov mesh,Crouzeix-Raviart,Raviart-Thomas,Nedelec,de Rham,discrete maximum principle,maximum norm,history-dependent PDE,exact-curved FEM,certified computation,AI4Math,Babuska paradox,plate paradox,spectral pollution,locking,numerical analysis paradoxes" name="keywords"/>
-<meta content="Research notes on numerical analysis, classical paradoxes and modern research questions, anisotropic finite element geometry, CR-RT methods, history-dependent PDEs, exact-curved geometry, and certified computation" name="description"/>
-<link href="../css/base.css" rel="stylesheet"/>
-<link href="../css/rwd.css" rel="stylesheet"/>
-<link href="../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
-<link href="../favicon.ico" rel="apple-touch-icon"/>
-<link href="../favicon.ico" rel="apple-touch-icon-precomposed"/>
-<link href="../favicon.ico" rel="icon"/>
-<!--[if lt IE 9]>
-<script src="../js/html5.js"></script>
-<![endif]-->
-<script charset="utf-8" src="../js/jquery.js"></script>
-<script charset="utf-8" src="../js/jquery-migrate.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blog | Hiroki Ishizaka</title>
+<meta name="description" content="Research notes on anisotropic finite element geometry, unresolved dynamics and memory, exact-curved FEM, certified computation, numerical-analysis paradoxes and computational methods.">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/">
+<link rel="stylesheet" href="../css/modern.css">
+<link rel="icon" href="../favicon.ico">
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]}};</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+.blog-tabs{display:flex;flex-wrap:wrap;gap:9px;margin-top:25px}.blog-tabs a{padding:9px 13px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:.8rem;font-weight:760}
+.blog-intro{display:grid;grid-template-columns:1.25fr .75fr;gap:14px}.blog-note,.blog-stat{background:#fff;border:1px solid var(--line);border-radius:20px;padding:23px}.blog-note p,.blog-stat p{margin:0;color:var(--muted);font-size:.91rem}.blog-stat strong{display:block;font-size:2.3rem;letter-spacing:-.05em;color:var(--ink);margin-bottom:5px}.blog-stat span{font-size:.76rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.series-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.series-card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px;display:flex;flex-direction:column;min-height:230px}.series-card.feature{background:linear-gradient(135deg,#17243a,#30324d);border:0}.series-card.feature h3{color:#fff}.series-card.feature p{color:#d7deea}.series-card .series-meta{font-size:.7rem;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}.series-card.feature .series-meta{color:#c7b9ed}.series-card h3{font-size:1.1rem;line-height:1.38;margin:8px 0 10px;letter-spacing:-.02em}.series-card p{font-size:.87rem;color:var(--muted);margin:0 0 16px}.series-card .go{margin-top:auto;font-size:.8rem;font-weight:800;color:var(--accent)}.series-card.feature .go{color:#d2e0ef}
+.series-block{background:#fff;border:1px solid var(--line);border-radius:22px;padding:24px;margin-bottom:15px;scroll-margin-top:90px}.series-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start}.series-head h3{font-size:1.24rem;line-height:1.35;margin:6px 0 8px}.series-head p{font-size:.89rem;color:var(--muted);max-width:750px;margin:0}.count{flex:0 0 auto;padding:7px 10px;border-radius:999px;background:var(--soft);font-size:.7rem;font-weight:850;color:#52657b}.series-block.memory .count{background:var(--soft2)}
+.post-list{list-style:none;margin:18px 0 0;padding:0;border-top:1px solid var(--line)}.post-list li{display:grid;grid-template-columns:1fr auto;gap:14px;padding:11px 0;border-bottom:1px solid var(--line);align-items:start}.post-list a{font-size:.88rem;font-weight:690;line-height:1.5}.post-list time,.post-list .state{font-size:.72rem;color:var(--muted);white-space:nowrap;padding-top:2px}.post-list .planned{color:#738399;font-weight:600}.post-list .planned:before{content:'Planned · ';font-size:.65rem;font-weight:850;text-transform:uppercase;letter-spacing:.05em;color:#9a7fae}
+.more-list{margin-top:15px}.more-list summary{cursor:pointer;font-size:.8rem;font-weight:800;color:var(--accent)}.more-list ul{margin:12px 0 0;padding-left:1.2em;color:var(--muted);font-size:.86rem}.more-list li{margin:.5em 0}
+.warning{margin-top:14px;padding:13px 15px;border:1px solid #ded8cb;border-radius:14px;background:#fffdf8;color:#625c50;font-size:.8rem}
+.foundation-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.foundation{background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px}.foundation h3{font-size:1.08rem;margin:0 0 12px}.foundation .post-list{margin-top:0}
+@media(max-width:980px){.series-grid{grid-template-columns:repeat(2,1fr)}.blog-intro{grid-template-columns:1fr}.foundation-grid{grid-template-columns:1fr}}
+@media(max-width:700px){.series-grid{grid-template-columns:1fr}.series-head{display:block}.count{display:inline-block;margin-top:12px}.post-list li{grid-template-columns:1fr}.post-list time,.post-list .state{padding-top:0}}
+</style>
 </head>
-<body class="page">
-<!--▼サイトヘッダー-->
-<header class="site-header" id="top">
-<div class="site-header-in">
-<div class="site-header-conts">
-<p class="site-title"><a href="../">ISHIZAKA Hiroki Website</a></p>
-</div>
-</div>
-<!--▼グローバルナビ-->
-<nav class="global-nav">
-<div class="global-nav-in">
-<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
-<ul id="menu">
-<li>
-<a href="../">Home</a>
-</li>
-<li><a href="../publications/">Publications</a></li>
-<li>
-<a href="../research/">Research</a>
-</li>
-<li>
-<a href="../fem/">Research Visions</a>
-</li>
-<li>
-<a href="../suppl/">Supplementary Visions</a>
-</li>
-<li>
-<a href="../blog/">Blog</a>
-</li>
-<li>
-<a href="../geo/">History of Geometric Conditions in FEM</a>
-</li>
-<li>
-<a href="../links/">Links</a>
-</li>
-</ul>
-</div>
-</nav>
-<!--▲グローバルナビ-->
-</header>
-<!--▲サイトヘッダー-->
-<div class="main-body">
-<div class="main-body-in">
-<!--▼パンくずリスト-->
-<nav class="breadcrumbs">
-<ol class="breadcrumbs-in" itemscope="" itemtype="http://schema.org/BreadcrumbList">
-<li class="bcl-first" itemprop="itemListElement" itemscope="" itemtype="http://schema.org/ListItem">
-<a href="../" itemprop="item">
-<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
-				</a>
-<meta content="1" itemprop="position"/>
-</li>
-<li class="bcl-last">
-				Blog
-			</li>
-</ol>
-</nav>
-<!--▲パンくずリスト-->
-<!--▼メインコンテンツ-->
+<body>
+<header class="topbar"><div class="shell nav"><a class="brand" href="../">Hiroki Ishizaka<small>Numerical Analysis · PDEs · FEM</small></a><nav class="navlinks" aria-label="Primary navigation"><a href="../research/">Research</a><a href="../publications/">Publications</a><a href="../fem/">Visions</a><a href="./">Blog</a><a href="../links/">Links</a></nav></div></header>
 <main>
-<div class="main-conts">
-<article class="section-wrap">
-<div class="section-in">
-<h1 class="section-title">Blog</h1>
-<h2>このBlogの役割</h2>
-<div class="news">
-<article class="news-item">
-<p>
-このBlogでは，完成した論文の一覧ではなく，研究の背景，最小モデル，数学的ボトルネック，
-反例，数値実験，実装上の注意を連載形式で整理します．
-各ページの役割は次の通りです．
-</p>
-<ul>
-<li><a href="../publications/">Publications</a>：完成・投稿中の成果と直近の原稿順．</li>
-<li><a href="../fem/">Research Visions</a>：Core programmeとResearch Expansion．</li>
-<li><a href="../suppl/">Supplementary Visions</a>：中核研究へ到達するための学習地図．</li>
-<li><b>Blog：</b>理論の背景，試行錯誤，最小計算，実装，研究途中の問題整理．</li>
-</ul>
-<p>
-現在のCore研究に直結する主要連載は，次の六つです．
-</p>
-<ol>
-<li><b>異方性有限要素法の幾何学的基礎</b></li>
-<li><b>異方性CR–RT，DMP，maximum-norm解析</b></li>
-<li><b>3D Nédélec，異方性de Rham・Hodge・Maxwell</b></li>
-<li><b>履歴依存型発展方程式と構造保存完全離散化</b></li>
-<li><b>Exact-curved geometry programme</b></li>
-<li><b>Certified FEM，verified output，AI4Math</b></li>
-</ol>
-<p>
-癌・歯周病，PINNs，学習支援型適応化などは，Coreで得られた理論を展開する
-Applications and Research Expansionsとして分けて掲載します．
-これとは別に，現在のCore研究に限定せず，数値解析・応用数学の古典的な逆説，反例，失敗例を取り上げ，
-そこから現代的な研究課題を抽出する独立系列も掲載します．
-準備中の記事には架空の日付や仮リンクを付けず，「構想中」と表示します．
-<br/>
-This page is updated periodically.<br/>
-(7th August 2026 <span class="cat cat001">Update</span>)
-</p>
-</article>
-</div>
-<h2>From Classical Paradoxes to Modern Research Questions</h2>
-<h3>古典的パラドックスから現代の研究課題へ</h3>
-<div class="news">
-<article class="news-item">
-<p>
-この系列では，現在のCore研究に直接限定せず，数値解析・近似理論・偏微分方程式に現れる
-パラドックス，反例，偽収束，設計上の障壁を取り上げます．
-各記事は，古典的現象の解説で終わらず，現代の計算法，幾何表現，非線形問題，
-データ駆動型計算へ接続できる研究の問いを最後に整理します．
-</p>
-<div class="news-cont">
-<b>公開済み・構想中の記事</b>
-<ol>
-<li><a href="./posts/paradoxes-pitfalls-01.html">第1回：領域が収束しても解は正しく収束しない――バブシュカ・パラドックス</a>
-<div class="news-date"><time datetime="2026-08-03">3rd August 2026</time></div></li>
-<li><a href="./posts/paradoxes-pitfalls-02.html">第2回：有限要素解は収束しているのに正解へ収束しない――最大角条件とBabuška–Aziz反例</a>
-<div class="news-date"><time datetime="2026-08-07">7th August 2026</time></div></li>
-<li>第3回：安定なのに過度に硬くなる――ロッキング現象（構想中）</li>
-<li>第4回：存在しない固有値へ収束する――スペクトル汚染（構想中）</li>
-<li>第5回：固有値は安定でも解は一時的に増幅する――非正規作用素と擬スペクトル（構想中）</li>
-<li>第6回：高次精度と単調性は両立するか――Godunovの障壁（構想中）</li>
-<li>第7回：離散化誤差より前に問題が変わる――variational crimes（構想中）</li>
-<li>第8回：解像度を上げても振動が消えない――Gibbs現象（構想中）</li>
-<li>第9回：誤差が減ったように見える瞬間――逆問題のsemi-convergence（構想中）</li>
-</ol>
-</div>
-<p>
-各回の共通の問いは，<b>「計算が収束していることは，正しい問題を解いている保証になるか」</b>です．
-第1回のバブシュカ・パラドックスは，下記の
-<a href="#exact-curved-programme">Exact-curved geometry programme</a>と直接接続し，
-exact-domain法が幾何近似による誤った極限をどこまで排除できるかを考える基準問題になります．
-第2回のBabuška–Aziz反例は，下記の
-<a href="#published-geometry-mesh">有限要素法における幾何とメッシュ</a>および
-<b>異方性有限要素法の幾何学的基礎</b>と接続し，
-最大角条件を外したときに，何をもって「正しい収束」と判定できるかを検証します．
-</p>
-</article>
-</div>
-<h2>Current Core Research Series</h2>
-<h3>異方性有限要素法の幾何学的基礎</h3>
-<div class="news">
-<article class="news-item">
-<p>
-異方性有限要素法の解析では，要素が単に「細長い」かどうかだけでなく，
-その形状が細分化に対して固定されているのか，
-特異点や境界層に近づくにつれて異方性が強くなるのかを区別する必要があります．
-この系列では，相似縮小，等方的graded mesh，Shishkin mesh，
-Bakhvalov mesh，Bakhvalov–Shishkin mesh，S-type meshなどを取り上げ，
-すべてを共通の幾何指標
-\[
-  Q_T:=\frac{h_T^d}{|T|_d},
-  \qquad
-  A_T:=\frac{H_T}{h_T}
-      =\frac{\prod_{i=1}^{d}h_i}{|T|_d}
-\]
-によって調べます．
-</p>
-<p>
-各記事では，対象メッシュの構成を示した後，
-要素ごとの辺長，面積・体積，\(Q_T\)，\(A_T\)を計算し，
-メッシュ族が正則，準正則だが非正則，非準正則のいずれに属するかを確認します．
-さらに，その幾何条件から保証される補間・安定性と，
-DMP，maximum-norm評価，離散Sobolev不等式など，
-別の条件を必要とする問題を区別して整理します．
-</p>
-<div class="news-cont">
-<b>公開済み・構想中の記事</b>
-<ol>
-<li><a href="./posts/anisotropic-geometry-01.html">有限要素法ではなぜメッシュの幾何条件が必要なのか</a>
-<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-<li><a href="./posts/anisotropic-geometry-02.html">正則性と準正則性を角度を使わずに表す</a>
-<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-<li><a href="./posts/anisotropic-geometry-03.html">異方性メッシュの二つの現れ方：相似縮小とgraded mesh</a>
-<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-<li><a href="./posts/anisotropic-geometry-04.html">相似縮小された細長い要素は非正則なのか</a>
-<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-<li><a href="./posts/anisotropic-geometry-05.html">graded mesh，quasi-uniformity，shape regularityの違い</a>
-<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-<li><a href="./posts/anisotropic-geometry-06.html">長方形の三角形分割を\(Q_T\)と\(H_T/h_T\)で調べる</a>
-<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-<li><a href="./posts/anisotropic-geometry-07.html">Shishkin meshは正則か，準正則か</a>
-<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-<li><a href="./posts/anisotropic-geometry-08.html">Bakhvalov meshの滑らかなgradingと幾何条件</a>
-<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-<li><a href="./posts/anisotropic-geometry-09.html">Bakhvalov–Shishkin meshとS-type mesh：最適性と幾何条件</a>
-<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-<li><a href="./posts/anisotropic-geometry-10.html">代表的なlayer-adapted meshの幾何条件を比較する</a>
-<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-<li><a href="./posts/anisotropic-geometry-11.html">三次元layer-adapted meshを四面体分割すると何が起こるか</a>
-<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-<li><a href="./posts/anisotropic-geometry-12.html">幾何条件から補間・DMP・\(L^\infty\)解析へ何が引き継げるか</a>
-<div class="news-date"><time datetime="2026-08-01">1st August 2026</time></div></li>
-</ol>
-</div>
-<p>
-関連ページ：
-<a href="../geo/">History of Geometric Conditions in FEM</a>，
-<a href="../publications/">Publications</a>（異方性補間・semi-regularity関連），
-<a href="../fem/">Research Visions</a>，
-下記の<a href="#published-geometry-mesh">有限要素法における幾何とメッシュ</a>
-</p>
-</article>
-</div>
-<h3>異方性CR–RT：離散最大値原理とmaximum-norm解析</h3>
-<div class="news">
-<article class="news-item">
-<p>
-異方性単体メッシュ上で，有限要素解の符号・上下界を保つ条件と，
-点ごとの誤差を制御する条件を区別して調べます．
-semi-regularityは補間・安定性を制御する幾何条件ですが，
-DMPにはmetric-angle型の単調性条件が，
-\(L^\infty\)誤差評価には離散Green関数やpatch connectivityが必要になり得ます．
-</p>
-<p class="news-cont">
-<b>構想中の記事</b>
-<ul>
-<li>第1回：CR要素の離散最大値原理とは何か</li>
-<li>第2回：semi-regularityとmetric-angle条件は何が違うか</li>
-<li>第3回：CR自由度のDMPとpointwise boundは同じではない</li>
-<li>第4回：正値性を保つ右辺離散化</li>
-<li>第5回：異方性メッシュでは接続の仕方が\(L^\infty\)精度を変える</li>
-<li>第6回：Ritz射影と離散Green関数</li>
-<li>第7回：CR conforming companionとRT局所保存流束</li>
-<li>第8回：DMP・局所保存・誤差保証を同時に満たせるか</li>
-</ul>
-</p>
-<p>
-関連ページ：
-<a href="../publications/">Publications</a>（A1，A2，F3），
-<a href="../fem/">Research Visions</a>（Vision 20），
-<a href="../suppl/">Supplementary Visions</a>（離散最大値原理とmaximum-norm誤差評価）
-</p>
-</article>
-</div>
-<h3>3D Nédélecから異方性de Rham・Hodge・Maxwellへ</h3>
-<div class="news">
-<article class="news-item">
-<p>
-既存の異方性Raviart–Thomas補間理論を\(H(\operatorname{curl})\)適合Nédélec要素へ拡張し，
-\[
-  P_1^c
-  \xrightarrow{\nabla}
-  N_0
-  \xrightarrow{\operatorname{curl}}
-  RT_0
-  \xrightarrow{\operatorname{div}}
-  P_0
-\]
-を計算可能な幾何条件の下で統一する系列です．
-最初は三次元四面体上の補間安定性と可換性に絞り，
-その後にHodge分解，discrete compactness，Maxwell認証へ進みます．
-</p>
-<p class="news-cont">
-<b>構想中の記事</b>
-<ul>
-<li>第1回：RT要素とNédélec要素はどこが同じでどこが違うか</li>
-<li>第2回：contravariant Piolaとcovariant Piola</li>
-<li>第3回：edge momentは低正則性で定義できるか</li>
-<li>第4回：two-step transformationで方向別評価を作る</li>
-<li>第5回：curl可換性とRT補間評価</li>
-<li>第6回：de Rham complexは有限要素法で何を保証するか</li>
-<li>第7回：CRはde Rham理論にどう関係するか</li>
-<li>第8回：調和成分と多重連結領域</li>
-<li>第9回：異方性メッシュ上のdiscrete compactness</li>
-<li>第10回：verified Maxwellへの道</li>
-</ul>
-</p>
-<p>
-関連ページ：
-<a href="../publications/">Publications</a>（T1，F1，F2），
-<a href="../fem/">Research Visions</a>（Vision 21），
-<a href="../suppl/">Supplementary Visions</a>（Nédélec・de Rham・Maxwell）
-</p>
-</article>
-</div>
-<h3>履歴依存型発展方程式：memory kernelと構造保存完全離散化</h3>
-<div class="news">
-<article class="news-item">
-<p>
-現在値だけでは将来が決まらず，過去の軌道または拡張状態を必要とする発展方程式を扱います．
-確率性は必須ではありません．
-未解像状態を消去したときに現れるmemory kernelを，
-固定された係数ではなく，導出・同定・近似・検証の対象として扱います．
-</p>
-<p class="news-cont">
-<ul>
-<li><a href="./posts/unresolved-memory-01.html">第1回：未解像ダイナミクスと履歴依存型方程式 — 記憶をどう安定にモデル化・同定・離散化するか</a>
-<div class="news-date"><time datetime="2026-07-25">25th July 2026</time>（2nd August 2026 revised）</div></li>
-<li><a href="./posts/unresolved-memory-02.html">第2回：未解像状態を消去すると，なぜmemoryが現れるのか</a>
-<div class="news-date"><time datetime="2026-08-02">2nd August 2026</time></div></li>
-<li><a href="./posts/unresolved-memory-03.html">第3回：measure-valued delayで分布遅延・原子遅延・混合遅延を統一する</a>
-<div class="news-date"><time datetime="2026-08-02">2nd August 2026</time></div></li>
-<li><a href="./posts/unresolved-memory-04.html">第4回：指数重みでmeasure-valued delayのwell-posednessを得る</a>
-<div class="news-date"><time datetime="2026-08-02">2nd August 2026</time></div></li>
-<li><a href="./posts/unresolved-memory-05.html">第5回：positive-type memoryとcoercivity gap</a>
-<div class="news-date"><time datetime="2026-08-02">2nd August 2026</time></div></li>
-<li><a href="./posts/unresolved-memory-06.html">第6回：graph-space well-posednessとは何か</a>
-<div class="news-date"><time datetime="2026-08-02">2nd August 2026</time></div></li>
-<li><a href="./posts/unresolved-memory-07.html">第7回：kernel stabilityとfinite-atomic approximation</a>
-<div class="news-date"><time datetime="2026-08-03">3rd August 2026</time></div></li>
-<li><a href="./posts/unresolved-memory-08.html">第8回：離散内部変数でcross-term cancellationを保存する</a>
-<div class="news-date"><time datetime="2026-08-03">3rd August 2026</time></div></li>
-<li><a href="./posts/unresolved-memory-09.html">第9回：BDFとconvolution quadratureは何を離散化しているのか</a>
-<div class="news-date"><time datetime="2026-08-03">3rd August 2026</time></div></li>
-<li><a href="./posts/unresolved-memory-10.html">第10回：model-reduction errorをどう分解するか</a>
-<div class="news-date"><time datetime="2026-08-03">3rd August 2026</time></div></li>
-<li><a href="./posts/unresolved-memory-11.html">第11回：誤差に応じて潜在状態を追加するmodel adaptivity</a>
-<div class="news-date"><time datetime="2026-08-03">3rd August 2026</time></div></li>
-</ul>
-</p>
-<p>
-関連ページ：
-<a href="../publications/">Publications</a>（S3–S5，A3），
-<a href="../fem/">Research Visions</a>（Vision 11，18），
-<a href="../suppl/">Supplementary Visions</a>（履歴依存型発展方程式とmemory kernel）
-</p>
-</article>
-</div>
-<h3 id="exact-curved-programme">Exact-curved geometry programme：曲CR–RT・形状微分・ALE・FSI</h3>
-<div class="news">
-<article class="news-item">
-<p>
-要素写像を
-\[
-  F_K=\Psi_K\circ\Phi_{T_K}
-\]
-と分解し，異方性を担うaffine coreと曲率を担うcurved correctionを分離します．
-既公開記事は二次元Poisson問題の理論と実装を扱っています．
-今後は，曲CR–RT構造，形状微分，移動領域，流体–構造連成へ進みます．
-</p>
-<p class="news-cont">
-<b>公開済み</b>
-<ul>
-<li><a href="./posts/exact-curved-fem-01.html">第1回：有限要素法で「丸い領域」を丸いまま扱いたい</a>
-<div class="news-date"><time datetime="2026-05-28">28th May 2026</time></div></li>
-<li><a href="./posts/exact-curved-fem-02.html">第2回：曲線要素写像をaffine coreとcurved correctionに分ける</a>
-<div class="news-date"><time datetime="2026-05-28">28th May 2026</time></div></li>
-<li><a href="./posts/exact-curved-fem-03.html">第3回：Gmshのgeometry orderは有限要素次数ではない</a>
-<div class="news-date"><time datetime="2026-05-28">28th May 2026</time></div></li>
-<li><a href="./posts/exact-curved-fem-04.html">第4回：UFLのgradとdxの中で何が起きているか</a>
-<div class="news-date"><time datetime="2026-05-28">28th May 2026</time></div></li>
-<li><a href="./posts/exact-curved-fem-05.html">第5回：単位円上のPoisson問題で曲線メッシュを比較する</a>
-<div class="news-date"><time datetime="2026-05-28">28th May 2026</time></div></li>
-<li><a href="./posts/exact-curved-fem-06.html">第6回：Exact-curved FEMsとisoparametric FEMsは何が違うのか</a>
-<div class="news-date"><time datetime="2026-06-01">1st June 2026</time></div></li>
-</ul>
-<b>次の論文化に沿った構想</b>
-<ol>
-<li>曲面平均自由度としてのCR要素，曲単体上のRT要素，Piola変換</li>
-<li>curved Marini reconstructionとequilibrated flux</li>
-<li>material derivativeと補間作用素の交換子</li>
-<li>shape derivativeとFEM離散化の可換性</li>
-<li>ALE速度，Jacobianの時間微分，geometric conservation law</li>
-<li>離散曲界面をさらに直線化しないFSIと界面仕事の相殺</li>
-<li>形状感度，traction，流量，エネルギー交換のverified output</li>
-</ol>
-</p>
-<p>
-関連ページ：
-<a href="../publications/">Publications</a>（Q1–Q3），
-<a href="../fem/">Research Visions</a>（Vision 10），
-<a href="../suppl/">Supplementary Visions</a>（Exact-curved FEM・形状微分・移動領域）
-</p>
-</article>
-</div>
-<h3>Certified FEM・verified output・AI4Math</h3>
-<div class="news">
-<article class="news-item">
-<p>
-平衡化フラックス，hypercircle，DWR，maximum-norm certificate，
-model-reduction errorを，計算可能な誤差保証として整理します．
-AI4MathやLean 4は研究の主目的ではなく，
-定義・補題・定数依存性・certificateを検証可能で再利用可能な形へ整理する補助手段として位置づけます．
-</p>
-<p class="news-cont">
-<ul>
-<li><a href="./posts/lean4-01.html">第1回：Lean 4は有限要素法研究に何をもたらすか</a>
-<div class="news-date"><time datetime="2026-06-08">8th June 2026</time></div></li>
-<li>第2回：a priori，a posteriori，verified outputは何が違うか（構想中）</li>
-<li>第3回：equilibrated fluxはなぜcertificateになるのか（構想中）</li>
-<li>第4回：DWRで目的量誤差をどう評価するか（構想中）</li>
-<li>第5回：maximum-normとpointwise certificate（構想中）</li>
-<li>第6回：model-reduction errorをcertificateにできるか（構想中）</li>
-<li>第7回：幾何条件を機械可読なcertificateへ変換する（構想中）</li>
-<li>第8回：Leanで形式化しやすい補題列とは何か（構想中）</li>
-</ul>
-</p>
-<p>
-関連ページ：
-<a href="../publications/">Publications</a>（S1，F2，F3），
-<a href="../fem/">Research Visions</a>（Vision 17，20，21），
-<a href="../suppl/">Supplementary Visions</a>（保証付き数値解析とAI4Mathリテラシー）
-</p>
-</article>
-</div>
-<h2>Applications and Research Expansions</h2>
-<h3>潜在状態と治療履歴から疾患進行を予測する数理</h3>
-<div class="news">
-<article class="news-item">
-<p>
-癌と歯周病は医学的には異なる疾患ですが，
-潜在状態，局所微小環境，治療履歴，慢性的・不可逆的進行，
-時空間的不均一性という共通の数理構造を持ちます．
-本連載は，Vision 18の一般理論を疾患進行へ具体化するExpansionです．
-</p>
-<div style="border:1px solid #999; padding:10px; margin-bottom:10px;">
-本連載は数理モデル・数値解析・統計的推論の研究構想を扱うものであり，
-診断・治療上の助言を提供するものではありません．
-</div>
-<p class="news-cont">
-<ul>
-<li><a href="./posts/disease-progression-math-01.html">第1回：癌と歯周病はなぜ同じ数理構造で考えられるのか</a>
-<div class="news-date"><time datetime="2026-07-26">26th July 2026</time></div></li>
-<li>第2回：observed stateとcomplete state（構想中）</li>
-<li>第3回：潜在状態を消去するとmemoryが現れる（構想中）</li>
-<li>第4回：縮約モデルで治療法の順位が逆転することはあるか（構想中）</li>
-<li>第5回：進行予測と因果的治療効果は何が違うか（構想中）</li>
-<li>第6回：予測値と不確実性をどう可視化するか（構想中）</li>
-<li>第7回：goal-oriented observation design（構想中）</li>
-<li>第8回：verification，statistical validation，clinical validation（構想中）</li>
-</ul>
-</p>
-<p>
-<b>既公開の歯科数理記事</b>
-</p>
-<ul>
-<li><a href="./posts/dental-math-01.html">数学で虫歯・歯周病に何ができるか</a>
-<div class="news-date"><time datetime="2026-07-26">26th July 2026</time></div></li>
-<li><a href="./posts/dental-math-02.html">治療履歴から虫歯・歯周病の未来を予測できるか</a>
-<div class="news-date"><time datetime="2026-07-26">26th July 2026</time></div></li>
-</ul>
-<p>
-虫歯は酸・pH・脱灰・再石灰化という独自の機構を持つため，
-癌・歯周病の共通潜在状態モデルとは分け，歯科数理の独立系列として扱います．
-</p>
-<p>関連ページ：<a href="../fem/">Research Visions</a>（Vision 19）</p>
-</article>
-</div>
-<h3>PINNs・Deep Ritz・学習支援型数値計算</h3>
-<div class="news">
-<article class="news-item">
-<p>
-PINNsやDeep RitzをFEMの代替として無条件に推奨するのではなく，
-点配置，残差，近似空間，幾何条件，certificateの観点から比較します．
-この系列は現在のCore論文を完成させた後に進めるExpansionです．
-</p>
-<p class="news-cont">
-<ul>
-<li><a href="./posts/pinns-01.html">第1回：1次元Poisson問題でPINNsを動かす</a></li>
-<li><a href="./posts/pinns-02.html">第2回：残差点の配置と近似誤差の関係</a></li>
-<li><a href="./posts/pinns-03.html">第3回：どの幾何的量が誤差を支配するか</a></li>
-<li><a href="./posts/pinns-04.html">第4回：PINNs / Deep Ritz / VPINN / WANを比べる</a></li>
-<li><a href="./posts/pinns-05.html">第5回：コードと数学の辞書</a></li>
-<li><a href="./posts/pinns-06.html">第6回：flatness parameterからNN幾何条件へ</a></li>
-<li><a href="./posts/pinns-07.html">第7回：研究ビジョン全体図</a></li>
-</ul>
-</p>
-<p>関連ページ：<a href="../fem/">Research Visions</a>（Vision 2，4，15）</p>
-</article>
-</div>
-<h2>Published Foundational and Computational Series</h2>
-<h3 id="published-geometry-mesh">有限要素法における幾何とメッシュ</h3>
-<div class="news">
-<article class="news-item">
-<p class="news-cont">
-<ul>
-<li><a href="./posts/article16apr26.html">FEniCSxで学ぶメッシュ分割入門</a>
-<div class="news-date"><time datetime="2026-04-16">16th April 2026</time></div></li>
-<li><a href="./posts/article18apr26.html">異方性メッシュ族をPythonで再構成する</a>
-<div class="news-date"><time datetime="2026-04-18">18th April 2026</time></div></li>
-<li><a href="./posts/article20apr26.html">FEniCSx用メッシュファイルを取り出す</a>
-<div class="news-date"><time datetime="2026-04-20">20th April 2026</time></div></li>
-<li><a href="./posts/article20apr26_2.html">FreeFEM用メッシュファイルを取り出す</a>
-<div class="news-date"><time datetime="2026-04-20">20th April 2026</time></div></li>
-</ul>
-</p>
-</article>
-</div>
-<h3>FEniCSx・FreeFEM入門</h3>
-<div class="news">
-<article class="news-item">
-<p class="news-cont">
-<ul>
-<li><a href="./posts/article15apr26.html">Google Colabで始めるFEniCSx入門</a>
-<div class="news-date"><time datetime="2026-04-15">15th April 2026</time></div></li>
-<li><a href="./posts/article20apr26_3.html">Google ColabでFreeFEMを使う</a>
-<div class="news-date"><time datetime="2026-04-20">20th April 2026</time></div></li>
-<li><a href="./posts/article21apr26.html">Google Colabで始めるFreeFEM入門</a>
-<div class="news-date"><time datetime="2026-04-21">21st April 2026</time></div></li>
-</ul>
-</p>
-</article>
-</div>
-<h3>外挿法と誤差展開</h3>
-<div class="news">
-<article class="news-item">
-<p class="news-cont">
-<ul>
-<li><a href="./posts/article08may26.html">第1回：外挿法で円周率を求める</a></li>
-<li><a href="./posts/article08may26_2.html">第2回：数値微分と外挿法</a></li>
-<li><a href="./posts/article08may26_3.html">第3回：Romberg積分入門</a></li>
-<li><a href="./posts/article09may26.html">第4回：ODEにおける外挿法とCrank–Nicolson</a></li>
-<li><a href="./posts/article10may26.html">第5回：FEMにおけるRitz射影と点値外挿</a></li>
-<li><a href="./posts/article10may26_2.html">第6回：Defect correctionとは何か</a></li>
-<li><a href="./posts/article10may26_3.html">第7回：特異性があると外挿はどうなるか</a></li>
-<li><a href="./posts/article10may26_4.html">第8回：外挿，defect correction，特異性の比較</a></li>
-</ul>
-</p>
-</article>
-</div>
-<h2>Exploratory Series</h2>
-<div class="news">
-<article class="news-item">
-<p>
-次の連載は研究アイデアとして保持しますが，
-現在のCore論文を完成させるまで大量の未作成記事を並べません．
-主要定理，反例，または実装上の出口が見えた段階で個別記事を追加します．
-</p>
-<ul>
-<li><b>CIP法の二つの顔：</b>
-<a href="./posts/article10may26_5.html">第1回：Constrained Interpolation ProfileとContinuous Interior Penalty</a>．</li>
-<li><b>Weak GalerkinとハイブリッドFEM：</b>
-  境界未知量，弱微分，局所消去，CR–RT再構成を整理予定．</li>
-<li><b>非圧縮流れとpressure robustness：</b>
-  弱い発散自由，局所質量保存，\(H(\operatorname{div})\)再構成，離散Kornを整理予定．</li>
-<li><b>SPDE・気候・災害：</b>
-  異方性・不確実性・memory closureの数学的出口が明確になった段階で記事化．</li>
-<li><b>Never Ending Story：</b>
-  DMP，移流支配，長時間誤差，異方性inf–supなど，FEMの未解決問題を必要に応じて扱う．</li>
-</ul>
-</article>
-</div>
-<!--section-in-->
-</div>
-</article>
-</div>
+<section class="page-hero"><div class="shell"><div class="eyebrow"><span class="dot"></span>Research Notes</div><h1>Ideas, calculations,<br>counterexamples and open questions.</h1><p>The Blog sits between formal publications and long-term Research Visions. It records mathematical background, minimal models, numerical experiments, implementation details and the questions that appear before a theorem becomes a paper.</p><div class="blog-tabs"><a href="#core">Core series</a><a href="#paradoxes">Paradoxes</a><a href="#applications">Applications</a><a href="#foundations">Foundations</a><a href="#exploratory">Exploratory</a></div></div></section>
+<section class="section"><div class="shell"><div class="blog-intro"><article class="blog-note"><div class="kicker">How to read the Blog</div><h2>Research in motion.</h2><p>Publications records completed and active manuscripts. Research Visions maps the longer programme. Supplementary Visions gives learning routes. The Blog is where background, trial calculations, implementation and research bottlenecks are developed in public.</p></article><aside class="blog-stat"><span>Published notes</span><strong>50+</strong><p>Across anisotropic FEM, memory and unresolved dynamics, exact-curved geometry, PINNs, computational FEM and classical numerical-analysis questions.</p></aside></div></div></section>
+<section id="core" class="section"><div class="shell"><div class="section-head"><div><div class="kicker">Current core research series</div><h2>Six lines closest to active research.</h2></div><p>The first three already contain substantial published sequences; CR–RT / DMP and Nédélec / de Rham are intentionally kept as planned series until the mathematical exit is sufficiently clear.</p></div><div class="series-grid">
+<a class="series-card" href="#geometry"><span class="series-meta">12 published · Geometry</span><h3>Anisotropic finite-element geometry</h3><p>Mesh regularity, semi-regularity, graded and layer-adapted meshes, and what geometric conditions actually guarantee.</p><span class="go">Open series ↓</span></a>
+<a class="series-card feature" href="#memory"><span class="series-meta">11 published · Unresolved dynamics</span><h3>Memory, delay and stable reduction</h3><p>From elimination of hidden states to graph-space well-posedness, kernel stability, BDF-CQ and model adaptivity.</p><span class="go">Open series ↓</span></a>
+<a class="series-card" href="#curved"><span class="series-meta">6 published · Exact geometry</span><h3>Exact-curved FEM</h3><p>Curved mappings, affine cores, geometry order, implementation, and the path towards CR–RT, shape derivatives and ALE.</p><span class="go">Open series ↓</span></a>
+<a class="series-card" href="#cr-dmp"><span class="series-meta">Planned · Vision 20</span><h3>Anisotropic CR–RT, DMP and maximum norm</h3><p>Separate semi-regularity, metric-angle monotonicity, pointwise bounds, connectivity and discrete Green functions.</p><span class="go">View research map ↓</span></a>
+<a class="series-card" href="#nedelec"><span class="series-meta">Planned · Vision 21</span><h3>3D Nédélec, de Rham, Hodge and Maxwell</h3><p>Piola transformations, edge moments, commuting projections, discrete compactness and certified Maxwell FEM.</p><span class="go">View research map ↓</span></a>
+<a class="series-card" href="#certified"><span class="series-meta">1 published · Certification</span><h3>Certified FEM, verified output and AI4Math</h3><p>Equilibrated fluxes, DWR, machine-readable geometric certificates and formal reasoning as supporting infrastructure.</p><span class="go">Open series ↓</span></a>
+</div></div></section>
+<section class="section"><div class="shell">
+<article id="geometry" class="series-block"><div class="series-head"><div><div class="kicker">Core · Geometry</div><h3>異方性有限要素法の幾何学的基礎</h3><p>相似縮小，graded mesh，Shishkin，Bakhvalov，Bakhvalov–Shishkin，S-type meshを共通の幾何指標で比較し，正則性・準正則性・補間安定性・DMP・maximum normを区別します．</p></div><span class="count">12 published</span></div><ul class="post-list">
+<li><a href="./posts/anisotropic-geometry-01.html">有限要素法ではなぜメッシュの幾何条件が必要なのか</a><time datetime="2026-08-01">1 Aug 2026</time></li>
+<li><a href="./posts/anisotropic-geometry-02.html">正則性と準正則性を角度を使わずに表す</a><time datetime="2026-08-01">1 Aug 2026</time></li>
+<li><a href="./posts/anisotropic-geometry-03.html">異方性メッシュの二つの現れ方：相似縮小とgraded mesh</a><time datetime="2026-08-01">1 Aug 2026</time></li>
+<li><a href="./posts/anisotropic-geometry-04.html">相似縮小された細長い要素は非正則なのか</a><time datetime="2026-08-01">1 Aug 2026</time></li>
+<li><a href="./posts/anisotropic-geometry-05.html">graded mesh，quasi-uniformity，shape regularityの違い</a><time datetime="2026-08-01">1 Aug 2026</time></li>
+<li><a href="./posts/anisotropic-geometry-06.html">長方形の三角形分割を\(Q_T\)と\(H_T/h_T\)で調べる</a><time datetime="2026-08-01">1 Aug 2026</time></li>
+<li><a href="./posts/anisotropic-geometry-07.html">Shishkin meshは正則か，準正則か</a><time datetime="2026-08-01">1 Aug 2026</time></li>
+<li><a href="./posts/anisotropic-geometry-08.html">Bakhvalov meshの滑らかなgradingと幾何条件</a><time datetime="2026-08-01">1 Aug 2026</time></li>
+<li><a href="./posts/anisotropic-geometry-09.html">Bakhvalov–Shishkin meshとS-type mesh：最適性と幾何条件</a><time datetime="2026-08-01">1 Aug 2026</time></li>
+<li><a href="./posts/anisotropic-geometry-10.html">代表的なlayer-adapted meshの幾何条件を比較する</a><time datetime="2026-08-01">1 Aug 2026</time></li>
+<li><a href="./posts/anisotropic-geometry-11.html">三次元layer-adapted meshを四面体分割すると何が起こるか</a><time datetime="2026-08-01">1 Aug 2026</time></li>
+<li><a href="./posts/anisotropic-geometry-12.html">幾何条件から補間・DMP・\(L^\infty\)解析へ何が引き継げるか</a><time datetime="2026-08-01">1 Aug 2026</time></li>
+</ul></article>
+<article id="cr-dmp" class="series-block"><div class="series-head"><div><div class="kicker">Core · Vision 20</div><h3>異方性CR–RT：離散最大値原理とmaximum-norm解析</h3><p>符号・上下界を保つ条件と点ごとの誤差を制御する条件を分離し，semi-regularity，metric-angle condition，patch connectivity，discrete Green functionの役割を整理します．</p></div><span class="count">Planned series</span></div><details class="more-list"><summary>Planned article map</summary><ul><li>CR要素の離散最大値原理とは何か</li><li>semi-regularityとmetric-angle条件は何が違うか</li><li>CR自由度のDMPとpointwise boundは同じではない</li><li>正値性を保つ右辺離散化</li><li>異方性メッシュでは接続の仕方が\(L^\infty\)精度を変える</li><li>Ritz射影と離散Green関数</li><li>CR conforming companionとRT局所保存流束</li><li>DMP・局所保存・誤差保証を同時に満たせるか</li></ul></details></article>
+<article id="nedelec" class="series-block"><div class="series-head"><div><div class="kicker">Core · Vision 21</div><h3>3D Nédélecから異方性de Rham・Hodge・Maxwellへ</h3><p>既存の異方性RT補間理論を\(H(\mathrm{curl})\)へ拡張し，低次de Rham complex，可換射影，Hodge分解，discrete compactness，Maxwell認証へ進みます．</p></div><span class="count">Planned series</span></div><details class="more-list"><summary>Planned article map</summary><ul><li>RT要素とNédélec要素はどこが同じでどこが違うか</li><li>contravariant Piolaとcovariant Piola</li><li>edge momentは低正則性で定義できるか</li><li>two-step transformationで方向別評価を作る</li><li>curl可換性とRT補間評価</li><li>de Rham complexは有限要素法で何を保証するか</li><li>CRはde Rham理論にどう関係するか</li><li>調和成分と多重連結領域</li><li>異方性メッシュ上のdiscrete compactness</li><li>verified Maxwellへの道</li></ul></details></article>
+<article id="memory" class="series-block memory"><div class="series-head"><div><div class="kicker">Core · Memory / unresolved dynamics</div><h3>履歴依存型発展方程式：memory kernelと構造保存完全離散化</h3><p>未解像状態の消去，measure-valued delay，positive-type memory，graph-space well-posedness，kernel stability，BDF/CQ，model-reduction errorまでを一つの流れで整理します．</p></div><span class="count">11 published</span></div><ul class="post-list">
+<li><a href="./posts/unresolved-memory-01.html">第1回：未解像ダイナミクスと履歴依存型方程式 — 記憶をどう安定にモデル化・同定・離散化するか</a><time datetime="2026-07-25">25 Jul 2026</time></li>
+<li><a href="./posts/unresolved-memory-02.html">第2回：未解像状態を消去すると，なぜmemoryが現れるのか</a><time datetime="2026-08-02">2 Aug 2026</time></li>
+<li><a href="./posts/unresolved-memory-03.html">第3回：measure-valued delayで分布遅延・原子遅延・混合遅延を統一する</a><time datetime="2026-08-02">2 Aug 2026</time></li>
+<li><a href="./posts/unresolved-memory-04.html">第4回：指数重みでmeasure-valued delayのwell-posednessを得る</a><time datetime="2026-08-02">2 Aug 2026</time></li>
+<li><a href="./posts/unresolved-memory-05.html">第5回：positive-type memoryとcoercivity gap</a><time datetime="2026-08-02">2 Aug 2026</time></li>
+<li><a href="./posts/unresolved-memory-06.html">第6回：graph-space well-posednessとは何か</a><time datetime="2026-08-02">2 Aug 2026</time></li>
+<li><a href="./posts/unresolved-memory-07.html">第7回：kernel stabilityとfinite-atomic approximation</a><time datetime="2026-08-03">3 Aug 2026</time></li>
+<li><a href="./posts/unresolved-memory-08.html">第8回：離散内部変数でcross-term cancellationを保存する</a><time datetime="2026-08-03">3 Aug 2026</time></li>
+<li><a href="./posts/unresolved-memory-09.html">第9回：BDFとconvolution quadratureは何を離散化しているのか</a><time datetime="2026-08-03">3 Aug 2026</time></li>
+<li><a href="./posts/unresolved-memory-10.html">第10回：model-reduction errorをどう分解するか</a><time datetime="2026-08-03">3 Aug 2026</time></li>
+<li><a href="./posts/unresolved-memory-11.html">第11回：誤差に応じて潜在状態を追加するmodel adaptivity</a><time datetime="2026-08-03">3 Aug 2026</time></li>
+</ul></article>
+<article id="curved" class="series-block"><div class="series-head"><div><div class="kicker">Core · Exact geometry</div><h3>Exact-curved geometry programme</h3><p>曲領域をさらに多角形化せず，affine coreとcurved correctionを分ける考え方から，実装，CR–RT，shape differentiation，ALE，FSIへ進みます．</p></div><span class="count">6 published</span></div><ul class="post-list">
+<li><a href="./posts/exact-curved-fem-01.html">第1回：有限要素法で「丸い領域」を丸いまま扱いたい</a><time datetime="2026-05-28">28 May 2026</time></li>
+<li><a href="./posts/exact-curved-fem-02.html">第2回：曲線要素写像をaffine coreとcurved correctionに分ける</a><time datetime="2026-05-28">28 May 2026</time></li>
+<li><a href="./posts/exact-curved-fem-03.html">第3回：Gmshのgeometry orderは有限要素次数ではない</a><time datetime="2026-05-28">28 May 2026</time></li>
+<li><a href="./posts/exact-curved-fem-04.html">第4回：UFLのgradとdxの中で何が起きているか</a><time datetime="2026-05-28">28 May 2026</time></li>
+<li><a href="./posts/exact-curved-fem-05.html">第5回：単位円上のPoisson問題で曲線メッシュを比較する</a><time datetime="2026-05-28">28 May 2026</time></li>
+<li><a href="./posts/exact-curved-fem-06.html">第6回：Exact-curved FEMsとisoparametric FEMsは何が違うのか</a><time datetime="2026-06-01">1 Jun 2026</time></li>
+</ul></article>
+<article id="certified" class="series-block"><div class="series-head"><div><div class="kicker">Core · Certification</div><h3>Certified FEM・verified output・AI4Math</h3><p>平衡化フラックス，DWR，maximum-norm certificate，model-reduction errorを計算可能な保証として整理し，形式推論はそれを再利用可能にする補助手段として扱います．</p></div><span class="count">1 published</span></div><ul class="post-list"><li><a href="./posts/lean4-01.html">第1回：Lean 4は有限要素法研究に何をもたらすか</a><time datetime="2026-06-08">8 Jun 2026</time></li></ul><details class="more-list"><summary>Planned article map</summary><ul><li>a priori，a posteriori，verified outputは何が違うか</li><li>equilibrated fluxはなぜcertificateになるのか</li><li>DWRで目的量誤差をどう評価するか</li><li>maximum-normとpointwise certificate</li><li>model-reduction errorをcertificateにできるか</li><li>幾何条件を機械可読なcertificateへ変換する</li><li>Leanで形式化しやすい補題列とは何か</li></ul></details></article>
+</div></section>
+<section id="paradoxes" class="section"><div class="shell"><div class="section-head"><div><div class="kicker">Independent series</div><h2>From classical paradoxes to modern research questions.</h2></div><p>Classical counterexamples are used as starting points for present-day questions about geometry, approximation, false convergence and trustworthy computation.</p></div><article class="series-block"><div class="series-head"><div><h3>古典的パラドックスから現代の研究課題へ</h3><p>共通の問いは「計算が収束していることは，正しい問題を解いている保証になるか」です．</p></div><span class="count">2 published</span></div><ul class="post-list"><li><a href="./posts/paradoxes-pitfalls-01.html">第1回：領域が収束しても解は正しく収束しない――バブシュカ・パラドックス</a><time datetime="2026-08-03">3 Aug 2026</time></li><li><a href="./posts/paradoxes-pitfalls-02.html">第2回：有限要素解は収束しているのに正解へ収束しない――最大角条件とBabuška–Aziz反例</a><time datetime="2026-08-07">7 Aug 2026</time></li></ul><details class="more-list"><summary>Planned topics</summary><ul><li>ロッキング現象</li><li>スペクトル汚染</li><li>非正規作用素と擬スペクトル</li><li>Godunovの障壁</li><li>variational crimes</li><li>Gibbs現象</li><li>逆問題のsemi-convergence</li></ul></details></article></div></section>
+<section id="applications" class="section"><div class="shell"><div class="section-head"><div><div class="kicker">Applications & research expansions</div><h2>Where the core theory may travel.</h2></div><p>These series are intentionally separated from the mathematical Core. They explore applications and newer computational paradigms after the underlying stability and certification questions are made explicit.</p></div>
+<article class="series-block memory"><div class="series-head"><div><h3>潜在状態と治療履歴から疾患進行を予測する数理</h3><p>癌と歯周病を，潜在状態，履歴，時空間的不均一性という共通の数理構造から考える研究構想です．</p><div class="warning">This series concerns mathematical modelling, numerical analysis and statistical inference. It does not provide medical diagnosis or treatment advice.</div></div><span class="count">3 related notes</span></div><ul class="post-list"><li><a href="./posts/disease-progression-math-01.html">第1回：癌と歯周病はなぜ同じ数理構造で考えられるのか</a><time datetime="2026-07-26">26 Jul 2026</time></li><li><a href="./posts/dental-math-01.html">数学で虫歯・歯周病に何ができるか</a><time datetime="2026-07-26">26 Jul 2026</time></li><li><a href="./posts/dental-math-02.html">治療履歴から虫歯・歯周病の未来を予測できるか</a><time datetime="2026-07-26">26 Jul 2026</time></li></ul></article>
+<article class="series-block"><div class="series-head"><div><h3>PINNs・Deep Ritz・学習支援型数値計算</h3><p>点配置，残差，近似空間，幾何条件，certificateの観点から，FEMとの違いと接点を調べます．</p></div><span class="count">7 published</span></div><ul class="post-list"><li><a href="./posts/pinns-01.html">第1回：1次元Poisson問題でPINNsを動かす</a></li><li><a href="./posts/pinns-02.html">第2回：残差点の配置と近似誤差の関係</a></li><li><a href="./posts/pinns-03.html">第3回：どの幾何的量が誤差を支配するか</a></li><li><a href="./posts/pinns-04.html">第4回：PINNs / Deep Ritz / VPINN / WANを比べる</a></li><li><a href="./posts/pinns-05.html">第5回：コードと数学の辞書</a></li><li><a href="./posts/pinns-06.html">第6回：flatness parameterからNN幾何条件へ</a></li><li><a href="./posts/pinns-07.html">第7回：研究ビジョン全体図</a></li></ul></article>
+</div></section>
+<section id="foundations" class="section"><div class="shell"><div class="section-head"><div><div class="kicker">Published foundational & computational series</div><h2>Implementation and classical numerical tools.</h2></div><p>Earlier computational notes remain useful as entry points to the more theoretical series above.</p></div><div class="foundation-grid">
+<article class="foundation"><h3>有限要素法における幾何とメッシュ</h3><ul class="post-list"><li><a href="./posts/article16apr26.html">FEniCSxで学ぶメッシュ分割入門</a><time>16 Apr 2026</time></li><li><a href="./posts/article18apr26.html">異方性メッシュ族をPythonで再構成する</a><time>18 Apr 2026</time></li><li><a href="./posts/article20apr26.html">FEniCSx用メッシュファイルを取り出す</a><time>20 Apr 2026</time></li><li><a href="./posts/article20apr26_2.html">FreeFEM用メッシュファイルを取り出す</a><time>20 Apr 2026</time></li></ul></article>
+<article class="foundation"><h3>FEniCSx・FreeFEM入門</h3><ul class="post-list"><li><a href="./posts/article15apr26.html">Google Colabで始めるFEniCSx入門</a><time>15 Apr 2026</time></li><li><a href="./posts/article20apr26_3.html">Google ColabでFreeFEMを使う</a><time>20 Apr 2026</time></li><li><a href="./posts/article21apr26.html">Google Colabで始めるFreeFEM入門</a><time>21 Apr 2026</time></li></ul></article>
+<article class="foundation"><h3>外挿法と誤差展開</h3><ul class="post-list"><li><a href="./posts/article08may26.html">第1回：外挿法で円周率を求める</a></li><li><a href="./posts/article08may26_2.html">第2回：数値微分と外挿法</a></li><li><a href="./posts/article08may26_3.html">第3回：Romberg積分入門</a></li><li><a href="./posts/article09may26.html">第4回：ODEにおける外挿法とCrank–Nicolson</a></li><li><a href="./posts/article10may26.html">第5回：FEMにおけるRitz射影と点値外挿</a></li><li><a href="./posts/article10may26_2.html">第6回：Defect correctionとは何か</a></li><li><a href="./posts/article10may26_3.html">第7回：特異性があると外挿はどうなるか</a></li><li><a href="./posts/article10may26_4.html">第8回：外挿，defect correction，特異性の比較</a></li></ul></article>
+<article id="exploratory" class="foundation"><h3>Exploratory series</h3><ul class="post-list"><li><a href="./posts/article10may26_5.html">CIP法の二つの顔：Constrained Interpolation ProfileとContinuous Interior Penalty</a><span class="state">Published</span></li><li><span class="planned">Weak GalerkinとハイブリッドFEM</span></li><li><span class="planned">非圧縮流れとpressure robustness</span></li><li><span class="planned">SPDE・気候・災害</span></li><li><span class="planned">Never Ending Story</span></li></ul></article>
+</div></div></section>
+<section class="section"><div class="shell"><div class="quick"><a href="../publications/">Publications<span>Formal research outputs</span></a><a href="../fem/">Research Visions<span>Core and expansion map</span></a><a href="../suppl/">Supplementary Visions<span>Learning routes to the frontier</span></a><a href="../research/">Research<span>Two main research programmes</span></a></div></div></section>
 </main>
-<!--▲メインコンテンツ-->
-</div><!--main-body-in-->
-</div><!--main-body-->
-<!--▼サイトフッター-->
-<footer class="site-footer">
-<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
-</footer>
-<!--▲サイトフッター-->
-<!--▼ページトップ-->
-<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../images/common/page-top_off.png" width="80"/></a></p>
-<!--▲ページトップ-->
-<script charset="utf-8" src="../js/utility.js"></script>
+<footer class="footer"><div class="shell footer-inner"><span>© 2026 Hiroki Ishizaka</span><span>Research Notes · Numerical Analysis</span></div></footer>
 </body>
 </html>
