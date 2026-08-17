@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,convolution quadrature,BDF1,BDF2,operational calculus,Laplace transform,transfer function,internal variables,completely monotone kernel,starting correction">
-<meta name="description" content="BDFとconvolution quadratureは何を離散化しているのかについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．">
+<meta name="description" content="BDF convolution quadratureを，kernelの直接積分ではなくLaplace領域のtransfer functionにBDF symbolを代入する離散operational calculusとして解説します．">
 <link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-09.html">
 
 <link rel="stylesheet" href="../../css/base.css">
@@ -32,7 +32,7 @@
       "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-09.html#article",
       "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-09.html",
       "headline": "第9回：BDFとconvolution quadratureは何を離散化しているのか",
-      "description": "BDFとconvolution quadratureは何を離散化しているのかについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．",
+      "description": "BDF convolution quadratureを，kernelの直接積分ではなくLaplace領域のtransfer functionにBDF symbolを代入する離散operational calculusとして解説します．",
       "author": {
         "@id": "https://teamfem.github.io/hiroki_ishizaka/#person"
       },
@@ -121,7 +121,7 @@
 <meta property="og:site_name" content="Hiroki Ishizaka">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="BDFとconvolution quadratureは何を離散化しているのか | Hiroki Ishizaka">
-<meta property="og:description" content="BDFとconvolution quadratureは何を離散化しているのかについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．">
+<meta property="og:description" content="BDF convolution quadratureを，kernelの直接積分ではなくLaplace領域のtransfer functionにBDF symbolを代入する離散operational calculusとして解説します．">
 <meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-09.html">
 <meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/head_image.png">
 <meta property="og:image:alt" content="Hiroki Ishizaka — Numerical Analysis · PDEs · FEM">
@@ -129,7 +129,7 @@
 <meta name="twitter:site" content="@teamfem16key">
 <meta name="twitter:creator" content="@teamfem16key">
 <meta name="twitter:title" content="BDFとconvolution quadratureは何を離散化しているのか | Hiroki Ishizaka">
-<meta name="twitter:description" content="BDFとconvolution quadratureは何を離散化しているのかについて，有限要素法・数値解析・PDEの観点から整理するHiroki Ishizakaの研究ノートです．">
+<meta name="twitter:description" content="BDF convolution quadratureを，kernelの直接積分ではなくLaplace領域のtransfer functionにBDF symbolを代入する離散operational calculusとして解説します．">
 <meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/head_image.png">
 <meta name="twitter:image:alt" content="Hiroki Ishizaka — Numerical Analysis · PDEs · FEM">
 </head>
@@ -188,7 +188,7 @@
 
 <p class="news-date"><time datetime="2026-08-03">3rd August 2026</time></p>
 
-<h2>Introduction：CQはkernelを格子点で積分する方法ではない</h2>
+<h2>はじめに――BDF convolution quadratureは何を離散化するのか</h2>
 <div class="news">
 <article class="news-item">
 <p>
@@ -229,6 +229,12 @@ BDF convolution quadratureは，
 starting correction，kernel singularityが一つの構造として理解できます．
 </p>
 </article>
+</div>
+
+<!-- memory-search-entry-related -->
+<div style="padding:12px 15px;margin:14px 0 22px;border:1px solid #dfe6ef;border-radius:14px;background:#f7f9fc;">
+<b>関連して読む</b>
+<ul><li><a href="unresolved-memory-08.html">離散内部変数でcross-term cancellationを保存する</a></li><li><a href="unresolved-memory-10.html">model-reduction errorをどう分解するか</a></li><li><a href="unresolved-memory-02.html">dynamic Schur complementとmemory kernel</a></li><li><a href="../../publications/#preprints">Current preprints</a></li></ul>
 </div>
 
 <h2>1．causal convolutionはtransfer functionで特徴付けられる</h2>
