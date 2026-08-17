@@ -1,0 +1,120 @@
+name: Refine search entry articles
+
+on:
+  push:
+    paths:
+      - '.github/workflows/refine-search-entry-articles.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refine headings and related-reading links
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          articles = {
+              'blog/posts/anisotropic-geometry-01.html': {
+                  'old_h2': '<h2>はじめに</h2>',
+                  'new_h2': '<h2>はじめに――なぜ有限要素法にメッシュの幾何条件が必要なのか</h2>',
+                  'links': [
+                      ('anisotropic-geometry-02.html','正則性と準正則性を角度を使わずに表す'),
+                      ('paradoxes-pitfalls-02.html','最大角条件とBabuška–Aziz反例'),
+                      ('../../geo/','History of Geometric Conditions in FEM'),
+                      ('../../publications/','Publications')
+                  ]
+              },
+              'blog/posts/anisotropic-geometry-02.html': {
+                  'old_h2': '<h2>はじめに</h2>',
+                  'new_h2': '<h2>はじめに――shape regularityとsemi-regularityをどう区別するか</h2>',
+                  'links': [
+                      ('anisotropic-geometry-01.html','有限要素法ではなぜメッシュの幾何条件が必要なのか'),
+                      ('anisotropic-geometry-05.html','graded mesh，quasi-uniformity，shape regularityの違い'),
+                      ('paradoxes-pitfalls-02.html','最大角条件とBabuška–Aziz反例'),
+                      ('../../geo/','History of Geometric Conditions in FEM')
+                  ]
+              },
+              'blog/posts/anisotropic-geometry-05.html': {
+                  'old_h2': '<h2>はじめに</h2>',
+                  'new_h2': '<h2>はじめに――graded mesh，quasi-uniformity，shape regularityは別の概念</h2>',
+                  'links': [
+                      ('anisotropic-geometry-02.html','正則性と準正則性を角度を使わずに表す'),
+                      ('anisotropic-geometry-07.html','Shishkin meshは正則か，準正則か'),
+                      ('anisotropic-geometry-08.html','Bakhvalov meshの滑らかなgradingと幾何条件'),
+                      ('../../publications/','Publications')
+                  ]
+              },
+              'blog/posts/anisotropic-geometry-07.html': {
+                  'old_h2': '<h2>はじめに</h2>',
+                  'new_h2': '<h2>はじめに――Shishkin meshの正則性・準正則性をどう判定するか</h2>',
+                  'links': [
+                      ('anisotropic-geometry-05.html','graded mesh，quasi-uniformity，shape regularityの違い'),
+                      ('anisotropic-geometry-06.html','長方形の三角形分割を幾何指標で調べる'),
+                      ('anisotropic-geometry-08.html','Bakhvalov meshの滑らかなgradingと幾何条件'),
+                      ('../../fem/','Research Visions')
+                  ]
+              },
+              'blog/posts/paradoxes-pitfalls-01.html': {
+                  'old_h2': '<h2>Introduction</h2>',
+                  'new_h2': '<h2>はじめに――Babuška paradoxとは何か</h2>',
+                  'links': [
+                      ('paradoxes-pitfalls-02.html','最大角条件とBabuška–Aziz反例'),
+                      ('exact-curved-fem-01.html','Exact-curved FEMの入口'),
+                      ('../../research/','Research'),
+                      ('../../publications/','Publications')
+                  ]
+              },
+              'blog/posts/paradoxes-pitfalls-02.html': {
+                  'old_h2': '<h2>Introduction</h2>',
+                  'new_h2': '<h2>はじめに――最大角条件を破ると何が起こるのか</h2>',
+                  'links': [
+                      ('anisotropic-geometry-01.html','有限要素法ではなぜメッシュの幾何条件が必要なのか'),
+                      ('anisotropic-geometry-02.html','正則性と準正則性を角度を使わずに表す'),
+                      ('paradoxes-pitfalls-01.html','Babuška paradox'),
+                      ('../../geo/','History of Geometric Conditions in FEM')
+                  ]
+              },
+          }
+
+          for path, cfg in articles.items():
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              if cfg['new_h2'] not in text:
+                  if cfg['old_h2'] not in text:
+                      raise RuntimeError(f'opening h2 not found: {path}')
+                  text = text.replace(cfg['old_h2'], cfg['new_h2'], 1)
+
+              if '<!-- search-entry-related -->' not in text:
+                  first_h2 = text.find(cfg['new_h2'])
+                  if first_h2 < 0:
+                      raise RuntimeError(f'new h2 not found: {path}')
+                  boundary = text.find('</article>\n</div>\n\n<h2', first_h2)
+                  if boundary < 0:
+                      boundary = text.find('</article>\r\n</div>\r\n\r\n<h2', first_h2)
+                  if boundary < 0:
+                      raise RuntimeError(f'intro boundary not found: {path}')
+                  close_end = text.find('</div>', boundary) + len('</div>')
+                  items = ''.join(f'<li><a href="{href}">{label}</a></li>' for href,label in cfg['links'])
+                  block = ('\n\n<!-- search-entry-related -->\n'
+                           '<div style="padding:12px 15px;margin:14px 0 22px;border:1px solid #dfe6ef;border-radius:14px;background:#f7f9fc;">\n'
+                           '<b>関連して読む</b>\n<ul>' + items + '</ul>\n</div>')
+                  text = text[:close_end] + block + text[close_end:]
+
+              p.write_text(text, encoding='utf-8')
+
+          print('Refined six search-entry articles without changing mathematical content.')
+          PY
+      - name: Commit refinements
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add blog/posts/anisotropic-geometry-01.html blog/posts/anisotropic-geometry-02.html blog/posts/anisotropic-geometry-05.html blog/posts/anisotropic-geometry-07.html blog/posts/paradoxes-pitfalls-01.html blog/posts/paradoxes-pitfalls-02.html
+          git commit -m 'Refine six search-entry articles and related reading'
+          git push
