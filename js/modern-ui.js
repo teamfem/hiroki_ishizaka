@@ -1,6 +1,8 @@
 (function(){
   'use strict';
 
+  var MOBILE_BREAKPOINT=1080;
+
   function addSharedStyles(){
     if(document.getElementById('modern-ui-styles')) return;
     var style=document.createElement('style');
@@ -9,6 +11,7 @@
 .skip-link{position:fixed;left:14px;top:10px;z-index:200;padding:10px 14px;border-radius:10px;background:#142033;color:#fff;font-size:.86rem;font-weight:800;transform:translateY(-160%);transition:transform .16s ease;box-shadow:0 10px 24px rgba(20,32,51,.2)}\
 .skip-link:focus{transform:translateY(0);color:#fff}\
 a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid rgba(36,91,138,.34);outline-offset:3px}\
+.topbar .navlinks{gap:16px;font-size:.86rem;white-space:nowrap}\
 .site-toplink{position:fixed;right:22px;bottom:22px;z-index:80;width:48px;height:48px;display:grid;place-items:center;border:1px solid rgba(223,230,239,.96);border-radius:50%;background:rgba(255,255,255,.94);color:#245b8a;font-size:1.25rem;font-weight:800;line-height:1;box-shadow:0 12px 30px rgba(20,32,51,.14);opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .2s ease,transform .2s ease,visibility .2s ease,background .2s ease,color .2s ease;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);cursor:pointer}\
 .site-toplink.is-visible{opacity:1;visibility:visible;transform:translateY(0)}\
 .site-toplink:hover{background:#142033;color:#fff;border-color:#142033}\
@@ -22,7 +25,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
 .mobile-nav-panel-inner{width:min(1160px,100%);margin:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}\
 .mobile-nav-panel a{display:block;padding:11px 13px;border:1px solid #e6ebf1;border-radius:12px;background:#fff;color:#34445a;font-size:.88rem;font-weight:700}\
 .mobile-nav-panel a:hover{color:#245b8a;border-color:#cbd8e5}\
-@media(max-width:940px){.topbar .navlinks{display:none}.mobile-nav-toggle{display:flex}.site-toplink{right:16px;bottom:16px}.topbar{overflow:visible}}\
+@media(max-width:1080px){.topbar .navlinks{display:none}.mobile-nav-toggle{display:flex}.site-toplink{right:16px;bottom:16px}.topbar{overflow:visible}}\
 @media(max-width:520px){.mobile-nav-panel-inner{grid-template-columns:1fr}.mobile-nav-panel{padding-left:12px;padding-right:12px}.site-toplink{right:14px;bottom:14px;width:44px;height:44px}}\
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.skip-link,.site-toplink,.mobile-nav-toggle span{transition:none}}';
     document.head.appendChild(style);
@@ -44,15 +47,30 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
     document.body.insertBefore(link,document.body.firstChild);
   }
 
-  function ensureContactLink(){
+  function ensurePrimaryNavigation(){
     var desktop=document.querySelector('.topbar .navlinks');
     if(!desktop) return;
-    var exists=Array.prototype.some.call(desktop.querySelectorAll('a'),function(a){return a.textContent.trim().toLowerCase()==='contact';});
-    if(exists) return;
-    var link=document.createElement('a');
-    link.href='/hiroki_ishizaka/contact/';
-    link.textContent='Contact';
-    desktop.appendChild(link);
+
+    var base='/hiroki_ishizaka/';
+    var items=[
+      {href:base+'research/',label:'Research'},
+      {href:base+'publications/',label:'Publications'},
+      {href:base+'fem/',label:'Visions'},
+      {href:base+'suppl/',label:'Supplementary'},
+      {href:base+'blog/',label:'Blog'},
+      {href:base+'geo/',label:'Geometry'},
+      {href:base+'links/',label:'Links'},
+      {href:base+'contact/',label:'Contact'}
+    ];
+    var path=window.location.pathname;
+    desktop.textContent='';
+    items.forEach(function(item){
+      var link=document.createElement('a');
+      link.href=item.href;
+      link.textContent=item.label;
+      if(path.indexOf(item.href)===0) link.setAttribute('aria-current','page');
+      desktop.appendChild(link);
+    });
   }
 
   function initBackToTop(){
@@ -120,13 +138,13 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
     document.addEventListener('click',function(e){
       if(panel.classList.contains('is-open')&&!header.contains(e.target)) close(false);
     });
-    window.addEventListener('resize',function(){if(window.innerWidth>940)close(false);},{passive:true});
+    window.addEventListener('resize',function(){if(window.innerWidth>MOBILE_BREAKPOINT)close(false);},{passive:true});
   }
 
   function init(){
     addSharedStyles();
     ensureSkipLink();
-    ensureContactLink();
+    ensurePrimaryNavigation();
     initMobileNav();
     initBackToTop();
   }
