@@ -40,6 +40,10 @@ for url in urls:
         fail(f'Missing sitemap file: {url} -> {path}')
         continue
     text=path.read_text(encoding='utf-8')
+    desc_tags=re.findall(r'<meta\b(?=[^>]*\bname=[\"\']description[\"\'])[^>]*>',text,re.I)
+    if len(desc_tags)!=1: fail(f'Meta description count {len(desc_tags)}: {path}')
+    canon_tags=re.findall(r'<link\b(?=[^>]*\brel=[\"\']canonical[\"\'])[^>]*>',text,re.I)
+    if len(canon_tags)!=1: fail(f'Canonical count {len(canon_tags)}: {path}')
     tm=re.search(r'<title>(.*?)</title>',text,re.I|re.S)
     if not tm: fail(f'Missing title: {path}')
     else:
