@@ -1,5 +1,4 @@
 from pathlib import Path
-from datetime import datetime
 import json, re
 
 TODAY = '2026-08-17'
@@ -28,16 +27,61 @@ def section_for(name: str) -> str:
     return 'Research notes in numerical analysis'
 
 
-def fallback_date(name: str):
+MONTHS = {
+    'january': 1, 'february': 2, 'march': 3, 'april': 4,
+    'may': 5, 'june': 6, 'july': 7, 'august': 8,
+    'september': 9, 'october': 10, 'november': 11, 'december': 12,
+    'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'jun': 6, 'jul': 7,
+    'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12,
+}
+
+
+def english_date(s: str):
+    m = re.search(
+        r'\b(\d{1,2})(?:st|nd|rd|th)?\s+'
+        r'(January|February|March|April|May|June|July|August|September|October|November|December|'
+        r'Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(20\d{2})\b',
+        s, re.I
+    )
+    if not m:
+        return None
+    month = MONTHS[m.group(2).lower()]
+    return f'{m.group(3)}-{month:02d}-{int(m.group(1)):02d}'
+
+
+def filename_date(name: str):
     # Legacy article filenames such as article15apr26.html.
     m = re.match(r'article(\d{2})([a-z]{3})(\d{2})', name, re.I)
     if not m:
         return None
-    months = {'jan':1,'feb':2,'mar':3,'apr':4,'may':5,'jun':6,'jul':7,'aug':8,'sep':9,'oct':10,'nov':11,'dec':12}
-    mon = months.get(m.group(2).lower())
+    mon = MONTHS.get(m.group(2).lower())
     if not mon:
         return None
     return f'20{m.group(3)}-{mon:02d}-{int(m.group(1)):02d}'
+
+
+def published_date(text: str, name: str):
+    # Preferred machine-readable source.
+    tm = re.search(r'<time\b[^>]*\bdatetime=["\'](\d{4}-\d{2}-\d{2})["\']', text, re.I)
+    if tm:
+        return tm.group(1)
+
+    # Older templates often store the publication date in the breadcrumb.
+    m = re.search(r'Blog post from\s+([^<\n]+)', text, re.I)
+    if m:
+        d = english_date(m.group(1))
+        if d:
+            return d
+
+    # Some series put the date immediately under the H1 instead of using <time>.
+    h1 = re.search(r'<h1\b[^>]*class=["\'][^"\']*section-title[^"\']*["\'][^>]*>.*?</h1>', text, re.I | re.S)
+    if h1:
+        nearby = text[h1.end():h1.end() + 1400]
+        d = english_date(nearby)
+        if d:
+            return d
+
+    return filename_date(name)
 
 
 def meta_value(text: str, name: str):
@@ -68,8 +112,7 @@ for p in files:
     if not posting:
         continue
 
-    tm = re.search(r'<time\b[^>]*\bdatetime=["\'](\d{4}-\d{2}-\d{2})["\']', text, re.I)
-    published = tm.group(1) if tm else fallback_date(p.name)
+    published = published_date(text, p.name)
     if not published:
         missing_dates.append(p.as_posix())
         continue
@@ -108,6 +151,7 @@ for x in missing_dates:
 
 # Validation pass.
 errors = []
+validated = 0
 for p in files:
     text = p.read_text(encoding='utf-8')
     m = re.search(r'<script\s+id=["\']site-structured-data["\']\s+type=["\']application/ld\+json["\']>(.*?)</script>', text, re.I | re.S)
@@ -126,7 +170,10 @@ for p in files:
     absent = [k for k in required if not posting.get(k)]
     if absent:
         errors.append((p.as_posix(), 'missing '+','.join(absent)))
+    else:
+        validated += 1
 
+print(f'VALIDATED_BLOGPOSTING {validated}')
 print(f'VALIDATION_ERRORS {len(errors)}')
 for x in errors:
     print(' ', x)
