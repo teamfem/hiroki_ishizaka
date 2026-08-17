@@ -12,3 +12,4 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run final site audit
         run: python .github/scripts/final-site-audit.py
+# rerun after verification-file exclusion
