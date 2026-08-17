@@ -199,5 +199,7 @@ jQuery.noConflict();
   if(next) navLink(next,'Next article','Next in this series →');
   if(!prev && !next) postNav.classList.add('single');
 
+  if(!document.querySelector('script[src*=\"modern-ui.js\"]')){var ui=document.createElement('script');ui.src='../../js/modern-ui.js';document.body.appendChild(ui);}
+
   if(window.MathJax && MathJax.typesetPromise){MathJax.typesetPromise([article]).catch(function(){});}
 })();
