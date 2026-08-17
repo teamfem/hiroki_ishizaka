@@ -1,0 +1,179 @@
+name: Add structured data
+
+on:
+  push:
+    paths:
+      - '.github/workflows/add-structured-data.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add JSON-LD to sitemap pages
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from urllib.parse import urlparse
+          from html.parser import HTMLParser
+          import xml.etree.ElementTree as ET
+          import json, re, html
+
+          BASE='https://teamfem.github.io/hiroki_ishizaka/'
+          PERSON_ID=BASE+'#person'
+          WEBSITE_ID=BASE+'#website'
+          BLOG_ID=BASE+'blog/#blog'
+          SAME_AS=[
+              'https://scholar.google.com/citations?user=kmHMrZIAAAAJ&hl=en',
+              'https://researchmap.jp/3dns',
+              'https://arxiv.org/search/math?searchtype=author&query=Ishizaka,+H',
+              'https://orcid.org/0000-0002-5892-7488',
+              'https://www.researchgate.net/profile/Hiroki-Ishizaka',
+              'https://x.com/teamfem16key'
+          ]
+
+          class P(HTMLParser):
+              def __init__(self):
+                  super().__init__(convert_charrefs=True)
+                  self.title=''; self.in_title=False
+                  self.h1=''; self.in_h1=False; self.h1buf=[]
+                  self.description=''; self.canonical=''; self.lang=''
+              def handle_starttag(self,tag,attrs):
+                  a=dict(attrs)
+                  if tag=='html': self.lang=a.get('lang','')
+                  if tag=='title': self.in_title=True
+                  if tag=='h1' and not self.h1:
+                      self.in_h1=True; self.h1buf=[]
+                  if tag=='meta' and (a.get('name') or '').lower()=='description': self.description=a.get('content','').strip()
+                  if tag=='link' and (a.get('rel') or '').lower()=='canonical': self.canonical=a.get('href','').strip()
+              def handle_endtag(self,tag):
+                  if tag=='title': self.in_title=False
+                  if tag=='h1' and self.in_h1:
+                      self.h1=' '.join(''.join(self.h1buf).split()); self.in_h1=False
+              def handle_data(self,data):
+                  if self.in_title: self.title+=data
+                  if self.in_h1: self.h1buf.append(data)
+
+          person={
+              '@type':'Person',
+              '@id':PERSON_ID,
+              'name':'Hiroki Ishizaka',
+              'url':BASE,
+              'email':'mailto:h.ishizaka005@gmail.com',
+              'sameAs':SAME_AS,
+              'knowsAbout':[
+                  'Numerical analysis','Finite element method','Partial differential equations',
+                  'Anisotropic meshes','Certified computation','Unresolved dynamics'
+              ]
+          }
+          website={
+              '@type':'WebSite','@id':WEBSITE_ID,'url':BASE,'name':'Hiroki Ishizaka',
+              'publisher':{'@id':PERSON_ID},'inLanguage':'en-GB'
+          }
+
+          ns={'s':'http://www.sitemaps.org/schemas/sitemap/0.9'}
+          urls=[e.text.strip() for e in ET.parse('sitemap.xml').getroot().findall('s:url/s:loc',ns) if e.text]
+
+          def local_path(url):
+              p=urlparse(url).path
+              marker='/hiroki_ishizaka/'
+              if marker not in p: return None
+              rel=p.split(marker,1)[1]
+              if not rel: return Path('index.html')
+              if rel.endswith('/'): return Path(rel)/'index.html'
+              return Path(rel)
+
+          def page_type(rel):
+              if rel=='': return 'WebPage'
+              if rel=='publications/': return 'CollectionPage'
+              if rel=='blog/': return 'Blog'
+              if rel=='contact/': return 'ContactPage'
+              if rel in ('research/','fem/','suppl/','geo/','links/'):
+                  return 'CollectionPage' if rel in ('fem/','suppl/','links/') else 'WebPage'
+              return 'WebPage'
+
+          for url in urls:
+              path=local_path(url)
+              if not path or not path.exists(): continue
+              text=path.read_text(encoding='utf-8')
+              p=P(); p.feed(text)
+              canonical=p.canonical or url
+              rel=urlparse(url).path.split('/hiroki_ishizaka/',1)[1]
+              headline=p.h1 or ' '.join(p.title.split())
+              desc=p.description
+              lang=p.lang or ('ja' if rel.startswith('blog/posts/') else 'en-GB')
+
+              graph=[]
+              if rel=='':
+                  graph=[person,website,{
+                      '@type':'WebPage','@id':BASE+'#webpage','url':BASE,
+                      'name':' '.join(p.title.split()),'description':desc,
+                      'isPartOf':{'@id':WEBSITE_ID},'about':{'@id':PERSON_ID},
+                      'mainEntity':{'@id':PERSON_ID},'inLanguage':lang
+                  }]
+              elif rel.startswith('blog/posts/'):
+                  graph=[
+                      {
+                          '@type':'BlogPosting','@id':canonical+'#article','url':canonical,
+                          'headline':headline,'description':desc,
+                          'author':{'@id':PERSON_ID},'publisher':{'@id':PERSON_ID},
+                          'isPartOf':{'@id':BLOG_ID},'mainEntityOfPage':canonical,
+                          'inLanguage':lang
+                      },
+                      {
+                          '@type':'BreadcrumbList','@id':canonical+'#breadcrumbs',
+                          'itemListElement':[
+                              {'@type':'ListItem','position':1,'name':'Home','item':BASE},
+                              {'@type':'ListItem','position':2,'name':'Blog','item':BASE+'blog/'},
+                              {'@type':'ListItem','position':3,'name':headline,'item':canonical}
+                          ]
+                      }
+                  ]
+              elif rel=='blog/':
+                  graph=[
+                      {'@type':'Blog','@id':BLOG_ID,'url':canonical,'name':'Blog | Hiroki Ishizaka',
+                       'description':desc,'author':{'@id':PERSON_ID},'publisher':{'@id':PERSON_ID},
+                       'isPartOf':{'@id':WEBSITE_ID},'inLanguage':lang},
+                      person
+                  ]
+              else:
+                  graph=[
+                      {'@type':page_type(rel),'@id':canonical+'#webpage','url':canonical,
+                       'name':' '.join(p.title.split()),'description':desc,
+                       'isPartOf':{'@id':WEBSITE_ID},'about':{'@id':PERSON_ID},'inLanguage':lang},
+                      person
+                  ]
+
+              data={'@context':'https://schema.org','@graph':graph}
+              block='<script id="site-structured-data" type="application/ld+json">\n'+json.dumps(data,ensure_ascii=False,indent=2)+'\n</script>'
+              text=re.sub(r'\n?<script id=["\']site-structured-data["\'] type=["\']application/ld\+json["\]>.*?</script>\n?', '\n', text, flags=re.S|re.I)
+              text=text.replace('</head>',block+'\n</head>',1)
+              path.write_text(text,encoding='utf-8')
+          PY
+      - name: Validate JSON-LD
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re, json
+          files=list(Path('.').rglob('*.html'))
+          found=0
+          for path in files:
+              text=path.read_text(encoding='utf-8',errors='ignore')
+              m=re.search(r'<script id="site-structured-data" type="application/ld\+json">(.*?)</script>',text,re.S)
+              if not m: continue
+              json.loads(m.group(1)); found+=1
+          if found < 67:
+              raise SystemExit(f'Expected structured data on at least 67 pages, found {found}')
+          print('Validated structured data on',found,'pages')
+          PY
+      - name: Commit structured data
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html publications/index.html research/index.html fem/index.html suppl/index.html blog/index.html geo/index.html links/index.html contact/index.html blog/posts/*.html
+          git commit -m 'Add structured data across research website'
+          git push
