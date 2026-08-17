@@ -1,598 +1,79 @@
 <!DOCTYPE html>
-<html lang="ja" class="col1">
+<html lang="en-GB">
 <head>
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<meta name="google-site-verification" content="oDwt8186L37cOf9VVCZWRCXMWfvKtBGc9iy6ouKYFXc" />
-
-<title>Publications/Talks | ISHIZAKA Hiroki Website</title>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Finite Element Method,有限要素法,anisotropic FEM,Crouzeix-Raviart,Nedelec,de Rham,maximum norm,discrete maximum principle,certified FEM">
-<meta name="description" content="Publications and research pipeline: anisotropic FEM, CR-RT methods, maximum-norm estimates, de Rham complexes, memory-dependent PDEs, exact-curved FEM, and certified computation">
-
-<link rel="stylesheet" href="../css/base.css">
-<link rel="stylesheet" href="../css/rwd.css">
-
-<link rel="shortcut icon" type="image/x-icon" href="../favicon.ico">
-<link rel="apple-touch-icon" href="../favicon.ico">
-<link rel="apple-touch-icon-precomposed" href="../favicon.ico">
+<meta name="google-site-verification" content="oDwt8186L37cOf9VVCZWRCXMWfvKtBGc9iy6ouKYFXc">
+<title>Publications | Hiroki Ishizaka</title>
+<meta name="description" content="Publications, preprints and research pipeline of Hiroki Ishizaka in anisotropic finite element analysis, certified computation and history-dependent PDEs.">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/publications/">
+<link rel="stylesheet" href="../css/modern.css">
 <link rel="icon" href="../favicon.ico">
-
-<!--[if lt IE 9]>
-<script src="../js/html5.js"></script>
-<![endif]-->
-<script src="../js/jquery.js" charset="utf-8"></script>
-<script src="../js/jquery-migrate.js" charset="utf-8"></script>
-
+<style>
+.pub-tabs{display:flex;flex-wrap:wrap;gap:9px;margin-top:24px}.pub-tabs a{padding:9px 13px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:.82rem;font-weight:720}
+.pub-list{display:grid;gap:12px}.pub{background:#fff;border:1px solid var(--line);border-radius:18px;padding:21px}.pub-top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.pub-id{font-size:.72rem;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);white-space:nowrap}.pub h3{font-size:1.05rem;line-height:1.43;margin:5px 0 7px;letter-spacing:-.018em}.pub-meta{color:var(--muted);font-size:.88rem}.pub-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.pub-links a{padding:6px 9px;border:1px solid var(--line);border-radius:9px;background:#fbfcfe;font-size:.78rem;font-weight:720}.status{display:inline-flex;padding:5px 8px;border-radius:999px;background:var(--soft);font-size:.7rem;font-weight:800;color:var(--accent)}
+.pipeline-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.pipe{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px}.pipe .code{font-size:.72rem;font-weight:850;color:var(--accent2);letter-spacing:.08em;text-transform:uppercase}.pipe h3{font-size:1.02rem;margin:6px 0 8px}.pipe p{font-size:.87rem;color:var(--muted);margin:0}.pipe.dark{background:linear-gradient(135deg,#18243a,#31314f);color:#fff;border:0}.pipe.dark h3{color:#fff}.pipe.dark p{color:#d7deea}.pipe.dark .code{color:#c5b8ed}
+.small-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.small-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:19px}.small-card h3{font-size:1rem;margin:0 0 8px}.small-card p,.small-card li{font-size:.86rem;color:var(--muted)}.small-card ul{padding-left:1.2em;margin:.6em 0 0}
+@media(max-width:820px){.pipeline-grid,.small-grid{grid-template-columns:1fr}.pub-top{display:block}.pub-id{display:block;margin-bottom:4px}}
+</style>
 </head>
-
-<body class="page">
-
-<!--▼サイトヘッダー-->
-<header id="top" class="site-header">
-	
-	<div class="site-header-in">
-		<div class="site-header-conts">
-			<p class="site-title"><a href="../">ISHIZAKA Hiroki Website</a></p>
-		</div>
-	</div>
-
-	<!--▼グローバルナビ-->
-	<nav class="global-nav">
-		<div class="global-nav-in">
-			<div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
-			<ul id="menu">
-				<li>
-					<a href="../">Home</a>
-				</li>
-			
-				<li><a href="../publications/">Publications</a></li>
-				
-				<li>
-					<a href="../research/">Research</a>
-					<!--
-					<ul>
-						<li><a href="./research/research01/">Research1</a></li>
-						<li><a href="./research/research02/">Research2</a></li>
-					</ul>
-					-->
-				</li>
-				
-				<li>
-					<a href="../fem/">Research Visions</a>
-				</li>
-				
-				<li>
-					<a href="../suppl/">Supplementary Visions</a>
-				</li>
-				
-				<li>
-					<a href="../blog/">Blog</a>
-				</li>
-				
-				<li>
-					<a href="../geo/">History of Geometric Conditions in FEM</a>
-				</li>
-				
-				<li>
-					<a href="../links/">Links</a>
-				</li>
-				<!--
-				<li><a href="./about/">会社情報</a></li>
-				<li><a href="./privacy-policy/">個人情報保護方針</a></li>
-				-->
-			</ul>
-		</div>
-	</nav>
-	<!--▲グローバルナビ-->
-
-</header>
-<!--▲サイトヘッダー-->
-
-<div class="main-body">
-<div class="main-body-in">
-
-	<!--▼パンくずリスト-->
-	<nav class="breadcrumbs">
-		<ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
-			<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
-				<a href="../" itemprop="item">
-				<span itemprop="name">ISHIZAKA Hiroki Website</span> TOP
-				</a>
-				<meta itemprop="position" content="1">
-			</li>
-			<li class="bcl-last">
-				Publications/Talks
-			</li>
-		</ol>
-	</nav>
-	<!--▲パンくずリスト-->
-
-	<!--▼メインコンテンツ-->
-	<main>
-		<div class="main-conts">
-
-		<article class="section-wrap">
-			<div class="section-in">
-
-
-<h1 class="section-title">Publications/Talks</h1>
-
-<h2>Publications</h2>
-* Corresponding author
-
-<h3>Publications in peer-reviewed journals</h3>
-<div class="news">
-<article class="news-item">
-<p class="news-cont">
-[11] <b>H. Ishizaka*</b>: On discrete Sobolev inequalities for nonconforming finite elements under a semi-regular mesh condition. IMA Journal of Numerical Analysis, (2026) [<a href="https://arxiv.org/abs/2509.00505" target="_blank">Arxiv</a>] [<a href="https://doi.org/10.1093/imanum/drag006" target="_blank">DOI</a>]<br><hr>
-[10] <b>H. Ishizaka*</b>: Nitsche's method under a semi-regular mesh condition. Numerical Algorithms 102, 291-334 (2026) [<a href="https://arxiv.org/abs/2501.06824" target="_blank">Arxiv</a>] [<a href="https://doi.org/10.1007/s11075-025-02131-8" target="_blank">DOI</a>]<br><hr>
-[9] <b>H. Ishizaka*</b>: Anisotropic modified Crouzeix-Raviart finite element method for the stationary Navier-Stokes equation. Numerische Mathematik 157, 855-895 (2025) [<a href="https://arxiv.org/abs/2304.10214" target="_blank">Arxiv</a>] [<a href="https://doi.org/10.1007/s00211-025-01460-z" target="_blank">DOI</a>]<br><hr>
-[8] <b>H. Ishizaka*</b>: Morley finite element analysis for fourth-order elliptic equations under a semi-regular mesh condition. Applications of Mathematics 69 (6), 769-805 (2024) [<a href="https://arxiv.org/abs/2302.08719" target="_blank">Arxiv</a>] [<a href="https://doi.org/10.21136/AM.2024.0103-24" target="_blank">DOI</a>]<br><hr>
-[7] <b>H. Ishizaka*</b>: Hybrid weakly over-penalised symmetric interior penalty method on anisotropic meshes. Calcolo 61, 45 (2024)  [<a href="https://arxiv.org/abs/2404.15288" target="_blank">Arxiv</a>] [<a href="https://doi.org/10.1007/s10092-024-00600-5" target="_blank">DOI</a>]<br><hr>
-[6] <b>H. Ishizaka*</b>: Anisotropic weakly over-penalised symmetric interior penalty method for the Stokes equation. Journal of Scientific Computing 100, 53 (2024) [<a href="https://arxiv.org/abs/2212.03822" target="_blank">Arxiv</a>] [<a href="https://doi.org/10.1007/s10915-024-02598-y" target="_blank">DOI</a>]<br><hr>
-[5] <b>H. Ishizaka*</b>, K. Kobayashi, T. Tsuchiya: Anisotropic interpolation error estimates using a new geometric parameter. Jpn. J. Ind. Appl. Math. 40 (1), 475-512 (2023)  [<a href="https://link.springer.com/article/10.1007/s13160-022-00535-w" target="_blank">Japan Journal of Industrial and Applied Mathematics</a>] [<a href="https://doi.org/10.1007/s13160-022-00535-w" target="_blank">DOI</a>]<br><hr>
-[4] <b>H. Ishizaka*</b>: Anisotropic Raviart-Thomas interpolation error estimates using a new geometric parameter. Calcolo, 59 (4), (2022)  [<a href="https://arxiv.org/abs/2110.02348" target="_blank">Arxiv</a>]  [<a href="https://link.springer.com/article/10.1007/s10092-022-00494-1" target="_blank">Calcolo</a>] [<a href="https://doi.org/10.1007/s10092-022-00494-1" target="_blank">DOI</a>]<br><hr>
-[3] <b>H. Ishizaka</b>, K. Kobayashi, R. Suzuki, T. Tsuchiya: A new geometric condition equivalent to the maximum angle condition for tetrahedrons. Computers & Mathematics with Applications 99, 323-328 (2021) [<a href="https://www.sciencedirect.com/science/article/pii/S0898122121003084" target="_blank">Computers & Mathematics with Applications</a>] [<a href="https://doi.org/10.1016/j.camwa.2021.08.017" target="_blank">DOI</a>]<br><hr>
-[2] <b>H. Ishizaka*</b>, K. Kobayashi, T. Tsuchiya: Crouzeix-Raviart and Raviart-Thomas finite-element error analysis on anisotropic meshes violating the maximum-angle condition. Jpn. J. Ind. Appl. Math. 38 (2), 645-675 (2021) [<a href="https://www.researchgate.net/publication/349185270_Crouzeix-Raviart_and_Raviart-Thomas_finite-element_error_analysis_on_anisotropic_meshes_violating_the_maximum-angle_condition" target="_blank">ResearchGate</a>] [<a href="https://doi.org/10.1007/s13160-020-00455-7" target="_blank">DOI</a>]<br><hr>
-[1] <b>H. Ishizaka*</b>, K. Kobayashi, T. Tsuchiya: General theory of interpolation error estimates on anisotropic meshes. Jpn. J. Ind. Appl. Math. 38 (1), 163-191 (2021) [<a href="https://www.researchgate.net/publication/343250856_General_theory_of_interpolation_error_estimates_on_anisotropic_meshes" target="_blank">ResearchGate</a>] [<a href="https://doi.org/10.1007/s13160-020-00433-z" target="_blank">DOI</a>]<br>
-Correction to: General theory of interpolation error estimates on anisotropic meshes. [<a href="https://link.springer.com/article/10.1007/s13160-023-00582-x" target="_blank">Link</a>]
-</p>
-</article>
-</div>
-
-<h3>Submitted manuscripts and preprints</h3>
-<div class="news">
-<article class="news-item">
-<p class="news-cont">
-[S6] <b>H. Ishizaka*</b>: Exact characterisation of maximum-angle conditions for spherical finite element meshes. [<a href="https://arxiv.org/abs/2608.11353" target="_blank">Arxiv</a>] [<a href="" target="_blank">DOI</a>]<br><hr>
-[S5] <b>H. Ishizaka*</b>: Weighted well-posedness and kernel stability for coercive evolution equations with measure-valued delays. [<a href="https://arxiv.org/abs/2602.19099" target="_blank">Arxiv</a>] [<a href="" target="_blank">DOI</a>]<br><hr>
-[S4] <b>H. Ishizaka*</b>: Graph-space well-posedness for diffusion equations with degenerate instantaneous diffusion. [<a href="https://arxiv.org/abs/2607.12871" target="_blank">Arxiv</a>] [<a href="" target="_blank">DOI</a>]<br><hr>
-[S3] <b>H. Ishizaka*</b>: Coercivity structure of positive-type memory: exact gaps, critical horizons, and singular limits. [<a href="https://arxiv.org/abs/2607.12482" target="_blank">Arxiv</a>] [<a href="" target="_blank">DOI</a>]<br><hr>
-[S2] <b>H. Ishizaka*</b>: Exact-curved Lagrange finite elements for the Poisson problem in two dimensions. [<a href="https://arxiv.org/abs/2605.26566" target="_blank">Arxiv</a>] [<a href="" target="_blank">DOI</a>]<br><hr>
-[S1] <b>H. Ishizaka*</b>: Low-order CR-RT equilibrated-flux certification for semilinear problems on anisotropic meshes. [<a href="https://arxiv.org/abs/2602.01636" target="_blank">Arxiv</a>] [<a href="" target="_blank">DOI</a>]<br><hr>
-</p>
-</article>
-</div>
-
-<h3>Manuscripts in preparation</h3>
-<div class="news">
-<article class="news-item">
-<p class="news-cont">
-[MP5] <b>H. Ishizaka*</b>: In preparation. [<a href="" target="_blank">Arxiv</a>] [<a href="" target="_blank">DOI</a>]<br><hr>
-[MP4] <b>H. Ishizaka*</b>: Stable reduction of coupled diffusion systems to equations with memory. [<a href="" target="_blank">Arxiv</a>] [<a href="" target="_blank">DOI</a>]<br><hr>
-[MP3] <b>H. Ishizaka*</b>: Anisotropic Lagrange interpolation on exact spherical triangles. [<a href="" target="_blank">Arxiv</a>] [<a href="" target="_blank">DOI</a>]<br><hr>
-[MP2] <b>H. Ishizaka*</b>: Constrained commuting Raviart--Thomas projections on anisotropic meshes. [<a href="" target="_blank">Arxiv</a>] [<a href="" target="_blank">DOI</a>]<br><hr>
-[MP1] <b>H. Ishizaka*</b>: Quantitative kernel concentration and sharp stability boundaries for coercive evolution equations with measure-valued delays. [<a href="" target="_blank">Arxiv</a>] [<a href="" target="_blank">DOI</a>]<br><hr>
-</p>
-</article>
-</div>
-
-<h3>NotebookLM</h3>
-<div class="news">
-<article class="news-item">
-<p class="news-cont">
-[LM3] <b>H. Ishizaka*</b>: Anisotropic Crouzeix-Raviart Finite Elements for Navier-Stokes. [<a href="https://notebooklm.google.com/notebook/d72da4d1-c9f9-49c1-95ae-eb6e6caba3c1/audio" target="_blank">Audio Memo by NotebookLM</a>]<br> 圧力ロバストな定常Navier-Stokes方程式の異方性CR有限要素法について<br><hr>
-
-[LM2] <b>H. Ishizaka*</b>: Nitsche's method under a semi-regular mesh condition. [<a href="https://notebooklm.google.com/notebook/c314fbf2-508f-4284-a4e0-af646c04d174/audio" target="_blank">Audio Memo by NotebookLM</a>]<br> 準正則幾何条件下でのニッチェ法について <br><hr>
-
-[LM1] <b>H. Ishizaka*</b>, K. Kobayashi, T. Tsuchiya: Anisotropic interpolation error estimates using a new geometric parameter. [<a href="https://notebooklm.google.com/notebook/564d25d6-3428-4ef4-a227-0e8bcb32568a/audio" target="_blank">Audio Memo by NotebookLM</a>] [<a href="https://notebooklm.google.com/notebook/8cbc1823-66f2-4a7e-a8b9-5a0ad947a56c/audio" target="_blank">Audio Memo by NotebookLM (English)</a>]<br> 新しい幾何パラメーターを用いた異方性補間誤差評価について
-</p>
-</article>
-</div>
-
-
-<h2>Notes</h2>
-<div class="news">
-<article class="news-item">
-<p class="news-cont">
-[N3] <b>H. Ishizaka</b>: Stable Reduction of Unresolved Dynamics: An Operator-Theoretic Framework. [<a href="" target="_blank">Arxiv</a>] <br><hr>
-[N2] <b>H. Ishizaka</b>: Interpolation error analysis using a new geometric parameter. [<a href="https://arxiv.org/abs/2504.16012" target="_blank">Arxiv</a>] <br><hr>
-[N1] <b>H. Ishizaka</b>: Note on a weakly over-penalised symmetric interior
-penalty method on anisotropic meshes for the
-Poisson equation, Ver. 1. [<a href="https://arxiv.org/abs/2403.07899" target="_blank">Arxiv</a>]<br>
-【Remark】修正箇所あり．できるだけ早い段階で書き直します．
-</p>
-</article>
-</div>
-
-
-
-<h2>Research Pipeline</h2>
-<div class="news">
-<article class="news-item">
-<p class="news-cont">
-ここでは，研究テーマを単に列挙するのではなく，既発表・投稿中の成果から次の論文へ進む依存関係と優先順位を示します．
-同時に本文を本格的に執筆する論文は原則として一編とし，もう一つのテーマについて主要補題・反例・数値実験を準備します．
-<br><br>
-26th July 2026 <span class="cat cat001">Last Update</span>
-
-<h3>Current manuscript policy</h3>
-<ul>
-  <li>投稿中の [S1]--[S5] の改訂・査読対応を最優先する．</li>
-  <li>新規原稿は，主要定理の出口条件を確認してから執筆を開始する．</li>
-  <li>局所幾何，パッチ接続，離散構造，認証を，一編に無理に詰め込まない．</li>
-  <li>研究テーマは多く保持してよいが，Active manuscript は最大三件に限定する．</li>
-</ul>
-
-<h3>Active manuscripts and immediate priorities</h3>
-
-[A1] <b>H. Ishizaka</b>:
-(temporary title) Discrete maximum principles for Crouzeix–Raviart finite elements on anisotropic simplicial meshes
-<br>
-次の新規論文候補です．
-準正則条件
-\[
-  \sup_{T\in\mathcal T_h}\frac{H_T}{h_T}<\infty
-\]
-が補間・安定性を制御する条件である一方，離散最大値原理には
-\[
-  \nabla\lambda_i^{\top}D_T\nabla\lambda_j\leq 0
-  \qquad (i\neq j)
-\]
-のようなmetric-angle型の単調性条件が必要になることを明確に区別します．
-主な出口条件は，
-<ul>
-  <li>CR自由度に対するDMPと，物理空間でのpointwise boundの違いを定理化すること，</li>
-  <li>正値性を保つ右辺離散化を構成すること，</li>
-  <li>二次元だけでなく三次元四面体で本質的な結果を与えること，</li>
-  <li>RT再構成による局所保存とbound-preserving postprocessingを接続すること，</li>
-  <li>semi-regularityとmetric acutenessが独立であることを反例で示すこと</li>
-</ul>
-です．この出口条件が閉じた場合に本格執筆へ進みます．
-<br><hr>
-
-[A2] <b>H. Ishizaka</b>:
-(temporary title) Maximum-norm error estimates on anisotropic simplicial meshes under computable geometric and connectivity conditions
-<br>
-異方性有限要素法に対する \(L^\infty\) 誤差評価を，局所要素形状だけでなく，パッチ構造とメッシュ接続まで含めて再構成します．
-目標は，
-\[
-  \|u-u_h\|_{L^\infty(\Omega)}
-  \leq
-  C\,\ell_h
-  \left[
-    \max_{T\in\mathcal T_h}
-    \sum_{i=1}^{d}
-    h_{T,i}^{\,2}
-    \|\partial_{\boldsymbol r_{T,i}}^2u\|_{L^\infty(\omega_T)}
-    +
-    \eta_{\mathrm{conn}}
-  \right]
-\]
-のように，方向別補間誤差と，パッチ接続・トポロジーに由来する項を分離することです．
-準正則条件だけでmaximum-norm quasi-optimalityが得られるとは仮定せず，
-離散Green関数，Ritz射影の \(L^\infty\) 安定性，DMP，メッシュ接続条件の関係を調べます．
-最初は直線単体上の \(P_1\) FEMを対象とし，その後にCR companion，exact-curved geometry，verified pointwise outputへ進みます．
-<br><hr>
-
-[A3] <b>H. Ishizaka</b>:
-(temporary title) Structure-preserving fully discrete approximation of history-dependent diffusion with measure-valued memory
-<br>
-投稿中の連続理論 [S3]--[S5] を完全離散化へ進めるmemory系列の主原稿です．
-BDF型時間離散およびconvolution quadratureを隠れ内部変数系の離散化として表現し，
-主方程式と内部変数のcross-term cancellationを離散レベルで再現します．
-主結果は，瞬間的coercivity定数 \(\alpha_0\) が退化する極限でも一様な離散graph-norm安定性です．
-memory系列では，同時に別の新規原稿を立ち上げず，本論文を閉じてから空間異方性・認証へ進みます．
-<br><hr>
-
-<h3>Theorems under investigation</h3>
-
-[T1] <b>Three-dimensional Nédélec interpolation under computable anisotropic geometry</b>
-<br>
-第1種Nédélec補間について，two-step transformationと弱境界momentを用い，
-方向別微分項，curl項，幾何係数を分離した定量的安定性評価を調べます．
-単に既存の最大角条件付き定数を \(H_T/h_T\) で書き換えるのではなく，
-<ul>
-  <li>最大角退化時の定数発散率を陽に示せるか，</li>
-  <li>RT補間評価と同じ幾何パラメータでcurl可換性を閉じられるか，</li>
-  <li>低正則性で線積分自由度を弱momentへ置き換えられるか，</li>
-  <li>三次元四面体に固有の新しい補題が得られるか</li>
-</ul>
-をgo/no-go基準とします．単独論文として十分な新規性が得られない場合は，異方性de Rham論文の基礎節へ統合します．
-<br><hr>
-
-[T2] <b>Discrete maximum principle versus maximum-norm stability</b>
-<br>
-DMPは順序保存・単調性の問題であり，\(L^\infty\) 誤差評価は点ごとの定量的精度の問題です．
-両者を混同せず，
-\[
-  \text{DMP}
-  \not\Rightarrow
-  \text{optimal }L^\infty\text{ error estimate}
-\]
-であることを踏まえて，M行列条件，離散Green関数，Ritz射影安定性，接続条件の相互関係を整理します．
-CR-DMPと異方性 \(L^\infty\) 評価は独立論文としつつ，共通する局所幾何・パッチ条件を再利用します．
-<br><hr>
-
-<h3>Long-term flagship programme</h3>
-
-[F1] <b>H. Ishizaka</b>:
-(temporary title) Anisotropic de Rham stability on semi-regular tetrahedral meshes
-<br>
-長期的な旗艦理論です．最初の論文では，
-\[
-  P_1^c
-  \xrightarrow{\nabla}
-  N_0
-  \xrightarrow{\operatorname{curl}}
-  RT_0
-  \xrightarrow{\operatorname{div}}
-  P_0
-\]
-を対象に，三次元四面体上で，
-<ul>
-  <li>Nédélec補間の定量的安定性，</li>
-  <li>既存のRT補間評価との統一，</li>
-  <li>可換射影，</li>
-  <li>離散Poincaré不等式，</li>
-  <li>安定なHodge分解と調和成分，</li>
-  <li>必要な大域的grading・接続条件，</li>
-  <li>最大角条件が破綻するときの障害</li>
-</ul>
-を明らかにします．
-外部代数，一般次元，fractional-order quasi-interpolation，Maxwell固有値問題は，この低次・三次元理論を閉じた後に分離して進めます．
-<br><hr>
-
-[F2] <b>Certified Maxwell finite elements on anisotropic tetrahedral meshes</b>
-<br>
-[F1]の可換性とHodge構造を基礎として，
-discrete compactness，spectral correctness，Maxwell固有値問題の誤差保証へ進みます．
-最終的には，
-\[
-  \operatorname{curl}\Pi_h^N
-  =
-  \Pi_h^{RT}\operatorname{curl}
-\]
-と計算可能な幾何certificateを組み合わせたverified Maxwell FEMを目指します．
-<br><hr>
-
-[F3] <b>Bound-preserving and locally conservative CR–RT methods</b>
-<br>
-[A1]の線形CR-DMPを基礎として，非線形安定化，RT保存流束，bound-preserving reconstruction，
-事後誤差評価を結合します．
-目標は，
-\[
-  \text{DMP}
-  +
-  \text{local conservation}
-  +
-  \text{computable certification}
-\]
-を同時に満たす異方性CR–RT法です．
-<br><hr>
-
-<h3>Exact-curved geometry programme</h3>
-
-[Q1] <b>H. Ishizaka</b>:
-(temporary title) Exact-curved Crouzeix–Raviart and Raviart–Thomas elements via an affine-core/curved-correction decomposition
-<br>
-投稿中のexact-curved Lagrange FEM [S2] をCR・RTへ拡張します．
-曲面平均自由度，非アフィンPiola変換，発散可換性，curved Marini型再構成，equilibrated fluxを整備します．
-本テーマは長期旗艦理論より後回しに固定するのではなく，CR-DMP，\(L^\infty\) 評価，Nédélec予備研究の進捗に応じて主原稿へ昇格させます．
-<br><hr>
-
-[Q2] <b>Exact-curved shape differentiation and moving domains</b>
-<br>
-[Q1]を基礎として，
-\[
-  \Omega(t)=\mathcal A_t(\Omega_0),
-  \qquad
-  K(t)=F_K(t)(\widehat K)
-\]
-に対する一様補間評価，material derivativeとの交換子，shape derivativeの誤差評価，
-ALE geometric conservation lawへ進みます．
-<br><hr>
-
-[Q3] <b>Energy-stable exact-curved ALE FSI and certified interface outputs</b>
-<br>
-流体・固体で共有する曲界面，界面仕事の相殺，divergence preservation，異方性境界層を統一し，
-界面traction，流量，エネルギー交換をverified outputとして評価します．
-<br><hr>
-
-<h3>Research programme</h3>
-<ul>
-  <li><b>Geometry and anisotropic FEM：</b>
-  flatness parameter，semi-regularity，方向別補間，パッチ接続，maximum-norm stability．</li>
-  <li><b>Structure-preserving CR–RT methods：</b>
-  DMP，局所保存，平衡化フラックス，bound-preserving reconstruction．</li>
-  <li><b>Anisotropic de Rham and Maxwell：</b>
-  Nédélec–RT可換性，Hodge分解，discrete compactness，verified Maxwell．</li>
-  <li><b>History-dependent PDEs：</b>
-  memory構造，kernel stability，完全離散化，model-reduction error．</li>
-  <li><b>Exact-curved geometry：</b>
-  curved CR–RT，形状微分，ALE，FSI，界面出力認証．</li>
-  <li><b>Certified and goal-oriented computation：</b>
-  CR–RT平衡フラックス，DWR，verified output，pointwise certificate．</li>
-</ul>
-
-<h3>Queued projects</h3>
-<ul>
-  <li>Pressure-robust CR Stokes with symmetric gradient under a semi-regular mesh condition．</li>
-  <li>Certified space–time DWR for semilinear parabolic problems．</li>
-  <li>Fractional-order \(H(\mathrm{div})/H(\mathrm{curl})\) quasi-interpolation．</li>
-  <li>Coordinate-free anisotropic de Rham theory via exterior algebra．</li>
-  <li>Nitsche methods for diffusion–advection on semi-regular meshes．</li>
-</ul>
-
-<h3>Idea archive</h3>
-<p>
-CIP・semi-Lagrangian法，Richardson外挿，SPDE，PINNs，neural operators，情報幾何，
-learning-assisted mesh adaptationなどの探索的テーマは，
-個別の進行中論文としては掲載せず，
-<a href="../fem/">Research Visions</a>および
-<a href="../suppl/">Supplementary Visions</a>に整理します．
-</p>
-
-</p>
-</article>
-</div>
-
-
-<h2>Presentations</h2>
-<div class="news">
-<article class="news-item">
-<p class="news-cont">
-[P4] <b>H. Ishizaka</b> and T. Tsuchiya, Error analysis of Crouzeix–Raviart finite element methods on anisotropic meshes, Joint Conference on Applied Mathematics, The Mathematical Society of Japan, 12 December 2019, Ryukoku University, Shiga<br><hr>
-[P3] <b>H. Ishizaka</b> and T. Tsuchiya, Error analysis of Crouzeix-Raviart finite element method without the shape regularity condition, The Mathematical Society of Japan, 17 September 2019, Kanazawa University, Ishikawa<br><hr>
-[P2] <b>H. Ishizaka</b> and T. Tsuchiya, Error analysis of Crouzeix-Raviart finite element method without the shape regularity condition, The Japan Society for Industrial and Applied Mathematics, 03 September 2019, Tokyo University, Tokyo<br><hr>
-[P1] <b>H. Ishizaka</b> and M. Tabata, An finite element analysis of the two-dimensional micro scale heat transport equations, The Japan Society for Industrial and Applied Mathematics, March 2007, Nagoya University, Aichi
-</p>
-</article>
-</div>
-
-<h2>Theses</h2>
-<div class="news">
-<article class="news-item">
-<p class="news-cont">
-[PhD Thesis] Anisotropic interpolation error analysis using a new geometric parameter and its applications<br><hr>
-[Master Thesis] Mathematical analysis of a linearised equation accompanied with a two-phase flow problem
-</p>
-</article>
-</div>
-
-<h2>Classification</h2>
-<div class="news">
-
-<h3>Crouzeix-Raviart FEMs</h3>
-<article class="news-item">
-<p class="news-cont">
-Papers: [2][9][10][11][PhD Thesis]<br><br>
-Presentations: [P2][P3][P4]<br><br>
-Notes: [N2]
-</p>
-</article>
-
-<h3>Discontinuous Galerkin FEMs, WOPSIP type, Hybrid type</h3>
-<article class="news-item">
-<p class="news-cont">
-Papers: [6][7]<br><br>
-Presentations: <br><br>
-Notes: [N1]
-</p>
-</article>
-
-<h3>Morley FEMs</h3>
-<article class="news-item">
-<p class="news-cont">
-Papers: [8]<br><br>
-Presentations: <br><br>
-Notes: [N2]
-</p>
-</article>
-
-<h3>Anisotropic Interpolation Error Estimates</h3>
-<article class="news-item">
-<p class="news-cont">
-Papers: [1][3][4][5][8][9][PhD Thesis]<br><br>
-Presentations: [P2][P3][P4]<br><br>
-Notes: [N2]
-</p>
-</article>
-
-<h3>Anisotropic FEMs</h3>
-<article class="news-item">
-<p class="news-cont">
-Papers: [2][6][7][8][9][10][PhD Thesis]<br><br>
-Presentations: [P2][P3][P4] <br><br>
-Notes: [N1]
-</p>
-</article>
-
-<h3>Pressure robust (well-balanced) schemes</h3>
-<div class="news">
-<article class="news-item">
-<p class="news-cont">
-Papers: [8][9][10]<br><br>
-Presentations: 
-</p>
-</article>
-
-<h3>FEMs for the non-Fourier heat transfer equation</h3>
-<article class="news-item">
-<p class="news-cont">
-Papers: <br><br>
-Presentation: [P1]
-</p>
-</article>
-
-<h3>Mathematical analysis of two-phase flow problems</h3>
-<article class="news-item">
-<p class="news-cont">
-Paper: [Master Thesis] <br><br>
-Presentation:
-</p>
-</article>
-
-<h3>Discrete maximum principles and maximum-norm estimates</h3>
-<article class="news-item">
-<p class="news-cont">
-Current research: [A1], [A2]<br><br>
-Related foundations: [2], [4], [5], [9], [11], [S1]
-</p>
-</article>
-
-<h3>Nédélec, de Rham complexes and Maxwell problems</h3>
-<article class="news-item">
-<p class="news-cont">
-Theorems under investigation: [T1]<br><br>
-Flagship programme: [F1], [F2]<br><br>
-Related Raviart–Thomas foundation: [4], [5]
-</p>
-</article>
-
-<h3>History-dependent PDEs and memory equations</h3>
-<article class="news-item">
-<p class="news-cont">
-Submitted preprints: [S3], [S4], [S5]<br><br>
-Active manuscript: [A3]
-</p>
-</article>
-
-<h3>Exact-curved FEM, shape differentiation, moving domains and FSI</h3>
-<article class="news-item">
-<p class="news-cont">
-Submitted preprint: [S2]<br><br>
-Research sequence: [Q1]--[Q3]
-</p>
-</article>
-
-<h3>Mathematical analysis of moving boundary problems</h3>
-<article class="news-item">
-<p class="news-cont">
-Submitted preprint: [S2]<br><br>
-Research sequence: [Q2], [Q3]<br><br>
-Presentation:
-</p>
-</article>
-
-</div>
-
-			</div><!--section-in-->
-		</article>
-
-		</div>	
-	</main>
-	<!--▲メインコンテンツ-->
-
-	
-</div><!--main-body-in-->
-</div><!--main-body-->
-
-
-<!--▼サイトフッター-->
-<footer class="site-footer">
-	<div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
-</footer>
-<!--▲サイトフッター-->
-
-
-<!--▼ページトップ-->
-<p class="page-top"><a href="#top"><img class="over" src="../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
-<!--▲ページトップ-->
-
-<script src="../js/utility.js" charset="utf-8"></script>
-
+<body>
+<header class="topbar"><div class="shell nav"><a class="brand" href="../">Hiroki Ishizaka<small>Numerical Analysis · PDEs · FEM</small></a><nav class="navlinks" aria-label="Primary navigation"><a href="../research/">Research</a><a href="./">Publications</a><a href="../fem/">Visions</a><a href="../blog/">Blog</a><a href="../links/">Links</a></nav></div></header>
+<main>
+<section class="page-hero"><div class="shell"><div class="eyebrow"><span class="dot"></span>Publications</div><h1>Published results,<br>current manuscripts and research pipeline.</h1><p>Peer-reviewed journal articles, submitted manuscripts and preprints are listed separately from manuscripts in preparation and longer-term research projects.</p><div class="pub-tabs"><a href="#journals">Peer-reviewed</a><a href="#preprints">Submitted / preprints</a><a href="#preparation">In preparation</a><a href="#pipeline">Research pipeline</a><a href="#talks">Talks &amp; theses</a></div></div></section>
+
+<section id="journals" class="section"><div class="shell"><div class="section-head"><div><div class="kicker">Peer-reviewed journals</div><h2>Published work.</h2></div><p>* Corresponding author. Links point to arXiv, DOI or journal pages as available.</p></div><div class="pub-list">
+<article class="pub"><div class="pub-top"><div><span class="pub-id">[11] · 2026</span><h3>On discrete Sobolev inequalities for nonconforming finite elements under a semi-regular mesh condition</h3><div class="pub-meta"><b>H. Ishizaka*</b> · IMA Journal of Numerical Analysis</div></div><span class="status">Published</span></div><div class="pub-links"><a href="https://arxiv.org/abs/2509.00505">arXiv</a><a href="https://doi.org/10.1093/imanum/drag006">DOI</a></div></article>
+<article class="pub"><div class="pub-top"><div><span class="pub-id">[10] · 2026</span><h3>Nitsche's method under a semi-regular mesh condition</h3><div class="pub-meta"><b>H. Ishizaka*</b> · Numerical Algorithms 102, 291–334</div></div><span class="status">Published</span></div><div class="pub-links"><a href="https://arxiv.org/abs/2501.06824">arXiv</a><a href="https://doi.org/10.1007/s11075-025-02131-8">DOI</a></div></article>
+<article class="pub"><div class="pub-top"><div><span class="pub-id">[9] · 2025</span><h3>Anisotropic modified Crouzeix–Raviart finite element method for the stationary Navier–Stokes equation</h3><div class="pub-meta"><b>H. Ishizaka*</b> · Numerische Mathematik 157, 855–895</div></div><span class="status">Published</span></div><div class="pub-links"><a href="https://arxiv.org/abs/2304.10214">arXiv</a><a href="https://doi.org/10.1007/s00211-025-01460-z">DOI</a></div></article>
+<article class="pub"><div class="pub-top"><div><span class="pub-id">[8] · 2024</span><h3>Morley finite element analysis for fourth-order elliptic equations under a semi-regular mesh condition</h3><div class="pub-meta"><b>H. Ishizaka*</b> · Applications of Mathematics 69(6), 769–805</div></div><span class="status">Published</span></div><div class="pub-links"><a href="https://arxiv.org/abs/2302.08719">arXiv</a><a href="https://doi.org/10.21136/AM.2024.0103-24">DOI</a></div></article>
+<article class="pub"><div class="pub-top"><div><span class="pub-id">[7] · 2024</span><h3>Hybrid weakly over-penalised symmetric interior penalty method on anisotropic meshes</h3><div class="pub-meta"><b>H. Ishizaka*</b> · Calcolo 61, 45</div></div><span class="status">Published</span></div><div class="pub-links"><a href="https://arxiv.org/abs/2404.15288">arXiv</a><a href="https://doi.org/10.1007/s10092-024-00600-5">DOI</a></div></article>
+<article class="pub"><div class="pub-top"><div><span class="pub-id">[6] · 2024</span><h3>Anisotropic weakly over-penalised symmetric interior penalty method for the Stokes equation</h3><div class="pub-meta"><b>H. Ishizaka*</b> · Journal of Scientific Computing 100, 53</div></div><span class="status">Published</span></div><div class="pub-links"><a href="https://arxiv.org/abs/2212.03822">arXiv</a><a href="https://doi.org/10.1007/s10915-024-02598-y">DOI</a></div></article>
+<article class="pub"><div class="pub-top"><div><span class="pub-id">[5] · 2023</span><h3>Anisotropic interpolation error estimates using a new geometric parameter</h3><div class="pub-meta"><b>H. Ishizaka*</b>, K. Kobayashi, T. Tsuchiya · Jpn. J. Ind. Appl. Math. 40(1), 475–512</div></div><span class="status">Published</span></div><div class="pub-links"><a href="https://doi.org/10.1007/s13160-022-00535-w">DOI</a></div></article>
+<article class="pub"><div class="pub-top"><div><span class="pub-id">[4] · 2022</span><h3>Anisotropic Raviart–Thomas interpolation error estimates using a new geometric parameter</h3><div class="pub-meta"><b>H. Ishizaka*</b> · Calcolo 59(4)</div></div><span class="status">Published</span></div><div class="pub-links"><a href="https://arxiv.org/abs/2110.02348">arXiv</a><a href="https://doi.org/10.1007/s10092-022-00494-1">DOI</a></div></article>
+<article class="pub"><div class="pub-top"><div><span class="pub-id">[3] · 2021</span><h3>A new geometric condition equivalent to the maximum angle condition for tetrahedrons</h3><div class="pub-meta"><b>H. Ishizaka</b>, K. Kobayashi, R. Suzuki, T. Tsuchiya · Computers &amp; Mathematics with Applications 99, 323–328</div></div><span class="status">Published</span></div><div class="pub-links"><a href="https://doi.org/10.1016/j.camwa.2021.08.017">DOI</a></div></article>
+<article class="pub"><div class="pub-top"><div><span class="pub-id">[2] · 2021</span><h3>Crouzeix–Raviart and Raviart–Thomas finite-element error analysis on anisotropic meshes violating the maximum-angle condition</h3><div class="pub-meta"><b>H. Ishizaka*</b>, K. Kobayashi, T. Tsuchiya · Jpn. J. Ind. Appl. Math. 38(2), 645–675</div></div><span class="status">Published</span></div><div class="pub-links"><a href="https://doi.org/10.1007/s13160-020-00455-7">DOI</a></div></article>
+<article class="pub"><div class="pub-top"><div><span class="pub-id">[1] · 2021</span><h3>General theory of interpolation error estimates on anisotropic meshes</h3><div class="pub-meta"><b>H. Ishizaka*</b>, K. Kobayashi, T. Tsuchiya · Jpn. J. Ind. Appl. Math. 38(1), 163–191</div></div><span class="status">Published</span></div><div class="pub-links"><a href="https://doi.org/10.1007/s13160-020-00433-z">DOI</a><a href="https://link.springer.com/article/10.1007/s13160-023-00582-x">Erratum / Correction</a></div></article>
+</div></div></section>
+
+<section id="preprints" class="section"><div class="shell"><div class="section-head"><div><div class="kicker">Submitted manuscripts and preprints</div><h2>Current public manuscripts.</h2></div><p>These are separated from peer-reviewed publications and from manuscripts still in preparation.</p></div><div class="pub-list">
+<article class="pub"><div class="pub-top"><div><span class="pub-id">[S6]</span><h3>Exact characterisation of maximum-angle conditions for spherical finite element meshes</h3><div class="pub-meta"><b>H. Ishizaka*</b></div></div><span class="status">Preprint</span></div><div class="pub-links"><a href="https://arxiv.org/abs/2608.11353">arXiv</a></div></article>
+<article class="pub"><div class="pub-top"><div><span class="pub-id">[S5]</span><h3>Weighted well-posedness and kernel stability for coercive evolution equations with measure-valued delays</h3><div class="pub-meta"><b>H. Ishizaka*</b></div></div><span class="status">Preprint</span></div><div class="pub-links"><a href="https://arxiv.org/abs/2602.19099">arXiv</a></div></article>
+<article class="pub"><div class="pub-top"><div><span class="pub-id">[S4]</span><h3>Graph-space well-posedness for diffusion equations with degenerate instantaneous diffusion</h3><div class="pub-meta"><b>H. Ishizaka*</b></div></div><span class="status">Preprint</span></div><div class="pub-links"><a href="https://arxiv.org/abs/2607.12871">arXiv</a></div></article>
+<article class="pub"><div class="pub-top"><div><span class="pub-id">[S3]</span><h3>Coercivity structure of positive-type memory: exact gaps, critical horizons, and singular limits</h3><div class="pub-meta"><b>H. Ishizaka*</b></div></div><span class="status">Preprint</span></div><div class="pub-links"><a href="https://arxiv.org/abs/2607.12482">arXiv</a></div></article>
+<article class="pub"><div class="pub-top"><div><span class="pub-id">[S2]</span><h3>Exact-curved Lagrange finite elements for the Poisson problem in two dimensions</h3><div class="pub-meta"><b>H. Ishizaka*</b></div></div><span class="status">Preprint</span></div><div class="pub-links"><a href="https://arxiv.org/abs/2605.26566">arXiv</a></div></article>
+<article class="pub"><div class="pub-top"><div><span class="pub-id">[S1]</span><h3>Low-order CR–RT equilibrated-flux certification for semilinear problems on anisotropic meshes</h3><div class="pub-meta"><b>H. Ishizaka*</b></div></div><span class="status">Preprint</span></div><div class="pub-links"><a href="https://arxiv.org/abs/2602.01636">arXiv</a></div></article>
+</div></div></section>
+
+<section id="preparation" class="section"><div class="shell"><div class="section-head"><div><div class="kicker">Manuscripts in preparation</div><h2>Work being developed.</h2></div><p>Titles are kept distinct from public preprints. They represent active manuscripts rather than completed results.</p></div><div class="pipeline-grid">
+<article class="pipe"><span class="code">MP5</span><h3>In preparation</h3><p>Working manuscript; title not yet fixed.</p></article>
+<article class="pipe dark"><span class="code">MP4</span><h3>Stable reduction of coupled diffusion systems to equations with memory</h3><p>Concrete PDE development of the stable-reduction programme.</p></article>
+<article class="pipe"><span class="code">MP3</span><h3>Anisotropic Lagrange interpolation on exact spherical triangles</h3><p>Exact curved geometry and anisotropic interpolation.</p></article>
+<article class="pipe"><span class="code">MP2</span><h3>Constrained commuting Raviart–Thomas projections on anisotropic meshes</h3><p>Commuting projection structure under anisotropic geometry.</p></article>
+<article class="pipe"><span class="code">MP1</span><h3>Quantitative kernel concentration and sharp stability boundaries for coercive evolution equations with measure-valued delays</h3><p>Quantitative stability boundaries in the measure-valued delay programme.</p></article>
+</div></div></section>
+
+<section id="pipeline" class="section"><div class="shell"><div class="section-head"><div><div class="kicker">Research pipeline</div><h2>What comes after the current manuscripts.</h2></div><p>Candidate papers, theorems under investigation, flagship programmes and exact-curved geometry projects are shown separately from completed work.</p></div><div class="pipeline-grid">
+<article class="pipe"><span class="code">A1 · Candidate paper</span><h3>Discrete maximum principles for Crouzeix–Raviart finite elements on anisotropic simplicial meshes</h3><p>Separates semi-regularity from metric-angle monotonicity and studies CR degrees of freedom, positivity-preserving loads and RT-based conservative reconstruction.</p></article>
+<article class="pipe"><span class="code">A2 · Candidate paper</span><h3>Maximum-norm error estimates on anisotropic simplicial meshes under computable geometric and connectivity conditions</h3><p>Separates directional interpolation error from patch connectivity and investigates discrete Green functions, Ritz stability and DMP.</p></article>
+<article class="pipe dark"><span class="code">A3 · Memory series</span><h3>Structure-preserving fully discrete approximation of history-dependent diffusion with measure-valued memory</h3><p>BDF and convolution quadrature interpreted through hidden internal variables, with discrete cross-term cancellation and graph-norm stability.</p></article>
+<article class="pipe"><span class="code">T1 · Theorem under investigation</span><h3>Three-dimensional Nédélec interpolation under computable anisotropic geometry</h3><p>Quantitative stability, weak boundary moments, curl commutativity and genuinely three-dimensional tetrahedral structure.</p></article>
+<article class="pipe"><span class="code">T2 · Theorem under investigation</span><h3>Discrete maximum principle versus maximum-norm stability</h3><p>Clarifies the distinction between order preservation and quantitative pointwise accuracy.</p></article>
+<article class="pipe dark"><span class="code">F1 · Flagship</span><h3>Anisotropic de Rham stability on semi-regular tetrahedral meshes</h3><p>Nédélec–RT stability, commuting projections, discrete Poincaré inequalities, Hodge decomposition and global grading/connectivity conditions.</p></article>
+<article class="pipe"><span class="code">F2 · Flagship</span><h3>Certified Maxwell finite elements on anisotropic tetrahedral meshes</h3><p>Discrete compactness, spectral correctness and verified Maxwell FEM built on the de Rham programme.</p></article>
+<article class="pipe"><span class="code">F3 · Flagship</span><h3>Bound-preserving and locally conservative CR–RT methods</h3><p>Combines DMP, local conservation and computable certification.</p></article>
+<article class="pipe"><span class="code">Q1 · Exact-curved geometry</span><h3>Exact-curved Crouzeix–Raviart and Raviart–Thomas elements via an affine-core/curved-correction decomposition</h3><p>Curved-face moments, non-affine Piola maps, divergence commutativity and equilibrated fluxes.</p></article>
+<article class="pipe"><span class="code">Q2 · Exact-curved geometry</span><h3>Exact-curved shape differentiation and moving domains</h3><p>Material derivatives, commutators, shape-derivative error estimates and ALE geometric conservation.</p></article>
+<article class="pipe"><span class="code">Q3 · Exact-curved geometry</span><h3>Energy-stable exact-curved ALE FSI and certified interface outputs</h3><p>Shared curved interfaces, work cancellation, divergence preservation and certified traction/flux outputs.</p></article>
+</div></div></section>
+
+<section id="talks" class="section"><div class="shell"><div class="section-head"><div><div class="kicker">Presentations &amp; theses</div><h2>Earlier academic work.</h2></div><p>Talks and theses remain on the same page but are visually separated from journal publications.</p></div><div class="small-grid">
+<article class="small-card"><h3>Presentations</h3><ul><li>2019 — Error analysis of Crouzeix–Raviart finite element methods on anisotropic meshes, Joint Conference on Applied Mathematics, Ryukoku University.</li><li>2019 — Error analysis of Crouzeix–Raviart FEM without the shape regularity condition, Mathematical Society of Japan, Kanazawa University.</li><li>2019 — Same topic, Japan Society for Industrial and Applied Mathematics, Tokyo University.</li><li>2007 — A finite element analysis of the two-dimensional micro scale heat transport equations, JSIAM, Nagoya University.</li></ul></article>
+<article class="small-card"><h3>Theses</h3><p><b>PhD Thesis</b><br>Anisotropic interpolation error analysis using a new geometric parameter and its applications</p><p><b>Master Thesis</b><br>Mathematical analysis of a linearised equation accompanied with a two-phase flow problem</p></article>
+</div></div></section>
+
+<section class="section"><div class="shell"><div class="quick"><a href="../research/">Research<span>Research programmes and architecture</span></a><a href="../fem/">Research Visions<span>Long-term directions and open problems</span></a><a href="../blog/">Blog<span>Explanatory research notes</span></a><a href="../geo/">Geometric Conditions<span>Historical background of the FEM programme</span></a></div></div></section>
+</main>
+<footer class="footer"><div class="shell footer-inner"><span>© 2026 Hiroki Ishizaka</span><span>Numerical Analysis · PDEs · Finite Element Methods</span></div></footer>
 </body>
 </html>
