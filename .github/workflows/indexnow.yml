@@ -1,0 +1,24 @@
+name: Notify IndexNow
+
+on:
+  push:
+    paths:
+      - '**/*.html'
+      - '.github/workflows/indexnow.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Submit changed URLs to IndexNow
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: python .github/scripts/submit-indexnow.py
