@@ -741,12 +741,210 @@ nonconforming face termが残り得ます．
 従ってstandard CR velocity errorはpressure approximationや
 \(\boldsymbol f\) のgradient componentの影響を受けることがあります．
 </p>
+</article></div>
+
+<h2>17．pressure-robust CR scheme――RT liftingで右辺を変える</h2>
+<div class="news"><article class="news-item">
 <p>
-pressure-robust modificationは後の回で改めて扱います．
+pressure robustnessを得る基本的な考え方は，
+CR test function \(\boldsymbol v_h\) をそのまま右辺に使わず，
+\(H(\operatorname{div};\Omega)\)-conformingなlifting
+\[
+\mathcal L_h:
+V_h
+\longrightarrow
+V_h^{RT0}
+\subset
+H(\operatorname{div};\Omega)
+\]
+へ写してからforcingとpairingすることです．
+</p>
+<p>
+CR–P0ではlowest-order RT reconstructionを使い，
+概念的には
+\[
+\boxed{
+\mathcal L_h\boldsymbol v_h
+=
+I_h^{RT0}\boldsymbol v_h
+}
+\]
+と考えます．
+このliftingはCRのface mean informationをRTのnormal-flux continuityへ移します．
+</p>
+<p>
+modified Stokes schemeは，
+</p>
+\[
+\boxed{
+\nu a_h(
+\boldsymbol u_h^{\ast},
+\boldsymbol v_h
+)
++
+b_h(
+\boldsymbol v_h,
+p_h^{\ast}
+)
+=
+(
+\boldsymbol f,
+\mathcal L_h\boldsymbol v_h
+)
+}
+\]
+<p>
+for all \(\boldsymbol v_h\in V_h\)，および
+</p>
+\[
+\boxed{
+b_h(
+\boldsymbol u_h^{\ast},
+q_h
+)
+=
+0
+}
+\]
+<p>
+for all \(q_h\in Q_h\) とします．
+stiffness matrixとdivergence matrixを変えるのではなく，
+<b>forcingを受け取るtest functionだけを(H(\operatorname{div}))-conforming reconstructionへ置き換える</b>
+のがlinear Stokesでの基本形です．
 </p>
 </article></div>
 
-<h2>17．Stokesの誤差解析は「nonconforming + mixed」</h2>
+<h2>18．なぜこれでgradient forceを除けるのか</h2>
+<div class="news"><article class="news-item">
+<p>
+forceをHelmholtz decompositionで
+\[
+\boldsymbol f
+=
+\mathbb P\boldsymbol f
++
+\nabla\phi
+\]
+と分けます．
+continuous divergence-free velocityに効くのは
+\[
+\mathbb P\boldsymbol f
+\]
+だけです．
+</p>
+<p>
+standard CRではdiscrete divergence-free
+\[
+\boldsymbol v_h\in V_{h,\operatorname{div}}
+\]
+であっても，
+\(\boldsymbol v_h\) 自身はglobal \(H(\operatorname{div})\)-conformingではないため，
+\[
+(\nabla\phi,\boldsymbol v_h)
+\]
+がexactには0にならない場合があります．
+</p>
+<p>
+一方，liftingが
+\[
+\nabla\cdot
+\mathcal L_h\boldsymbol v_h
+=
+0
+\]
+かつboundary normal flux zeroを満たすなら，
+\[
+\boxed{
+(
+\nabla\phi,
+\mathcal L_h\boldsymbol v_h
+)
+=
+0.
+}
+\]
+</p>
+<p>
+従ってmodified methodでは，discrete velocityが
+irrotational forcingに汚染されにくくなります．
+</p>
+</article></div>
+
+<h2>19．pressure-independent velocity estimateが目標</h2>
+<div class="news"><article class="news-item">
+<p>
+standard mixed methodではschematically
+\[
+|\boldsymbol u-\boldsymbol u_h|_{1,h}
+\lesssim
+\text{velocity approximation}
++
+\nu^{-1}
+\text{pressure approximation}
++
+\text{consistency}
+\]
+となり，\(\nu\) が小さいとpressure errorの影響が強く現れます．
+</p>
+<p>
+pressure-robust modificationの目標は，
+velocity estimateからpressure approximation termを切り離し，
+概念的に
+\[
+\boxed{
+|\boldsymbol u-\boldsymbol u_h^{\ast}|_{1,h}
+\lesssim
+\text{velocity approximation}
++
+\text{reconstruction / consistency error}
+}
+\]
+とすることです．
+</p>
+<p>
+CR velocityをlowest-order RT spaceへliftingする方法では，
+shape-regular mesh上でpressure-independentなvelocity estimateが得られます．
+さらにanisotropic meshでは，
+RT liftingのstabilityとCR–RT structureをsemi-regular geometryの下で追うことが重要になります．
+</p>
+</article></div>
+
+<h2>20．pressure robustnessを数値でどうtestするか</h2>
+<div class="news"><article class="news-item">
+<p>
+最も分かりやすいverificationは，
+同じdivergence-free velocityを保ったまま
+forceへ大きなgradient componentを加えることです．
+</p>
+\[
+\boldsymbol f_{\alpha}
+=
+\boldsymbol f_0
++
+\alpha\nabla\phi,
+\qquad
+\alpha\gg1.
+\]
+<p>
+continuous velocityは \(\alpha\) に依存しません．
+従って，
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>pressure-robustness test</b><br/>
+standard CRとmodified CRで
+\[
+\alpha=1,10^2,10^4,\ldots
+\]
+を比較し，
+velocity errorが \(\alpha\) に対して増大するかを調べる．
+</div>
+<p>
+standard CRではvelocity errorがgradient forcingの影響を受け得ますが，
+pressure-robust schemeではvelocity errorがほぼ不変であることを期待します．
+</p>
+</article></div>
+
+<h2>21．Stokesの誤差解析は「nonconforming + mixed」</h2>
 <div class="news"><article class="news-item">
 <p>
 Poisson CRでは
@@ -804,7 +1002,7 @@ b_h(\boldsymbol w_h,p)
 </p>
 </article></div>
 
-<h2>18．manufactured solution</h2>
+<h2>22．manufactured solution</h2>
 <div class="news"><article class="news-item">
 <p>
 unit square
@@ -860,7 +1058,7 @@ pressureは
 </p>
 </article></div>
 
-<h2>19．数値結果</h2>
+<h2>23．数値結果</h2>
 <div class="news"><article class="news-item">
 <p>
 uniform triangulationでCR–P0を解きました．
@@ -910,7 +1108,7 @@ O(h^2)
 </p>
 </article></div>
 
-<h2>20．discrete divergenceの数値監査</h2>
+<h2>24．discrete divergenceの数値監査</h2>
 <div class="news"><article class="news-item">
 <p>
 計算したvelocityについて
@@ -932,7 +1130,7 @@ theoretical valueは0であり，
 </p>
 </article></div>
 
-<h2>21．pressure meanを必ず監査する</h2>
+<h2>25．pressure meanを必ず監査する</h2>
 <div class="news"><article class="news-item">
 <p>
 pressureは定数分だけ不定なので，
@@ -960,7 +1158,7 @@ pressure errorが大きいとき，
 </p>
 </article></div>
 
-<h2>22．matrix rankだけではinf-sup testにならない</h2>
+<h2>26．matrix rankだけではinf-sup testにならない</h2>
 <div class="news"><article class="news-item">
 <p>
 pressure constant modeを除いたsaddle matrixがnonsingularなら，
@@ -989,7 +1187,7 @@ mesh familyに対して
 </p>
 </article></div>
 
-<h2>23．anisotropic meshでは何を追加監査するか</h2>
+<h2>27．anisotropic meshでは何を追加監査するか</h2>
 <div class="news"><article class="news-item">
 <p>
 強いanisotropyを許す場合は，
@@ -1021,7 +1219,7 @@ semi-regularity condition
 </p>
 </article></div>
 
-<h2>24．ChatGPTへのStokes implementation audit prompt</h2>
+<h2>28．ChatGPTへのStokes implementation audit prompt</h2>
 <div class="news"><article class="news-item">
 <div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
 <b>Audit prompt</b><br/>
@@ -1036,12 +1234,15 @@ semi-regularity condition
 (8) discrete inf-supを一つのmatrix rankだけで判断していないか，<br/>
 (9) \(\operatorname{div}_hu_h=0\) がelementwiseに成立するか，<br/>
 (10) elementwise divergence-free性とpressure robustnessを混同していないか，<br/>
-(11) broken \(H^1\) velocity errorとpressure \(L^2\) errorが期待orderで収束するか<br/>
+(11) pressure-robust版では右辺を \((f,\mathcal L_hv_h)\) に置き換えているか，<br/>
+(12) \(\mathcal L_hv_h\) が \(H(\operatorname{div})\)-conformingで，discrete divergence-free fieldをexactly divergence-free fieldへ送るか，<br/>
+(13) gradient forcingを増幅したtestでvelocity errorがpressureに汚染されないか，<br/>
+(14) broken \(H^1\) velocity errorとpressure \(L^2\) errorが期待orderで収束するか<br/>
 を順に確認してください．
 </div>
 </article></div>
 
-<h2>25．第17回の結論</h2>
+<h2>29．第17回の結論</h2>
 <div class="news"><article class="news-item">
 <p>
 Stokes FEMでは，
@@ -1069,6 +1270,13 @@ CR–P0では
 \]
 がelementwiseに成立し，
 同時にstable velocity–pressure couplingを得られます．
+ただしこれだけでpressure robustではありません．
+RT lifting
+\[
+\mathcal L_h:V_h\to V_h^{RT0}\subset H(\operatorname{div};\Omega)
+\]
+を使ってforcing termを修正すると，
+gradient forceをvelocity equationから除くpressure-robust schemeへ進めます．
 </p>
 <div style="padding:12px; margin:14px 0; border:5px double #333333;">
 <b>Season 2 第5回の原則</b><br/>
