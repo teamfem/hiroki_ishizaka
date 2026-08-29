@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第19回：DG法では何が変わるか — jump・average・penalty | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,discontinuous Galerkin,DG,SIPG,NIPG,IIPG,WOPSIP,HDG,Nitsche,jump,average,penalty,anisotropic mesh,Python"/>
+<meta name="description" content="Season 2 第7回（通算第19回）として，discontinuous Galerkin法のjump・average・penaltyを実装し，SIPG・NIPG・IIPG・LDG・BR2・WOPSIP・hybrid DGの違いを整理します．さらにsymmetric Nitsche法がclassical interior-penalty DGの特別な場合として得られることを数式で示します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-19.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-19.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-19.html",
+      "headline": "第19回：DG法では何が変わるか — jump・average・penalty",
+      "description": "DGのjump・average・penalty，SIPG/NIPG/IIPG/WOPSIP/HDGの違い，Nitsche法との関係を数式とPythonで監査します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-19.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 2",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 2"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第19回：DG法では何が変わるか — jump・average・penalty | Hiroki Ishizaka"/>
+<meta property="og:description" content="element内では独立，faceでjump・average・penaltyにより結合する．SIPGからWOPSIP・hybrid DGまで，Nitscheとの関係も整理します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-19.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第19回：DG法では何が変わるか — jump・average・penalty | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="DG families, jump/average/penalty, and Nitsche as a conforming restriction of interior-penalty DG."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 2 第7回（通算第19回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第19回：DG法では何が変わるか — jump・average・penalty</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 2 第7回（通算第19回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――DG法は一つの方法ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+discontinuous Galerkin（DG）法では，
+elementごとのpolynomialを隣接elementと直接同一視しません．
+その代わり，element interfaceに
+</p>
+\[
+\boxed{
+\text{jump}
+\quad+\quad
+\text{average / numerical flux}
+\quad+\quad
+\text{penalty}
+}
+\tag{1}
+\]
+<p>
+を置いて，element同士をweakly couplingします．
+</p>
+<p>
+ただし「DG法」という単一のbilinear formがあるわけではありません．
+SIPG，NIPG，IIPG，LDG，BR2，WOPSIP，hybrid DG / HDGなど，
+<b>どのnumerical fluxを選び，どのjumpをどう制御するか</b>によって複数のfamilyがあります．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>第19回のもう一つのポイント</b><br/>
+前回のNitsche法はDGと別世界の方法ではない．<br/>
+<b>symmetric Nitsche formulationはclassical interior-penalty DGの特別な場合として解釈できる</b>．
+</div>
+</article></div>
+
+<h2>1．DG spaceでは同じvertexにも別々のunknownを持つ</h2>
+<div class="news"><article class="news-item">
+<p>
+Poisson equation
+\[
+-\Delta u=f
+\qquad\text{in }\Omega
+\tag{2}
+\]
+を考えます．
+</p>
+<p>
+lowest-orderに近い例としてdiscontinuous \(P_1\) spaceを
+\[
+\boxed{
+V_h^{DG}
+=
+\left\{
+v_h\in L^2(\Omega):
+v_h|_T\in P_1(T)
+\quad
+\forall T\in\mathcal T_h
+\right\}
+}
+\tag{3}
+\]
+とします．
+</p>
+<p>
+continuous P1と違って，隣接triangleが同じvertexを共有していても，
+そのvertex valueはelementごとに別のDoFです．
+</p>
+<p>
+2次元triangleなら
+\[
+\dim P_1(T)=3
+\]
+なので，global unknown数は基本的に
+\[
+3\times(\text{number of elements})
+\]
+です．
+</p>
+</article></div>
+
+<h2>2．interior faceに向きを一つ固定する</h2>
+<div class="news"><article class="news-item">
+<p>
+interior face
+\[
+F=T^+\cap T^-
+\]
+に対し，unit normal
+\[
+\boldsymbol n_F
+\]
+を \(T^+\) から \(T^-\) へ向けて一つ固定します．
+</p>
+<p>
+scalar function \(v\) のtraceを
+\[
+v^\pm
+=
+v|_{T^\pm}
+\]
+と書きます．
+</p>
+<p>
+DGではface orientationを途中で変えないことが重要です．
+jumpの符号はorientationに依存しますが，
+最終bilinear formは一貫した定義を使えばorientation-independentになります．
+</p>
+</article></div>
+
+<h2>3．jumpとaverage</h2>
+<div class="news"><article class="news-item">
+<p>
+今回はscalar jumpを
+\[
+\boxed{
+[v]
+=
+v^+-v^-
+}
+\tag{4}
+\]
+とし，averageを
+\[
+\boxed{
+\{v\}
+=
+\frac12
+\left(
+v^++v^-
+\right)
+}
+\tag{5}
+\]
+とします．
+</p>
+<p>
+gradientについても
+\[
+\boxed{
+\{\nabla v\}
+=
+\frac12
+\left(
+\nabla v^+
++
+\nabla v^-
+\right).
+}
+\tag{6}
+\]
+</p>
+<p>
+文献によってはscalar jumpではなく
+\[
+v^+\boldsymbol n^+
++
+v^-\boldsymbol n^-
+\]
+というvector jumpを使います．
+<b>実装では定義を混ぜないこと</b>が最重要です．
+</p>
+</article></div>
+
+<h2>4．elementwise integration by partsでface termが現れる</h2>
+<div class="news"><article class="news-item">
+<p>
+DG test functionはglobal \(H^1\) functionではないので，
+integration by partsはelementごとに行います．
+</p>
+\[
+\sum_{T\in\mathcal T_h}
+(\nabla u,\nabla v_h)_T
+=
+(f,v_h)_\Omega
++
+\sum_{T\in\mathcal T_h}
+\int_{\partial T}
+\partial_nu\,v_h\,ds.
+\tag{7}
+\]
+<p>
+interior faceの両側をまとめると，
+exact solutionがcontinuousでnormal fluxもsingle-valuedなら，
+</p>
+\[
+\boxed{
+\sum_{T}
+\int_{\partial T}
+\partial_nu\,v_h\,ds
+=
+\sum_{F\in\mathcal F_h^i}
+\int_F
+\{\nabla u\}\cdot\boldsymbol n_F
+[v_h]\,ds
++
+\text{boundary terms}.
+}
+\tag{8}
+\]
+<p>
+つまりDGでは，continuous FEMで消えていたinterface termを
+numerical fluxとして設計し直す必要があります．
+</p>
+</article></div>
+
+<h2>5．interior-penalty familyを一つの式で書く</h2>
+<div class="news"><article class="news-item">
+<p>
+parameter
+\[
+\theta\in\{-1,0,1\}
+\]
+を使い，interior-penalty bilinear formを
+\[
+\begin{aligned}
+a_h^\theta(u_h,v_h)
+:={}&
+\sum_T
+(\nabla u_h,\nabla v_h)_T
+\\
+&-
+\sum_{F\in\mathcal F_h}
+(
+\{\nabla u_h\}\cdot\boldsymbol n_F,
+[v_h]
+)_F
+\\
+&-
+\theta
+\sum_{F\in\mathcal F_h}
+(
+\{\nabla v_h\}\cdot\boldsymbol n_F,
+[u_h]
+)_F
+\\
+&+
+\sum_{F\in\mathcal F_h}
+\eta_F
+(
+[u_h],
+[v_h]
+)_F
+\end{aligned}
+\tag{9}
+\]
+と書けます．
+</p>
+<p>
+boundary faceでは
+\[
+[v]=v,
+\qquad
+\{\nabla v\}=\nabla v
+\tag{10}
+\]
+というconventionを使います．
+</p>
+</article></div>
+
+<h2>6．SIPG・NIPG・IIPGの違い</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">method</th>
+<th style="border:1px solid #777; padding:7px;">\(\theta\)</th>
+<th style="border:1px solid #777; padding:7px;">特徴</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">SIPG</td><td style="border:1px solid #777; padding:7px;">\(1\)</td><td style="border:1px solid #777; padding:7px;">symmetric，adjoint consistent．penaltyは十分大きく選ぶ必要がある</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">NIPG</td><td style="border:1px solid #777; padding:7px;">\(-1\)</td><td style="border:1px solid #777; padding:7px;">nonsymmetric．第二のconsistency termのsignが反転する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">IIPG</td><td style="border:1px solid #777; padding:7px;">\(0\)</td><td style="border:1px solid #777; padding:7px;">incomplete．adjoint-consistency termを省く</td></tr>
+</table>
+<p>
+三者の違いは「DGかどうか」ではなく，
+<b>face fluxの設計</b>です．
+</p>
+</article></div>
+
+<h2>7．SIPGを基準形として実装する</h2>
+<div class="news"><article class="news-item">
+<p>
+以下ではsymmetric interior penalty Galerkin（SIPG）を使います．
+\[
+\theta=1
+\]
+なので
+\[
+a_h^{SIP}(u_h,v_h)
+=
+a_h^{SIP}(v_h,u_h).
+\tag{11}
+\]
+</p>
+<p>
+DG energy normの代表例は
+\[
+\boxed{
+\|v_h\|_{DG}^2
+=
+\sum_T
+\|\nabla v_h\|_{L^2(T)}^2
++
+\sum_{F\in\mathcal F_h}
+\eta_F
+\|[v_h]\|_{L^2(F)}^2.
+}
+\tag{12}
+\]
+</p>
+<p>
+第一項がelement内のenergy，
+第二項がelement間のdiscontinuityを測ります．
+</p>
+</article></div>
+
+<h2>8．penaltyはjumpを抑えるがcontinuityを強制しない</h2>
+<div class="news"><article class="news-item">
+<p>
+penalty term
+\[
+\eta_F
+([u_h],[v_h])_F
+\]
+はjumpを小さくしますが，
+有限の \(\eta_F\) では
+\[
+[u_h]=0
+\]
+をstrongly imposeしているわけではありません．
+</p>
+<p>
+従ってDG solutionは有限mesh上では本当にdiscontinuousです．
+</p>
+<p>
+一方，penaltyを極端に大きくするとconditioningが悪化します．
+SIPGでは
+\[
+\boxed{
+\text{coercivity}
+\quad\text{と}\quad
+\text{conditioning}
+}
+\]
+の両方を見る必要があります．
+</p>
+</article></div>
+
+<h2>9．regular meshの典型的なpenalty scale</h2>
+<div class="news"><article class="news-item">
+<p>
+shape-regular meshでは典型的に
+\[
+\boxed{
+\eta_F
+=
+\frac{\gamma}{h_F}
+}
+\tag{13}
+\]
+を使います．
+</p>
+<p>
+ここで \(\gamma\) はdimension，polynomial degree，mesh regularityに応じて
+coercivityを保証する大きさに取ります．
+</p>
+<p>
+「\(\gamma=10\) ならどんなmeshでも安全」というuniversally fixedな定数ではありません．
+</p>
+</article></div>
+
+<h2>10．anisotropic meshではnormal thicknessを見る</h2>
+<div class="news"><article class="news-item">
+<p>
+thin triangleではface length \(h_F\) とface-normal thicknessが全く異なる場合があります．
+</p>
+<p>
+boundary faceまたはinterior faceの各側について
+\[
+\ell_{T,F}
+=
+\frac{
+d\,|T|_d
+}{
+|F|_{d-1}
+}
+\tag{14}
+\]
+をface \(F\) に対するnormal thicknessとします．
+</p>
+<p>
+anisotropic penaltyでは，例えば
+\[
+\eta_F
+\sim
+\gamma
+\max_{T:\,F\subset\partial T}
+\ell_{T,F}^{-1}
+\tag{15}
+\]
+のように<b>normal directionのelement scale</b>を反映する設計が自然です．
+</p>
+<p>
+第18回のNitsche penaltyと同じ幾何学が，
+今度はinterior facesにも現れます．
+</p>
+</article></div>
+
+<h2>11．Nitsche法はSIPGの特別な場合</h2>
+<div class="news"><article class="news-item">
+<p>
+ここが第18回との重要な接続です．
+DG spaceの中のcontinuous subspace
+\[
+V_h^c
+=
+V_h^{DG}\cap H^1(\Omega)
+\tag{16}
+\]
+へSIPG formulationを制限します．
+</p>
+<p>
+すると全てのinterior facesで
+\[
+[u_h]=0,
+\qquad
+[v_h]=0
+\tag{17}
+\]
+なので，式 (9) のinterior-face termsは全部消えます．
+</p>
+<p>
+残るのはboundary face上の
+\[
+\boxed{
+-
+(\partial_nu_h,v_h)_{\partial\Omega}
+-
+(u_h,\partial_nv_h)_{\partial\Omega}
++
+\eta_{\partial}
+(u_h,v_h)_{\partial\Omega}
+}
+\tag{18}
+\]
+です．
+</p>
+<p>
+これはまさにsymmetric Nitsche boundary formです．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>したがって</b><br/>
+\[
+\boxed{
+\text{symmetric Nitsche}
+=
+\text{SIPGをinterior-continuous spaceへ制限したboundary version}
+}
+\tag{19}
+\]
+<p>
+と見ることができます．
+</p>
+</div>
+</article></div>
+
+<h2>12．nonhomogeneous Dirichlet dataまで含める</h2>
+<div class="news"><article class="news-item">
+<p>
+boundary condition
+\[
+u=g
+\qquad\text{on }\partial\Omega
+\]
+をweakly課すと，SIPG / symmetric Nitscheのboundary right-hand sideは
+\[
+\boxed{
+-
+\sum_{F\in\mathcal F_h^\partial}
+(g,\partial_nv_h)_F
++
+\sum_{F\in\mathcal F_h^\partial}
+\eta_F
+(g,v_h)_F.
+}
+\tag{20}
+\]
+</p>
+<p>
+interior jumpがあるかないかだけがDGとNitscheの違いであり，
+boundary calculusは同じinterior-penalty philosophyに属します．
+</p>
+</article></div>
+
+<h2>13．DG assemblyではinterior faceが二要素を同時にcoupleする</h2>
+<div class="news"><article class="news-item">
+<p>
+continuous P1ではelement matrixを3×3でassembleしました．
+DG P1ではelement volume termも3×3ですが，
+interior face \(F=T^+\cap T^-\) は
+</p>
+\[
+\boxed{
+(T^+,T^-)
+\quad\Longrightarrow\quad
+6\times6\ \text{face block}
+}
+\tag{21}
+\]
+<p>
+を作ります．
+</p>
+<p>
+blockは
+\[
+(++),\quad (+-),\quad (-+),\quad (--)
+\]
+の四つに分かれます．
+</p>
+<p>
+ここでjump signを一つ間違えるとsymmetryもconsistencyも壊れます．
+</p>
+</article></div>
+
+<h2>14．SIPG interior-face assemblyの核心</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;"># one interior edge F = T_plus ∩ T_minus
+
+all_ids = np.r_[ids_plus, ids_minus]
+
+# fixed normal: plus -> minus
+nF = outward_normal_of_plus
+
+# traces of the six local basis functions
+trace = np.r_[phi_plus, phi_minus]
+
+# [v] = v_plus - v_minus
+side = np.r_[
+    np.ones(3),
+    -np.ones(3)
+]
+jump = side * trace
+
+# {grad phi} · nF
+avg_dn = 0.5 * (
+    np.vstack([
+        grad_plus,
+        grad_minus
+    ]) @ nF
+)
+
+for i, I in enumerate(all_ids):
+    for j, J in enumerate(all_ids):
+        A[I, J] += weight * (
+            -avg_dn[j] * jump[i]
+            -avg_dn[i] * jump[j]
+            +eta_F
+            *jump[j] * jump[i]
+        )
+</code></pre>
+<p>
+この三項がそれぞれ
+</p>
+\[
+\text{consistency},
+\qquad
+\text{adjoint consistency},
+\qquad
+\text{penalty}
+\]
+<p>
+です．
+</p>
+</article></div>
+
+<h2>15．boundary face assemblyはNitscheと同じ</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;"># boundary edge
+dn = grads @ n_out
+
+A_loc += weight * (
+    -np.outer(phi, dn)
+    -np.outer(dn, phi)
+    +eta_F
+    *np.outer(phi, phi)
+)
+
+b_loc += weight * (
+    -g * dn
+    +eta_F * g * phi
+)
+</code></pre>
+<p>
+第18回のsymmetric Nitsche codeと同じ形です．
+DGではこれにinterior-face loopが追加されると理解できます．
+</p>
+</article></div>
+
+<h2>16．affine patch test</h2>
+<div class="news"><article class="news-item">
+<p>
+\[
+u(x,y)=1+x+2y,
+\qquad
+f=0,
+\qquad
+g=u|_{\partial\Omega}
+\tag{22}
+\]
+を使います．
+</p>
+<p>
+このexact solutionは各elementで \(P_1\) かつglobal continuousなので，
+exact quadratureならSIPGは
+\[
+\boxed{
+u_h=u
+}
+\tag{23}
+\]
+を再現します．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">\(n\)</th><th style="border:1px solid #777; padding:7px;">max local nodal error</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">4.88e-15</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">2.18e-14</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">3.46e-14</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">1.98e-13</td></tr>
+</table>
+<p>
+このtestはvolume termだけではなく，
+interior jump signsとNitsche-type boundary termsを同時に監査します．
+</p>
+</article></div>
+
+<h2>17．smooth solutionの収束</h2>
+<div class="news"><article class="news-item">
+<p>
+次に
+\[
+u(x,y)
+=
+\sin(\pi x)\sin(\pi y),
+\qquad
+f
+=
+2\pi^2\sin(\pi x)\sin(\pi y)
+\tag{24}
+\]
+を使います．
+</p>
+<p>
+uniform triangulation，DG \(P_1\)，
+\[
+\eta_F=\frac{20}{h_F}
+\]
+で計算した結果です．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">\(n\)</th>
+<th style="border:1px solid #777; padding:7px;">\(L^2\) relative error</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+<th style="border:1px solid #777; padding:7px;">broken \(H^1\) relative error</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">1.2137e-1</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">3.3493e-1</td><td style="border:1px solid #777; padding:7px;">—</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">3.4436e-2</td><td style="border:1px solid #777; padding:7px;">1.817</td><td style="border:1px solid #777; padding:7px;">1.7402e-1</td><td style="border:1px solid #777; padding:7px;">0.945</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">9.0153e-3</td><td style="border:1px solid #777; padding:7px;">1.934</td><td style="border:1px solid #777; padding:7px;">8.8055e-2</td><td style="border:1px solid #777; padding:7px;">0.983</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">32</td><td style="border:1px solid #777; padding:7px;">2.2942e-3</td><td style="border:1px solid #777; padding:7px;">1.974</td><td style="border:1px solid #777; padding:7px;">4.4211e-2</td><td style="border:1px solid #777; padding:7px;">0.994</td></tr>
+</table>
+<p>
+regular mesh上のsmooth solutionでは
+\[
+\boxed{
+\|u-u_h\|_{L^2}
+=
+O(h^2),
+\qquad
+|u-u_h|_{1,h}
+=
+O(h)
+}
+\tag{25}
+\]
+へ漸近しています．
+</p>
+</article></div>
+
+<h2>18．jumpそのものもerror indicatorになる</h2>
+<div class="news"><article class="news-item">
+<p>
+DG solutionでは
+\[
+[u_h]
+\]
+が直接計算できます．
+</p>
+<p>
+従って
+\[
+\sum_F
+\eta_F
+\|[u_h]\|_{L^2(F)}^2
+\tag{26}
+\]
+はenergy normの一部であるだけでなく，
+mesh refinementやdebuggingで
+「どこでsolutionがつながっていないか」を可視化する量にもなります．
+</p>
+<p>
+conforming FEMには存在しなかった情報です．
+</p>
+</article></div>
+
+<h2>19．DG法の種類はinterior-penalty familyだけではない</h2>
+<div class="news"><article class="news-item">
+<p>
+DGにはさらに別の設計思想があります．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">family</th><th style="border:1px solid #777; padding:7px;">主な考え方</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">SIPG / NIPG / IIPG</td><td style="border:1px solid #777; padding:7px;">primal formでjump・average・penaltyを直接組む</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">LDG</td><td style="border:1px solid #777; padding:7px;">first-order systemへ書き換え，solutionとfluxのnumerical tracesを設計する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">BR2</td><td style="border:1px solid #777; padding:7px;">face jumpをlifting operatorでelement内部へ持ち上げて安定化する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">WOPSIP</td><td style="border:1px solid #777; padding:7px;">projected jumpをweakly over-penaliseし，CRに近い構造を持つ</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">hybrid DG / HDG</td><td style="border:1px solid #777; padding:7px;">single-valued skeleton unknownを導入し，element unknownを局所消去する</td></tr>
+</table>
+<p>
+したがって，「DGを実装した」と言うだけではschemeを特定したことになりません．
+</p>
+</article></div>
+
+<h2>20．WOPSIPはSIPGと何が違うか</h2>
+<div class="news"><article class="news-item">
+<p>
+WOPSIP（weakly over-penalised symmetric interior penalty）では，
+SIPGのようなinterior consistency flux termsをbilinear formに直接入れず，
+face jumpの低次projectionを強く制御します．
+</p>
+<p>
+schematicallyには
+\[
+\boxed{
+a_h^{WOP}(v_h,w_h)
+=
+(\nabla_hv_h,\nabla_hw_h)
++
+\sum_{F\in\mathcal F_h}
+\kappa_F(1)
+(
+\Pi_F^0[v_h],
+\Pi_F^0[w_h]
+)_F.
+}
+\tag{27}
+\]
+</p>
+<p>
+この設計はCR methodに近く，
+standard SIPGのようにcoercivityのためのpenalty thresholdを細かく調整する必要がない，
+という利点があります．
+</p>
+<p>
+一方，SIPGのGalerkin consistencyとは構造が異なるため，
+error analysisでは
+\[
+\boxed{
+\text{approximation error}
++
+\text{consistency error}
+}
+\]
+を分けて扱います．
+</p>
+</article></div>
+
+<h2>21．なぜWOPSIPがanisotropic meshで重要なのか</h2>
+<div class="news"><article class="news-item">
+<p>
+standard SIPGのconsistency fluxをanisotropic trace inequalityで直接評価すると，
+強いaspect ratioのためにdirectional approximation structureを損なうことがあります．
+</p>
+<p>
+WOPSIPではCR-like projection structureを利用でき，
+consistency analysisをRT interpolationとの関係へ移すことができます．
+</p>
+<p>
+第15回で扱った
+\[
+\text{CR--RT discrete integration by parts}
+\]
+と第14回のRT interpolationが，
+ここでもanisotropic consistency estimateの道具になります．
+</p>
+</article></div>
+
+<h2>22．hybridisationすると何が変わるか</h2>
+<div class="news"><article class="news-item">
+<p>
+hybrid DG / HDGではface上にsingle-valued unknown
+\[
+\lambda_h
+\]
+を導入します．
+</p>
+<p>
+element unknown \(u_h|_T\) は各element内で局所的に解き，
+global systemは主にskeleton unknown \(\lambda_h\) に対して組みます．
+</p>
+<p>
+概念的には
+\[
+\boxed{
+\text{element unknown}
+\quad+\quad
+\text{skeleton trace unknown}
+}
+\tag{28}
+\]
+という構造です．
+</p>
+<p>
+HWOPSIPはWOPSIPにこのhybrid ideaを取り込んだ設計であり，
+anisotropic Poisson problemでも利用できます．
+</p>
+</article></div>
+
+<h2>23．DGとCRはどこが似ていて，どこが違うか</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">method</th><th style="border:1px solid #777; padding:7px;">element間continuity</th><th style="border:1px solid #777; padding:7px;">coupling</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">conforming P1</td><td style="border:1px solid #777; padding:7px;">pointwise continuous</td><td style="border:1px solid #777; padding:7px;">shared nodal DoF</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">CR</td><td style="border:1px solid #777; padding:7px;">face mean continuous</td><td style="border:1px solid #777; padding:7px;">shared face mean DoF</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">DG</td><td style="border:1px solid #777; padding:7px;">continuityを要求しない</td><td style="border:1px solid #777; padding:7px;">numerical flux / penalty</td></tr>
+</table>
+<p>
+WOPSIPがCR-likeと呼ばれる理由は，
+faceの低次momentを中心にcouplingする点にあります．
+</p>
+</article></div>
+
+<h2>24．anisotropic DGで何を監査するか</h2>
+<div class="news"><article class="news-item">
+<p>
+anisotropic meshでは，単に
+\[
+h_F
+\]
+を入れたisotropic penalty formulaを使うだけでは不十分な場合があります．
+</p>
+<p>
+最低でも
+</p>
+\[
+\boxed{
+\begin{aligned}
+&\text{normal thickness},\\
+&\text{trace inequality},\\
+&\text{penalty stability},\\
+&\text{directional interpolation error},\\
+&\text{consistency error}
+\end{aligned}
+}
+\tag{29}
+\]
+<p>
+を分けて確認します．
+</p>
+<p>
+「DGだからanisotropyに自動的に強い」ということではありません．
+</p>
+</article></div>
+
+<h2>25．ChatGPTへのDG implementation audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このPoisson DG codeを数学的に監査してください．<br/>
+(1) finite-element spaceがelementwise discontinuous polynomial spaceになっているか，<br/>
+(2) interior faceのplus/minus orientationを一貫して固定しているか，<br/>
+(3) jumpとaverageの定義を途中で混ぜていないか，<br/>
+(4) SIPG / NIPG / IIPGのどれを実装しているか明示されているか，<br/>
+(5) SIPGなら二つのconsistency termsとpenalty termが正しいsignで入っているか，<br/>
+(6) interior faceでplus/minus elementのcross blockまでassembleしているか，<br/>
+(7) boundary face termがsymmetric Nitsche formと一致しているか，<br/>
+(8) continuous subspaceへ制限するとinterior termsが消えNitsche methodになるか，<br/>
+(9) penalty scaleがmesh geometryとpolynomial degreeに適合しているか，<br/>
+(10) affine patch testを通るか，<br/>
+(11) \(L^2\) とbroken \(H^1\) errorが期待orderで収束するか，<br/>
+(12) anisotropic meshではnormal thicknessとtrace estimateを監査しているか，<br/>
+(13) WOPSIPをSIPGと同じbilinear formだと誤認していないか，<br/>
+(14) hybrid DGではskeleton unknownとelement unknownを区別しているか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>26．第19回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+DG法で最も大きく変わるのは，
+</p>
+\[
+\boxed{
+\text{element間continuityをspaceで課さず，face calculusで設計する}
+}
+\tag{30}
+\]
+<p>
+という点です．
+</p>
+<p>
+そのface calculusが
+\[
+\text{jump},
+\qquad
+\text{average / numerical flux},
+\qquad
+\text{penalty}
+\]
+です．
+</p>
+<p>
+さらにDGは一種類ではなく，
+SIPG，NIPG，IIPG，LDG，BR2，WOPSIP，hybrid DGなど，
+<b>fluxとstabilisationの設計そのものがmethodの違い</b>になります．
+</p>
+<p>
+そして第18回のNitsche法は，
+continuous interior spaceへSIPGを制限することで
+interior jump termsが消え，boundary termsだけが残るため，
+</p>
+\[
+\boxed{
+\text{Nitsche}
+\subset
+\text{interior-penalty DG philosophy}
+}
+\tag{31}
+\]
+<p>
+と理解できます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 2 第7回の原則</b><br/>
+DGでは
+<b>「element basis」より「faceで何を保存し，何をpenaliseするか」を先に決める</b>．
+</div>
+<p>
+次回はさらにcontinuity requirementを変え，
+<b>Morley要素で4階問題をどう離散化するか</b>へ進みます．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>D. N. Arnold, F. Brezzi, B. Cockburn and L. D. Marini, “Unified analysis of discontinuous Galerkin methods for elliptic problems”, <i>SIAM Journal on Numerical Analysis</i> 39 (2002), 1749–1779.</li>
+<li>D. A. Di Pietro and A. Ern, <i>Mathematical Aspects of Discontinuous Galerkin Methods</i>, Springer, 2012.</li>
+<li>B. Rivière, <i>Discontinuous Galerkin Methods for Solving Elliptic and Parabolic Equations</i>, SIAM, 2008.</li>
+<li>J. A. Nitsche, “Über ein Variationsprinzip zur Lösung von Dirichlet-Problemen bei Verwendung von Teilräumen, die keinen Randbedingungen unterworfen sind”, <i>Abhandlungen aus dem Mathematischen Seminar der Universität Hamburg</i> 36 (1971), 9–15.</li>
+<li>H. Ishizaka, “Anisotropic weakly over-penalised symmetric interior penalty method for the Stokes equation”, <i>Journal of Scientific Computing</i> 100 (2024), 53. <a href="https://doi.org/10.1007/s10915-024-02598-y">DOI</a>.</li>
+<li>H. Ishizaka, “Hybrid weakly over-penalised symmetric interior penalty method on anisotropic meshes”, <i>Calcolo</i> 61 (2024), 45. <a href="https://doi.org/10.1007/s10092-024-00600-5">DOI</a>.</li>
+<li>H. Ishizaka, “Nitsche's method under a semi-regular mesh condition”, <i>Numerical Algorithms</i> 102 (2026), 291–334. <a href="https://doi.org/10.1007/s11075-025-02131-8">DOI</a>.</li>
+<li><a href="./chatgpt-fem-15.html">第15回：CRとRTはなぜ相性がよいのか</a></li>
+<li><a href="./chatgpt-fem-18.html">第18回：Nitsche法とは何か</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 2 前回：</b><a href="./chatgpt-fem-18.html">第18回：Nitsche法とは何か — Dirichlet境界条件を弱く課す</a></p>
+<p><b>次回：</b>第20回：Morley要素を実装する — 4階問題と非適合有限要素法（構想中）</p>
+<p><a href="../#chatgpt-fem-season2">Season 2一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
