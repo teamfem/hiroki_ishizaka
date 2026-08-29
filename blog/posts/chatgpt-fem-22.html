@@ -18,8 +18,8 @@ window.MathJax = {
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,de Rham complex,finite element exterior calculus,FEEC,Lagrange,Nedelec,Nédélec,Raviart Thomas,RT,P0,incidence matrix,commuting diagram,Hodge decomposition,Python"/>
-<meta name="description" content="Season 2 第10回（通算第22回）として，3次元lowest-order finite-element de Rham complex P1→Nédélec→RT0→P0をコードで構成します．signed incidence matrices G,C,D，CG=0，DC=0，commuting interpolation，topologyとmetricの分離，cohomologyまで監査します．"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,de Rham complex,finite element exterior calculus,FEEC,Lagrange,Nedelec,Nédélec,Raviart Thomas,RT,P0,incidence matrix,commuting diagram,Hodge decomposition,Helmholtz decomposition,pressure robustness,Python"/>
+<meta name="description" content="Season 2 第10回（通算第22回）として，3次元lowest-order finite-element de Rham complex P1→Nédélec→RT0→P0をコードで構成します．signed incidence matrices G,C,D，CG=0，DC=0，commuting interpolation，topologyとmetricの分離，cohomology，Hodge–Helmholtz分解まで監査します．"/>
 <link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
 <link href="../../favicon.ico" rel="icon"/>
 <link href="../../css/modern.css" rel="stylesheet"/>
@@ -1015,7 +1015,7 @@ circulationを持つharmonic componentに対応します．
 </p>
 </article></div>
 
-<h2>28．穴があると何が起こるか――complexは壊れない，exactnessが壊れる</h2>
+<h2>27．穴があると何が起こるか――complexは壊れない，exactnessが壊れる</h2>
 <div class="news"><article class="news-item">
 <p>
 ここがde Rham complexのtopologyが最もよく見えるところです．
@@ -1404,7 +1404,7 @@ boundary edge DoFsを除去すると，
 </div>
 </article></div>
 
-<h2>27．Euler characteristicもdimension countに現れる</h2>
+<h2>28．Euler characteristicもdimension countに現れる</h2>
 <div class="news"><article class="news-item">
 <p>
 single tetrahedronでは
@@ -1432,11 +1432,106 @@ N_V-N_E+N_F-N_T
 </p>
 </article></div>
 
-<h2>29．Hodge decompositionへの入口</h2>
+<h2>29．Hodge–Helmholtz分解との関係――de Rham complexに内積を入れる</h2>
 <div class="news"><article class="news-item">
 <p>
-de Rham complexとmass matricesを組み合わせると，
-discrete fieldを
+de Rham complexは
+\[
+\operatorname{im}G
+\subset
+\ker C,
+\qquad
+\operatorname{im}C
+\subset
+\ker D
+\]
+という微分作用素の代数構造を与えます．
+ここへ \(L^2\) inner product，すなわちmass matricesを入れると，
+orthogonal decompositionが現れます．
+これがHodge decompositionであり，
+vector calculusの言葉ではHelmholtz decompositionと密接に対応します．
+</p>
+
+<h3>29.1　continuous levelではgradient・curl・harmonicへ分かれる</h3>
+<p>
+3次元vector proxyでschematicallyに書けば，
+適切なboundary conditionsの下で
+\[
+\boxed{
+\boldsymbol v
+=
+\nabla\phi
++
+\nabla\times\boldsymbol\psi
++
+\boldsymbol h
+}
+\]
+という分解を考えます．
+</p>
+<p>
+ここで
+\[
+\nabla\phi
+\]
+はexact / gradient part，
+\[
+\nabla\times\boldsymbol\psi
+\]
+はcoexact / solenoidal part，
+\[
+\boldsymbol h
+\]
+はharmonic partです．
+</p>
+<p>
+contractible domainでboundary conditionもcompatibleなら
+harmonic partが消える場合があります．
+一方，tunnelやcavityを持つdomainでは
+cohomologyに対応するfinite-dimensional harmonic spaceが残ります．
+</p>
+
+<h3>29.2　discrete codifferentialはmass matrixから作る</h3>
+<p>
+Nédélec coefficient spaceにおけるinner productを \(M_1\)，
+RT coefficient spaceにおけるinner productを \(M_2\) とします．
+edge-to-face exterior derivativeが \(C\) なら，
+そのdiscrete adjoint，すなわちcodifferentialは
+</p>
+\[
+\boxed{
+\delta_h
+=
+M_1^{-1}
+C^{\top}
+M_2.
+}
+\]
+<p>
+実際，
+edge coefficient \(\boldsymbol e\) とface coefficient \(\boldsymbol f\) に対して
+\[
+(
+C\boldsymbol e,
+\boldsymbol f
+)_{M_2}
+=
+(
+\boldsymbol e,
+\delta_h\boldsymbol f
+)_{M_1}
+\]
+となります．
+</p>
+<p>
+つまりincidence matrixだけでは「微分」しかありませんが，
+mass matrixを入れると「adjoint differential」まで作れます．
+</p>
+
+<h3>29.3　discrete Hodge–Helmholtz decomposition</h3>
+<p>
+compatible boundary conditionsを固定した有限次元complexでは，
+Nédélec coefficient spaceを
 </p>
 \[
 \boxed{
@@ -1449,22 +1544,215 @@ discrete fieldを
 \tag{36}
 \]
 <p>
-へ分けるdiscrete Hodge decompositionにつながります．
-</p>
-<p>
-ここで
+へ \(M_1\)-orthogonally分解できます．
+より具体的には
 </p>
 \[
-\text{exact part}
-\sim
-\operatorname{im}G,
-\qquad
-\text{harmonic part}
-\sim
-\ker C/\operatorname{im}G
+\boxed{
+N_h^0
+=
+\operatorname{im}G
+\oplus_{M_1}
+\mathcal H_h^1
+\oplus_{M_1}
+\operatorname{im}\delta_h.
+}
 \]
 <p>
-というtopological meaningが明確になります．
+ここで
+\[
+\boxed{
+\mathcal H_h^1
+=
+\ker C
+\cap
+\ker(G^{\top}M_1)
+}
+\]
+であり，
+\[
+\dim\mathcal H_h^1=b_1
+\]
+です．
+</p>
+<p>
+従ってedge coefficient vector \(\boldsymbol e\) は概念的に
+\[
+\boxed{
+\boldsymbol e
+=
+G\boldsymbol\phi
++
+\boldsymbol h
++
+M_1^{-1}C^{\top}M_2\boldsymbol\psi
+}
+\]
+と書けます．
+</p>
+<p>
+第一項がgradient part，
+第二項がtopological harmonic part，
+第三項がcoexact partです．
+</p>
+
+<h3>29.4　穴があるとHelmholtz分解に第三項が本当に必要になる</h3>
+<p>
+annulusやsolid torusでは
+\[
+C\boldsymbol h=0
+\]
+なのに
+\[
+\boldsymbol h\notin\operatorname{im}G
+\]
+というmodeがあります．
+つまりcurl-freeだからといってgradientとは限りません．
+</p>
+<p>
+この差が
+\[
+\ker C/\operatorname{im}G
+\]
+であり，
+mass matrixでorthogonal representativeを選んだものが
+\(\mathcal H_h^1\) です．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>de RhamからHelmholtzへ</b><br/>
+\[
+\boxed{
+\text{de Rham complex}
++
+\text{mass matrices}
+\Longrightarrow
+\text{discrete Hodge--Helmholtz decomposition}
+}
+\]
+</div>
+
+<h3>29.5　Maxwellのkernelが一行で説明できる</h3>
+<p>
+pure curl--curl matrix
+\[
+K_{\mathrm{curl}}
+=
+C^{\top}M_2C
+\]
+に対し，\(M_2\) がpositive definiteなら
+\[
+\ker K_{\mathrm{curl}}
+=
+\ker C.
+\]
+</p>
+<p>
+従ってcontractible domainでは典型的に
+\[
+\ker K_{\mathrm{curl}}
+=
+\operatorname{im}G,
+\]
+一方，tunnelを持つdomainでは
+\[
+\boxed{
+\ker K_{\mathrm{curl}}
+=
+\operatorname{im}G
+\oplus
+\mathcal H_h^1.
+}
+\]
+</p>
+<p>
+つまりMaxwell solverで
+「gradient kernelだけ除けばよい」
+とは限りません．
+domain topologyに由来するharmonic modesもnullspaceへ入ります．
+</p>
+
+<h3>29.6　Stokesのpressure robustnessもHelmholtz分解の問題</h3>
+<p>
+Stokes forcingをappropriateなHelmholtz projector \(\mathbb P\) で
+\[
+\boxed{
+\boldsymbol f
+=
+\mathbb P\boldsymbol f
++
+\nabla\phi
+}
+\]
+と分けると，
+incompressible velocityを動かすのはsolenoidal part
+\[
+\mathbb P\boldsymbol f
+\]
+です．
+gradient partはpressureへ吸収されます．
+</p>
+<p>
+従ってpressure-robust discretisationでは，
+discretely divergence-freeなtest functionを
+本当にdivergence-freeな \(H(\operatorname{div})\) fieldへreconstructし，
+\[
+(
+\nabla\phi,
+\mathcal L_h\boldsymbol v_h
+)
+=
+0
+\]
+を実現することが重要でした．
+</p>
+<p>
+これは
+<a href="./chatgpt-fem-17.html">第17回：Stokes方程式を有限要素法で解く</a>
+で扱ったpressure robustnessを，
+<b>Helmholtz decompositionをdiscrete levelで正しく再現する問題</b>
+として読み直したものです．
+</p>
+
+<h3>29.7　topologyとmetricの役割がここで完全に分かれる</h3>
+<p>
+harmonic spaceのdimension
+\[
+b_1
+\]
+はincidence matricesのrankから決まり，
+topological invariantです．
+一方，
+そのharmonic equivalence classから
+どのrepresentativeをorthogonalに選ぶかは
+\[
+M_1
+\]
+というmetricに依存します．
+</p>
+<p>
+従って
+\[
+\boxed{
+\begin{aligned}
+&\text{cohomology dimension}
+&&\longleftarrow
+\text{topology},
+\\
+&\text{orthogonality / Hodge representative}
+&&\longleftarrow
+\text{metric}.
+\end{aligned}
+}
+\]
+</p>
+<p>
+第22回で分けてきた
+\[
+\text{topology}
+\quad\text{と}\quad
+\text{metric}
+\]
+が，Hodge–Helmholtz decompositionで一つにつながります．
 </p>
 </article></div>
 
@@ -1609,6 +1897,8 @@ de Rham codeではdebuggingの順番が重要です．
 <tr><td style="border:1px solid #777; padding:7px;">NédélecにRT Piolaを使う</td><td style="border:1px solid #777; padding:7px;">commuting diagramが壊れる</td></tr>
 <tr><td style="border:1px solid #777; padding:7px;">topologyとmetricを同じmatrixへ埋め込む</td><td style="border:1px solid #777; padding:7px;">debuggingが困難になる</td></tr>
 <tr><td style="border:1px solid #777; padding:7px;">complexならglobal exactと思う</td><td style="border:1px solid #777; padding:7px;">holes / cohomologyを見落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">Helmholtz分解をgradient + curlだけで固定する</td><td style="border:1px solid #777; padding:7px;">nontrivial topologyのharmonic partを落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">incidence matrixだけでHodge decompositionを作る</td><td style="border:1px solid #777; padding:7px;">metric-dependent orthogonality / codifferentialを失う</td></tr>
 <tr><td style="border:1px solid #777; padding:7px;">canonical interpolantをenergy space全体に無条件適用</td><td style="border:1px solid #777; padding:7px;">trace / point-value regularityを誤る</td></tr>
 </table>
 </article></div>
@@ -1632,11 +1922,14 @@ de Rham codeではdebuggingの順番が重要です．
 (12) canonical interpolationのregularity domainを過大評価していないか，<br/>
 (13) incidence matricesとmass matricesをtopology / metricとして分離しているか，<br/>
 (14) contractibleでないdomainではcomplexとglobal exactnessを区別しているか，<br/>
-(15) (b_1=dimker C-operatorname{rank}G) と (b_2=dimker D-operatorname{rank}C) をrankから検査しているか，<br/>
-(16) tunnelによる (H^1) cohomologyとcavityによる (H^2) cohomologyを区別しているか，<br/>
-(17) Maxwell kernelにgradient fieldsだけでなくharmonic fieldsが入る場合を考慮しているか，<br/>
-(18) essential boundary conditionを入れた後はordinary cohomologyとrelative cohomologyを区別しているか，<br/>
-(19) anisotropic meshでもtopological identitiesとmetric stabilityを分けて監査しているか<br/>
+(15) \(b_1=\dim\ker C-\operatorname{rank}G\) と \(b_2=\dim\ker D-\operatorname{rank}C\) をrankから検査しているか，<br/>
+(16) tunnelによる \(H^1\) cohomologyとcavityによる \(H^2\) cohomologyを区別しているか，<br/>
+(17) discrete codifferentialを \(M_1^{-1}C^{\top}M_2\) のようにmass matricesを使って定義しているか，<br/>
+(18) Hodge–Helmholtz分解でexact・coexact・harmonicの三成分を区別しているか，<br/>
+(19) Maxwell kernelにgradient fieldsだけでなくharmonic fieldsが入る場合を考慮しているか，<br/>
+(20) pressure robustnessをHelmholtz decompositionとの関係で説明できるか，<br/>
+(21) essential boundary conditionを入れた後はordinary cohomologyとrelative cohomologyを区別しているか，<br/>
+(22) anisotropic meshでもtopological identitiesとmetric stabilityを分けて監査しているか<br/>
 を順に確認してください．
 </div>
 </article></div>
@@ -1691,12 +1984,15 @@ DC=0.
 これはgeometryに依存しません．
 穴があってもこのidentity自体は壊れず，
 変わるのは
-[
-ker C/operatorname{im}G,
-qquad
-ker D/operatorname{im}C
-]
+\[
+\ker C/\operatorname{im}G,
+\qquad
+\ker D/\operatorname{im}C
+\]
 というcohomologyです．
+さらにmass matricesでinner productを入れると，
+このcohomologyがharmonic componentとして
+Hodge–Helmholtz decompositionに現れます．
 </p>
 <p>
 geometry・material・anisotropyはmass matricesとPiola transformsへ入り，
@@ -1736,6 +2032,7 @@ grad・curl・divを別々の微分演算として実装する前に，
 <li>D. N. Arnold, R. S. Falk and R. Winther, “Finite element exterior calculus: from Hodge theory to numerical stability”, <i>Bulletin of the American Mathematical Society</i> 47 (2010), 281–354.</li>
 <li><a href="./chatgpt-fem-14.html">第14回：Raviart–Thomas要素を実装する — normal fluxとPiola変換</a></li>
 <li><a href="./chatgpt-fem-16.html">第16回：mixed Poisson問題を解く — RT0–P0と局所保存</a></li>
+<li><a href="./chatgpt-fem-17.html">第17回：Stokes方程式を有限要素法で解く — velocity・pressure・inf-sup条件</a></li>
 <li><a href="./chatgpt-fem-21.html">第21回：Nédélec要素を実装する — edge moment・curl・covariant Piola</a></li>
 </ol>
 </article></div>
