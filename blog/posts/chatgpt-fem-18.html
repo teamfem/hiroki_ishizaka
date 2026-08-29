@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第18回：Nitsche法とは何か — Dirichlet境界条件を弱く課す | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,Nitsche method,Dirichlet boundary condition,weak imposition,anisotropic mesh,semi-regularity,WOPSIP,CR,RT,Python"/>
+<meta name="description" content="Season 2 第6回（通算第18回）として，Nitsche法でDirichlet境界条件を弱く課す仕組みを，symmetric Nitsche formulation，penalty scale，coercivity，patch test，異方性meshでの注意，WOPSIP-based Nitsche schemeまで実装・監査します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-18.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-18.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-18.html",
+      "headline": "第18回：Nitsche法とは何か — Dirichlet境界条件を弱く課す",
+      "description": "symmetric Nitsche formulation，penalty scale，coercivity，patch test，anisotropic WOPSIP-based Nitsche schemeを数式とPythonで監査します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-18.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 2",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 2"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第18回：Nitsche法とは何か — Dirichlet境界条件を弱く課す | Hiroki Ishizaka"/>
+<meta property="og:description" content="boundary nodeを消さずにDirichlet conditionをweakly imposeする．symmetric Nitscheからanisotropic WOPSIP-based formulationまで．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-18.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第18回：Nitsche法とは何か — Dirichlet境界条件を弱く課す | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="Weak Dirichlet imposition, symmetric consistency terms, anisotropic penalty scales and WOPSIP-based Nitsche."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 2 第6回（通算第18回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第18回：Nitsche法とは何か — Dirichlet境界条件を弱く課す</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 2 第6回（通算第18回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――boundary nodeを消さずにDirichlet conditionを入れる</h2>
+<div class="news"><article class="news-item">
+<p>
+これまでのconforming P1 Poisson FEMでは，
+Dirichlet boundary nodeの値を直接固定しました．
+これは<b>strong imposition</b>です．
+</p>
+<p>
+Nitsche法では，trial spaceそのものにはboundary conditionを組み込まず，
+bilinear formとlinear functionalへboundary termsを追加して
+\[
+u=g
+\qquad\text{on }\partial\Omega
+\]
+をweakly imposeします．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Nitsche法の基本思想</b><br/>
+\[
+\boxed{
+\text{consistency terms}
++
+\text{symmetry term}
++
+\text{penalty term}
+}
+\]
+をboundaryへ加え，
+Dirichlet conditionをvariational equationの一部にする．
+</div>
+</article></div>
+
+<h2>1．model problem</h2>
+<div class="news"><article class="news-item">
+<p>
+\[
+-\Delta u=f
+\qquad\text{in }\Omega,
+\tag{1}
+\]
+\[
+u=g
+\qquad\text{on }\partial\Omega
+\tag{2}
+\]
+を考えます．
+</p>
+<p>
+standard strong formulationでは
+\[
+V(g)
+=
+\left\{
+v\in H^1(\Omega):
+v=g\text{ on }\partial\Omega
+\right\}
+\tag{3}
+\]
+を使います．
+</p>
+<p>
+Nitsche法ではdiscrete trial spaceを
+\[
+V_h=P_1^c(\mathcal T_h)
+\tag{4}
+\]
+のままにして，
+boundary nodesを未知量として残します．
+</p>
+</article></div>
+
+<h2>2．symmetric Nitsche formulation</h2>
+<div class="news"><article class="news-item">
+<p>
+boundary face集合を \(\mathcal F_h^\partial\) とします．
+symmetric Nitsche bilinear formを
+\[
+\begin{aligned}
+a_h^{N}(v,w)
+:={}&
+(\nabla v,\nabla w)_\Omega
+\\
+&-
+\sum_{F\in\mathcal F_h^\partial}
+(\partial_n v,w)_F
+-
+\sum_{F\in\mathcal F_h^\partial}
+(v,\partial_n w)_F
+\\
+&+
+\sum_{F\in\mathcal F_h^\partial}
+\gamma\,\kappa_F
+(v,w)_F
+\end{aligned}
+\tag{5}
+\]
+とします．
+</p>
+<p>
+linear functionalは
+\[
+\begin{aligned}
+\ell_h^{N}(w)
+:={}&
+(f,w)_\Omega
+-
+\sum_{F\in\mathcal F_h^\partial}
+(g,\partial_n w)_F
+\\
+&+
+\sum_{F\in\mathcal F_h^\partial}
+\gamma\,\kappa_F
+(g,w)_F.
+\end{aligned}
+\tag{6}
+\]
+</p>
+<p>
+求める \(u_h\in V_h\) は
+\[
+\boxed{
+a_h^{N}(u_h,v_h)
+=
+\ell_h^{N}(v_h)
+\qquad
+\forall v_h\in V_h.
+}
+\tag{7}
+\]
+</p>
+</article></div>
+
+<h2>3．三つのboundary termの役割</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (5) の三種類のboundary termにはそれぞれ役割があります．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">term</th><th style="border:1px solid #777; padding:7px;">role</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(-(\partial_n v,w)_F\)</td><td style="border:1px solid #777; padding:7px;">integration by partsから来るconsistency</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(-(v,\partial_n w)_F\)</td><td style="border:1px solid #777; padding:7px;">symmetric formulationを作るadjoint-consistency term</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(\gamma\kappa_F(v,w)_F\)</td><td style="border:1px solid #777; padding:7px;">boundary valueを安定に制御するpenalty</td></tr>
+</table>
+<p>
+penaltyだけを追加する方法と異なり，
+Nitsche法ではconsistencyを保つboundary flux termが入っています．
+</p>
+</article></div>
+
+<h2>4．exact solutionはNitsche equationを満たす</h2>
+<div class="news"><article class="news-item">
+<p>
+十分smoothなexact solution \(u\) について，
+\[
+-\Delta u=f,
+\qquad
+u=g
+\]
+を使うと
+\[
+\boxed{
+a_h^{N}(u,v_h)
+=
+\ell_h^{N}(v_h)
+\qquad
+\forall v_h\in V_h.
+}
+\tag{8}
+\]
+</p>
+<p>
+従ってclassical symmetric Nitscheはconsistentです．
+</p>
+<p>
+ここが後で扱うWOPSIP-based formulationとの重要な違いです．
+</p>
+</article></div>
+
+<h2>5．penalty scaleを単に \(1/h\) と覚えない</h2>
+<div class="news"><article class="news-item">
+<p>
+boundary face \(F=\partial T\cap\partial\Omega\) に対して，
+anisotropic geometryを意識したface scaleを
+\[
+\boxed{
+\ell_{T,F}
+=
+\frac{
+d!\,|T|_d
+}{
+|F|_{d-1}
+}
+}
+\tag{9}
+\]
+とします．
+</p>
+<p>
+2次元では
+\[
+\ell_{T,F}
+=
+\frac{2|T|}{|F|}
+\tag{10}
+\]
+なので，boundary edge \(F\) に対するtriangleの高さそのものです．
+</p>
+<p>
+classical symmetric Nitscheでは
+\[
+\boxed{
+\kappa_F(0)
+=
+\ell_{T,F}^{-1}
+}
+\tag{11}
+\]
+というnormal-direction scaleを使えます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>anisotropic meshでの注意</b><br/>
+\[
+\gamma/h_F
+\]
+とedge lengthだけでpenaltyを決めると，
+thin elementのnormal thicknessを見失うことがあります．<br/>
+boundary penaltyでは
+<b>faceに垂直なelement scale</b>を見ることが重要です．
+</div>
+</article></div>
+
+<h2>6．coercivityにはpenalty parameterが必要</h2>
+<div class="news"><article class="news-item">
+<p>
+energy normを
+\[
+\boxed{
+|v|_{N}^2
+=
+|v|_{H^1(\Omega)}^2
++
+\sum_{F\in\mathcal F_h^\partial}
+\kappa_F(0)
+\|v\|_{L^2(F)}^2
+}
+\tag{12}
+\]
+とします．
+</p>
+<p>
+\(\gamma\) を十分大きく選び，
+適切なtrace / inverse estimateを使うと
+\[
+\boxed{
+a_h^{N}(v_h,v_h)
+\ge
+\alpha
+|v_h|_{N}^2
+}
+\tag{13}
+\]
+が得られます．
+</p>
+<p>
+したがって
+\[
+\gamma&gt;0
+\]
+なら何でもよいわけではありません．
+</p>
+</article></div>
+
+<h2>7．\(\gamma\) を大きくしすぎればよいわけでもない</h2>
+<div class="news"><article class="news-item">
+<p>
+coercivityのためにはpenaltyを十分大きくする必要がありますが，
+極端に大きくするとmatrix conditioningを悪化させます．
+</p>
+<p>
+従って実装では
+\[
+\boxed{
+\text{coercivity}
+\quad\text{と}\quad
+\text{conditioning}
+}
+\]
+を両方監査します．
+</p>
+<p>
+「大きな \(\gamma\) ほど安全」という単純な理解では不十分です．
+</p>
+</article></div>
+
+<h2>8．boundary element matrix</h2>
+<div class="news"><article class="news-item">
+<p>
+P1 basis \(\phi_i\) を使うと，
+boundary face \(F\subset\partial T\) から
+\[
+\begin{aligned}
+K_{ij}^{F}
+={}&
+-
+\int_F
+(\nabla\phi_j\cdot n)\phi_i\,ds
+-
+\int_F
+\phi_j(\nabla\phi_i\cdot n)\,ds
+\\
+&+
+\gamma\kappa_F(0)
+\int_F
+\phi_j\phi_i\,ds.
+\end{aligned}
+\tag{14}
+\]
+</p>
+<p>
+nonhomogeneous boundary data \(g\) は
+\[
+\boxed{
+F_i^{F}
+=
+-
+\int_F
+g\,\nabla\phi_i\cdot n\,ds
++
+\gamma\kappa_F(0)
+\int_F
+g\phi_i\,ds.
+}
+\tag{15}
+\]
+</p>
+<p>
+boundary nodeをmatrixから削除しないことが，
+strong impositionとの実装上の大きな違いです．
+</p>
+</article></div>
+
+<h2>9．Python assemblyの核心</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">for local_edge in boundary_edges_of_T:
+    a, b = local_edge
+
+    pa = P[a]
+    pb = P[b]
+
+    tangent = pb - pa
+    edge_length = np.linalg.norm(tangent)
+
+    n_out = np.array([
+        tangent[1],
+        -tangent[0]
+    ]) / edge_length
+
+    ell_TF = (
+        2.0 * area
+        / edge_length
+    )
+
+    kappa = 1.0 / ell_TF
+
+    for s, w in edge_quad:
+        x = (
+            (1.0 - s) * pa
+            + s * pb
+        )
+
+        phi = p1_basis_on_T(x)
+        dn_phi = grads @ n_out
+
+        g = boundary_value(*x)
+        weight = edge_length * w
+
+        A_loc += weight * (
+            -np.outer(phi, dn_phi)
+            -np.outer(dn_phi, phi)
+            + gamma
+            * kappa
+            * np.outer(phi, phi)
+        )
+
+        b_loc += weight * (
+            -g * dn_phi
+            + gamma
+            * kappa
+            * g
+            * phi
+        )
+</code></pre>
+<p>
+positive element orientation
+\[
+\det J_T&gt;0
+\]
+を仮定し，local edge orderからoutward normalを一貫して作ります．
+</p>
+</article></div>
+
+<h2>10．Nitsche patch test</h2>
+<div class="news"><article class="news-item">
+<p>
+affine harmonic function
+\[
+u(x,y)
+=
+1+x+2y,
+\qquad
+f=0,
+\qquad
+g=u|_{\partial\Omega}
+\tag{16}
+\]
+を使います．
+</p>
+<p>
+\(u\in P_1\) なのでexact integrationなら
+\[
+\boxed{
+u_h=u
+}
+\tag{17}
+\]
+となるべきです．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">\(n\)</th><th style="border:1px solid #777; padding:7px;">max nodal error</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">4.44e-16</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">1.33e-15</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">1.78e-15</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">2.66e-15</td></tr>
+</table>
+<p>
+このtestはboundary normal，consistency term，penalty term，
+nonhomogeneous right-hand sideをまとめて監査できます．
+</p>
+</article></div>
+
+<h2>11．smooth solutionの収束test</h2>
+<div class="news"><article class="news-item">
+<p>
+次に
+\[
+u(x,y)
+=
+\sin(\pi x)\sin(\pi y)
++
+1+x+2y
+\tag{18}
+\]
+を使います．
+</p>
+<p>
+\[
+f
+=
+2\pi^2
+\sin(\pi x)\sin(\pi y),
+\qquad
+g=u|_{\partial\Omega}.
+\tag{19}
+\]
+</p>
+<p>
+uniform triangulation，\(\gamma=20\)，
+\(\kappa_F(0)=1/\ell_{T,F}\) で計算すると次の結果になりました．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">\(n\)</th>
+<th style="border:1px solid #777; padding:7px;">\(L^2\) rel.</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+<th style="border:1px solid #777; padding:7px;">\(H^1\) rel.</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+<th style="border:1px solid #777; padding:7px;">boundary \(L^2\) rel.</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">2.3838e-2</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">2.5871e-1</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">5.3877e-3</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">6.7928e-3</td><td style="border:1px solid #777; padding:7px;">1.811</td><td style="border:1px solid #777; padding:7px;">1.3623e-1</td><td style="border:1px solid #777; padding:7px;">0.926</td><td style="border:1px solid #777; padding:7px;">1.2343e-3</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">1.7668e-3</td><td style="border:1px solid #777; padding:7px;">1.943</td><td style="border:1px solid #777; padding:7px;">6.8944e-2</td><td style="border:1px solid #777; padding:7px;">0.983</td><td style="border:1px solid #777; padding:7px;">2.8911e-4</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">32</td><td style="border:1px solid #777; padding:7px;">4.4778e-4</td><td style="border:1px solid #777; padding:7px;">1.980</td><td style="border:1px solid #777; padding:7px;">3.4569e-2</td><td style="border:1px solid #777; padding:7px;">0.996</td><td style="border:1px solid #777; padding:7px;">6.9795e-5</td></tr>
+</table>
+<p>
+regular mesh上のsmooth solutionでは，
+\[
+\boxed{
+\|u-u_h\|_{L^2}
+=
+O(h^2),
+\qquad
+|u-u_h|_{H^1}
+=
+O(h)
+}
+\tag{20}
+\]
+へ漸近しています．
+</p>
+</article></div>
+
+<h2>12．strong impositionとの違いを数値仕様として見る</h2>
+<div class="news"><article class="news-item">
+<p>
+strong Dirichlet FEMではboundary nodal errorは構成上0です．
+Nitsche法ではboundary unknownもsolveするので，
+\[
+u_h-g
+\]
+は有限mesh上では一般に0ではありません．
+</p>
+<p>
+従ってboundary errorが小さくなっていくこと自体が
+Nitsche implementationのverification targetになります．
+</p>
+</article></div>
+
+<h2>13．classical symmetric Nitscheの異方性上の難しさ</h2>
+<div class="news"><article class="news-item">
+<p>
+semi-regularなanisotropic meshでは，
+Lagrange interpolationそのものは方向別評価
+\[
+\boxed{
+|u-I_T^L u|_{H^1(T)}
+\le
+C
+\sum_{i=1}^{d}
+h_i
+\left\|
+\frac{\partial u}{\partial r_i}
+\right\|_{H^1(T)}
+}
+\tag{21}
+\]
+を持ちます．
+</p>
+<p>
+ところがclassical symmetric Nitscheでは，
+boundary consistency term
+\[
+\int_F
+\nabla(u-I_h^Lu)\cdot n\,
+v_h\,ds
+\]
+をtrace estimateで評価する必要があります．
+</p>
+<p>
+anisotropic mesh上では，このtrace estimateから追加のmixed-scale termが現れ，
+interpolation errorの最適なdirectional structureをそのまま保てない場合があります．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>重要な区別</b><br/>
+anisotropic Lagrange interpolationがoptimalでも，
+<b>Nitsche boundary consistency estimateまで自動的にoptimalになるわけではない</b>．
+</div>
+</article></div>
+
+<h2>14．WOPSIP-based Nitscheという別の設計</h2>
+<div class="news"><article class="news-item">
+<p>
+この問題を避ける一つの方法は，
+classical symmetric Nitscheのboundary consistency termsを直接評価する代わりに，
+CR spaceとweakly over-penalised boundary termを使うことです．
+</p>
+<p>
+CR spaceを
+\[
+V_h^{CR}
+=
+\left\{
+v_h\in P_1^{dc}(\mathcal T_h):
+\int_F[v_h]\,ds=0
+\quad
+\forall F\in\mathcal F_h^i
+\right\}
+\tag{22}
+\]
+とします．
+</p>
+<p>
+boundary face \(F\) 上のconstant projectionを
+\[
+\Pi_F^0:
+L^2(F)\to P_0(F)
+\tag{23}
+\]
+とします．
+</p>
+</article></div>
+
+<h2>15．over-penalised boundary scale</h2>
+<div class="news"><article class="news-item">
+<p>
+一般に
+\[
+\boxed{
+\kappa_F(\beta)
+=
+h^{-2\beta}
+\ell_{T,F}^{-1},
+\qquad
+\beta\ge0
+}
+\tag{24}
+\]
+と置きます．
+</p>
+<p>
+classical symmetric Nitscheで使ったのは
+\[
+\kappa_F(0)
+=
+\ell_{T,F}^{-1}.
+\]
+</p>
+<p>
+WOPSIP-based schemeでは
+\[
+\boxed{
+\kappa_F(1)
+=
+h^{-2}
+\ell_{T,F}^{-1}
+}
+\tag{25}
+\]
+を使います．
+</p>
+<p>
+したがって名前どおり<b>weakly over-penalised</b>です．
+</p>
+</article></div>
+
+<h2>16．WOPSIP-based Poisson formulation</h2>
+<div class="news"><article class="news-item">
+<p>
+bilinear formを
+\[
+\boxed{
+a_h(v_h,w_h)
+=
+(\nabla_hv_h,\nabla_hw_h)_\Omega
++
+\sum_{F\in\mathcal F_h^\partial}
+\kappa_F(1)
+(
+\Pi_F^0v_h,
+\Pi_F^0w_h
+)_F
+}
+\tag{26}
+\]
+とします．
+</p>
+<p>
+right-hand sideは
+\[
+\boxed{
+\ell_h(w_h)
+=
+(f,w_h)_\Omega
++
+\sum_{F\in\mathcal F_h^\partial}
+\kappa_F(1)
+(
+\Pi_F^0g,
+\Pi_F^0w_h
+)_F.
+}
+\tag{27}
+\]
+</p>
+<p>
+求める \(u_h\in V_h^{CR}\) は
+\[
+a_h(u_h,v_h)
+=
+\ell_h(v_h)
+\qquad
+\forall v_h\in V_h^{CR}.
+\tag{28}
+\]
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>classical symmetric Nitscheとの違い</b><br/>
+式 (26) には
+\[
+-(\partial_nu_h,v_h)_F
+-
+(u_h,\partial_nv_h)_F
+\]
+というboundary consistency termsがありません．
+</div>
+</article></div>
+
+<h2>17．このschemeはconsistentではない――だから二つに分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+classical symmetric Nitscheでは式 (8) のGalerkin consistencyが成立しました．
+一方，式 (26)–(28) のCR-based schemeではexact solution \(u\) に対して
+\[
+a_h(u,w_h)-\ell_h(w_h)
+\]
+は一般に0ではありません．
+</p>
+<p>
+そこでenergy errorを
+\[
+\boxed{
+|u-u_h|_{1,1}
+\le
+C
+\inf_{v_h\in V_h^{CR}}
+|u-v_h|_{1,1}
++
+E_h(u)
+}
+\tag{29}
+\]
+と分けます．
+</p>
+<p>
+ここで
+\[
+\boxed{
+E_h(u)
+=
+\sup_{0\neq w_h\in V_h^{CR}}
+\frac{
+|a_h(u,w_h)-\ell_h(w_h)|
+}{
+|w_h|_{1,1}
+}
+}
+\tag{30}
+\]
+がconsistency errorです．
+</p>
+<p>
+第13回で見た
+\[
+\text{approximation}
++
+\text{consistency}
+\]
+というnonconforming error structureがここでも再登場します．
+</p>
+</article></div>
+
+<h2>18．best approximationはCR interpolationで扱う</h2>
+<div class="news"><article class="news-item">
+<p>
+boundary face meanをCR interpolationが再現するため，
+\[
+\Pi_F^0
+(
+u-I_h^{CR}u
+)
+=
+0
+\qquad
+F\in\mathcal F_h^\partial.
+\tag{31}
+\]
+</p>
+<p>
+従ってboundary penalty partを増やさずに
+\[
+\inf_{v_h\in V_h^{CR}}
+|u-v_h|_{1,1}
+\]
+をCR interpolation errorで評価できます．
+</p>
+<p>
+semi-regular meshではdirectional estimate
+\[
+\boxed{
+\inf_{v_h\in V_h^{CR}}
+|u-v_h|_{1,1}
+\le
+C
+\left(
+\sum_{T\in\mathcal T_h}
+\sum_{i=1}^{d}
+h_i^2
+\left\|
+\frac{\partial}{\partial r_i}
+\nabla u
+\right\|_{L^2(T)^d}^2
+\right)^{1/2}
+}
+\tag{32}
+\]
+が基本になります．
+</p>
+</article></div>
+
+<h2>19．consistency errorにCR–RT relationを使う</h2>
+<div class="news"><article class="news-item">
+<p>
+consistency estimateでは
+\[
+I_h^{RT}\nabla u
+\]
+を導入し，
+\[
+\boxed{
+\nabla\cdot
+I_h^{RT}\nabla u
+=
+\Pi_h^0\Delta u
+}
+\tag{33}
+\]
+というcommuting propertyを使います．
+</p>
+<p>
+これによりboundary traceを直接追うだけの議論から，
+RT interpolation errorとelementwise projection errorを使うbulk estimateへ移せます．
+</p>
+<p>
+Season 2でCR，RT，CR–RT relationを先に扱ったのは，
+このNitsche consistency analysisにつながるからです．
+</p>
+</article></div>
+
+<h2>20．semi-regular meshでのconsistency estimate</h2>
+<div class="news"><article class="news-item">
+<p>
+convex domain，\(u\in H^2(\Omega)\)，semi-regular mesh familyなどの仮定の下では，
+consistency errorは代表的に
+\[
+\begin{aligned}
+E_h(u)
+\le C\Bigg[
+&
+\left(
+\sum_{T\in\mathcal T_h}
+\sum_{i=1}^{d}
+h_i^2
+\left\|
+\frac{\partial}{\partial r_i}
+\nabla u
+\right\|_{L^2(T)^d}^2
+\right)^{1/2}
+\\
+&+
+h\|\Delta u\|_{L^2(\Omega)}
++
+h|u|_{H^1(\Omega)}
+\\
+&+
+h^{3/2}
+|u|_{H^1(\Omega)}^{1/2}
+\|\Delta u\|_{L^2(\Omega)}^{1/2}
+\Bigg].
+\end{aligned}
+\tag{34}
+\]
+</p>
+<p>
+ここで重要なのは，
+第一項にanisotropic directional derivative structureが明示的に残っていることです．
+</p>
+</article></div>
+
+<h2>21．「Nitsche法」と一言でまとめない</h2>
+<div class="news"><article class="news-item">
+<p>
+この記事では二つのschemeを区別しました．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">scheme</th><th style="border:1px solid #777; padding:7px;">space</th><th style="border:1px solid #777; padding:7px;">boundary treatment</th><th style="border:1px solid #777; padding:7px;">error structure</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">classical symmetric Nitsche</td><td style="border:1px solid #777; padding:7px;">continuous P1</td><td style="border:1px solid #777; padding:7px;">flux consistency + symmetry + penalty</td><td style="border:1px solid #777; padding:7px;">consistent Galerkin</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">WOPSIP-based Nitsche</td><td style="border:1px solid #777; padding:7px;">CR</td><td style="border:1px solid #777; padding:7px;">projected over-penalty</td><td style="border:1px solid #777; padding:7px;">approximation + consistency</td></tr>
+</table>
+<p>
+両者はDirichlet conditionをweakly扱いますが，
+数学的な構造は同じではありません．
+</p>
+</article></div>
+
+<h2>22．Stokesへの接続</h2>
+<div class="news"><article class="news-item">
+<p>
+Nitsche型boundary treatmentはStokes equationにも使えます．
+</p>
+<p>
+第17回で扱ったCR–P0 Stokesとpressure-robust reconstructionに，
+weak boundary penaltyを組み合わせると，
+anisotropic mesh上でもvelocity boundary conditionをweakly imposeするschemeへ拡張できます．
+</p>
+<p>
+この場合には
+</p>
+\[
+\boxed{
+\text{boundary stability}
++
+\text{inf-sup}
++
+\text{pressure robustness}
+}
+\]
+<p>
+を同時に監査する必要があります．
+</p>
+</article></div>
+
+<h2>23．ChatGPTがNitsche実装で起こしやすいミス</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">mistake</th><th style="border:1px solid #777; padding:7px;">consequence</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">boundary nodesをstrongly eliminateした上でNitsche termsも追加</td><td style="border:1px solid #777; padding:7px;">methodを二重に変更</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(-u\partial_n v\) のsignを逆にする</td><td style="border:1px solid #777; padding:7px;">symmetry / consistency破壊</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">nonhomogeneous RHSの \(-g\partial_n v\) を忘れる</td><td style="border:1px solid #777; padding:7px;">patch test失敗</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">anisotropic meshでpenaltyをedge lengthだけから決める</td><td style="border:1px solid #777; padding:7px;">normal thicknessを無視</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(\gamma&gt;0\) なら必ずcoerciveと仮定</td><td style="border:1px solid #777; padding:7px;">stability未確認</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">classical NitscheとWOPSIP-based schemeを同じbilinear formと扱う</td><td style="border:1px solid #777; padding:7px;">consistency structureの混同</td></tr>
+</table>
+</article></div>
+
+<h2>24．Nitsche implementation audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このPoisson Nitsche codeを数学的に監査してください．<br/>
+(1) boundary nodesをstrongly eliminateしていないか，<br/>
+(2) symmetric Nitscheなら \(-(\partial_nu_h,v_h)- (u_h,\partial_nv_h)\) の二項が入っているか，<br/>
+(3) nonhomogeneous \(g\) のright-hand sideが正しいか，<br/>
+(4) boundary normal orientationが正しいか，<br/>
+(5) penalty scaleがboundary faceに垂直なelement scaleを反映しているか，<br/>
+(6) penalty parameterがcoercivityを保証する大きさか，<br/>
+(7) affine nonhomogeneous patch testをmachine precisionで通るか，<br/>
+(8) \(L^2\) / \(H^1\) convergence orderが期待値へ近づくか，<br/>
+(9) anisotropic meshではLagrange interpolation estimateとNitsche consistency estimateを分けて考えているか，<br/>
+(10) WOPSIP-based schemeではCR space，\(\Pi_F^0\)，\(\kappa_F(1)\) を使い，classical boundary consistency termsが無いことを認識しているか，<br/>
+(11) nonconforming errorをapproximation + consistencyに分けているか，<br/>
+(12) consistency analysisでCR–RT relationとRT commuting propertyを正しく使っているか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>25．第18回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+Nitsche法は
+</p>
+\[
+\boxed{
+\text{Dirichlet conditionをspaceではなくvariational formへ入れる}
+}
+\tag{35}
+\]
+<p>
+方法です．
+</p>
+<p>
+classical symmetric formulationでは
+\[
+\text{consistency}
++
+\text{symmetry}
++
+\text{penalty}
+\]
+がboundaryに入り，
+exact solutionとのGalerkin consistencyを保ちます．
+</p>
+<p>
+一方，anisotropic meshではboundary consistency estimate自体が難しくなります．
+そのためCRとWOPSIP penaltyを用い，
+</p>
+\[
+\boxed{
+\text{anisotropic approximation}
++
+\text{CR--RT consistency analysis}
+}
+\tag{36}
+\]
+<p>
+へ問題を組み替える設計が有効です．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 2 第6回の原則</b><br/>
+Nitsche法では
+<b>penaltyの大きさだけでなく，consistencyとgeometryを同時に見る</b>．
+</div>
+<p>
+次回はこのboundary / face calculusをdomain内部の全facesへ広げ，
+<b>DG法のjump・average・penalty</b>を実装します．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>J. A. Nitsche, “Über ein Variationsprinzip zur Lösung von Dirichlet-Problemen bei Verwendung von Teilräumen, die keinen Randbedingungen unterworfen sind”, <i>Abhandlungen aus dem Mathematischen Seminar der Universität Hamburg</i> 36 (1971), 9–15.</li>
+<li>H. Ishizaka, “Nitsche's method under a semi-regular mesh condition”, <i>Numerical Algorithms</i> 102 (2026), 291–334. <a href="https://doi.org/10.1007/s11075-025-02131-8">DOI</a>.</li>
+<li>S. C. Brenner, “Poincaré–Friedrichs inequalities for piecewise \(H^1\) functions”, <i>SIAM Journal on Numerical Analysis</i> 41 (2003), 306–324.</li>
+<li><a href="./chatgpt-fem-13.html">第13回：Crouzeix–Raviart要素を本当に実装する</a></li>
+<li><a href="./chatgpt-fem-14.html">第14回：Raviart–Thomas要素を実装する</a></li>
+<li><a href="./chatgpt-fem-15.html">第15回：CRとRTはなぜ相性がよいのか</a></li>
+<li><a href="./chatgpt-fem-17.html">第17回：Stokes方程式を有限要素法で解く</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 2 前回：</b><a href="./chatgpt-fem-17.html">第17回：Stokes方程式を有限要素法で解く — velocity・pressure・inf-sup条件</a></p>
+<p><b>次回：</b>第19回：DG法では何が変わるか — jump・average・penalty（構想中）</p>
+<p><a href="../#chatgpt-fem-season2">Season 2一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
