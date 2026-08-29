@@ -200,8 +200,20 @@ u\in H^3(\Omega)
 程度のregularityが必要です．
 </p>
 <p>
-convex polygonでは4階問題に対して \(H^3\)-regularityが得られる設定がありますが，
-nonconvex cornerやboundary singularityがあるとglobal \(H^3\) regularityは失われ得ます．
+clamped biharmonic problemでは，polygonの最大内角を \(\omega_{\max}\) とすると，
+Blum–Rannacherのregularity theoryから，少なくとも
+\[
+\omega_{\max}&lt;\pi,
+\qquad
+f\in H^{-1}(\Omega)
+\]
+のとき
+\[
+u\in H^3(\Omega)
+\]
+が得られます．
+従ってconvex polygonでは \(H^3\)-regularityが期待できますが，
+\(H^4\) はconvexityだけから自動的に従うわけではありません．
 </p>
 <div style="padding:12px; margin:14px 0; border:5px double #333333;">
 <b>4階問題の収束率を見る前に確認すること</b><br/>
@@ -420,6 +432,170 @@ genericな4×4 determinantへ形式的に \(\lambda=2\) を代入し，
 と結論してはいけません．
 \(\lambda=2\) はgeneric separated basisのdegenerate valueであり，
 proper operator pencil / generalised singular modesで判定する必要があります．
+</div>
+
+<h3>2.5　では，いつ \(H^4\) まで上がるのか</h3>
+<p>
+ここはMorley error analysisを読むうえで非常に重要です．
+clamped biharmonic problem
+\[
+\Delta^2u=f,
+\qquad
+u=\partial_nu=0
+\]
+に対し，smooth boundaryならstandard elliptic regularityにより，
+十分smoothなdomainと \(f\in L^2(\Omega)\) の下で
+\[
+\boxed{
+u\in H^4(\Omega),
+\qquad
+\|u\|_{H^4(\Omega)}
+\le
+C
+\|f\|_{L^2(\Omega)}.
+}
+\]
+</p>
+<p>
+polygonではcorner spectrumがregularityを制限します．
+Blum–Rannacherのsharp regularity analysisから，
+bounded polygonの最大内角 \(\omega_{\max}\) が
+\[
+\boxed{
+\omega_{\max}
+&lt;
+126.283696\ldots^\circ
+}
+\]
+を満たし，
+\[
+f\in L^2(\Omega)
+\]
+なら
+\[
+\boxed{
+u\in H^4(\Omega).
+}
+\]
+</p>
+<p>
+従って，例えば
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">domain</th>
+<th style="border:1px solid #777; padding:7px;">largest angle</th>
+<th style="border:1px solid #777; padding:7px;">clamped \(H^4\) theorem</th>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">equilateral triangle</td>
+<td style="border:1px solid #777; padding:7px;">\(60^\circ\)</td>
+<td style="border:1px solid #777; padding:7px;">applies</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">square / rectangle</td>
+<td style="border:1px solid #777; padding:7px;">\(90^\circ\)</td>
+<td style="border:1px solid #777; padding:7px;">applies</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">regular hexagon</td>
+<td style="border:1px solid #777; padding:7px;">\(120^\circ\)</td>
+<td style="border:1px solid #777; padding:7px;">applies</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">convex polygon with a \(135^\circ\) corner</td>
+<td style="border:1px solid #777; padding:7px;">\(135^\circ\)</td>
+<td style="border:1px solid #777; padding:7px;">not guaranteed by this angle criterion</td>
+</tr>
+</table>
+<p>
+したがって今回のunit squareは
+\[
+\boxed{
+90^\circ
+&lt;
+126.283696\ldots^\circ
+}
+\]
+なので，
+任意の \(f\in L^2(\Omega)\) に対するclamped biharmonic problemについて
+\(H^4\)-regularityが保証される範囲に入ります．
+</p>
+
+<h3>2.6　「convex」と「\(H^4\)」の間には一段ある</h3>
+<p>
+clamped biharmonicについてangle conditionを基準に整理すると，
+</p>
+\[
+\boxed{
+\begin{aligned}
+\omega_{\max}&lt;180^\circ
+&&\Longrightarrow
+\text{\(H^3\)-regularity},\\
+\omega_{\max}&lt;126.283696\ldots^\circ
+&&\Longrightarrow
+\text{\(H^4\)-regularity}.
+\end{aligned}
+}
+\]
+<p>
+ただし第二行のangle thresholdは，
+<b>任意の \(f\in L^2\) に対して \(H^4\) をuniformに保証する十分条件</b>
+として読むべきです．
+\[
+126.283696\ldots^\circ
+\le
+\omega_{\max}
+&lt;
+180^\circ
+\]
+だからといって，
+個々のsolutionが必ず \(H^4\) から外れるという意味ではありません．
+singular coefficientが0になるspecial dataでは，
+solutionがangle-based generic guaranteeよりsmoothになることがあります．
+</p>
+
+<h3>2.7　domain-wide regularity theoremとmanufactured solutionを区別する</h3>
+<p>
+今回のnumerical testでは
+\[
+u(x,y)
+=
+x^2(1-x)^2y^2(1-y)^2
+\]
+をexact solutionとして先に選び，
+\[
+f=\Delta^2u
+\]
+を作っています．
+この \(u\) はpolynomialなので非常にsmoothです．
+</p>
+<p>
+これは
+</p>
+\[
+\boxed{
+\begin{aligned}
+&\text{domain geometryから任意のdataに対して保証されるregularity}
+\\
+&\qquad\text{と}
+\\
+&\text{特定のmanufactured solutionがたまたま持つ高regularity}
+\end{aligned}
+}
+\]
+<p>
+を区別する必要があることを示しています．
+squareでは前者としても \(H^4\) が保証されますが，
+manufactured polynomialはさらにsmoothです．
+</p>
+
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>regularity auditの要点</b><br/>
+Morley \(P_2\) のenergy-rate \(O(h)\) には \(H^3\) で足りることが多い．<br/>
+しかし \(H^4\) があるかどうかは，
+dual estimates，higher-order nonconforming methods，post-processing，
+consistencyの高次評価を考えるときに効いてくる．
 </div>
 </article></div>
 
@@ -1540,14 +1716,17 @@ geometry errorを追う考え方を扱っています．
 (8) \(D^2I_T^Mu=\Pi_T^0D^2u\) を確認できるか，<br/>
 (9) Morley errorをapproximation + consistencyに分けているか，<br/>
 (10) \(O(h)\) broken \(H^2\) rateを主張する前に \(H^3\)-regularityを確認しているか，<br/>
-(11) \(L^2\) rateにdual regularityが必要なことを認識しているか，<br/>
-(12) anisotropic meshではdirectional interpolationとconsistencyを別々に監査しているか，<br/>
-(13) Babuška paradoxをclamped Morley problemそのものと混同していないか，<br/>
-(14) curved-domain plate problemではgeometry・boundary operator・discretisationを同時に確認しているか，<br/>
-(15) Babuška paradox型testでは単なるmesh-to-mesh convergenceではなくcorrect variational limitを確認しているか，<br/>
-(16) total errorをdiscretisation・geometry・boundary-realisation・quadratureに分けて考えているか，<br/>
-(17) curved MorleyではHessian mappingに (D^2F_K) termが現れることを考慮しているか，<br/>
-(18) curved edgeのnormal derivative momentをstraight-edge midpoint formulaで置き換えていないか<br/>
+(11) clamped polygonで \(H^4\) を使う場合，最大内角 \(126.283696\ldots^\circ\) のangle criterionなどregularity theoremの仮定を確認しているか，<br/>
+(12) squareでは \(90^\circ&lt;126.283696\ldots^\circ\) なので \(f\in L^2\) から \(H^4\) が保証されることを認識しているか，<br/>
+(13) domain-wide regularity guaranteeとmanufactured solution固有のsmoothnessを区別しているか，<br/>
+(14) \(L^2\) rateにdual regularityが必要なことを認識しているか，<br/>
+(15) anisotropic meshではdirectional interpolationとconsistencyを別々に監査しているか，<br/>
+(16) Babuška paradoxをclamped Morley problemそのものと混同していないか，<br/>
+(17) curved-domain plate problemではgeometry・boundary operator・discretisationを同時に確認しているか，<br/>
+(18) Babuška paradox型testでは単なるmesh-to-mesh convergenceではなくcorrect variational limitを確認しているか，<br/>
+(19) total errorをdiscretisation・geometry・boundary-realisation・quadratureに分けて考えているか，<br/>
+(20) curved MorleyではHessian mappingに (D^2F_K) termが現れることを考慮しているか，<br/>
+(21) curved edgeのnormal derivative momentをstraight-edge midpoint formulaで置き換えていないか<br/>
 を順に確認してください．
 </div>
 </article></div>
@@ -1623,6 +1802,7 @@ Babuška paradoxが示すように，
 <li>P. Grisvard, <i>Elliptic Problems in Nonsmooth Domains</i>, Pitman, 1985.</li>
 <li>M. Dauge, <i>Elliptic Boundary Value Problems on Corner Domains</i>, Lecture Notes in Mathematics 1341, Springer, 1988.</li>
 <li>M. Costabel and M. Dauge, “Construction of Corner Singularities for Agmon–Douglis–Nirenberg Elliptic Systems”, <i>Mathematische Nachrichten</i> 162 (1993), 209–237. <a href="https://doi.org/10.1002/mana.19931620117">DOI</a>.</li>
+<li>H. Blum and R. Rannacher, “On the boundary value problem of the biharmonic operator on domains with angular corners”, <i>Mathematical Methods in the Applied Sciences</i> 2(4) (1980), 556–581. <a href="https://doi.org/10.1002/mma.1670020416">DOI</a>.</li>
 <li>R. Rannacher, “Finite Element Approximation of Simply Supported Plates and the Babuška Paradox”, <i>Zeitschrift für Angewandte Mathematik und Mechanik</i> 59 (1979), T73–T76.</li>
 <li>R. Rannacher, “On nonconforming and mixed finite element methods for plate bending problems: The linear case”, <i>RAIRO. Analyse numérique</i> 13 (1979), 369–387.</li>
 <li>H. Ishizaka, “Morley finite element analysis for fourth-order elliptic equations under a semi-regular mesh condition”, <i>Applications of Mathematics</i> 69(6) (2024), 769–805. <a href="https://doi.org/10.21136/AM.2024.0103-24">DOI</a>.</li>
