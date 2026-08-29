@@ -1103,7 +1103,157 @@ H^3(\Omega)
 </p>
 </article></div>
 
-<h2>28．Morley implementation audit prompt</h2>
+<h2>28．Babuška paradoxを「geometry–boundary consistency benchmark」として使う</h2>
+<div class="news"><article class="news-item">
+<p>
+Babuška paradoxは，単なる古典的な反例として読むだけではありません．
+4階plate problemの数値法が
+<b>どの連続問題を近似しているか</b>
+を検証するbenchmarkとして使えます．
+</p>
+<p>
+特にcurved domainをpolygonal meshで近似するときは，
+finite-element discretisation errorだけでなく，
+</p>
+\[
+\boxed{
+\begin{aligned}
+\text{total error}
+={}&
+\text{discretisation error}
+\\
+&+
+\text{geometry error}
+\\
+&+
+\text{boundary-realisation error}
+\\
+&+
+\text{quadrature error}
+\end{aligned}
+}
+\tag{38}
+\]
+<p>
+という分解を意識する必要があります．
+</p>
+<p>
+通常のmesh-refinement studyで
+\[
+u_h-u_{h/2}
+\longrightarrow0
+\]
+だけを確認しても，
+geometryとboundary operatorの極限が誤っていれば，
+数値列は<b>誤った連続問題へきれいに収束</b>する可能性があります．
+</p>
+<p>
+そこでplate problemでは，
+polygonal geometry，isoparametric geometry，exact-curved geometryを比較し，
+</p>
+\[
+\boxed{
+\text{discrete solutionが収束するか}
+\quad\text{ではなく}\quad
+\text{正しいvariational limitへ収束するか}
+}
+\tag{39}
+\]
+<p>
+を確認することが重要です．
+</p>
+<p>
+例えば
+<a href="./paradoxes-pitfalls-01.html">Babuška paradoxの記事</a>
+で扱ったように，
+中心変位だけでなくboundary bending moment，curvature term，energyなども比較すると，
+geometry errorとboundary-realisation errorを区別しやすくなります．
+</p>
+</article></div>
+
+<h2>29．curved MorleyではHessian変換とnormal-derivative DoFが新しい問題になる</h2>
+<div class="news"><article class="news-item">
+<p>
+straight-sided affine triangleでは，
+Morley basisをphysical element上で直接作る方法が安全でした．
+しかしcurved elementへ進むと，
+「reference Morley basisを写せばよい」では済みません．
+</p>
+<p>
+非アフィン写像
+\[
+F_K:\widehat K\longrightarrow K
+\]
+に対してscalar function \(v\) をpull backすると，
+Hessianにはschematically
+</p>
+\[
+\boxed{
+D^2(v\circ F_K)
+=
+DF_K^{\top}
+(D^2v\circ F_K)
+DF_K
++
+\sum_{\ell=1}^{d}
+(\partial_\ell v\circ F_K)
+D^2F_{K,\ell}
+}
+\tag{40}
+\]
+<p>
+が現れます．
+</p>
+<p>
+affine mapでは
+\[
+D^2F_K=0
+\]
+なので第二項は消えますが，
+curved mapではこの項が残ります．
+したがって二階問題で使ったgradient transformationを
+そのまま4階問題へ持ち込むことはできません．
+</p>
+<p>
+さらにMorley elementではedge normal derivative
+\[
+\frac1{|E|}
+\int_E
+\nabla v\cdot n\,ds
+\]
+がDoFです．
+curved edgeではnormal \(n\) 自体がedge上で変化するため，
+straight-edgeの「midpoint normal derivative」と同じ扱いはできません．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>curved Morleyで同時に監査するもの</b><br/>
+\[
+\begin{aligned}
+&\text{Hessian transformation},\\
+&\text{curved-edge normal derivative moment},\\
+&\text{boundary curvature},\\
+&\text{geometry approximation},\\
+&\text{nonconforming consistency}
+\end{aligned}
+\]
+</div>
+<p>
+この視点では，Babuška paradoxは
+「Morley要素が正しいか」だけを問う問題ではなく，
+<b>finite-element space・geometry mapping・boundary operatorを一体として設計できているか</b>
+を問う問題になります．
+</p>
+<p>
+関連して，
+<a href="./exact-curved-fem-01.html">Exact-curved FEMの入口</a>
+では，affine coreとcurved correctionを分離して
+geometry errorを追う考え方を扱っています．
+4階問題ではそのcurved correctionに
+\(D^2F_K\) が入るため，二階問題より一段難しくなります．
+</p>
+</article></div>
+
+<h2>30．Morley implementation audit prompt</h2>
 <div class="news"><article class="news-item">
 <div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
 <b>Audit prompt</b><br/>
@@ -1121,12 +1271,16 @@ H^3(\Omega)
 (11) \(L^2\) rateにdual regularityが必要なことを認識しているか，<br/>
 (12) anisotropic meshではdirectional interpolationとconsistencyを別々に監査しているか，<br/>
 (13) Babuška paradoxをclamped Morley problemそのものと混同していないか，<br/>
-(14) curved-domain plate problemではgeometry・boundary operator・discretisationを同時に確認しているか<br/>
+(14) curved-domain plate problemではgeometry・boundary operator・discretisationを同時に確認しているか，<br/>
+(15) Babuška paradox型testでは単なるmesh-to-mesh convergenceではなくcorrect variational limitを確認しているか，<br/>
+(16) total errorをdiscretisation・geometry・boundary-realisation・quadratureに分けて考えているか，<br/>
+(17) curved MorleyではHessian mappingに (D^2F_K) termが現れることを考慮しているか，<br/>
+(18) curved edgeのnormal derivative momentをstraight-edge midpoint formulaで置き換えていないか<br/>
 を順に確認してください．
 </div>
 </article></div>
 
-<h2>29．第20回の結論</h2>
+<h2>31．第20回の結論</h2>
 <div class="news"><article class="news-item">
 <p>
 Morley要素では4階問題を
@@ -1140,7 +1294,7 @@ Morley要素では4階問題を
 &\text{broken Hessian}
 \end{aligned}
 }
-\tag{38}
+\tag{41}
 \]
 <p>
 で離散化します．
@@ -1172,7 +1326,7 @@ Babuška paradoxが示すように，
 +
 \text{variational limit}
 }
-\tag{39}
+\tag{42}
 \]
 <p>
 を分けて監査する必要があります．
@@ -1198,6 +1352,7 @@ Babuška paradoxが示すように，
 <li>R. Rannacher, “On nonconforming and mixed finite element methods for plate bending problems: The linear case”, <i>RAIRO. Analyse numérique</i> 13 (1979), 369–387.</li>
 <li>H. Ishizaka, “Morley finite element analysis for fourth-order elliptic equations under a semi-regular mesh condition”, <i>Applications of Mathematics</i> 69(6) (2024), 769–805. <a href="https://doi.org/10.21136/AM.2024.0103-24">DOI</a>.</li>
 <li><a href="./paradoxes-pitfalls-01.html">領域が収束しても解は正しく収束しない――バブシュカ・パラドックス</a></li>
+<li><a href="./exact-curved-fem-01.html">Exact-curved FEMの入口</a></li>
 <li><a href="./chatgpt-fem-13.html">第13回：Crouzeix–Raviart要素を本当に実装する</a></li>
 <li><a href="./chatgpt-fem-14.html">第14回：Raviart–Thomas要素を実装する</a></li>
 <li><a href="./chatgpt-fem-19.html">第19回：DG法では何が変わるか</a></li>
