@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第27回：PINNsを作る — strong residualを点で最小化する | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,PINNs,Physics-Informed Neural Networks,strong residual,collocation points,sampling geometry,residual norm,Deep Ritz,PyTorch,automatic differentiation"/>
+<meta name="description" content="Season 3 第3回（通算第27回）として，1次元Poisson問題のPINNsをPyTorchで実装します．strong-form residualをcollocation pointsで最小化し，continuous residualとsampled residualの違い，Deep Ritzとのnormの違い，finite samplingによる見落としを数学的に監査します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-27.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-27.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-27.html",
+      "headline": "第27回：PINNsを作る — strong residualを点で最小化する",
+      "description": "Poisson問題のstrong residualをcollocation pointsで最小化するPINNsを実装し，continuous residualとsampled residual，Deep Ritzとの違い，finite samplingの見落としを監査します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-27.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 3",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 3"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第27回：PINNsを作る — strong residualを点で最小化する | Hiroki Ishizaka"/>
+<meta property="og:description" content="点でPDE残差を小さくすることと，領域全体で解が正しいことは同じではない．PINNsを作り，その差を数値解析します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-27.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第27回：PINNsを作る — strong residualを点で最小化する | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="Strong residual at collocation points versus continuous PDE error: build and audit a PINN from the FEM viewpoint."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 3 第3回（通算第27回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第27回：PINNsを作る — strong residualを点で最小化する</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 3 第3回（通算第27回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――「PDEを点で満たす」とは何を意味するのか</h2>
+<div class="news"><article class="news-item">
+<p>
+第25・26回ではDeep Ritz法を
+energy minimisationとして見ました．
+今回は同じPoisson problemを
+Physics-Informed Neural Networks（PINNs）で解きます．
+</p>
+<p>
+PINNsの基本形は非常に単純です．
+PDE residual
+</p>
+\[
+r_\theta(x)
+=
+\mathcal N u_\theta(x)-f(x)
+\tag{1}
+\]
+<p>
+をcollocation points
+\[
+X_N=\{x_1,\ldots,x_N\}
+\]
+で評価し，
+</p>
+\[
+\boxed{
+\mathcal L_N(\theta)
+=
+\sum_{i=1}^N
+w_i
+|r_\theta(x_i)|^2
+}
+\tag{2}
+\]
+<p>
+を小さくします．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>第27回の問い</b><br/>
+\[
+\boxed{
+\mathcal L_N(\theta)\ll1
+\quad\Longrightarrow\quad
+u_\theta\approx u
+\text{ と言ってよいのか？}
+}
+\tag{3}
+\]
+</div>
+</article></div>
+
+<h2>1．同じ1次元Poisson problemを使う</h2>
+<div class="news"><article class="news-item">
+<p>
+今回も
+</p>
+\[
+-u''(x)=f(x),
+\qquad
+0&lt;x&lt;1,
+\qquad
+u(0)=u(1)=0
+\tag{4}
+\]
+<p>
+を考え，
+</p>
+\[
+\boxed{
+u^\ast(x)=\sin(\pi x),
+\qquad
+f(x)=\pi^2\sin(\pi x)
+}
+\tag{5}
+\]
+<p>
+とします．
+Deep RitzとPINNsを同じproblemで比較できるようにします．
+</p>
+</article></div>
+
+<h2>2．PINNsはstrong formを直接使う</h2>
+<div class="news"><article class="news-item">
+<p>
+Poisson operator
+\[
+\mathcal N u=-u''
+\]
+に対してPINN residualは
+</p>
+\[
+\boxed{
+r_\theta(x)
+=
+-u_\theta''(x)
+-
+f(x).
+}
+\tag{6}
+\]
+<p>
+Deep Ritzがfirst derivativeを使ったenergyを最小化したのに対し，
+PINNsではsecond derivativeをpointwiseに評価します．
+</p>
+</article></div>
+
+<h2>3．boundary conditionは今回もhard constraintにする</h2>
+<div class="news"><article class="news-item">
+<p>
+boundary penaltyのweightを別の変数として持ち込まないため，
+前回と同じ
+</p>
+\[
+\boxed{
+u_\theta(x)
+=
+x(1-x)N_\theta(x)
+}
+\tag{7}
+\]
+<p>
+を使います．
+</p>
+<p>
+これにより
+\[
+u_\theta(0)=u_\theta(1)=0
+\]
+はparameterに関係なくexactly成立します．
+</p>
+</article></div>
+
+<h2>4．strong residualにはtrial functionの二階微分が必要</h2>
+<div class="news"><article class="news-item">
+<p>
+今回のtanh networkはsmoothなので
+\[
+u_\theta''(x)
+\]
+をautomatic differentiationで計算できます．
+</p>
+<p>
+しかし一般のPDEで重要なのは，
+</p>
+\[
+\boxed{
+\text{networkがsmooth}
+\quad\not\Rightarrow\quad
+\text{exact solutionがstrong-form regularityを持つ}
+}
+\tag{8}
+\]
+<p>
+という点です．
+</p>
+<p>
+weak solutionが自然には \(H_0^1\) にしか属さないproblemで，
+pointwise second derivative residualを主役にすることは，
+variational formulationより強いregularityを暗に要求する場合があります．
+</p>
+</article></div>
+
+<h2>5．continuous strong-residual lossを定義する</h2>
+<div class="news"><article class="news-item">
+<p>
+まず点を置く前のcontinuous quantityとして
+</p>
+\[
+\boxed{
+\mathcal L(\theta)
+=
+\int_0^1
+|r_\theta(x)|^2\,dx
+=
+\|r_\theta\|_{L^2(0,1)}^2
+}
+\tag{9}
+\]
+<p>
+を考えます．
+</p>
+<p>
+PINNsのsampled lossは
+</p>
+\[
+\boxed{
+\mathcal L_N(\theta)
+=
+\sum_{i=1}^N
+w_i|r_\theta(x_i)|^2
+}
+\tag{10}
+\]
+<p>
+であり，
+</p>
+\[
+\boxed{
+\mathcal L_N
+\neq
+\mathcal L
+}
+\tag{11}
+\]
+<p>
+です．
+この違いがSeason 3のpoint-placement problemです．
+</p>
+</article></div>
+
+<h2>6．continuous residualならenergy errorを上から制御できる</h2>
+<div class="news"><article class="news-item">
+<p>
+error
+\[
+e=u_\theta-u^\ast
+\]
+とすると
+</p>
+\[
+-e''=r_\theta,
+\qquad
+e(0)=e(1)=0.
+\tag{12}
+\]
+<p>
+\(e\) をtest functionにすると
+</p>
+\[
+\int_0^1|e'|^2dx
+=
+\int_0^1r_\theta e\,dx.
+\tag{13}
+\]
+<p>
+Poincaré inequality
+\[
+\|e\|_{L^2}
+\le
+\frac1\pi
+|e|_{H^1}
+\]
+から
+</p>
+\[
+\boxed{
+|u_\theta-u^\ast|_{H^1}
+\le
+\frac1\pi
+\|r_\theta\|_{L^2}.
+}
+\tag{14}
+\]
+</article></div>
+
+<h2>7．\(L^2\) errorもcontinuous residualで制御できる</h2>
+<div class="news"><article class="news-item">
+<p>
+さらに
+</p>
+\[
+\|e\|_{L^2}
+\le
+\frac1\pi|e|_{H^1}
+\]
+と式 (14) を組み合わせると
+</p>
+\[
+\boxed{
+\|u_\theta-u^\ast\|_{L^2}
+\le
+\frac1{\pi^2}
+\|r_\theta\|_{L^2}.
+}
+\tag{15}
+\]
+<p>
+従って<b>continuous \(L^2\) residual</b>が本当に小さいなら，
+このproblemではsolution errorも小さいと言えます．
+</p>
+</article></div>
+
+<h2>8．問題はsampled residualしかtrainingでは見ていないこと</h2>
+<div class="news"><article class="news-item">
+<p>
+trainingで直接得るのは
+</p>
+\[
+\sqrt{\mathcal L_N(\theta)}
+\]
+<p>
+です．
+式 (14) に必要なのは
+</p>
+\[
+\|r_\theta\|_{L^2}
+=
+\sqrt{\mathcal L(\theta)}.
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+\sqrt{\mathcal L_N}
+\text{ が小さい}
+\quad\not\Rightarrow\quad
+\|r_\theta\|_{L^2}
+\text{ が小さい}
+}
+\tag{16}
+\]
+<p>
+を最初に区別しなければなりません．
+</p>
+</article></div>
+
+<h2>9．Deep RitzとPINNsは違うnormを見ている</h2>
+<div class="news"><article class="news-item">
+<p>
+Poisson error \(e\) に対し，
+Deep Ritzのenergy gapは
+</p>
+\[
+\boxed{
+2(E(u_\theta)-E(u^\ast))
+=
+|e|_{H^1}^2.
+}
+\tag{17}
+\]
+<p>
+一方，continuous PINN lossは
+</p>
+\[
+\boxed{
+\mathcal L(\theta)
+=
+\|e''\|_{L^2}^2.
+}
+\tag{18}
+\]
+<p>
+つまり同じsolution errorを
+異なるdifferential scaleで見ています．
+</p>
+</article></div>
+
+<h2>10．Fourier modeを見ると違いがはっきりする</h2>
+<div class="news"><article class="news-item">
+<p>
+error mode
+</p>
+\[
+e_k(x)=\sin(k\pi x)
+\tag{19}
+\]
+<p>
+に対して
+</p>
+\[
+|e_k|_{H^1}^2
+=
+\frac{(k\pi)^2}{2},
+\tag{20}
+\]
+<p>
+一方
+</p>
+\[
+\|e_k''\|_{L^2}^2
+=
+\frac{(k\pi)^4}{2}.
+\tag{21}
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{strong }L^2\text{ residual}
+\text{ は高周波errorをenergy normより強く重み付けする．}
+}
+\tag{22}
+\]
+<p>
+PINNsとDeep Ritzのlossを数値だけで直接比較してはいけません．
+</p>
+</article></div>
+
+<h2>11．residual functionalの自然なnormは \(H^{-1}\) にも見える</h2>
+<div class="news"><article class="news-item">
+<p>
+weak residualを
+</p>
+\[
+\langle R_\theta,v\rangle
+=
+\int_0^1
+u_\theta'v'\,dx
+-
+\int_0^1fv\,dx
+\tag{23}
+\]
+<p>
+とすると
+</p>
+\[
+\boxed{
+\|R_\theta\|_{H^{-1}}
+=
+|u_\theta-u^\ast|_{H^1}
+}
+\tag{24}
+\]
+<p>
+です．
+</p>
+<p>
+つまりstrong \(L^2\) residualは，
+このweak residual normより強いquantityを最小化しています．
+</p>
+</article></div>
+
+<h2>12．finite collocationにはexact zero-lossの見落としが存在する</h2>
+<div class="news"><article class="news-item">
+<p>
+固定されたcollocation points
+</p>
+\[
+X_N=\{x_1,\ldots,x_N\}
+\]
+<p>
+を考えます．
+</p>
+<p>
+次のsmooth perturbationを作ります．
+</p>
+\[
+\boxed{
+\psi_N(x)
+=
+x(1-x)
+\prod_{i=1}^N
+(x-x_i)^3.
+}
+\tag{25}
+\]
+<p>
+これは
+</p>
+\[
+\psi_N(0)=\psi_N(1)=0
+\tag{26}
+\]
+<p>
+を満たし，さらに各collocation pointで
+</p>
+\[
+\boxed{
+\psi_N''(x_i)=0.
+}
+\tag{27}
+\]
+</article></div>
+
+<h2>13．sampled lossがexactly zeroでもsolutionは違い得る</h2>
+<div class="news"><article class="news-item">
+<p>
+任意の \(c\ne0\) に対し
+</p>
+\[
+\widetilde u(x)
+=
+u^\ast(x)
++
+c\psi_N(x)
+\tag{28}
+\]
+<p>
+と置きます．
+boundary conditionはexact solutionと同じです．
+さらに
+</p>
+\[
+-\widetilde u''(x_i)-f(x_i)
+=
+-c\psi_N''(x_i)
+=
+0.
+\tag{29}
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+\mathcal L_N(\widetilde u)=0
+}
+\tag{30}
+\]
+<p>
+ですが
+</p>
+\[
+\boxed{
+\widetilde u\ne u^\ast
+}
+\tag{31}
+\]
+<p>
+です．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>finite samplingの本質</b><br/>
+collocation pointsでPDEをexactly満たしても，
+<b>点の間でPDEを破る自由度</b>は残り得る．
+</div>
+</article></div>
+
+<h2>14．これはnetworkに限った問題ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (25)–(31) はneural networkもoptimizerも使っていません．
+つまり
+</p>
+\[
+\boxed{
+\text{finite collocationのinformation loss}
+}
+\tag{32}
+\]
+<p>
+そのものです．
+</p>
+<p>
+実際のPINNではnetwork classとimplicit regularisationが
+この極端なperturbationを選びにくくする場合がありますが，
+sampled lossだけから排除できるわけではありません．
+</p>
+</article></div>
+
+<h2>15．PINN networkを実装する</h2>
+<div class="news"><article class="news-item">
+<p>
+前回と同じtanh networkを使います．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">class Net(torch.nn.Module):
+    def __init__(self, width=32, depth=3):
+        super().__init__()
+
+        layers = [
+            torch.nn.Linear(1, width),
+            torch.nn.Tanh()
+        ]
+
+        for _ in range(depth - 1):
+            layers += [
+                torch.nn.Linear(width, width),
+                torch.nn.Tanh()
+            ]
+
+        layers += [torch.nn.Linear(width, 1)]
+        self.net = torch.nn.Sequential(*layers)
+
+    def forward(self, x):
+        raw = self.net(x)
+        return x * (1.0 - x) * raw
+</code></pre>
+</article></div>
+
+<h2>16．automatic differentiationで二階微分を作る</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def pde_residual(model, x):
+    x = (
+        x.clone()
+         .detach()
+         .requires_grad_(True)
+    )
+
+    u = model(x)
+
+    ux = torch.autograd.grad(
+        u,
+        x,
+        grad_outputs=torch.ones_like(u),
+        create_graph=True
+    )[0]
+
+    uxx = torch.autograd.grad(
+        ux,
+        x,
+        grad_outputs=torch.ones_like(ux),
+        create_graph=True
+    )[0]
+
+    f = (
+        math.pi ** 2
+        * torch.sin(math.pi * x)
+    )
+
+    return -uxx - f
+</code></pre>
+</article></div>
+
+<h2>17．baselineでは64点Gauss–Legendreを使う</h2>
+<div class="news"><article class="news-item">
+<p>
+第27回ではまだpoint placementを比較せず，
+Deep Ritzのbaselineと同じく
+</p>
+\[
+\boxed{
+N=64
+\text{ Gauss--Legendre points}
+}
+\tag{33}
+\]
+<p>
+を使います．
+</p>
+<p>
+目的はstrong-residual formulationそのものを確認することです．
+点配置比較は第28回で行います．
+</p>
+</article></div>
+
+<h2>18．sampled PINN loss</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def pinn_loss(model, xq, wq):
+    r = pde_residual(model, xq)
+    return torch.sum(
+        wq * r ** 2
+    )
+</code></pre>
+<p>
+Gauss weightsを使っているので，
+このbaselineでは
+</p>
+\[
+\mathcal L_N
+\approx
+\int_0^1
+|r_\theta(x)|^2dx
+\]
+<p>
+を高精度に評価することを狙っています．
+</p>
+</article></div>
+
+<h2>19．training scheduleもDeep Ritzと揃える</h2>
+<div class="news"><article class="news-item">
+<p>
+method comparisonでoptimizer差を混ぜないため，
+</p>
+\[
+\boxed{
+4000\text{ Adam steps}
++
+\text{L-BFGS refinement}
+}
+\tag{34}
+\]
+<p>
+を使います．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">model = Net()
+
+optimizer = torch.optim.Adam(
+    model.parameters(),
+    lr=1.0e-3
+)
+
+for epoch in range(4000):
+    optimizer.zero_grad()
+
+    loss = pinn_loss(
+        model,
+        xq,
+        wq
+    )
+
+    loss.backward()
+    optimizer.step()
+</code></pre>
+</article></div>
+
+<h2>20．baseline numerical result</h2>
+<div class="news"><article class="news-item">
+<p>
+double precision，seed 7，
+64-point Gauss–Legendre，
+Adam 4000 + L-BFGS で得た代表的な結果は
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">quantity</th><th style="border:1px solid #777; padding:7px;">value</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">sampled loss \(\mathcal L_N\)</td><td style="border:1px solid #777; padding:7px;">\(6.08\times10^{-7}\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">reference \(\|r_\theta\|_{L^2}\)</td><td style="border:1px solid #777; padding:7px;">\(7.80\times10^{-4}\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(L^2\) solution error</td><td style="border:1px solid #777; padding:7px;">\(1.19\times10^{-6}\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(H^1\) seminorm error</td><td style="border:1px solid #777; padding:7px;">\(2.83\times10^{-5}\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">max pointwise error</td><td style="border:1px solid #777; padding:7px;">\(2.28\times10^{-6}\)</td></tr>
+</table>
+<p>
+reference quantitiesはtraining pointsとは独立な
+512-point Gauss–Legendre ruleで評価しています．
+</p>
+</article></div>
+
+<h2>21．continuous residual boundを実際に監査する</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (14) の右辺は
+</p>
+\[
+\frac1\pi
+\|r_\theta\|_{L^2}
+\approx
+2.48\times10^{-4}.
+\tag{35}
+\]
+<p>
+実際のenergy errorは
+</p>
+\[
+|u_\theta-u^\ast|_{H^1}
+\approx
+2.83\times10^{-5}.
+\tag{36}
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+2.83\times10^{-5}
+\le
+2.48\times10^{-4}
+}
+\tag{37}
+\]
+<p>
+となり，continuous residual reliability boundと整合します．
+</p>
+</article></div>
+
+<h2>22．このboundはsampled lossそのものの保証ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+今回
+\[
+\sqrt{\mathcal L_N}
+\]
+とreference
+\[
+\|r_\theta\|_{L^2}
+\]
+がほぼ一致したのは，
+smooth testに対して64-point Gauss ruleを使ったためです．
+</p>
+<p>
+一般には
+</p>
+\[
+\boxed{
+\sqrt{\mathcal L_N}
+\approx
+\|r_\theta\|_{L^2}
+}
+\tag{38}
+\]
+<p>
+を別途検証しなければ，
+式 (14) をtraining lossへ直接適用できません．
+</p>
+</article></div>
+
+<h2>23．Deep Ritz baselineとの違い</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">項目</th>
+<th style="border:1px solid #777; padding:7px;">Deep Ritz</th>
+<th style="border:1px solid #777; padding:7px;">PINNs</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">continuous target</td><td style="border:1px solid #777; padding:7px;">energy \(E(u_\theta)\)</td><td style="border:1px solid #777; padding:7px;">strong residual \(\|r_\theta\|_{L^2}^2\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">Poissonで使う微分</td><td style="border:1px solid #777; padding:7px;">first derivative</td><td style="border:1px solid #777; padding:7px;">second derivative</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">自然なsolution scale</td><td style="border:1px solid #777; padding:7px;">energy / \(H^1\)</td><td style="border:1px solid #777; padding:7px;">strong residual / \(L^2\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">pointの役割</td><td style="border:1px solid #777; padding:7px;">quadrature points</td><td style="border:1px solid #777; padding:7px;">collocation / residual sampling points</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">finite-sample failure</td><td style="border:1px solid #777; padding:7px;">wrong sampled energy</td><td style="border:1px solid #777; padding:7px;">residualを点の間で見落とす</td></tr>
+</table>
+</article></div>
+
+<h2>24．PINNsでもpoint countだけでは足りない</h2>
+<div class="news"><article class="news-item">
+<p>
+sampled residualはempirical measure
+</p>
+\[
+\mu_N
+=
+\sum_iw_i\delta_{x_i}
+\tag{39}
+\]
+<p>
+に対して
+</p>
+\[
+\mathcal L_N(\theta)
+=
+\int
+|r_\theta|^2\,d\mu_N
+\tag{40}
+\]
+<p>
+と書けます．
+</p>
+<p>
+従ってPINNsでも
+</p>
+\[
+\boxed{
+\text{point count}
++
+\text{point geometry}
++
+\text{weights}
+}
+\tag{41}
+\]
+<p>
+を一体として記録する必要があります．
+</p>
+</article></div>
+
+<h2>25．training pointsとは独立なresidual auditを置く</h2>
+<div class="news"><article class="news-item">
+<p>
+Season 3ではPINN training後に必ず
+</p>
+\[
+\boxed{
+\text{independent reference grid / quadrature}
+}
+\tag{42}
+\]
+<p>
+を置きます．
+</p>
+<p>
+そこで少なくとも
+</p>
+\[
+\boxed{
+\|r_\theta\|_{L^2},
+\quad
+\|u_\theta-u^\ast\|_{L^2},
+\quad
+|u_\theta-u^\ast|_{H^1}
+}
+\tag{43}
+\]
+<p>
+を評価します．
+</p>
+<p>
+training setだけでtestしてはいけません．
+</p>
+</article></div>
+
+<h2>26．exact solutionがない場合はどうするか</h2>
+<div class="news"><article class="news-item">
+<p>
+実問題では
+\[
+u^\ast
+\]
+を知りません．
+そこで
+</p>
+<ul>
+<li>independent residual quadrature，</li>
+<li>weak residual / dual norm，</li>
+<li>equilibrated-flux certificate，</li>
+<li>mesh / point refinement consistency，</li>
+</ul>
+<p>
+を組み合わせます．
+</p>
+<p>
+第23回の考え方を使えば，
+</p>
+\[
+\boxed{
+\text{training loss}
+\quad\text{と}\quad
+\text{guaranteed residual bound}
+}
+\tag{44}
+\]
+<p>
+を別物として扱えます．
+</p>
+</article></div>
+
+<h2>27．activation functionもstrong residual設計の一部である</h2>
+<div class="news"><article class="news-item">
+<p>
+Poisson strong residualには \(u_\theta''\) が必要です．
+従ってactivationを変えると残差の意味も変わります．
+</p>
+<p>
+tanhはsmoothですが，
+piecewise linear ReLU networkではclassical second derivativeは
+elementwise almost everywhere zeroで，
+kinksにdistributional contributionが集まります．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{strong-form PINN}
++
+\text{activation regularity}
+}
+\tag{45}
+\]
+<p>
+は切り離せません．
+</p>
+</article></div>
+
+<h2>28．AIがPINN実装で間違えやすい点</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">mistake</th><th style="border:1px solid #777; padding:7px;">何が壊れるか</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">sampled lossをcontinuous residual normと呼ぶ</td><td style="border:1px solid #777; padding:7px;">sampling errorを消してしまう</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">training pointsでだけaccuracyを評価</td><td style="border:1px solid #777; padding:7px;">between-point failureを検出できない</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">Deep Ritz lossとPINN lossの大小を直接比較</td><td style="border:1px solid #777; padding:7px;">異なるnorm / differential orderを混同する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">smooth networkだからexact solutionもsmoothと仮定</td><td style="border:1px solid #777; padding:7px;">PDE regularityを過大評価する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">ReLUでclassical second derivative residualを無批判に使う</td><td style="border:1px solid #777; padding:7px;">distributional derivativeを見落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">点数だけでgeneralisationを判断</td><td style="border:1px solid #777; padding:7px;">sampling geometryを無視する</td></tr>
+</table>
+</article></div>
+
+<h2>29．PINN implementation audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このstrong-form PINN implementationを数学的に監査してください．<br/>
+(1) continuous PDEとstrong residualのsign conventionが一致しているか，<br/>
+(2) boundary conditionをhard constraintかpenaltyか明示しているか，<br/>
+(3) activationとnetworkが必要な微分をclassically持つか，<br/>
+(4) sampled loss \(\mathcal L_N\) とcontinuous residual norm \(\mathcal L\) を区別しているか，<br/>
+(5) collocation pointsとweightsを全て記録しているか，<br/>
+(6) training setとは独立なreference pointsでresidualを評価しているか，<br/>
+(7) exact solutionがある場合は \(L^2\)・\(H^1\) errorを別に評価しているか，<br/>
+(8) continuous residual reliability boundをsampled lossへ無条件に適用していないか，<br/>
+(9) Deep Ritzとの比較でlossのnormと微分次数を揃えて説明しているか，<br/>
+(10) finite collocationではzero sampled residualでもbetween-point errorが残り得ることを確認しているか，<br/>
+(11) random samplingではseed variationを調べているか，<br/>
+(12) point countとsampling coverageを同一視していないか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>30．第27回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+PINNsの基本式は
+</p>
+\[
+\boxed{
+\min_{\theta}
+\sum_{i=1}^N
+w_i
+|
+\mathcal Nu_\theta(x_i)-f(x_i)
+|^2
+}
+\tag{46}
+\]
+<p>
+です．
+しかしこの式には二つの問題が重なっています．
+</p>
+\[
+\boxed{
+\text{strong residual norm}
+\quad+\quad
+\text{finite sampling}
+}
+\tag{47}
+\]
+<p>
+です．
+</p>
+<p>
+continuous \(L^2\) residualが小さければ，
+今回のPoisson problemでは
+</p>
+\[
+\boxed{
+|u_\theta-u|_{H^1}
+\le
+\frac1\pi
+\|r_\theta\|_{L^2}
+}
+\tag{48}
+\]
+<p>
+とsolution errorを制御できます．
+</p>
+<p>
+しかしfinite collocationでは
+</p>
+\[
+\boxed{
+\mathcal L_N=0
+\quad\text{でも}\quad
+u_\theta\ne u
+}
+\tag{49}
+\]
+<p>
+が可能です．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 3 第3回の原則</b><br/>
+<b>PINNsで小さくしているのはPDE residualそのものではなく，
+選んだ点から見えたPDE residualである．</b>
+</div>
+<p>
+次回はこの差を正面から調べ，
+<b>第28回：PINNsでは点配置で答えが変わるか — uniform・random・adaptive sampling</b>
+へ進みます．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>M. Raissi, P. Perdikaris and G. E. Karniadakis, “Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations”, <i>Journal of Computational Physics</i> 378 (2019), 686–707.</li>
+<li>W. E and B. Yu, “The Deep Ritz Method: A Deep Learning-Based Numerical Algorithm for Solving Variational Problems”, <i>Communications in Mathematics and Statistics</i> 6 (2018), 1–12.</li>
+<li>S. C. Brenner and L. R. Scott, <i>The Mathematical Theory of Finite Element Methods</i>, 3rd ed., Springer, 2008.</li>
+<li><a href="./chatgpt-fem-25.html">第25回：Deep Ritz法を作る — FEMのenergy minimisationからneural trial spaceへ</a></li>
+<li><a href="./chatgpt-fem-26.html">第26回：Deep Ritzでは点をどこに置くか — quadratureとsampling geometry</a></li>
+<li><a href="./chatgpt-fem-23.html">第23回：有限要素解の誤差を保証する — equilibrated fluxとhypercircle</a></li>
+<li><a href="./pinns-01.html">関連する先行ノート：1次元Poisson問題でPINNsを動かす</a></li>
+<li><a href="./pinns-02.html">関連する先行ノート：残差点の配置を変えると何が起きるか</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 3 前回：</b><a href="./chatgpt-fem-26.html">第26回：Deep Ritzでは点をどこに置くか — quadratureとsampling geometry</a></p>
+<p><b>次回：</b>第28回：PINNsでは点配置で答えが変わるか — uniform・random・adaptive sampling（構想中）</p>
+<p><a href="../#chatgpt-fem-season3">Season 3一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
