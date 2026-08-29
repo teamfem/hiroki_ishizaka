@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<title>第5回：3次元四面体P1要素 — reference tetrahedronとJacobian | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,finite element method,Python,Poisson equation,P1 element,tetrahedron,reference tetrahedron,Jacobian,3D FEM,assembly,patch test"/>
+<meta name="description" content="3次元四面体P1有限要素について，reference tetrahedronからphysical tetrahedronへのアフィン写像，Jacobian，勾配変換 J^{-top}，体積 |det J|/6，局所剛性行列，3D assembly，linear patch test，収束を数式とPythonで確認します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-05.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-05.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-05.html",
+      "headline": "第5回：3次元四面体P1要素 — reference tetrahedronとJacobian",
+      "description": "3次元四面体P1有限要素について，reference tetrahedronからphysical tetrahedronへのアフィン写像，Jacobian，勾配変換，局所剛性行列，3D assembly，linear patch test，収束を数式とPythonで確認します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-05.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-29",
+      "dateModified": "2026-08-29",
+      "articleSection": "Computational FEM with AI",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-05.html#breadcrumbs",
+      "itemListElement": [
+        {"@type":"ListItem","position":1,"name":"Home","item":"https://teamfem.github.io/hiroki_ishizaka/"},
+        {"@type":"ListItem","position":2,"name":"Blog","item":"https://teamfem.github.io/hiroki_ishizaka/blog/"},
+        {"@type":"ListItem","position":3,"name":"第5回：3次元四面体P1要素 — reference tetrahedronとJacobian","item":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-05.html"}
+      ]
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-29"/>
+<meta property="article:modified_time" content="2026-08-29"/>
+<meta property="article:section" content="Computational FEM with AI"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第5回：3次元四面体P1要素 — reference tetrahedronとJacobian | Hiroki Ishizaka"/>
+<meta property="og:description" content="reference tetrahedronからphysical tetrahedronへの写像，Jacobian，J^{-top}，|det J|/6，局所剛性行列を数式とPythonで確認します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-05.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第5回：3次元四面体P1要素 — reference tetrahedronとJacobian | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="reference tetrahedronからphysical tetrahedronへの写像，Jacobian，J^{-top}，|det J|/6，局所剛性行列を数式とPythonで確認します．"/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 第5回</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第5回：3次元四面体P1要素 — reference tetrahedronとJacobian</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 第5回</b><br/><time datetime="2026-08-29">29th August 2026</time></p>
+
+<h2>はじめに――2次元の構造は3次元でも変わらない</h2>
+<div class="news"><article class="news-item">
+<p>
+第3回では三角形P1要素，第4回ではそのコード監査を扱いました．
+3次元へ進むと図形は三角形から四面体へ変わりますが，有限要素法の核心は同じです．
+</p>
+<p>
+reference element上の基底関数をphysical elementへ写し，
+\[
+\nabla\phi_i
+=
+J_T^{-\top}\widehat\nabla\widehat\phi_i
+\]
+で勾配を変換し，
+\[
+dx=|\det J_T|\,d\widehat x
+\]
+で積分measureを変換します．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>2次元から3次元への変更点</b><br/>
+三角形では \(|\widehat T|=1/2\) だったが，標準四面体では
+\[
+|\widehat T|=\frac16.
+\]
+したがって
+\[
+|T|=\frac{|\det J_T|}{6}.
+\]
+それ以外のJacobianと勾配変換の構造は同じである．
+</div>
+</article></div>
+
+<h2>1．3次元Poisson問題</h2>
+<div class="news"><article class="news-item">
+<p>
+単位立方体
+\[
+\Omega=(0,1)^3
+\]
+で
+\[
+-\Delta u=f
+\qquad\text{in }\Omega,
+\tag{1}
+\]
+\[
+u=0
+\qquad\text{on }\partial\Omega
+\tag{2}
+\]
+を考えます．
+</p>
+<p>
+検証用の厳密解として
+\[
+u(x,y,z)
+=
+\sin(\pi x)\sin(\pi y)\sin(\pi z)
+\tag{3}
+\]
+を選ぶと，
+\[
+f(x,y,z)
+=
+3\pi^2
+\sin(\pi x)\sin(\pi y)\sin(\pi z).
+\tag{4}
+\]
+</p>
+<p>
+弱形式は
+\[
+\text{Find }u\in H_0^1(\Omega)
+\text{ such that }
+\int_\Omega
+\nabla u\cdot\nabla v\,dx
+=
+\int_\Omega fv\,dx
+\quad
+\forall v\in H_0^1(\Omega).
+\tag{5}
+\]
+です．
+</p>
+</article></div>
+
+<h2>2．reference tetrahedron</h2>
+<div class="news"><article class="news-item">
+<p>
+標準参照四面体を
+\[
+\widehat T
+=
+\operatorname{conv}
+\left\{
+(0,0,0)^{\top},
+(1,0,0)^{\top},
+(0,1,0)^{\top},
+(0,0,1)^{\top}
+\right\}
+\tag{6}
+\]
+とします．
+reference coordinatesを
+\[
+\widehat x=(\xi,\eta,\zeta)^{\top}
+\]
+と書きます．
+</p>
+<p>
+P1 Lagrange基底は
+\[
+\widehat\phi_0
+=
+1-\xi-\eta-\zeta,
+\qquad
+\widehat\phi_1=\xi,
+\qquad
+\widehat\phi_2=\eta,
+\qquad
+\widehat\phi_3=\zeta.
+\tag{7}
+\]
+従ってreference gradientは
+\[
+\widehat\nabla\widehat\phi_0
+=
+\begin{pmatrix}-1\\-1\\-1\end{pmatrix},
+\quad
+\widehat\nabla\widehat\phi_1
+=
+\begin{pmatrix}1\\0\\0\end{pmatrix},
+\quad
+\widehat\nabla\widehat\phi_2
+=
+\begin{pmatrix}0\\1\\0\end{pmatrix},
+\quad
+\widehat\nabla\widehat\phi_3
+=
+\begin{pmatrix}0\\0\\1\end{pmatrix}.
+\tag{8}
+\]
+</p>
+<p>
+ここでも
+\[
+\sum_{i=0}^{3}
+\widehat\nabla\widehat\phi_i=0
+\tag{9}
+\]
+です．
+</p>
+</article></div>
+
+<h2>3．physical tetrahedronへのアフィン写像</h2>
+<div class="news"><article class="news-item">
+<p>
+実四面体を
+\[
+T
+=
+\operatorname{conv}
+\{p_0,p_1,p_2,p_3\},
+\qquad
+p_i\in\mathbb R^3
+\tag{10}
+\]
+とします．
+reference tetrahedronからphysical tetrahedronへの写像を
+\[
+F_T(\widehat x)
+=
+p_0+J_T\widehat x
+\tag{11}
+\]
+とし，
+\[
+\boxed{
+J_T
+=
+[p_1-p_0,\ p_2-p_0,\ p_3-p_0]
+}
+\tag{12}
+\]
+とします．
+</p>
+<p>
+Pythonでは
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">J = np.column_stack((
+    P[1] - P[0],
+    P[2] - P[0],
+    P[3] - P[0]
+))
+</code></pre>
+<p>
+となります．
+</p>
+</article></div>
+
+<h2>4．determinantと四面体の体積</h2>
+<div class="news"><article class="news-item">
+<p>
+標準四面体の体積は
+\[
+|\widehat T|=\frac16.
+\tag{13}
+\]
+従ってphysical tetrahedronの体積は
+\[
+\boxed{
+|T|
+=
+\frac{|\det J_T|}{6}
+}
+\tag{14}
+\]
+です．
+</p>
+<p>
+\(\det J_T\) の符号は頂点順序のorientationを表します．
+積分には
+\[
+|\det J_T|
+\]
+を使いますが，mesh connectivityを統一するなら
+\[
+\det J_T&gt;0
+\]
+を検査しておくと便利です．
+</p>
+</article></div>
+
+<h2>5．3次元でも勾配は \(J^{-\top}\) で変換する</h2>
+<div class="news"><article class="news-item">
+<p>
+physical basis functionを
+\[
+\phi_i(x)
+=
+\widehat\phi_i(F_T^{-1}(x))
+\tag{15}
+\]
+とすると，chain ruleから
+\[
+\widehat\nabla\widehat\phi_i
+=
+J_T^{\top}\nabla\phi_i.
+\]
+従って
+\[
+\boxed{
+\nabla\phi_i
+=
+J_T^{-\top}
+\widehat\nabla\widehat\phi_i
+}
+\tag{16}
+\]
+です．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">invJT = np.linalg.inv(J).T
+grads = (invJT @ grad_hat.T).T
+</code></pre>
+<p>
+2次元と全く同じコード構造です．
+</p>
+</article></div>
+
+<h2>6．局所剛性行列</h2>
+<div class="news"><article class="news-item">
+<p>
+Poisson問題の局所剛性行列は
+\[
+K^{(T)}_{ij}
+=
+\int_T
+\nabla\phi_j\cdot\nabla\phi_i\,dx.
+\tag{17}
+\]
+P1要素では勾配が要素内で一定なので，
+\[
+K^{(T)}_{ij}
+=
+\frac{|\det J_T|}{6}
+\left(
+J_T^{-\top}
+\widehat\nabla\widehat\phi_j
+\right)
+\cdot
+\left(
+J_T^{-\top}
+\widehat\nabla\widehat\phi_i
+\right).
+\tag{18}
+\]
+</p>
+<p>
+physical gradientsを行に並べた
+\[
+G_T
+=
+\begin{pmatrix}
+(\nabla\phi_0)^{\top}\\
+(\nabla\phi_1)^{\top}\\
+(\nabla\phi_2)^{\top}\\
+(\nabla\phi_3)^{\top}
+\end{pmatrix}
+\in\mathbb R^{4\times3}
+\tag{19}
+\]
+を使えば，
+\[
+\boxed{
+K^{(T)}
+=
+\frac{|\det J_T|}{6}
+G_TG_T^{\top}
+}
+\tag{20}
+\]
+です．
+</p>
+<p>
+従って
+\[
+(K^{(T)})^{\top}=K^{(T)},
+\qquad
+K^{(T)}
+\begin{pmatrix}1\\1\\1\\1\end{pmatrix}
+=0.
+\tag{21}
+\]
+これらは3次元でも重要なlocal auditです．
+</p>
+</article></div>
+
+<h2>7．具体例</h2>
+<div class="news"><article class="news-item">
+<p>
+例えば
+\[
+p_0=(0,0,0)^{\top},
+\quad
+p_1=(2,0,0)^{\top},
+\quad
+p_2=(0,1,0)^{\top},
+\quad
+p_3=(0,0,1/2)^{\top}
+\]
+とします．このとき
+\[
+J_T
+=
+\begin{pmatrix}
+2&0&0\\
+0&1&0\\
+0&0&1/2
+\end{pmatrix},
+\qquad
+|\det J_T|=1.
+\]
+従って
+\[
+|T|=\frac16.
+\]
+</p>
+<p>
+physical gradientsは
+\[
+\nabla\phi_0
+=
+\begin{pmatrix}-1/2\\-1\\-2\end{pmatrix},
+\quad
+\nabla\phi_1
+=
+\begin{pmatrix}1/2\\0\\0\end{pmatrix},
+\quad
+\nabla\phi_2
+=
+\begin{pmatrix}0\\1\\0\end{pmatrix},
+\quad
+\nabla\phi_3
+=
+\begin{pmatrix}0\\0\\2\end{pmatrix}.
+\]
+</p>
+<p>
+局所剛性行列は
+\[
+K^{(T)}
+=
+\begin{pmatrix}
+7/8&-1/24&-1/6&-2/3\\
+-1/24&1/24&0&0\\
+-1/6&0&1/6&0\\
+-2/3&0&0&2/3
+\end{pmatrix}.
+\tag{22}
+\]
+行和が0であることも確認できます．
+</p>
+</article></div>
+
+<h2>8．3次元メッシュ：立方体を6個の四面体へ分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+単位立方体を \(n\times n\times n\) の小立方体へ分割し，各小立方体をbody diagonalを共有する6個の四面体へ分割します．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def make_unit_cube_mesh(n):
+    grid = np.linspace(0.0, 1.0, n + 1)
+
+    nodes = np.array([
+        [x, y, z]
+        for z in grid
+        for y in grid
+        for x in grid
+    ])
+
+    def idx(i, j, k):
+        return (
+            k * (n + 1) * (n + 1)
+            + j * (n + 1)
+            + i
+        )
+
+    tetrahedra = []
+
+    for k in range(n):
+        for j in range(n):
+            for i in range(n):
+                v000 = idx(i,     j,     k)
+                v100 = idx(i + 1, j,     k)
+                v010 = idx(i,     j + 1, k)
+                v110 = idx(i + 1, j + 1, k)
+
+                v001 = idx(i,     j,     k + 1)
+                v101 = idx(i + 1, j,     k + 1)
+                v011 = idx(i,     j + 1, k + 1)
+                v111 = idx(i + 1, j + 1, k + 1)
+
+                tetrahedra += [
+                    [v000, v100, v110, v111],
+                    [v000, v110, v010, v111],
+                    [v000, v010, v011, v111],
+                    [v000, v011, v001, v111],
+                    [v000, v001, v101, v111],
+                    [v000, v101, v100, v111],
+                ]
+
+    return nodes, np.array(
+        tetrahedra,
+        dtype=int
+    )
+</code></pre>
+<p>
+この分割では各四面体の頂点順序を反時計回りの3次元版に相当する正orientationで統一してあり，
+\[
+\det J_T&gt;0
+\]
+となります．
+</p>
+</article></div>
+
+<h2>9．3次元ではsparse matrixを使う</h2>
+<div class="news"><article class="news-item">
+<p>
+2次元までは構造を見やすくするためdense matrixを使いました．
+しかし3次元では自由度数が急速に増えます．
+\[
+N_{\mathrm{node}}=(n+1)^3.
+\]
+例えば \(n=16\) なら
+\[
+N_{\mathrm{node}}=4913
+\]
+です．dense matrixでは約
+\[
+4913^2\approx2.4\times10^7
+\]
+個の成分を持つことになります．
+</p>
+<p>
+有限要素行列は疎なので，ここからはSciPyのsparse matrixを使います．
+</p>
+</article></div>
+
+<h2 style="color:#111;">10．四面体P1要素の最小Pythonコード</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">import numpy as np
+from scipy.sparse import lil_matrix
+from scipy.sparse.linalg import spsolve
+
+
+grad_hat = np.array([
+    [-1.0, -1.0, -1.0],
+    [ 1.0,  0.0,  0.0],
+    [ 0.0,  1.0,  0.0],
+    [ 0.0,  0.0,  1.0]
+])
+
+
+def tetra_quadrature_4():
+    a = 0.5854101966249685
+    b = 0.1381966011250105
+
+    bary = np.array([
+        [a, b, b, b],
+        [b, a, b, b],
+        [b, b, a, b],
+        [b, b, b, a]
+    ])
+
+    weights = np.full(4, 1.0 / 24.0)
+
+    return bary, weights
+
+
+def solve_poisson_3d(n):
+    nodes, tetrahedra = make_unit_cube_mesh(n)
+
+    N = len(nodes)
+
+    A = lil_matrix((N, N))
+    b = np.zeros(N)
+
+    bary, weights = tetra_quadrature_4()
+
+    for tet in tetrahedra:
+        P = nodes[tet]
+
+        J = np.column_stack((
+            P[1] - P[0],
+            P[2] - P[0],
+            P[3] - P[0]
+        ))
+
+        detJ = np.linalg.det(J)
+
+        if detJ &lt;= 0.0:
+            raise ValueError(
+                "Non-positive tetrahedron orientation"
+            )
+
+        invJT = np.linalg.inv(J).T
+
+        grads = (
+            invJT @ grad_hat.T
+        ).T
+
+        Ke = (
+            abs(detJ) / 6.0
+            * (grads @ grads.T)
+        )
+
+        Fe = np.zeros(4)
+
+        for lam, w in zip(bary, weights):
+            x = lam @ P
+
+            f = (
+                3.0 * np.pi**2
+                * np.sin(np.pi * x[0])
+                * np.sin(np.pi * x[1])
+                * np.sin(np.pi * x[2])
+            )
+
+            Fe += (
+                w
+                * abs(detJ)
+                * f
+                * lam
+            )
+
+        for a in range(4):
+            b[tet[a]] += Fe[a]
+
+            for c in range(4):
+                A[tet[a], tet[c]] += Ke[a, c]
+
+    A = A.tocsr()
+
+    on_boundary = (
+        np.isclose(nodes[:, 0], 0.0)
+        | np.isclose(nodes[:, 0], 1.0)
+        | np.isclose(nodes[:, 1], 0.0)
+        | np.isclose(nodes[:, 1], 1.0)
+        | np.isclose(nodes[:, 2], 0.0)
+        | np.isclose(nodes[:, 2], 1.0)
+    )
+
+    boundary = np.where(on_boundary)[0]
+    interior = np.where(~on_boundary)[0]
+
+    uh = np.zeros(N)
+
+    AII = A[interior][:, interior]
+
+    uh[interior] = spsolve(
+        AII,
+        b[interior]
+    )
+
+    return nodes, tetrahedra, uh
+</code></pre>
+<p>
+4点quadratureのweightはreference tetrahedron上で
+\[
+\sum_qw_q=\frac16
+\]
+になるように正規化されています．
+physical elementへ移すときに \(|\det J_T|\) を掛けます．
+</p>
+</article></div>
+
+<h2>11．local-to-global assemblyは2次元と同じ</h2>
+<div class="news"><article class="news-item">
+<p>
+三角形では一要素あたり3自由度でしたが，四面体P1では4自由度です．
+assemblyは
+\[
+A_{\operatorname{dof}_T(a),\operatorname{dof}_T(c)}
+\mathrel{+}=K^{(T)}_{ac},
+\qquad
+a,c=0,1,2,3
+\tag{23}
+\]
+です．
+</p>
+<p>
+つまり次の部分だけ見れば，2次元と本質的に同じです．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">for a in range(4):
+    b[tet[a]] += Fe[a]
+
+    for c in range(4):
+        A[tet[a], tet[c]] += Ke[a, c]
+</code></pre>
+</article></div>
+
+<h2>12．3次元linear patch test</h2>
+<div class="news"><article class="news-item">
+<p>
+3次元でもP1要素は任意の一次式
+\[
+u(x,y,z)
+=
+a+bx+cy+dz
+\tag{24}
+\]
+を厳密に再現します．
+</p>
+<p>
+例えば
+\[
+u(x,y,z)
+=
+1+2x-3y+\frac12z
+\tag{25}
+\]
+とします．
+\[
+-\Delta u=0
+\]
+であり，境界値を厳密解から与えると
+\[
+u_h=u.
+\tag{26}
+\]
+</p>
+<p>
+実際の浮動小数点計算では次の最大節点誤差が得られます．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">\(n\)</th><th style="border:1px solid #777; padding:7px;">max nodal error</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">1.1102e-16</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">1.9984e-15</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">3.5527e-15</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">3.1308e-14</td></tr>
+</table>
+<p>
+離散化誤差は理論上0であり，残っているのは丸め誤差と線形solverの浮動小数点誤差です．
+3次元では未知数が増えるので，2次元より丸め誤差が少し見えやすくなります．
+</p>
+</article></div>
+
+<h2>13．相対誤差と収束次数</h2>
+<div class="news"><article class="news-item">
+<p>
+厳密解 (3) に対して
+\[
+E_{L^2}^{\mathrm{rel}}
+=
+\frac{\|u-u_h\|_{L^2(\Omega)}}{\|u\|_{L^2(\Omega)}},
+\qquad
+E_{H^1}^{\mathrm{rel}}
+=
+\frac{|u-u_h|_{H^1(\Omega)}}{|u|_{H^1(\Omega)}}
+\tag{27}
+\]
+を計算します．
+</p>
+<p>
+shape-regularな四面体P1メッシュ上では，
+\[
+E_{L^2}^{\mathrm{rel}}=O(h^2),
+\qquad
+E_{H^1}^{\mathrm{rel}}=O(h)
+\tag{28}
+\]
+が期待されます．
+誤差積分には，reference tetrahedron上で高次のDuffy型Gauss積分を用いています．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">\(n\)</th>
+<th style="border:1px solid #777; padding:7px;">nodes</th>
+<th style="border:1px solid #777; padding:7px;">tetrahedra</th>
+<th style="border:1px solid #777; padding:7px;">\(L^2\) relative error</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+<th style="border:1px solid #777; padding:7px;">\(H^1\) seminorm relative error</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">27</td><td style="border:1px solid #777; padding:7px;">48</td><td style="border:1px solid #777; padding:7px;">6.5675e-1</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">7.9406e-1</td><td style="border:1px solid #777; padding:7px;">—</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">125</td><td style="border:1px solid #777; padding:7px;">384</td><td style="border:1px solid #777; padding:7px;">2.4535e-1</td><td style="border:1px solid #777; padding:7px;">1.420</td><td style="border:1px solid #777; padding:7px;">4.7390e-1</td><td style="border:1px solid #777; padding:7px;">0.745</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">729</td><td style="border:1px solid #777; padding:7px;">3072</td><td style="border:1px solid #777; padding:7px;">6.9318e-2</td><td style="border:1px solid #777; padding:7px;">1.824</td><td style="border:1px solid #777; padding:7px;">2.4909e-1</td><td style="border:1px solid #777; padding:7px;">0.928</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">4913</td><td style="border:1px solid #777; padding:7px;">24576</td><td style="border:1px solid #777; padding:7px;">1.7919e-2</td><td style="border:1px solid #777; padding:7px;">1.952</td><td style="border:1px solid #777; padding:7px;">1.2618e-1</td><td style="border:1px solid #777; padding:7px;">0.981</td></tr>
+</table>
+<p>
+細分化とともに \(L^2\) は2次，\(H^1\)半ノルムは1次へ近づいています．
+3次元でも2次元と同じP1収束構造が確認できます．
+</p>
+</article></div>
+
+<h2>14．3次元コードで監査すべき項目</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">数学的条件</th><th style="border:1px solid #777; padding:7px;">コード上の確認</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(\det J_T\neq0\)</td><td style="border:1px solid #777; padding:7px;">退化四面体でない</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(|T|=|\det J_T|/6\)</td><td style="border:1px solid #777; padding:7px;"><code>abs(detJ) / 6.0</code></td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(\nabla\phi_i=J_T^{-\top}\widehat\nabla\widehat\phi_i\)</td><td style="border:1px solid #777; padding:7px;"><code>np.linalg.inv(J).T</code></td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(\sum_i\nabla\phi_i=0\)</td><td style="border:1px solid #777; padding:7px;"><code>grads.sum(axis=0)</code></td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(K^{(T)}=(K^{(T)})^{\top}\)</td><td style="border:1px solid #777; padding:7px;">local symmetry</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(K^{(T)}\mathbf1=0\)</td><td style="border:1px solid #777; padding:7px;">local row sum</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">一次式再現性</td><td style="border:1px solid #777; padding:7px;">3D linear patch test</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">P1 convergence</td><td style="border:1px solid #777; padding:7px;">\(L^2\) 2次，\(H^1\) 1次</td></tr>
+</table>
+</article></div>
+
+<h2>15．標準Jacobianと異方性解析のJacobianは区別する</h2>
+<div class="news"><article class="news-item">
+<p>
+ここまで使った
+\[
+J_T
+=
+[p_1-p_0,\ p_2-p_0,\ p_3-p_0]
+\tag{29}
+\]
+は，任意の非退化四面体に対して有限要素写像を作る標準的なJacobianです．
+有限要素のassemblyにはこれで十分です．
+</p>
+<p>
+しかし，異方性解析では事情が変わります．
+四面体のどの辺を基準方向として選ぶか，どの長さを \(h_1,h_2,h_3\) とするかを明示し，
+異方的なscaleと残りのshape deformationを分離してJacobianを構成する必要があります．
+</p>
+<p>
+特に3次元では，異方性四面体の標準位置に複数の型が現れます．
+したがって，
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>第5回と異方性編の違い</b><br/>
+第5回：<b>与えられた四面体へ正しく写すJacobian</b>を作る．<br/>
+異方性編：<b>四面体の方向別scaleと幾何を解析できるようにJacobianを構成する</b>．
+</div>
+<p>
+この違いが，第6回以降の中心になります．
+</p>
+</article></div>
+
+<h2>16．第5回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+三角形P1要素から四面体P1要素へ進んでも，有限要素法の基本構造は変わりません．
+</p>
+\[
+\widehat T
+\longrightarrow
+T,
+\qquad
+J_T,
+\qquad
+J_T^{-\top},
+\qquad
+|\det J_T|,
+\qquad
+K^{(T)},
+\qquad
+\text{assembly}.
+\]
+<p>
+変わるのは，reference elementの次元と体積，
+そして一要素あたりの自由度数です．
+</p>
+<p>
+3次元で重要なのは，この標準的な構造をまず正確に実装しておくことです．
+その上で初めて，「異方性四面体では \(J_T\) をどう構成すべきか」という次の問題を切り離して考えることができます．
+</p>
+</article></div>
+
+<h2>参考文献</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>P. G. Ciarlet, <i>The Finite Element Method for Elliptic Problems</i>, North-Holland, 1978.</li>
+<li>S. C. Brenner and L. R. Scott, <i>The Mathematical Theory of Finite Element Methods</i>, 3rd ed., Springer, 2008.</li>
+<li>A. Ern and J.-L. Guermond, <i>Finite Elements I: Approximation and Interpolation</i>, Springer, 2021.</li>
+<li>H. Ishizaka, K. Kobayashi, R. Suzuki and T. Tsuchiya, “A new geometric condition equivalent to the maximum angle condition for tetrahedrons”, <i>Computers &amp; Mathematics with Applications</i> 99 (2021), 323–328.</li>
+</ol>
+<p>
+関連ページ：
+<a href="./chatgpt-fem-03.html">第3回：2次元三角形P1要素 — reference elementとJacobian</a>，
+<a href="./chatgpt-fem-04.html">第4回：2次元P1有限要素コードを数学的に監査する</a>，
+<a href="./anisotropic-geometry-01.html">有限要素法ではなぜメッシュの幾何条件が必要なのか</a>，
+<a href="../">Blog一覧</a>
+</p>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>前回：</b><a href="./chatgpt-fem-04.html">第4回：2次元P1有限要素コードを数学的に監査する — assembly・境界条件・収束</a></p>
+<p><b>次回：</b>第6回：異方性三角形ではJacobianをどう作るか — standard positionとtwo-step affine mapping（構想中）</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
