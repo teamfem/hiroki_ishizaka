@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<title>第10回：ChatGPTが書いたFEMコードをどうデバッグするか | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,finite element method,Python,debugging,code verification,patch test,manufactured solution,Jacobian,assembly,boundary condition,quadrature,condition number,anisotropic mesh"/>
+<meta name="description" content="ChatGPTが生成した有限要素コードを，弱形式，Jacobian，局所行列，assembly，境界条件，quadrature，solver residual，patch test，manufactured solution，収束次数，異方性meshの順に数学的にデバッグする実践的protocolをまとめます．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-10.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-10.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-10.html",
+      "headline": "第10回：ChatGPTが書いたFEMコードをどうデバッグするか",
+      "description": "ChatGPTが生成した有限要素コードを，弱形式からgeometry，assembly，境界条件，solver，patch test，収束試験まで数学的不変量を使ってデバッグするprotocolを整理します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-10.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-29",
+      "dateModified": "2026-08-29",
+      "articleSection": "Computational FEM with AI",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-10.html#breadcrumbs",
+      "itemListElement": [
+        {"@type":"ListItem","position":1,"name":"Home","item":"https://teamfem.github.io/hiroki_ishizaka/"},
+        {"@type":"ListItem","position":2,"name":"Blog","item":"https://teamfem.github.io/hiroki_ishizaka/blog/"},
+        {"@type":"ListItem","position":3,"name":"第10回：ChatGPTが書いたFEMコードをどうデバッグするか","item":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-10.html"}
+      ]
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-29"/>
+<meta property="article:modified_time" content="2026-08-29"/>
+<meta property="article:section" content="Computational FEM with AI"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第10回：ChatGPTが書いたFEMコードをどうデバッグするか | Hiroki Ishizaka"/>
+<meta property="og:description" content="FEMコードをplotではなく数学的不変量でデバッグする．弱形式，geometry，assembly，境界条件，quadrature，solver，patch test，収束を順に切り分けます．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-10.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第10回：ChatGPTが書いたFEMコードをどうデバッグするか | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="症状からコードを書き換えるのではなく，FEMの数学的不変量を上流から検査して原因を切り分けるdebugging protocolです．"/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 第10回</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第10回：ChatGPTが書いたFEMコードをどうデバッグするか</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 第10回</b><br/><time datetime="2026-08-29">29th August 2026</time></p>
+
+<h2>はじめに――FEMのdebuggingは「症状から原因を当てる」仕事ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+ChatGPTに有限要素コードを書かせると，コードが実行できるところまでは比較的簡単に到達します．
+難しいのはその後です．
+</p>
+<p>
+例えば，
+</p>
+<ul>
+<li>解のplotはそれらしく見える，</li>
+<li>linear solverのresidualも小さい，</li>
+<li>patch testも通る，</li>
+<li>しかし収束次数が出ない</li>
+</ul>
+<p>
+ということがあります．
+第4回では，実際に
+\[
+J_T^{-\top}
+\]
+を
+\[
+J_T^{-1}
+\]
+と誤って実装したコードが，symmetry testやlinear patch testを通過しながら，
+smooth solutionに対する収束試験で失敗する例を見ました．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>FEM debuggingの原則</b><br/>
+出力の見た目から原因を推測してコードを何度も書き換えるのではなく，
+<b>弱形式から数値解までの各段階が満たすべき数学的不変量を，上流から順に検査する</b>．
+</div>
+</article></div>
+
+<h2>1．最初に「正しいはずの問題」を固定する</h2>
+<div class="news"><article class="news-item">
+<p>
+debuggingを始める前に，仕様を一枚に固定します．
+最低限，
+</p>
+\[
+\boxed{
+\text{PDE}
+\to
+\text{weak form}
+\to
+\text{finite-element space}
+\to
+\text{element map}
+\to
+\text{quadrature}
+\to
+\text{boundary treatment}
+\to
+\text{linear solver}
+}
+\tag{1}
+\]
+<p>
+を書き出します．
+</p>
+<p>
+例えばPoisson問題なら，
+\[
+-\Delta u=f
+\quad\text{in }\Omega,
+\qquad
+u=g
+\quad\text{on }\partial\Omega
+\tag{2}
+\]
+に対して，test spaceを
+\[
+V_0=H_0^1(\Omega)
+\]
+とし，
+\[
+\int_\Omega\nabla u\cdot\nabla v\,dx
+=
+\int_\Omega fv\,dx
+\qquad
+\forall v\in V_0
+\tag{3}
+\]
+という弱形式を固定します．
+</p>
+<p>
+この段階が曖昧なままコードだけ直すと，
+「正しく実装された別の問題」
+を作ってしまう可能性があります．
+</p>
+</article></div>
+
+<h2>2．FEMのbugを五つの層に分ける</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">layer</th>
+<th style="border:1px solid #777; padding:7px;">典型的なbug</th>
+<th style="border:1px solid #777; padding:7px;">最初に見るtest</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">model / weak form</td><td style="border:1px solid #777; padding:7px;">符号，係数，境界項，test space</td><td style="border:1px solid #777; padding:7px;">手計算，energy identity，manufactured solution</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">geometry / mapping</td><td style="border:1px solid #777; padding:7px;">\(J^{-1}\) vs \(J^{-\top}\)，determinant，orientation</td><td style="border:1px solid #777; padding:7px;">element invariant，skew element，mesh certificate</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">discretisation</td><td style="border:1px solid #777; padding:7px;">local matrix，assembly，quadrature，boundary elimination</td><td style="border:1px solid #777; padding:7px;">row sum，symmetry，patch test</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">algebra / solver</td><td style="border:1px solid #777; padding:7px;">singularity，ill-conditioning，solver tolerance</td><td style="border:1px solid #777; padding:7px;">residual，eigenvalue，condition number</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">verification</td><td style="border:1px solid #777; padding:7px;">誤ったexact solution，誤差積分，偽reference solution</td><td style="border:1px solid #777; padding:7px;">symbolic residual，independent quadrature，known rate</td></tr>
+</table>
+<p>
+重要なのは，これらを一度に直そうとしないことです．
+一つずつ上流から閉じます．
+</p>
+</article></div>
+
+<h2>3．Step 1：弱形式をコードから独立に検査する</h2>
+<div class="news"><article class="news-item">
+<p>
+Poisson問題のbilinear formなら
+\[
+a(v,v)
+=
+\int_\Omega|\nabla v|^2\,dx
+\ge0.
+\tag{4}
+\]
+従って，Dirichlet条件を課したdiscrete matrixは対称正定値になります．
+</p>
+<p>
+もし
+\[
+a(u,v)
+=
+-\int_\Omega\nabla u\cdot\nabla v\,dx
+\]
+のように符号を誤れば，局所行列は対称のままでもenergy signが反転します．
+つまり
+<b>symmetryだけではweak-form bugを検出できません</b>．
+</p>
+<p>
+manufactured solutionを使う場合には，
+選んだ \(u\) から
+\[
+f=-\Delta u
+\]
+をコードとは独立に計算し，
+PDE residualが0になることを確認します．
+</p>
+</article></div>
+
+<h2>4．Step 2：geometryを局所要素だけで検査する</h2>
+<div class="news"><article class="news-item">
+<p>
+2次元三角形なら
+\[
+J_T=[p_1-p_0,\ p_2-p_0],
+\qquad
+|T|=\frac{|\det J_T|}{2},
+\tag{5}
+\]
+3次元四面体なら
+\[
+J_T=[p_1-p_0,\ p_2-p_0,\ p_3-p_0],
+\qquad
+|T|=\frac{|\det J_T|}{6}.
+\tag{6}
+\]
+</p>
+<p>
+scalar P1 basisのphysical gradientは
+\[
+\boxed{
+\nabla\phi_i
+=
+J_T^{-\top}
+\widehat\nabla\widehat\phi_i.
+}
+\tag{7}
+\]
+</p>
+<p>
+ここではuniformな直角要素だけでtestしない方がよいです．
+対称性の高い要素では，誤った変換が偶然見えにくいことがあります．
+例えば2次元なら
+\[
+(0,0)^{\top},
+\quad
+(1,0)^{\top},
+\quad
+(0.3,0.8)^{\top}
+\]
+のようなskew triangleもunit testに入れます．
+</p>
+</article></div>
+
+<h2>5．Step 3：局所剛性行列の不変量を調べる</h2>
+<div class="news"><article class="news-item">
+<p>
+nondegenerate simplex上のP1 Laplace stiffness matrix \(K^{(T)}\) は，
+</p>
+\[
+(K^{(T)})^{\top}=K^{(T)},
+\tag{8}
+\]
+\[
+K^{(T)}\mathbf1=0,
+\tag{9}
+\]
+\[
+z^{\top}K^{(T)}z\ge0
+\tag{10}
+\]
+<p>
+を満たします．
+さらにnullspaceは定数だけなので，2次元三角形ではrank 2，
+3次元四面体ではrank 3です．
+</p>
+<p>
+ただし異方性要素ではmatrix scaleが極端になることがあります．
+固定した
+<code>1e-12</code>
+だけで判定するより，matrix normに応じたscale-aware toleranceを使う方が安全です．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def local_stiffness_audit(Ke):
+    scale = max(
+        1.0,
+        np.linalg.norm(Ke, ord=np.inf)
+    )
+
+    tol = (
+        100.0
+        * np.finfo(float).eps
+        * scale
+    )
+
+    symmetry = np.linalg.norm(
+        Ke - Ke.T,
+        ord=np.inf
+    )
+
+    row_sum = np.linalg.norm(
+        Ke @ np.ones(Ke.shape[0]),
+        ord=np.inf
+    )
+
+    eigenvalues = np.linalg.eigvalsh(
+        0.5 * (Ke + Ke.T)
+    )
+
+    return {
+        "symmetry": symmetry,
+        "row_sum": row_sum,
+        "min_eigenvalue": eigenvalues[0],
+        "tolerance": tol,
+        "pass_symmetry": symmetry &lt;= tol,
+        "pass_row_sum": row_sum &lt;= tol,
+        "pass_psd":
+            eigenvalues[0] &gt;= -tol
+    }
+</code></pre>
+</article></div>
+
+<h2>6．Step 4：assemblyをfull matrixの段階で止めて調べる</h2>
+<div class="news"><article class="news-item">
+<p>
+Dirichlet条件をまだ入れていないfull stiffness matrixを
+\[
+A_{\mathrm{full}}
+\]
+とします．
+connected meshのpure Laplace operatorなら，
+</p>
+\[
+A_{\mathrm{full}}\mathbf1=0,
+\tag{11}
+\]
+\[
+A_{\mathrm{full}}
+=
+A_{\mathrm{full}}^{\top}.
+\tag{12}
+\]
+<p>
+が成立します．
+</p>
+<p>
+ここで重要なのは，<b>boundary conditionを入れる前のmatrixを保存する</b>ことです．
+境界行・列を上書きした後では，
+本来のassembly invariantが見えなくなります．
+</p>
+<p>
+局所行列が正しくてもglobal row sumが壊れているなら，
+local-to-global numberingまたはassembly loopを疑います．
+</p>
+</article></div>
+
+<h2>7．Step 5：境界条件はhomogeneous testだけでは不十分</h2>
+<div class="news"><article class="news-item">
+<p>
+同次Dirichlet条件
+\[
+u=0
+\]
+だけで開発していると，boundary eliminationのbugを見逃すことがあります．
+非同次境界値 \(U_B\) を与える場合，内部自由度は
+</p>
+\[
+\boxed{
+A_{II}U_I
+=
+b_I-A_{IB}U_B.
+}
+\tag{13}
+\]
+<p>
+を解かなければなりません．
+</p>
+<p>
+したがって，boundary-debug用には
+\[
+u(x,y)=1+2x-3y
+\tag{14}
+\]
+のような非同次affine solutionを必ず入れます．
+この場合
+\[
+-\Delta u=0
+\]
+なので，P1 finite elementは理論上
+\[
+u_h=u
+\]
+を厳密に再現します．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>homogeneous manufactured solutionとnonhomogeneous patch testは役割が違う</b><br/>
+前者はsmooth-solution convergenceを見る．<br/>
+後者はboundary eliminationとpolynomial reproductionを直接検査する．
+</div>
+</article></div>
+
+<h2>8．Step 6：quadratureをdiscretisationから分離する</h2>
+<div class="news"><article class="news-item">
+<p>
+「FEMが間違っている」のではなく，quadratureだけが間違っている場合もあります．
+reference element上のweightについて，まず
+</p>
+\[
+\sum_q w_q
+=
+|\widehat T|
+\tag{15}
+\]
+<p>
+を確認します．
+三角形なら \(1/2\)，四面体なら \(1/6\) です．
+</p>
+<p>
+affine P1 simplexでPoisson stiffnessを作る場合，
+\[
+\nabla\phi_i\cdot\nabla\phi_j
+\]
+は要素内で定数なので，stiffness integrationは非常に単純です．
+一方，
+\[
+\int_T f\phi_i\,dx
+\]
+は \(f\) に依存します．
+三角関数をmanufactured forcingに使えば，有限点Gauss公式は一般に数学的なexact integrationではありません．
+</p>
+<p>
+debuggingではquadrature orderを変えて，
+解・誤差・observed rateがどう変化するかを比較します．
+quadratureを上げても結果が変わらなければ，別の層を疑います．
+</p>
+</article></div>
+
+<h2>9．Step 7：solver residualは「最後の方程式」を解いた証拠にすぎない</h2>
+<div class="news"><article class="news-item">
+<p>
+内部systemについて
+\[
+r_I=A_{II}U_I-b_I^{\mathrm{eff}}
+\tag{16}
+\]
+を計算し，
+\[
+\frac{\|r_I\|}
+{\|b_I^{\mathrm{eff}}\|+\|A_{II}\|\|U_I\|}
+\tag{17}
+\]
+のようなscaled residualを確認します．
+</p>
+<p>
+しかしresidualが \(10^{-14}\) でも，
+\(A_{II}\) 自体を間違えて組み立てていれば有限要素解は間違っています．
+</p>
+<p>
+第7回では，semi-regularな強異方性meshでもglobal stiffness matrixのcondition numberが大きくなることを確認しました．
+従って
+\[
+\text{small residual}
+\not\Longrightarrow
+\text{small solution error}
+\tag{18}
+\]
+です．
+</p>
+</article></div>
+
+<h2>10．Step 8：patch testは必要だが十分ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+P1要素なら，2次元では
+\[
+u(x,y)=a+bx+cy,
+\]
+3次元では
+\[
+u(x,y,z)=a+bx+cy+dz
+\tag{19}
+\]
+を非同次Dirichlet dataとして与えます．
+正しいP1 discretisationならexact arithmeticで
+\[
+u_h=u.
+\tag{20}
+\]
+</p>
+<p>
+ただし第4回で見たように，誤った
+\[
+J_T^{-1}
+\]
+を使ったコードでもpatch testを通過する場合があります．
+</p>
+<p>
+従ってpatch testは
+「一次式再現性が壊れていない」
+ことを確認するtestであって，
+「すべての実装が正しい」
+ことを証明するtestではありません．
+</p>
+</article></div>
+
+<h2>11．Step 9：manufactured solutionと収束次数で最終確認する</h2>
+<div class="news"><article class="news-item">
+<p>
+smooth solutionとして
+\[
+u(x,y)=\sin(\pi x)\sin(\pi y)
+\tag{21}
+\]
+を使えば，regularなP1 mesh上で
+\[
+\|u-u_h\|_{L^2}=O(h^2),
+\qquad
+|u-u_h|_{H^1}=O(h)
+\tag{22}
+\]
+が期待されます．
+</p>
+<p>
+第4回のintentional bugでは，
+\(J_T^{-\top}\) を \(J_T^{-1}\) に変えたコードがpatch testを通ったにもかかわらず，
+\(n=32\) でも相対誤差が概ね
+\[
+E_{L^2}^{\mathrm{rel}}
+\approx2.99\times10^{-1},
+\qquad
+E_{H^1}^{\mathrm{rel}}
+\approx3.59\times10^{-1}
+\]
+に留まり，期待収束が現れませんでした．
+</p>
+<p>
+このため収束試験は，
+<b>理論上のerror estimateを実装仕様として使うverification test</b>
+だと考えることができます．
+</p>
+</article></div>
+
+<h2>12．Step 10：異方性stress testを別に行う</h2>
+<div class="news"><article class="news-item">
+<p>
+uniform meshで正しく見えたコードも，異方性meshで壊れることがあります．
+第6–9回で導入したgeometry auditを使い，
+</p>
+\[
+\kappa_2(J_T),
+\qquad
+\frac{H_T}{h_T},
+\qquad
+Q_T,
+\qquad
+\kappa_2(A_{II})
+\tag{23}
+\]
+<p>
+を分けて記録します．
+</p>
+<p>
+ここで
+\[
+\kappa_2(J_T)\gg1
+\]
+だから直ちにbad elementと判定してはいけません．
+第7回のthin right trianglesのように，
+\[
+H_T/h_T
+\]
+が一様有界な強異方性meshは存在します．
+</p>
+<p>
+3次元では第9回のsliverのように，
+edge ratioがほぼ2でも体積が潰れて
+semi-regularity certificateが発散する場合があります．
+</p>
+</article></div>
+
+<h2>13．bugの症状と疑う場所</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">symptom</th>
+<th style="border:1px solid #777; padding:7px;">最初に疑う場所</th>
+<th style="border:1px solid #777; padding:7px;">切り分けtest</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">local matrixが非対称</td><td style="border:1px solid #777; padding:7px;">gradient変換，index order</td><td style="border:1px solid #777; padding:7px;">一要素の手計算</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">local row sum \(\neq0\)</td><td style="border:1px solid #777; padding:7px;">basis gradient，local matrix formula</td><td style="border:1px solid #777; padding:7px;">\(\sum_i\nabla\phi_i=0\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">localは正しいがglobal row sumが壊れる</td><td style="border:1px solid #777; padding:7px;">assembly，connectivity</td><td style="border:1px solid #777; padding:7px;">single-element → two-element test</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">homogeneous BCは動くがnonhomogeneous BCで失敗</td><td style="border:1px solid #777; padding:7px;">RHS correction</td><td style="border:1px solid #777; padding:7px;">affine patch test</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">residualは小さいが誤差が大きい</td><td style="border:1px solid #777; padding:7px;">discretisation / weak form</td><td style="border:1px solid #777; padding:7px;">manufactured convergence</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">patch testは通るが収束しない</td><td style="border:1px solid #777; padding:7px;">mapping，quadrature，wrong operator</td><td style="border:1px solid #777; padding:7px;">skew-element test + smooth convergence</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">uniform meshだけ正しい</td><td style="border:1px solid #777; padding:7px;">geometry assumption</td><td style="border:1px solid #777; padding:7px;">anisotropic / skew mesh stress test</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">fine mesh同士では差が減るがexact errorは減らない</td><td style="border:1px solid #777; padding:7px;">reference solution</td><td style="border:1px solid #777; padding:7px;">manufactured exact solution / independent certificate</td></tr>
+</table>
+</article></div>
+
+<h2>14．「一要素 → 小mesh → 本番mesh」の順でdebugする</h2>
+<div class="news"><article class="news-item">
+<p>
+大きなmeshを最初からdebugする必要はありません．
+むしろ，
+</p>
+\[
+\boxed{
+\text{one element}
+\to
+\text{two or few elements}
+\to
+\text{structured coarse mesh}
+\to
+\text{anisotropic stress mesh}
+\to
+\text{production mesh}
+}
+\tag{24}
+\]
+<p>
+と段階を分けます．
+</p>
+<p>
+一要素ではJacobianとlocal matrixを確認し，
+二要素ではshared nodeへのassemblyを確認し，
+小meshではboundary eliminationとglobal SPDを確認します．
+その後にconvergenceとanisotropyへ進みます．
+</p>
+<p>
+この順番なら，bugが現れた最初のscaleが原因の候補をかなり限定してくれます．
+</p>
+</article></div>
+
+<h2 style="color:#111;">15．小規模mesh用のdiagnostic report</h2>
+<div class="news"><article class="news-item">
+<p>
+debug時だけ使う小規模なdiagnostic functionを用意しておくと便利です．
+以下はdense化しても問題ない小meshを想定しています．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def fem_debug_report(
+    A_full,
+    b,
+    uh,
+    interior,
+    boundary,
+    effective_rhs
+):
+    A_dense = (
+        A_full.toarray()
+        if hasattr(A_full, "toarray")
+        else np.asarray(A_full)
+    )
+
+    AII = A_dense[
+        np.ix_(interior, interior)
+    ]
+
+    symmetry_full = np.linalg.norm(
+        A_dense - A_dense.T,
+        ord=np.inf
+    )
+
+    constant_residual = np.linalg.norm(
+        A_dense @ np.ones(A_dense.shape[0]),
+        ord=np.inf
+    )
+
+    eig = np.linalg.eigvalsh(
+        0.5 * (AII + AII.T)
+    )
+
+    linear_residual = (
+        AII @ uh[interior]
+        - effective_rhs
+    )
+
+    return {
+        "global_symmetry":
+            symmetry_full,
+        "A_full_times_one":
+            constant_residual,
+        "lambda_min_AII":
+            eig[0],
+        "lambda_max_AII":
+            eig[-1],
+        "cond_AII":
+            eig[-1] / eig[0],
+        "solver_residual_inf":
+            np.linalg.norm(
+                linear_residual,
+                ord=np.inf
+            ),
+        "boundary_value_max":
+            np.max(
+                np.abs(uh[boundary])
+            )
+    }
+</code></pre>
+<p>
+非同次Dirichlet条件なら
+<code>boundary_value_max</code>
+の代わりに
+\[
+\max_{i\in B}|U_i-g(x_i)|
+\]
+を確認します．
+</p>
+</article></div>
+
+<h2>16．assertionは「証明」ではなくearly warningである</h2>
+<div class="news"><article class="news-item">
+<p>
+コード中の
+<code>assert</code>
+は非常に有効ですが，
+全assertionを通過したから数学的正しさが証明されたわけではありません．
+</p>
+<p>
+第4回の \(J^{-1}\) bugのように，
+</p>
+\[
+\text{symmetry},
+\quad
+\text{row sum},
+\quad
+\text{patch test}
+\]
+<p>
+を同時に通過する誤実装もあります．
+</p>
+<p>
+従ってverification suiteは少なくとも，
+</p>
+<ol>
+<li>local algebraic invariants，</li>
+<li>nonhomogeneous polynomial patch test，</li>
+<li>smooth manufactured-solution convergence，</li>
+<li>geometry stress test</li>
+</ol>
+<p>
+という異なる原理のtestを組み合わせます．
+</p>
+</article></div>
+
+<h2>17．reference solutionそのものを疑う</h2>
+<div class="news"><article class="news-item">
+<p>
+exact solutionがない問題では，fine-mesh solutionをreferenceにしたくなります．
+しかし，同じ誤ったコード，同じ不適切なmesh familyで細分化すると，
+粗い解とfine solutionの差だけが小さくなり，
+「収束しているように見える」可能性があります．
+</p>
+<p>
+この問題は
+<a href="./paradoxes-pitfalls-02.html">「有限要素解は収束しているのに正解へ収束しない――最大角条件とBabuška–Aziz反例」</a>
+で扱ったfalse convergenceと同じ警告です．
+</p>
+<p>
+debugging段階では，可能な限りmanufactured exact solutionを使います．
+exact solutionが使えない場合には，
+別method，verified bound，equilibrated flux，mesh-independent quantityなど，
+<b>独立なreference</b>を用意することが重要です．
+</p>
+</article></div>
+
+<h2>18．ChatGPTには「直して」ではなく「原因を一つずつ切り分けて」と頼む</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Debug prompt</b><br/>
+この有限要素コードを一度に書き換えないでください．
+まず現在の実装を，<br/>
+(1) PDEとweak form，<br/>
+(2) reference-to-physical mapping，<br/>
+(3) local basis gradients，<br/>
+(4) local stiffness/load，<br/>
+(5) local-to-global assembly，<br/>
+(6) Dirichlet boundary elimination，<br/>
+(7) quadrature，<br/>
+(8) linear solver，<br/>
+(9) error computation<br/>
+に分解してください．
+各段階について，成立すべき数学的不変量と最小unit testを一つずつ提示してください．
+一つの段階がpassしたら次へ進み，
+複数の箇所を同時に変更しないでください．
+最後にnonhomogeneous affine patch test，smooth manufactured-solution convergence，
+anisotropic/skew mesh stress testを行ってください．
+</div>
+<p>
+ChatGPTに「全部直して」と頼むと，
+元のbugを消す代わりに別の部分まで書き換え，
+原因が分からなくなることがあります．
+debuggingでは変更量を小さく保つ方がよいです．
+</p>
+</article></div>
+
+<h2>19．ChatGPTが出しやすい危険なdebugging pattern</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">pattern</th><th style="border:1px solid #777; padding:7px;">なぜ危険か</th><th style="border:1px solid #777; padding:7px;">代わりにすること</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">plotが滑らかなので正しいと判断</td><td style="border:1px solid #777; padding:7px;">wrong PDEでもsmooth solutionは出る</td><td style="border:1px solid #777; padding:7px;">error normとrateを見る</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">residualだけ確認</td><td style="border:1px solid #777; padding:7px;">wrong discrete systemも高精度で解ける</td><td style="border:1px solid #777; padding:7px;">independent verificationを追加</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">複数箇所を同時修正</td><td style="border:1px solid #777; padding:7px;">原因が特定できない</td><td style="border:1px solid #777; padding:7px;">one change, one test</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">uniform meshだけで確認</td><td style="border:1px solid #777; padding:7px;">geometry bugが隠れる</td><td style="border:1px solid #777; padding:7px;">skew / anisotropic meshを加える</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">aspect ratioが大きいのでmeshを拒否</td><td style="border:1px solid #777; padding:7px;">good anisotropyまで排除する</td><td style="border:1px solid #777; padding:7px;">\(H_T/h_T\)，volume，目的別条件を見る</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">fine mesh solutionを無条件に真値扱い</td><td style="border:1px solid #777; padding:7px;">false convergenceを見逃す</td><td style="border:1px solid #777; padding:7px;">independent referenceを使う</td></tr>
+</table>
+</article></div>
+
+<h2>20．最終debugging protocol</h2>
+<div class="news"><article class="news-item">
+<p>
+以上を一つの順番にまとめると，
+</p>
+\[
+\boxed{
+\begin{array}{c}
+\text{specification}\\
+\downarrow\\
+\text{weak form}\\
+\downarrow\\
+\text{geometry / Jacobian}\\
+\downarrow\\
+\text{local element invariants}\\
+\downarrow\\
+\text{assembly}\\
+\downarrow\\
+\text{boundary condition}\\
+\downarrow\\
+\text{quadrature}\\
+\downarrow\\
+\text{solver residual / conditioning}\\
+\downarrow\\
+\text{patch test}\\
+\downarrow\\
+\text{manufactured convergence}\\
+\downarrow\\
+\text{anisotropic stress test}
+\end{array}
+}
+\tag{25}
+\]
+<p>
+です．
+</p>
+<p>
+bugを見つけるというより，
+<b>正しさを段階的に狭い範囲で確認していく</b>と考えた方がよいです．
+</p>
+</article></div>
+
+<h2>21．第10回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+ChatGPTはFEMコードを速く生成できます．
+しかし，生成されたコードの正しさを
+ChatGPT自身の説明だけで保証することはできません．
+</p>
+<p>
+有限要素法には，
+</p>
+\[
+\text{partition of unity},
+\quad
+\text{symmetry},
+\quad
+\text{energy positivity},
+\quad
+\text{polynomial exactness},
+\quad
+\text{convergence rate},
+\quad
+\text{geometry conditions}
+\]
+<p>
+という多数の数学的不変量があります．
+これらをunit testとして利用すれば，
+AI生成コードをかなり系統的に監査できます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>AIにFEMをデバッグしてもらうときの最重要原則</b><br/>
+AIの「修正案」を信用するのではなく，
+<b>修正後のコードが満たすべき数学をtest specificationにする</b>．
+</div>
+<p>
+次回はP1要素を離れ，
+<b>CR・RTなど，P1の次に何を見るか</b>
+を扱います．
+ここでは自由度そのものが頂点値から辺平均・fluxへ変わり，
+mappingとdebuggingの考え方も一段進みます．
+</p>
+</article></div>
+
+<h2>参考文献・関連ノート</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>P. G. Ciarlet, <i>The Finite Element Method for Elliptic Problems</i>, North-Holland, 1978.</li>
+<li>S. C. Brenner and L. R. Scott, <i>The Mathematical Theory of Finite Element Methods</i>, 3rd ed., Springer, 2008.</li>
+<li>A. Ern and J.-L. Guermond, <i>Finite Elements I: Approximation and Interpolation</i>, Springer, 2021.</li>
+<li><a href="./chatgpt-fem-04.html">第4回：2次元P1有限要素コードを数学的に監査する</a></li>
+<li><a href="./chatgpt-fem-07.html">第7回：異方性P1要素は本当に正しく動くか</a></li>
+<li><a href="./chatgpt-fem-09.html">第9回：3次元異方性四面体 — Type (i), Type (ii), sliver</a></li>
+<li><a href="./paradoxes-pitfalls-02.html">有限要素解は収束しているのに正解へ収束しない――最大角条件とBabuška–Aziz反例</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>前回：</b><a href="./chatgpt-fem-09.html">第9回：3次元異方性四面体 — Type (i), Type (ii), sliver</a></p>
+<p><b>次回：</b>第11回：CR・RTなど，P1の次に何を見るか（構想中）</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
