@@ -516,6 +516,9 @@ f=2\pi^2\sin(\pi x)\sin(\pi y)
 \tag{22}
 \]
 を使い，7点triangle quadratureでloadを評価します．
+このquadratureは有限次数の多項式には高次精度を持ちますが，今回の三角関数loadを数学的に厳密積分するものではありません．
+したがって収束表は「exactly integrated CR method」そのものではなく，quadratureを含む実装の検証結果です．
+今回のmesh rangeではquadrature errorはCR discretisation errorより高次で，期待するrateを損なっていないことを数値的に確認しています．
 </p>
 <p>
 CR basisは要素内で符号を変えるので，
@@ -758,6 +761,8 @@ L^2:O(h^2),
 \tag{30}
 \]
 が明瞭に現れます．
+broken \(H^1\) 1次はstandard CR approximation/consistency estimateから得られ，\(L^2\) 2次にはさらにdual problemのregularityを使う議論が必要です．
+今回のunit squareではそのregularityを期待できる設定を使っています．
 </p>
 <p>
 ただしCRはnonconforming methodなので，
@@ -769,7 +774,7 @@ Strang型評価によるapproximation errorとconsistency errorの両方の制�
 <h2>16．CR interpolationのcommuting identityもunit testにできる</h2>
 <div class="news"><article class="news-item">
 <p>
-CR interpolation \(I_T^{CR}\) は
+十分なtrace regularityを持つ \(u\) に対し，CR interpolation \(I_T^{CR}\) は
 \[
 \int_E I_T^{CR}u\,ds
 =
