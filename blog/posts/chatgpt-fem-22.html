@@ -1015,6 +1015,395 @@ circulationを持つharmonic componentに対応します．
 </p>
 </article></div>
 
+<h2>28．穴があると何が起こるか――complexは壊れない，exactnessが壊れる</h2>
+<div class="news"><article class="news-item">
+<p>
+ここがde Rham complexのtopologyが最もよく見えるところです．
+domainにholeやtunnel，cavityがあっても
+\[
+CG=0,
+\qquad
+DC=0
+\]
+は壊れません．
+</p>
+<p>
+壊れる可能性があるのはexactnessです．つまり
+\[
+\operatorname{im}G
+\subset
+\ker C,
+\qquad
+\operatorname{im}C
+\subset
+\ker D
+\]
+は常に成り立ちますが，
+</p>
+\[
+\boxed{
+\operatorname{im}G
+=
+\ker C
+}
+\qquad\text{や}\qquad
+\boxed{
+\operatorname{im}C
+=
+\ker D
+}
+\]
+<p>
+がglobalには成り立たない場合があります．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>穴あき領域での本質</b><br/>
+\[
+\boxed{
+\text{complex property survives}
+\quad\text{but}\quad
+\text{global exactness may fail}
+}
+\]
+</div>
+
+<h3>27.1　annulusではcurl-freeでもgradientではない</h3>
+<p>
+2次元annulus
+\[
+\Omega
+=
+\left\{
+(x,y):
+1&lt;\sqrt{x^2+y^2}&lt;2
+\right\}
+\]
+で
+\[
+\boldsymbol h(x,y)
+=
+\frac1{x^2+y^2}
+\begin{pmatrix}
+-y\\
+x
+\end{pmatrix}
+\]
+を考えます．
+</p>
+<p>
+領域内では
+\[
+\operatorname{curl}\boldsymbol h=0
+\]
+ですが，穴を一周するclosed curve \(\gamma\) に対して
+\[
+\boxed{
+\oint_\gamma
+\boldsymbol h\cdot\boldsymbol t\,ds
+=
+2\pi.
+}
+\]
+</p>
+<p>
+もしsingle-valued scalar potential \(\phi\) が存在して
+\[
+\boldsymbol h=\nabla\phi
+\]
+ならclosed loop integralは0でなければなりません．
+従って
+\[
+\boxed{
+\operatorname{curl}\boldsymbol h=0
+\quad\not\Rightarrow\quad
+\boldsymbol h=\nabla\phi
+}
+\]
+です．
+これが
+\[
+\ker C/\operatorname{im}G
+\]
+に残るtopological modeの連続版です．
+</p>
+
+<h3>27.2　3次元ではtunnelとcavityを区別する</h3>
+<p>
+3次元では「穴が一つ」という言い方だけでは不十分です．
+topologyには少なくとも二種類の代表的な障害があります．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">geometry</th>
+<th style="border:1px solid #777; padding:7px;">Betti number</th>
+<th style="border:1px solid #777; padding:7px;">discrete quotient</th>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">solid torusのようなtunnel</td>
+<td style="border:1px solid #777; padding:7px;">\(b_1=1\)</td>
+<td style="border:1px solid #777; padding:7px;">\(\ker C/\operatorname{im}G\)</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">spherical shellのようなcavity</td>
+<td style="border:1px solid #777; padding:7px;">\(b_2=1\)</td>
+<td style="border:1px solid #777; padding:7px;">\(\ker D/\operatorname{im}C\)</td>
+</tr>
+</table>
+<p>
+したがって
+\[
+\boxed{
+\text{tunnel}
+\longleftrightarrow
+H^1\text{ cohomology},
+\qquad
+\text{cavity}
+\longleftrightarrow
+H^2\text{ cohomology}
+}
+\]
+と見ると分かりやすくなります．
+</p>
+
+<h3>27.3　cavityではdivergence-freeでもcurlとは限らない</h3>
+<p>
+spherical shellで
+\[
+\boldsymbol q(x)
+=
+\frac{x}{|x|^3}
+\]
+を考えると，originを除く領域内で
+\[
+\operatorname{div}\boldsymbol q=0.
+\]
+</p>
+<p>
+しかしcavityを囲むsphere \(S\) をradially outwardに向ければ
+\[
+\boxed{
+\int_S
+\boldsymbol q\cdot\boldsymbol n\,dS
+=
+4\pi.
+}
+\]
+</p>
+<p>
+globalに
+\[
+\boldsymbol q=\operatorname{curl}\boldsymbol v
+\]
+と書けるなら，closed surfaceを貫くfluxは0でなければなりません．
+従って
+\[
+\boxed{
+\operatorname{div}\boldsymbol q=0
+\quad\not\Rightarrow\quad
+\boldsymbol q=\operatorname{curl}\boldsymbol v.
+}
+\]
+</p>
+
+<h3>27.4　Betti numbersはincidence matricesのrankだけで計算できる</h3>
+<p>
+境界条件でcomplexを縮約する前のstandard cochain complexでは，
+</p>
+\[
+\boxed{
+b_1
+=
+\dim\ker C
+-
+\operatorname{rank}G
+=
+N_E
+-
+\operatorname{rank}C
+-
+\operatorname{rank}G
+}
+\]
+<p>
+および
+</p>
+\[
+\boxed{
+b_2
+=
+\dim\ker D
+-
+\operatorname{rank}C
+=
+N_F
+-
+\operatorname{rank}D
+-
+\operatorname{rank}C
+}
+\]
+<p>
+を計算できます．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">rank_G = matrix_rank(G)
+rank_C = matrix_rank(C)
+rank_D = matrix_rank(D)
+
+b1 = n_edges - rank_C - rank_G
+b2 = n_faces - rank_D - rank_C
+</code></pre>
+<p>
+つまりPDE matrixをassembleする前に，
+<b>mesh connectivityだけからtopologyを検出できる</b>わけです．
+</p>
+
+<h3>27.5　Euler characteristicとの整合性</h3>
+<p>
+connected bounded 3D domainで通常のcohomologyを考えると，
+代表例は
+</p>
+\[
+\begin{array}{c|cccc|c}
+\text{domain}
+&
+b_0&b_1&b_2&b_3
+&
+\chi
+\\ \hline
+\text{contractible domain}
+&
+1&0&0&0
+&
+1
+\\
+\text{solid torus}
+&
+1&1&0&0
+&
+0
+\\
+\text{spherical shell}
+&
+1&0&1&0
+&
+2
+\end{array}
+\]
+<p>
+となり，
+\[
+N_V-N_E+N_F-N_T
+=
+b_0-b_1+b_2-b_3
+\]
+と一致します．
+</p>
+
+<h3>27.6　harmonic fieldをmass matrixで一意に選ぶ</h3>
+<p>
+quotient
+\[
+\ker C/\operatorname{im}G
+\]
+はequivalence classなので，数値計算ではrepresentativeを選びます．
+\(M_1\) をNédélec mass matrixとすると
+</p>
+\[
+\boxed{
+\mathcal H_h^1
+=
+\ker C
+\cap
+(\operatorname{im}G)^{\perp_{M_1}}
+}
+\]
+<p>
+と定義すれば
+\[
+\dim\mathcal H_h^1=b_1.
+\]
+</p>
+<p>
+これによりdiscrete 1-formは概念的に
+\[
+\boxed{
+\text{exact}
++
+\text{coexact}
++
+\text{harmonic}
+}
+\]
+へ分解されます．
+harmonic componentはnumerical errorではなく，
+<b>domain topologyが要求する有限次元成分</b>です．
+</p>
+
+<h3>27.7　Maxwell kernelにはgradientだけでなくharmonic fieldも入る</h3>
+<p>
+pure curl--curl stiffness
+\[
+K_{\mathrm{curl}}
+=
+C^{\top}M_2C
+\]
+では \(M_2\) がpositive definiteなら
+\[
+\ker K_{\mathrm{curl}}
+=
+\ker C.
+\]
+</p>
+<p>
+contractible domainなら
+\[
+\ker C=\operatorname{im}G
+\]
+ですが，tunnelを持つdomainでは
+\[
+\boxed{
+\ker K_{\mathrm{curl}}
+=
+\operatorname{im}G
+\oplus
+\mathcal H_h^1
+}
+\]
+となります．
+従って
+<b>gradient kernelを除去しただけではMaxwell problemが一意化しない場合がある</b>
+ことに注意が必要です．
+</p>
+
+<h3>27.8　essential boundary conditionではrelative cohomologyが現れる</h3>
+<p>
+ここまでのrank formulasはboundary DoFsをそのまま含むstandard complexを基準にしています．
+一方，
+\[
+\boldsymbol u\times\boldsymbol n=0
+\]
+のようなessential tangential boundary conditionを課して
+boundary edge DoFsを除去すると，
+対応するtopological objectはordinary cohomologyではなく
+<b>relative cohomology</b>になります．
+</p>
+<p>
+したがってboundary conditionを入れた後のnullityを
+そのままordinary Betti numberと呼んではいけません．
+</p>
+<div style="padding:12px; margin:14px 0; border:2px solid #a66; background:#fffaf7;">
+<b>topology auditの注意</b><br/>
+\[
+\boxed{
+\text{domain topology}
++
+\text{which boundary trace is essential}
+}
+\]
+によって，実際に残るharmonic spaceのdimensionが決まる．
+</div>
+</article></div>
+
 <h2>27．Euler characteristicもdimension countに現れる</h2>
 <div class="news"><article class="news-item">
 <p>
@@ -1043,7 +1432,7 @@ N_V-N_E+N_F-N_T
 </p>
 </article></div>
 
-<h2>28．Hodge decompositionへの入口</h2>
+<h2>29．Hodge decompositionへの入口</h2>
 <div class="news"><article class="news-item">
 <p>
 de Rham complexとmass matricesを組み合わせると，
@@ -1079,7 +1468,7 @@ discrete fieldを
 </p>
 </article></div>
 
-<h2>29．spurious modesを防ぐのは「高い次数」ではなくstructure</h2>
+<h2>30．spurious modesを防ぐのは「高い次数」ではなくstructure</h2>
 <div class="news"><article class="news-item">
 <p>
 Maxwell eigenproblemでnodal vector elementsを無理に使うと，
@@ -1106,7 +1495,7 @@ RT_h^0
 </p>
 </article></div>
 
-<h2>30．anisotropic meshでもtopological identityは壊れない</h2>
+<h2>31．anisotropic meshでもtopological identityは壊れない</h2>
 <div class="news"><article class="news-item">
 <p>
 triangleやtetrahedronが極端に細長くなっても，
@@ -1145,7 +1534,7 @@ anisotropyが影響するのは
 </p>
 </article></div>
 
-<h2>31．mesh-wide incidence matricesを作る</h2>
+<h2>32．mesh-wide incidence matricesを作る</h2>
 <div class="news"><article class="news-item">
 <p>
 実際のmeshではまずglobal numberingを作ります．
@@ -1187,7 +1576,7 @@ assert (D @ C).nnz == 0
 </p>
 </article></div>
 
-<h2>32．geometry bugとtopology bugを切り分ける</h2>
+<h2>33．geometry bugとtopology bugを切り分ける</h2>
 <div class="news"><article class="news-item">
 <p>
 de Rham codeではdebuggingの順番が重要です．
@@ -1210,7 +1599,7 @@ de Rham codeではdebuggingの順番が重要です．
 </p>
 </article></div>
 
-<h2>33．AIがde Rham complexで間違えやすい点</h2>
+<h2>34．AIがde Rham complexで間違えやすい点</h2>
 <div class="news"><article class="news-item">
 <table style="width:100%; border-collapse:collapse; margin:14px 0;">
 <tr><th style="border:1px solid #777; padding:7px;">mistake</th><th style="border:1px solid #777; padding:7px;">何が壊れるか</th></tr>
@@ -1224,7 +1613,7 @@ de Rham codeではdebuggingの順番が重要です．
 </table>
 </article></div>
 
-<h2>34．de Rham implementation audit prompt</h2>
+<h2>35．de Rham implementation audit prompt</h2>
 <div class="news"><article class="news-item">
 <div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
 <b>Audit prompt</b><br/>
@@ -1243,13 +1632,16 @@ de Rham codeではdebuggingの順番が重要です．
 (12) canonical interpolationのregularity domainを過大評価していないか，<br/>
 (13) incidence matricesとmass matricesをtopology / metricとして分離しているか，<br/>
 (14) contractibleでないdomainではcomplexとglobal exactnessを区別しているか，<br/>
-(15) Maxwell kernelを \(CG=0\) と関連付けているか，<br/>
-(16) anisotropic meshでもtopological identitiesとmetric stabilityを分けて監査しているか<br/>
+(15) (b_1=dimker C-operatorname{rank}G) と (b_2=dimker D-operatorname{rank}C) をrankから検査しているか，<br/>
+(16) tunnelによる (H^1) cohomologyとcavityによる (H^2) cohomologyを区別しているか，<br/>
+(17) Maxwell kernelにgradient fieldsだけでなくharmonic fieldsが入る場合を考慮しているか，<br/>
+(18) essential boundary conditionを入れた後はordinary cohomologyとrelative cohomologyを区別しているか，<br/>
+(19) anisotropic meshでもtopological identitiesとmetric stabilityを分けて監査しているか<br/>
 を順に確認してください．
 </div>
 </article></div>
 
-<h2>35．第22回の結論</h2>
+<h2>36．第22回の結論</h2>
 <div class="news"><article class="news-item">
 <p>
 de Rham complexをコードで見ると，
@@ -1297,10 +1689,18 @@ DC=0.
 \]
 <p>
 これはgeometryに依存しません．
+穴があってもこのidentity自体は壊れず，
+変わるのは
+[
+ker C/operatorname{im}G,
+qquad
+ker D/operatorname{im}C
+]
+というcohomologyです．
 </p>
 <p>
 geometry・material・anisotropyはmass matricesとPiola transformsへ入り，
-topologyはincidence matricesへ入ります．
+topologyはincidence matricesとそのrank / nullspaceへ入ります．
 </p>
 \[
 \boxed{
