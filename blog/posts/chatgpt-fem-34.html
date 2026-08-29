@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第34回：解を学ぶのではなくsolution operatorを学ぶ | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,solution operator,operator learning,DeepONet,neural operator,Fourier neural operator,finite observations,sensor points,function space,Poisson equation"/>
+<meta name="description" content="Season 3 第10回（通算第34回）として，PDEを一つのright-hand sideに対する解ではなくsolution operatorとして捉えます．FEMの離散解作用素をload map・stiffness inverse・reconstructionに分解し，operator learning，有限観測，input reconstruction，stability，training distributionを数値解析の立場から監査します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-34.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-34.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-34.html",
+      "headline": "第34回：解を学ぶのではなくsolution operatorを学ぶ",
+      "description": "PDE solution operatorを関数空間間写像として捉え，FEMの離散作用素，operator learning，finite observations，input reconstruction，stabilityを数値解析します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-34.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 3",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 3"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第34回：解を学ぶのではなくsolution operatorを学ぶ | Hiroki Ishizaka"/>
+<meta property="og:description" content="一つのPDE解を近似するのではなく，入力関数から解関数への写像そのものを近似する．FEMからoperator learningへつなぎます．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-34.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第34回：解を学ぶのではなくsolution operatorを学ぶ | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="From finite element solution operators to neural operator learning on function spaces."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 3 第10回（通算第34回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第34回：解を学ぶのではなくsolution operatorを学ぶ</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 3 第10回（通算第34回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――PDE solverからfunction-space mapへ</h2>
+<div class="news"><article class="news-item">
+<p>
+第25–33回では，一つのPDE problemに対して
+Deep Ritz，PINNs，mixed neural formulationを作ってきました．
+</p>
+<p>
+しかしright-hand side \(f\) が変わるたびに新しいsolutionを求めるなら，
+本当に扱っている対象は一つの関数 \(u\) ではありません．
+</p>
+<p>
+PDEが定める
+</p>
+\[
+\boxed{
+S:
+f
+\longmapsto
+u
+}
+\tag{1}
+\]
+<p>
+という<b>solution operator</b>です．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>第34回の問い</b><br/>
+\[
+\boxed{
+\text{一つの解 }u
+\text{ を近似することと，
+solution operator }S
+\text{ を近似することは何が違うか？}
+}
+\tag{2}
+\]
+</div>
+</article></div>
+
+<h2>1．Poisson equationをoperator equationとして書く</h2>
+<div class="news"><article class="news-item">
+<p>
+まず
+</p>
+\[
+-\Delta u=f
+\quad\text{in }\Omega,
+\qquad
+u=0
+\quad\text{on }\partial\Omega
+\tag{3}
+\]
+<p>
+を考えます．
+</p>
+<p>
+\(V=H_0^1(\Omega)\) とし，
+</p>
+\[
+\boxed{
+a(u,v)
+=
+\int_\Omega
+\nabla u\cdot\nabla v\,dx
+}
+\tag{4}
+\]
+<p>
+と置けば，
+</p>
+\[
+a(u,v)
+=
+\langle f,v\rangle
+\qquad
+\forall v\in V.
+\tag{5}
+\]
+</article></div>
+
+<h2>2．solution operatorは \(V^\ast\to V\) の写像である</h2>
+<div class="news"><article class="news-item">
+<p>
+operator
+</p>
+\[
+\mathcal A:V\to V^\ast
+\]
+<p>
+を
+</p>
+\[
+\boxed{
+\langle\mathcal Au,v\rangle
+=
+a(u,v)
+}
+\tag{6}
+\]
+<p>
+で定めます．
+</p>
+<p>
+Poisson solution operatorは
+</p>
+\[
+\boxed{
+S
+=
+\mathcal A^{-1}
+:
+V^\ast
+\to
+V.
+}
+\tag{7}
+\]
+<p>
+つまり「PDEを解く」とは
+\[
+f
+\]
+を一つ入れて
+\[
+Sf
+\]
+を評価することです．
+</p>
+</article></div>
+
+<h2>3．well-posednessはoperator stabilityである</h2>
+<div class="news"><article class="news-item">
+<p>
+一般のcoercive bilinear formについて
+</p>
+\[
+a(v,v)
+\ge
+\alpha
+\|v\|_V^2
+\tag{8}
+\]
+<p>
+ならLax–Milgramから
+</p>
+\[
+\boxed{
+\|Sf\|_V
+\le
+\frac1\alpha
+\|f\|_{V^\ast}.
+}
+\tag{9}
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+\|Sf-Sg\|_V
+\le
+\frac1\alpha
+\|f-g\|_{V^\ast}.
+}
+\tag{10}
+\]
+<p>
+これはsolution operatorのLipschitz stabilityです．
+</p>
+</article></div>
+
+<h2>4．linear PDEではsolution operatorもlinearである</h2>
+<div class="news"><article class="news-item">
+<p>
+Poisson problemでは
+</p>
+\[
+\boxed{
+S(\lambda f+\mu g)
+=
+\lambda Sf+\mu Sg.
+}
+\tag{11}
+\]
+<p>
+従って一つのfixed \(f\) に対するsolution approximationより，
+\(S\) 全体を近似する方がはるかに多くの構造を含んでいます．
+</p>
+<p>
+nonlinear PDEではsolution mapもnonlinearになりますが，
+その場合はまずuniquenessを持つparameter regimeを指定する必要があります．
+</p>
+</article></div>
+
+<h2>5．FEMはすでにsolution operatorを近似している</h2>
+<div class="news"><article class="news-item">
+<p>
+finite element space
+</p>
+\[
+V_h
+\subset
+V
+\]
+<p>
+に対して
+</p>
+\[
+\boxed{
+a(S_hf,v_h)
+=
+\langle f,v_h\rangle
+\qquad
+\forall v_h\in V_h
+}
+\tag{12}
+\]
+<p>
+で
+</p>
+\[
+\boxed{
+S_h:
+V^\ast
+\to
+V_h
+}
+\tag{13}
+\]
+<p>
+を定めます．
+</p>
+<p>
+通常は一つのload vectorをsolveしますが，
+数学的には \(S_h\) はすべてのright-hand sideに作用する
+<b>discrete solution operator</b>です．
+</p>
+</article></div>
+
+<h2>6．Céa estimateもoperator approximationとして読める</h2>
+<div class="news"><article class="news-item">
+<p>
+bilinear formのcontinuity constantを \(M\) とすると
+</p>
+\[
+\boxed{
+\|Sf-S_hf\|_V
+\le
+\frac{M}{\alpha}
+\inf_{v_h\in V_h}
+\|Sf-v_h\|_V.
+}
+\tag{14}
+\]
+<p>
+入力class \(\mathcal K\subset V^\ast\) に対して
+</p>
+\[
+\boxed{
+\sup_{f\in\mathcal K}
+\|Sf-S_hf\|_V
+}
+\tag{15}
+\]
+<p>
+を考えれば，
+これはfunction class全体に対するoperator approximation errorです．
+</p>
+</article></div>
+
+<h2>7．FEMのdiscrete operatorを三段階に分解する</h2>
+<div class="news"><article class="news-item">
+<p>
+basis
+\[
+\{\phi_1,\ldots,\phi_n\}
+\]
+を取り，
+</p>
+\[
+\boxed{
+K_{ij}
+=
+a(\phi_j,\phi_i)
+}
+\tag{16}
+\]
+<p>
+とします．
+</p>
+<p>
+load mapを
+</p>
+\[
+\boxed{
+B_hf
+=
+\bigl(
+\langle f,\phi_1\rangle,
+\ldots,
+\langle f,\phi_n\rangle
+\bigr)^{\top}
+}
+\tag{17}
+\]
+<p>
+とし，coefficient vectorを \(\boldsymbol a\) とすれば
+</p>
+\[
+K\boldsymbol a
+=
+B_hf.
+\tag{18}
+\]
+</article></div>
+
+<h2>8．FEM operatorのfactorisation</h2>
+<div class="news"><article class="news-item">
+<p>
+coefficient vectorからfunctionへ戻すreconstructionを
+</p>
+\[
+E_h\boldsymbol a
+=
+\sum_{j=1}^n
+a_j\phi_j
+\]
+<p>
+とします．
+</p>
+<p>
+すると
+</p>
+\[
+\boxed{
+S_h
+=
+E_h
+K^{-1}
+B_h.
+}
+\tag{19}
+\]
+<p>
+つまり
+</p>
+\[
+\boxed{
+f
+\overset{B_h}{\longmapsto}
+\text{finite observations}
+\overset{K^{-1}}{\longmapsto}
+\text{coefficients}
+\overset{E_h}{\longmapsto}
+u_h.
+}
+\tag{20}
+\]
+<p>
+FEM自身が既にfinite-dimensional operator pipelineを持っています．
+</p>
+</article></div>
+
+<h2>9．ここでの「観測」はpoint valueではなくweak momentである</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (17) に現れる情報は
+</p>
+\[
+\boxed{
+\langle f,\phi_i\rangle
+}
+\tag{21}
+\]
+<p>
+です．
+</p>
+<p>
+これは
+\[
+f(x_i)
+\]
+というpoint sampleではありません．
+</p>
+<p>
+FEMはtest functionsを通して
+<b>right-hand sideのweak moments</b>を有限個取り出しています．
+</p>
+</article></div>
+
+<h2>10．1次元P1 FEMではoperator matrixを直接書ける</h2>
+<div class="news"><article class="news-item">
+<p>
+\(\Omega=(0,1)\) の一様P1 meshで，
+\(f_h\) もinterior hat basisで
+</p>
+\[
+f_h
+=
+\sum_{j=1}^n
+c_j\phi_j
+\]
+<p>
+と表すとload vectorは
+</p>
+\[
+\boxed{
+\boldsymbol b
+=
+M\boldsymbol c,
+}
+\tag{22}
+\]
+<p>
+ここで \(M\) はmass matrixです．
+</p>
+<p>
+solution coefficientsは
+</p>
+\[
+\boxed{
+\boldsymbol a
+=
+K^{-1}M\boldsymbol c.
+}
+\tag{23}
+\]
+</article></div>
+
+<h2>11．discrete solution operator matrix</h2>
+<div class="news"><article class="news-item">
+<p>
+したがってcoefficient space上のsolution operatorは
+</p>
+\[
+\boxed{
+T_h
+=
+K^{-1}M.
+}
+\tag{24}
+\]
+<p>
+一つの \(f_h\) をsolveする代わりに，
+matrix \(T_h\) 全体を考えれば
+</p>
+\[
+\boxed{
+\boldsymbol c
+\longmapsto
+T_h\boldsymbol c
+}
+\tag{25}
+\]
+<p>
+が離散operator learningの最も単純なbaselineになります．
+</p>
+</article></div>
+
+<h2>12．1次元operator matrixをコードで作る</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">import numpy as np
+
+def p1_poisson_operator(n_dof):
+    h = 1.0 / (n_dof + 1)
+
+    K = np.zeros(
+        (n_dof, n_dof)
+    )
+
+    M = np.zeros(
+        (n_dof, n_dof)
+    )
+
+    for i in range(n_dof):
+        K[i, i] += 2.0 / h
+        M[i, i] += 2.0 * h / 3.0
+
+        if i + 1 &lt; n_dof:
+            K[i, i + 1] += -1.0 / h
+            K[i + 1, i] += -1.0 / h
+
+            M[i, i + 1] += h / 6.0
+            M[i + 1, i] += h / 6.0
+
+    T = np.linalg.solve(K, M)
+
+    return K, M, T
+</code></pre>
+</article></div>
+
+<h2>13．operator datasetは一つのsolution pairではない</h2>
+<div class="news"><article class="news-item">
+<p>
+input coefficient vectors
+</p>
+\[
+\boldsymbol c^{(1)},
+\ldots,
+\boldsymbol c^{(N_{\rm train})}
+\]
+<p>
+を作り，
+</p>
+\[
+\boxed{
+\boldsymbol a^{(k)}
+=
+T_h
+\boldsymbol c^{(k)}
+}
+\tag{26}
+\]
+<p>
+をtraining pairsとします．
+</p>
+<p>
+datasetの一行は
+</p>
+\[
+\boxed{
+\text{one function}
+\longmapsto
+\text{another function}
+}
+\tag{27}
+\]
+<p>
+を離散化したものです．
+</p>
+</article></div>
+
+<h2>14．linear operatorならlinear networkでbaselineを作れる</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">n = 63
+
+model = torch.nn.Linear(
+    n,
+    n,
+    bias=False
+)
+
+optimizer = torch.optim.Adam(
+    model.parameters(),
+    lr=1.0e-3
+)
+
+for step in range(5000):
+    c = torch.randn(
+        256,
+        n,
+        dtype=torch.float64
+    )
+
+    with torch.no_grad():
+        target = c @ T.T
+
+    pred = model(c)
+
+    loss = torch.mean(
+        (pred - target) ** 2
+    )
+
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+</code></pre>
+<p>
+このtoy problemではtarget operator自体がlinearなので，
+十分にrichなtraining dataがあればlinear mapで学習可能です．
+</p>
+<p>
+ここではneural networkを複雑にすることが目的ではなく，
+<b>「solutionではなくmapを学ぶ」最小例</b>を作っています．
+</p>
+</article></div>
+
+<h2>15．operator learningのabstract form</h2>
+<div class="news"><article class="news-item">
+<p>
+input function spaceを \(X\)，output spaceを \(Y\) として
+</p>
+\[
+\boxed{
+S:
+X
+\to
+Y.
+}
+\tag{28}
+\]
+<p>
+operator learnerを
+</p>
+\[
+\boxed{
+\mathcal G_\theta:
+X
+\to
+Y
+}
+\tag{29}
+\]
+<p>
+と書けば，目標は
+</p>
+\[
+\boxed{
+\mathcal G_\theta
+\approx
+S
+}
+\tag{30}
+\]
+<p>
+です．
+</p>
+<p>
+これはfixed \(f\) に対する
+\[
+u_\theta\approx Sf
+\]
+より一段上の近似問題です．
+</p>
+</article></div>
+
+<h2>16．実装ではinput functionを有限情報へ落とす</h2>
+<div class="news"><article class="news-item">
+<p>
+実際のcomputerへfunction \(f\) をそのまま渡すことはできません．
+そこでobservation map
+</p>
+\[
+\boxed{
+\mathcal O_m:
+X
+\to
+\mathbb R^m
+}
+\tag{31}
+\]
+<p>
+を使い，
+</p>
+\[
+\boxed{
+\mathcal O_m f
+=
+\bigl(
+\ell_1(f),
+\ldots,
+\ell_m(f)
+\bigr)
+}
+\tag{32}
+\]
+<p>
+とします．
+</p>
+<p>
+\(\ell_j\) はpoint evaluationでもmomentでも構いませんが，
+input space上でwell-definedである必要があります．
+</p>
+</article></div>
+
+<h2>17．point sensorはinput spaceによっては定義できない</h2>
+<div class="news"><article class="news-item">
+<p>
+もし
+\[
+X=L^2(\Omega)
+\]
+なら
+</p>
+\[
+\boxed{
+f
+\longmapsto
+f(x_j)
+}
+\tag{33}
+\]
+<p>
+は一般の \(L^2\) equivalence class上ではwell-definedではありません．
+</p>
+<p>
+point sensorsを使うなら，
+continuous input classや
+\[
+H^s(\Omega),
+\qquad
+s&gt;d/2
+\]
+のようにpoint evaluationが意味を持つregularityを仮定する必要があります．
+</p>
+</article></div>
+
+<h2>18．weak sensorsなら低regularity inputにも使いやすい</h2>
+<div class="news"><article class="news-item">
+<p>
+例えば
+</p>
+\[
+\boxed{
+\ell_j(f)
+=
+\langle f,\psi_j\rangle
+}
+\tag{34}
+\]
+<p>
+というmoment observationなら，
+\(\psi_j\) を適切に選ぶことで
+\(V^\ast\) inputにも自然に使えます．
+</p>
+<p>
+FEMのload map
+\[
+B_h
+\]
+はまさにこの形でした．
+</p>
+</article></div>
+
+<h2>19．operator learnerは実際にはfinite-observation learnerである</h2>
+<div class="news"><article class="news-item">
+<p>
+computer上のmodelは通常
+</p>
+\[
+\boxed{
+G_\theta:
+\mathbb R^m
+\to
+Y
+}
+\tag{35}
+\]
+<p>
+として
+</p>
+\[
+\boxed{
+f
+\longmapsto
+\mathcal O_mf
+\longmapsto
+G_\theta(\mathcal O_mf)
+}
+\tag{36}
+\]
+<p>
+を実行します．
+</p>
+<p>
+つまりoperator learningには最初から
+<b>finite observation bottleneck</b>が入っています．
+</p>
+</article></div>
+
+<h2>20．input reconstructionを明示するとerrorを分解できる</h2>
+<div class="news"><article class="news-item">
+<p>
+observation vectorからinput functionを再構成するmap
+</p>
+\[
+\boxed{
+I_m:
+\mathbb R^m
+\to
+X
+}
+\tag{37}
+\]
+<p>
+を考えます．
+</p>
+<p>
+すると
+</p>
+\[
+Sf
+-
+G_\theta(\mathcal O_mf)
+\]
+<p>
+を
+</p>
+\[
+\boxed{
+\begin{aligned}
+Sf-G_\theta(\mathcal O_mf)
+={}&
+S\bigl(
+f-I_m\mathcal O_mf
+\bigr)
+\\
+&+
+\Bigl[
+S(I_m\mathcal O_mf)
+-
+G_\theta(\mathcal O_mf)
+\Bigr]
+\end{aligned}
+}
+\tag{38}
+\]
+<p>
+と分けられます．
+</p>
+</article></div>
+
+<h2>21．observation errorはPDE stabilityを通してsolution errorになる</h2>
+<div class="news"><article class="news-item">
+<p>
+solution operatorが
+</p>
+\[
+\|Sf-Sg\|_Y
+\le
+C_S
+\|f-g\|_X
+\]
+<p>
+を満たすなら，式 (38) から
+</p>
+\[
+\boxed{
+\begin{aligned}
+\|Sf-G_\theta(\mathcal O_mf)\|_Y
+\le{}&
+C_S
+\|f-I_m\mathcal O_mf\|_X
+\\
+&+
+\|S(I_m\mathcal O_mf)-G_\theta(\mathcal O_mf)\|_Y.
+\end{aligned}
+}
+\tag{39}
+\]
+<p>
+第一項はobservation / reconstruction error，
+第二項はlearned operator errorです．
+</p>
+</article></div>
+
+<h2>22．point placementがoperator errorへ入る場所</h2>
+<div class="news"><article class="news-item">
+<p>
+sensor points
+\[
+x_1,\ldots,x_m
+\]
+を変えると，
+</p>
+\[
+\mathcal O_m
+\]
+<p>
+も
+\[
+I_m
+\]
+<p>
+も変わります．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{sensor geometry}
+\longrightarrow
+\text{input reconstruction}
+\longrightarrow
+\text{solution operator error}.
+}
+\tag{40}
+\]
+<p>
+Season 3前半のcollocation-point geometryが，
+ここでは<b>input information geometry</b>になります．
+</p>
+</article></div>
+
+<h2>23．outputも有限次元へ落とす必要がある</h2>
+<div class="news"><article class="news-item">
+<p>
+output function \(u\in Y\) もcomputer上では
+</p>
+\[
+\boxed{
+\mathcal Q_n:
+Y
+\to
+\mathbb R^n
+}
+\tag{41}
+\]
+<p>
+で表します．
+</p>
+<p>
+例えば
+</p>
+<ul>
+<li>FEM coefficients，</li>
+<li>grid values，</li>
+<li>spectral coefficients，</li>
+<li>query pointでのvalues，</li>
+</ul>
+<p>
+などです．
+</p>
+<p>
+input observationsだけでなくoutput representationのgeometryもoperator approximationに入ります．
+</p>
+</article></div>
+
+<h2>24．FEM coefficientsをoutputにするoperator learner</h2>
+<div class="news"><article class="news-item">
+<p>
+最もFEMに近い設計は
+</p>
+\[
+\boxed{
+\widehat G_\theta:
+\mathbb R^m
+\to
+\mathbb R^n
+}
+\tag{42}
+\]
+<p>
+でsolution coefficientsを予測し，
+</p>
+\[
+\boxed{
+u_\theta
+=
+E_h
+\widehat G_\theta(\mathcal O_mf)
+}
+\tag{43}
+\]
+<p>
+とする方法です．
+</p>
+<p>
+この場合output spaceとbasisが明示されるので，
+\(L^2\)・\(H^1\) errorをFEM matricesで評価しやすくなります．
+</p>
+</article></div>
+
+<h2>25．query pointを入力するoperator learner</h2>
+<div class="news"><article class="news-item">
+<p>
+別の設計では
+</p>
+\[
+\boxed{
+G_\theta(
+\mathcal O_mf,
+x
+)
+\approx
+(Sf)(x)
+}
+\tag{44}
+\]
+<p>
+としてquery point \(x\) ごとにsolution valueを返します．
+</p>
+<p>
+DeepONetのbranch / trunk構造はこの考え方の代表例です．
+</p>
+<p>
+この場合は
+<b>input sensor geometry</b>と
+<b>output query geometry</b>
+の両方を記録する必要があります．
+</p>
+</article></div>
+
+<h2>26．neural operatorという言葉だけでmesh-freeとは言えない</h2>
+<div class="news"><article class="news-item">
+<p>
+architectureがfunction-space mapを意図していても，
+training dataは有限gridや有限sensorsから作られます．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{operator architecture}
+\quad\not\Rightarrow\quad
+\text{geometry-free computation}.
+}
+\tag{45}
+\]
+<p>
+discretisation independenceを主張するなら，
+入力・出力resolutionを変えたtestを別途行う必要があります．
+</p>
+</article></div>
+
+<h2>27．training objectiveはinput distributionに依存する</h2>
+<div class="news"><article class="news-item">
+<p>
+training functionsをprobability measure \(\mu\) から取るなら
+</p>
+\[
+\boxed{
+\min_\theta
+\mathbb E_{f\sim\mu}
+\left[
+\|
+G_\theta(\mathcal O_mf)-Sf
+\|_Y^2
+\right].
+}
+\tag{46}
+\]
+<p>
+これは
+</p>
+\[
+\boxed{
+\text{average-case approximation under }\mu
+}
+\tag{47}
+\]
+<p>
+です．
+</p>
+<p>
+\(\mu\) の外にあるforcingへ精度が保たれることは，
+training lossだけからは言えません．
+</p>
+</article></div>
+
+<h2>28．worst-case operator approximationは別の問題である</h2>
+<div class="news"><article class="news-item">
+<p>
+input class \(\mathcal K\subset X\) に対して
+</p>
+\[
+\boxed{
+E_{\rm op}
+=
+\sup_{f\in\mathcal K}
+\|
+G_\theta(\mathcal O_mf)-Sf
+\|_Y
+}
+\tag{48}
+\]
+<p>
+を考えると，
+distribution averageより強い評価になります．
+</p>
+<p>
+operator learningの性能を論じるときは
+<b>average-case</b>と<b>worst-case</b>を区別します．
+</p>
+</article></div>
+
+<h2>29．training functionsのspanだけ学んでいないか監査する</h2>
+<div class="news"><article class="news-item">
+<p>
+例えばtraining forcingを
+</p>
+\[
+f(x)
+=
+\sum_{k=1}^{p}
+c_k
+\sin(k\pi x)
+\tag{49}
+\]
+<p>
+だけから作れば，
+modelはこのlow-dimensional familyに非常に強くなれます．
+</p>
+<p>
+しかしそれは
+</p>
+\[
+\boxed{
+S
+\text{ on all of }X
+}
+\]
+<p>
+を学んだこととは違います．
+</p>
+<p>
+testではfrequency range，regularity，localisationを変えます．
+</p>
+</article></div>
+
+<h2>30．operator stabilityとdataset difficultyを混同しない</h2>
+<div class="news"><article class="news-item">
+<p>
+PDE operatorがstableでも，
+observation mapがill-conditionedならinput reconstructionは不安定になります．
+</p>
+<p>
+逆にsensor mapがよくても，
+PDE itselfがparameterに対してsensitiveならsolution mapが大きく変化します．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{PDE stability}
++
+\text{observation stability}
++
+\text{learning stability}
+}
+\tag{50}
+\]
+<p>
+を別々に見る必要があります．
+</p>
+</article></div>
+
+<h2>31．parameter-to-solution mapへ拡張する</h2>
+<div class="news"><article class="news-item">
+<p>
+inputはright-hand sideだけとは限りません．
+</p>
+<p>
+例えば
+</p>
+\[
+-\nabla\cdot(
+a(x)\nabla u
+)
+=
+f
+\]
+<p>
+なら
+</p>
+\[
+\boxed{
+S:
+(a,f)
+\longmapsto
+u.
+}
+\tag{51}
+\]
+<p>
+さらにboundary dataやgeometry parameterを含めて
+</p>
+\[
+\boxed{
+S:
+(a,f,g,\text{geometry})
+\longmapsto
+u
+}
+\tag{52}
+\]
+<p>
+とすることもできます．
+</p>
+<p>
+ただしinput spaceとwell-posed parameter setを先に定義しなければ，
+「operator」の意味が曖昧になります．
+</p>
+</article></div>
+
+<h2>32．nonlinear PDEではsolution mapのsingle-valuednessを確認する</h2>
+<div class="news"><article class="news-item">
+<p>
+Navier–Stokesやnonlinear reaction problemでは，
+同じinputに複数solutionがあり得るparameter regimeがあります．
+</p>
+<p>
+その場合
+</p>
+\[
+\boxed{
+S:f\mapsto u
+}
+\tag{53}
+\]
+<p>
+というsingle-valued operatorを無条件に置いてはいけません．
+</p>
+<p>
+uniqueness regimeを制限するか，
+solution branchを追加情報で指定する必要があります．
+</p>
+</article></div>
+
+<h2>33．physics-informed operator learningも作れる</h2>
+<div class="news"><article class="news-item">
+<p>
+training pair \((f,u)\) を大量に用意する代わりに，
+operator output
+</p>
+\[
+u_\theta(f)
+=
+G_\theta(\mathcal O_mf)
+\]
+<p>
+へPDE residualを課すこともできます．
+</p>
+<p>
+例えば
+</p>
+\[
+\boxed{
+\mathcal L_{\rm PDE}
+=
+\mathbb E_{f\sim\mu}
+\left[
+\|
+-\Delta G_\theta(\mathcal O_mf)-f
+\|_{L^2}^2
+\right].
+}
+\tag{54}
+\]
+<p>
+ただしここでもinput functionsとspatial collocation pointsの
+<b>二種類のsampling</b>が入ります．
+</p>
+</article></div>
+
+<h2>34．mixed operator learningへも拡張できる</h2>
+<div class="news"><article class="news-item">
+<p>
+第33回のfluxを含めれば
+</p>
+\[
+\boxed{
+\mathcal G_\theta:
+f
+\longmapsto
+(
+u_\theta(f),
+\boldsymbol q_\theta(f)
+)
+}
+\tag{55}
+\]
+<p>
+というoperatorを学べます．
+</p>
+<p>
+すると各input \(f\) に対して
+</p>
+\[
+\boldsymbol q_\theta(f)
+\approx
+A\nabla u_\theta(f),
+\]
+<p>
+\[
+\nabla\cdot\boldsymbol q_\theta(f)
+\approx
+-f
+\]
+<p>
+を監査できます．
+</p>
+</article></div>
+
+<h2>35．many-query problemでoperator approximationが意味を持つ</h2>
+<div class="news"><article class="news-item">
+<p>
+一つの \(f\) しか解かないなら，
+高精度FEM solveを直接行う方が単純な場合があります．
+</p>
+<p>
+operator approximationが特に意味を持つのは
+</p>
+\[
+\boxed{
+f^{(1)},f^{(2)},\ldots,f^{(N_{\rm query})}
+}
+\tag{56}
+\]
+<p>
+のように多数のqueriesを繰り返すときです．
+</p>
+<p>
+ただしoffline training costを含めて比較しなければ，
+「高速化」を公平に評価できません．
+</p>
+</article></div>
+
+<h2>36．FEM baselineを必ず残す</h2>
+<div class="news"><article class="news-item">
+<p>
+operator learnerを評価するときは
+</p>
+\[
+\boxed{
+S_h
+=
+E_hK^{-1}B_h
+}
+\tag{57}
+\]
+<p>
+というphysics-defined discrete operatorをbaselineに残します．
+</p>
+<p>
+比較すべきなのは
+</p>
+<ul>
+<li>offline construction / training cost，</li>
+<li>online evaluation cost，</li>
+<li>input observation cost，</li>
+<li>solution error，</li>
+<li>out-of-distribution stability，</li>
+</ul>
+<p>
+です．
+</p>
+</article></div>
+
+<h2>37．finite observationの限界は次回の主題である</h2>
+<div class="news"><article class="news-item">
+<p>
+もし
+</p>
+\[
+\boxed{
+\mathcal O_mf_1
+=
+\mathcal O_mf_2
+}
+\tag{58}
+\]
+<p>
+なら，deterministic learnerは
+</p>
+\[
+\boxed{
+G_\theta(\mathcal O_mf_1)
+=
+G_\theta(\mathcal O_mf_2)
+}
+\tag{59}
+\]
+<p>
+としか出力できません．
+</p>
+<p>
+しかしPDE solutionが
+\[
+Sf_1\ne Sf_2
+\]
+なら，有限観測だけでは両者を同時に正しく再構成できません．
+</p>
+<p>
+次回はこのinformation lossを定量化します．
+</p>
+</article></div>
+
+<h2>38．AIがoperator learningで間違えやすい点</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">mistake</th><th style="border:1px solid #777; padding:7px;">何が壊れるか</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">一つのPDE solutionを学んでoperator learningと呼ぶ</td><td style="border:1px solid #777; padding:7px;">input function dependenceを持たない</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(L^2\) inputにpoint evaluationを無条件に使う</td><td style="border:1px solid #777; padding:7px;">observation map自体がwell-definedでない</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">training distribution averageをuniform operator errorと呼ぶ</td><td style="border:1px solid #777; padding:7px;">average-caseとworst-caseを混同する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">sensor geometryをarchitecture detailとみなす</td><td style="border:1px solid #777; padding:7px;">input information lossを無視する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">grid-free architectureだからgeometry-freeとする</td><td style="border:1px solid #777; padding:7px;">training discretisationを消してしまう</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">FEMをsingle-solve methodとしてしか比較しない</td><td style="border:1px solid #777; padding:7px;">discrete solution operator baselineを見落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">nonlinear PDEでuniquenessを確認せずsolution operatorを書く</td><td style="border:1px solid #777; padding:7px;">mapがsingle-valuedでない可能性を無視する</td></tr>
+</table>
+</article></div>
+
+<h2>39．solution-operator audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このPDE operator-learning implementationを数学的に監査してください．<br/>
+(1) input space \(X\)，output space \(Y\)，solution operator \(S:X\to Y\) を明示しているか，<br/>
+(2) PDE well-posednessからoperator stability constantを確認しているか，<br/>
+(3) FEM baselineを \(S_h=E_hK^{-1}B_h\) というoperatorとして比較しているか，<br/>
+(4) input observation functionals \(\ell_j\) がinput space上でwell-definedか，<br/>
+(5) point sensorsを使う場合，必要なinput regularityを明示しているか，<br/>
+(6) observation / reconstruction errorとlearned-operator errorを分離しているか，<br/>
+(7) input sensor geometryとoutput representation geometryを保存しているか，<br/>
+(8) training distribution averageとworst-case operator errorを区別しているか，<br/>
+(9) training forcing familyのspan / frequency / regularityを記録しているか，<br/>
+(10) nonlinear PDEではsolution mapのuniqueness regimeを確認しているか，<br/>
+(11) physics-informed operator learningではinput samplingとspatial collocation samplingを区別しているか，<br/>
+(12) offline training costとonline query costを両方報告しているか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>40．第34回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+PDEを一つのsolutionとして見ると
+</p>
+\[
+f
+\mapsto
+u
+\]
+<p>
+は一回のsolveに見えます．
+</p>
+<p>
+しかし本質的には
+</p>
+\[
+\boxed{
+S:
+X
+\to
+Y
+}
+\tag{60}
+\]
+<p>
+というfunction-space mapです．
+</p>
+<p>
+FEMも
+</p>
+\[
+\boxed{
+S_h
+=
+E_hK^{-1}B_h
+}
+\tag{61}
+\]
+<p>
+としてsolution operatorをfinite-dimensionalに近似しています．
+</p>
+<p>
+operator learningではさらに
+</p>
+\[
+\boxed{
+f
+\longrightarrow
+\mathcal O_mf
+\longrightarrow
+G_\theta(\mathcal O_mf)
+}
+\tag{62}
+\]
+<p>
+と有限観測を通します．
+</p>
+<p>
+したがってerrorには
+</p>
+\[
+\boxed{
+\text{PDE approximation}
++
+\text{finite observation}
++
+\text{operator representation}
++
+\text{training}
+}
+\tag{63}
+\]
+<p>
+が重なります．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 3 第10回の原則</b><br/>
+<b>operator learningでは「何を学ぶか」だけでなく，
+functionをどの有限情報へ落とし，どのfunction spaceのnormでmapを比較するかを先に決める．</b>
+</div>
+<p>
+次回はこの有限観測そのものを正面から扱い，
+<b>第35回：sensor pointsをどこに置くか — 有限観測の限界</b>
+へ進みます．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>L. Lu, P. Jin, G. Pang, Z. Zhang and G. E. Karniadakis, “Learning nonlinear operators via DeepONet based on the universal approximation theorem of operators”, <i>Nature Machine Intelligence</i> 3 (2021), 218–229.</li>
+<li>Z. Li et al., “Fourier Neural Operator for Parametric Partial Differential Equations”, <i>International Conference on Learning Representations</i>, 2021.</li>
+<li>N. Kovachki et al., “Neural Operator: Learning Maps Between Function Spaces With Applications to PDEs”, <i>Journal of Machine Learning Research</i> 24 (2023).</li>
+<li>S. C. Brenner and L. R. Scott, <i>The Mathematical Theory of Finite Element Methods</i>, 3rd ed., Springer, 2008.</li>
+<li><a href="./chatgpt-fem-25.html">第25回：Deep Ritz法を作る — FEMのenergy minimisationからneural trial spaceへ</a></li>
+<li><a href="./chatgpt-fem-26.html">第26回：Deep Ritzでは点をどこに置くか — quadratureとsampling geometry</a></li>
+<li><a href="./chatgpt-fem-33.html">第33回：保存則をニューラルPDEへ入れる — mixed formulationとflux</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 3 前回：</b><a href="./chatgpt-fem-33.html">第33回：保存則をニューラルPDEへ入れる — mixed formulationとflux</a></p>
+<p><b>次回：</b>第35回：sensor pointsをどこに置くか — 有限観測の限界（構想中）</p>
+<p><a href="../#chatgpt-fem-season3">Season 3一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
