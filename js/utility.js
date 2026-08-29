@@ -259,7 +259,14 @@ if(window.jQuery){
     resizeTimer=setTimeout(function(){fitDisplayMath(article);},120);
   });
 
-  if(window.MathJax && MathJax.typesetPromise){
-    MathJax.typesetPromise([article]).then(function(){fitDisplayMath(article);}).catch(function(){});
+  function typesetAndFit(attempt){
+    if(window.MathJax && MathJax.typesetPromise){
+      MathJax.typesetPromise([article]).then(function(){fitDisplayMath(article);}).catch(function(){});
+      return;
+    }
+    if(attempt<30){
+      setTimeout(function(){typesetAndFit(attempt+1);},100);
+    }
   }
+  typesetAndFit(0);
 })();
