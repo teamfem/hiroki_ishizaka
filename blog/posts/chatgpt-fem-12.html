@@ -354,7 +354,7 @@ domain regularity，solution regularity，mesh assumptionsなどを確認する�
 <th style="border:1px solid #777; padding:7px;">\(n\)</th>
 <th style="border:1px solid #777; padding:7px;">\(L^2\) relative error</th>
 <th style="border:1px solid #777; padding:7px;">rate</th>
-<th style="border:1px solid #777; padding:7px;">\(H^1\) relative error</th>
+<th style="border:1px solid #777; padding:7px;">\(H^1\) seminorm relative error</th>
 <th style="border:1px solid #777; padding:7px;">rate</th>
 </tr>
 <tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">1.5818e-1</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">3.7748e-1</td><td style="border:1px solid #777; padding:7px;">—</td></tr>
@@ -424,7 +424,7 @@ V_h\not\subset H_0^1(\Omega)
 <p>
 discrete energy normを \(\|\cdot\|_h\)，
 broken bilinear formを \(a_h\) とすると，
-適切なboundedness・discrete coercivityの下でStrang型評価
+\(a_h\) が必要な拡張空間上で定義され，右辺もdiscrete test functionに対して意味を持ち，適切なboundedness・discrete coercivityが成立する下でStrang型評価
 \[
 \boxed{
 \|u-u_h\|_h
@@ -526,6 +526,14 @@ h_i
 \tag{21}
 \]
 のような方向別評価が使えます．
+ここで右辺は
+\[
+\left\|
+\frac{\partial u}{\partial r_i}
+\right\|_{H^1(T)}
+\]
+というfull \(H^1\)-normです．これは第6・8回の表記も数学監査で同じ形に修正しました．
+この式は2次元P1 Lagrange interpolationに対する代表的な評価であり，正確な定数・幾何仮定は対応するanisotropic interpolation theoremに依存します．
 </p>
 <p>
 これは
@@ -734,7 +742,13 @@ estimatorは有用でも，そのままrigorous numerical certificateとは限�
 \qquad
 u|_{\partial\Omega}=0
 \]
-について，
+について，ここではgradient-like fluxの符号規約
+\[
+\sigma=\nabla u,
+\qquad
+\nabla\cdot\sigma+f=0
+\]
+を採用します．
 conforming approximation \(v_h\in H_0^1(\Omega)\) と，
 equilibrated flux
 \[
@@ -825,21 +839,42 @@ software verificationのacceptance criteriaへ変換できます．
 <pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">import numpy as np
 
 
-def observed_rates(errors):
+def observed_rates(errors, h_values):
     errors = np.asarray(
         errors,
         dtype=float
     )
+
+    h_values = np.asarray(
+        h_values,
+        dtype=float
+    )
+
+    if len(errors) != len(h_values):
+        raise ValueError(
+            "errors and h_values must match"
+        )
 
     if np.any(errors &lt;= 0.0):
         raise ValueError(
             "Errors must be positive"
         )
 
+    if np.any(h_values &lt;= 0.0):
+        raise ValueError(
+            "Mesh sizes must be positive"
+        )
+
     return np.log(
         errors[:-1] / errors[1:]
-    ) / np.log(2.0)
+    ) / np.log(
+        h_values[:-1] / h_values[1:]
+    )
 
+
+h_values = 1.0 / np.array([
+    4.0, 8.0, 16.0, 32.0
+])
 
 L2_errors = np.array([
     1.5818e-1,
@@ -855,8 +890,19 @@ H1_errors = np.array([
     4.9056e-2
 ])
 
-print(observed_rates(L2_errors))
-print(observed_rates(H1_errors))
+print(
+    observed_rates(
+        L2_errors,
+        h_values
+    )
+)
+
+print(
+    observed_rates(
+        H1_errors,
+        h_values
+    )
+)
 </code></pre>
 <p>
 出力は概ね
@@ -1038,6 +1084,8 @@ AIと有限要素法を作りながら，
 <li>S. C. Brenner and L. R. Scott, <i>The Mathematical Theory of Finite Element Methods</i>, 3rd ed., Springer, 2008.</li>
 <li>A. Ern and J.-L. Guermond, <i>Finite Elements I: Approximation and Interpolation</i>, Springer, 2021.</li>
 <li>D. Boffi, F. Brezzi and M. Fortin, <i>Mixed Finite Element Methods and Applications</i>, Springer, 2013.</li>
+<li>H. Ishizaka, K. Kobayashi and T. Tsuchiya, “Anisotropic interpolation error estimates using a new geometric parameter”, <i>Japan Journal of Industrial and Applied Mathematics</i> 40 (2023), 475–512.</li>
+<li>H. Ishizaka, “Nitsche’s method under a semi-regular mesh condition”, <i>Numerical Algorithms</i> 102 (2026), 291–334. <a href="https://doi.org/10.1007/s11075-025-02131-8">DOI</a>.</li>
 <li><a href="./chatgpt-fem-04.html">第4回：2次元P1有限要素コードを数学的に監査する</a></li>
 <li><a href="./chatgpt-fem-08.html">第8回：良い異方性要素と悪い異方性要素</a></li>
 <li><a href="./chatgpt-fem-10.html">第10回：ChatGPTが書いたFEMコードをどうデバッグするか</a></li>
