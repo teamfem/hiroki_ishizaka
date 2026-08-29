@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第22回：de Rham complexをコードで見る — Lagrange・Nédélec・RT・P0 | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,de Rham complex,finite element exterior calculus,FEEC,Lagrange,Nedelec,Nédélec,Raviart Thomas,RT,P0,incidence matrix,commuting diagram,Hodge decomposition,Python"/>
+<meta name="description" content="Season 2 第10回（通算第22回）として，3次元lowest-order finite-element de Rham complex P1→Nédélec→RT0→P0をコードで構成します．signed incidence matrices G,C,D，CG=0，DC=0，commuting interpolation，topologyとmetricの分離，cohomologyまで監査します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-22.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-22.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-22.html",
+      "headline": "第22回：de Rham complexをコードで見る — Lagrange・Nédélec・RT・P0",
+      "description": "3次元lowest-order finite-element de Rham complexをsigned incidence matricesとcommuting diagramから実装・監査します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-22.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 2",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 2"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第22回：de Rham complexをコードで見る — Lagrange・Nédélec・RT・P0 | Hiroki Ishizaka"/>
+<meta property="og:description" content="grad・curl・divを別々に実装するのではなく，vertex→edge→face→cellのincidenceとして見る．CG=0，DC=0が整数演算で現れます．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-22.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第22回：de Rham complexをコードで見る — Lagrange・Nédélec・RT・P0 | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="Signed incidence matrices, commuting projections and discrete de Rham structure."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 2 第10回（通算第22回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第22回：de Rham complexをコードで見る — Lagrange・Nédélec・RT・P0</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 2 第10回（通算第22回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――四つの有限要素は別々の部品ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+これまで
+</p>
+\[
+\text{Lagrange},
+\qquad
+\text{Nédélec},
+\qquad
+\text{Raviart--Thomas},
+\qquad
+P_0
+\]
+<p>
+を個別に見てきました．
+しかし3次元では，lowest-order spacesは
+</p>
+\[
+\boxed{
+P_1
+\xrightarrow{\nabla}
+\mathcal N_0
+\xrightarrow{\operatorname{curl}}
+RT_0
+\xrightarrow{\operatorname{div}}
+P_0
+}
+\tag{1}
+\]
+<p>
+という一つのfinite-element de Rham complexを作ります．
+</p>
+<p>
+この回ではbasis formulaよりさらに一段下へ降り，
+<b>vertex・edge・face・cellのorientationだけから grad・curl・div を組み立てる</b>
+ところまで実装します．
+</p>
+</article></div>
+
+<h2>1．continuous de Rham complex</h2>
+<div class="news"><article class="news-item">
+<p>
+3次元で基本となるcontinuous sequenceは
+</p>
+\[
+\boxed{
+H^1(\Omega)
+\xrightarrow{\nabla}
+H(\operatorname{curl};\Omega)
+\xrightarrow{\operatorname{curl}}
+H(\operatorname{div};\Omega)
+\xrightarrow{\operatorname{div}}
+L^2(\Omega).
+}
+\tag{2}
+\]
+<p>
+微分作用素には
+\[
+\boxed{
+\operatorname{curl}\nabla=0,
+\qquad
+\operatorname{div}\operatorname{curl}=0
+}
+\tag{3}
+\]
+という恒等式があります．
+</p>
+<p>
+「complex」とは，隣り合う二つのarrowを合成すると0になることを意味します．
+</p>
+</article></div>
+
+<h2>2．exactであることはcomplexであることより強い</h2>
+<div class="news"><article class="news-item">
+<p>
+sequenceがexactとは
+</p>
+\[
+\boxed{
+\operatorname{im}\nabla
+=
+\ker\operatorname{curl},
+\qquad
+\operatorname{im}\operatorname{curl}
+=
+\ker\operatorname{div}
+}
+\tag{4}
+\]
+<p>
+が成り立つことです．
+</p>
+<p>
+complex property
+\[
+\operatorname{im}\nabla
+\subset
+\ker\operatorname{curl}
+\]
+だけでは足りません．
+</p>
+<p>
+global exactnessはdomain topologyにも依存します．
+穴のないcontractible domainでは標準的なde Rham sequenceはexactですが，
+穴やhandleがあるdomainではcohomology / harmonic fieldsが残ります．
+</p>
+</article></div>
+
+<h2>3．今回のdiscrete spaces</h2>
+<div class="news"><article class="news-item">
+<p>
+tetrahedral mesh \(\mathcal T_h\) 上で
+</p>
+\[
+\boxed{
+S_h^1
+\xrightarrow{\nabla}
+N_h^0
+\xrightarrow{\operatorname{curl}}
+RT_h^0
+\xrightarrow{\operatorname{div}}
+Q_h^0
+}
+\tag{5}
+\]
+<p>
+を使います．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">space</th>
+<th style="border:1px solid #777; padding:7px;">DoF location</th>
+<th style="border:1px solid #777; padding:7px;">DoF</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(S_h^1\)</td><td style="border:1px solid #777; padding:7px;">vertex</td><td style="border:1px solid #777; padding:7px;">point value</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(N_h^0\)</td><td style="border:1px solid #777; padding:7px;">edge</td><td style="border:1px solid #777; padding:7px;">tangential circulation</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(RT_h^0\)</td><td style="border:1px solid #777; padding:7px;">face</td><td style="border:1px solid #777; padding:7px;">normal flux</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(Q_h^0\)</td><td style="border:1px solid #777; padding:7px;">cell</td><td style="border:1px solid #777; padding:7px;">cell integral / constant value</td></tr>
+</table>
+</article></div>
+
+<h2>4．3次元でLagrange・Nédélec・RT・P0が一本につながる</h2>
+<div class="news"><article class="news-item">
+<p>
+この四空間を一列に並べるのは3次元が最も自然です．
+</p>
+<p>
+2次元では
+\[
+H^1
+\xrightarrow{\nabla}
+H(\operatorname{curl})
+\xrightarrow{\operatorname{curl}}
+L^2
+\]
+というsequenceと，
+rotationを介した
+\[
+H^1
+\xrightarrow{\operatorname{rot}}
+H(\operatorname{div})
+\xrightarrow{\operatorname{div}}
+L^2
+\]
+が対応します．
+</p>
+<p>
+従って本記事の
+\[
+P_1\to N_0\to RT_0\to P_0
+\]
+は<b>3次元tetrahedronを基準</b>に読みます．
+</p>
+</article></div>
+
+<h2>5．一つのtetrahedronでdimension countする</h2>
+<div class="news"><article class="news-item">
+<p>
+tetrahedronには
+\[
+4\ \text{vertices},
+\qquad
+6\ \text{edges},
+\qquad
+4\ \text{faces},
+\qquad
+1\ \text{cell}
+\]
+があります．
+したがって
+</p>
+\[
+\boxed{
+\dim P_1=4,
+\quad
+\dim\mathcal N_0=6,
+\quad
+\dim RT_0=4,
+\quad
+\dim P_0=1.
+}
+\tag{6}
+\]
+<p>
+この
+\[
+4\to6\to4\to1
+\]
+というdimension列はtetrahedronのsimplicial topologyそのものです．
+</p>
+</article></div>
+
+<h2>6．local exactnessをrankで見る</h2>
+<div class="news"><article class="news-item">
+<p>
+constant functionsがgradのkernelなので
+\[
+\dim\operatorname{im}\nabla
+=
+4-1
+=
+3.
+\]
+</p>
+<p>
+lowest-order tetrahedral Nédélec spaceでは
+\[
+\dim\ker\operatorname{curl}=3,
+\]
+RTでは
+\[
+\dim\ker\operatorname{div}=3,
+\qquad
+\dim\operatorname{im}\operatorname{div}=1.
+\]
+従って
+</p>
+\[
+\boxed{
+\mathbb R
+\longrightarrow
+P_1(T)
+\xrightarrow{\nabla}
+\mathcal N_0(T)
+\xrightarrow{\operatorname{curl}}
+RT_0(T)
+\xrightarrow{\operatorname{div}}
+P_0(T)
+\longrightarrow0
+}
+\tag{7}
+\]
+<p>
+はlocal exact sequenceになります．
+</p>
+</article></div>
+
+<h2>7．vertexからedgeへ――gradientは差分になる</h2>
+<div class="news"><article class="news-item">
+<p>
+oriented edge
+\[
+e=(i\to j)
+\]
+に対し，Lagrange function \(u_h\) のgradient circulationは
+</p>
+\[
+\begin{aligned}
+\int_e
+\nabla u_h\cdot\boldsymbol t_e\,ds
+&=
+u_h(p_j)-u_h(p_i).
+\end{aligned}
+\tag{8}
+\]
+<p>
+つまりnodal vector \(\boldsymbol u\) からedge cochainへのgradientは，
+signed vertex-edge incidence matrix \(G\) で
+</p>
+\[
+\boxed{
+\boldsymbol e
+=
+G\boldsymbol u.
+}
+\tag{9}
+\]
+</p>
+</article></div>
+
+<h2>8．edgeからfaceへ――curlはboundary circulationになる</h2>
+<div class="news"><article class="news-item">
+<p>
+oriented face \(F\) ではStokesの定理により
+</p>
+\[
+\boxed{
+\int_F
+\operatorname{curl}\boldsymbol v_h
+\cdot\boldsymbol n_F\,dS
+=
+\int_{\partial F}
+\boldsymbol v_h\cdot\boldsymbol t\,ds.
+}
+\tag{10}
+\]
+<p>
+従ってface flux vectorは
+\[
+\boxed{
+\boldsymbol f
+=
+C\boldsymbol e,
+}
+\tag{11}
+\]
+ここで \(C\) はsigned edge-face incidence matrixです．
+</p>
+</article></div>
+
+<h2>9．faceからcellへ――divergenceはboundary fluxになる</h2>
+<div class="news"><article class="news-item">
+<p>
+Gaussの定理によりtetrahedron \(T\) で
+</p>
+\[
+\boxed{
+\int_T
+\operatorname{div}\boldsymbol q_h\,dx
+=
+\int_{\partial T}
+\boldsymbol q_h\cdot\boldsymbol n\,dS.
+}
+\tag{12}
+\]
+<p>
+したがってcell-integral coordinateを使えば
+\[
+\boxed{
+\boldsymbol c
+=
+D\boldsymbol f,
+}
+\tag{13}
+\]
+ここで \(D\) はsigned face-cell incidence matrixです．
+</p>
+<p>
+\(P_0\) coefficientをconstant valueとして保存する実装では，
+cell volumeで割るmetric scalingが追加されます．
+</p>
+</article></div>
+
+<h2>10．single tetrahedronのincidence matrices</h2>
+<div class="news"><article class="news-item">
+<p>
+verticesを
+\[
+0,1,2,3
+\]
+とし，edgesを
+\[
+01,\ 02,\ 03,\ 12,\ 13,\ 23
+\]
+の昇順orientationで固定します．
+facesは
+\[
+012,\ 013,\ 023,\ 123
+\]
+のorientationを使います．
+</p>
+<p>
+すると
+</p>
+\[
+G=
+\begin{pmatrix}
+-1&1&0&0\\
+-1&0&1&0\\
+-1&0&0&1\\
+0&-1&1&0\\
+0&-1&0&1\\
+0&0&-1&1
+\end{pmatrix},
+\tag{14}
+\]
+\[
+C=
+\begin{pmatrix}
+1&-1&0&1&0&0\\
+1&0&-1&0&1&0\\
+0&1&-1&0&0&1\\
+0&0&0&1&-1&1
+\end{pmatrix},
+\tag{15}
+\]
+\[
+D=
+\begin{pmatrix}
+-1&1&-1&1
+\end{pmatrix}.
+\tag{16}
+\]
+</article></div>
+
+<h2>11．コードでは \(CG=0\) と \(DC=0\) がexact integer identityになる</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">import numpy as np
+
+G = np.array([
+    [-1,  1,  0,  0],
+    [-1,  0,  1,  0],
+    [-1,  0,  0,  1],
+    [ 0, -1,  1,  0],
+    [ 0, -1,  0,  1],
+    [ 0,  0, -1,  1]
+], dtype=int)
+
+C = np.array([
+    [1, -1,  0, 1,  0, 0],
+    [1,  0, -1, 0,  1, 0],
+    [0,  1, -1, 0,  0, 1],
+    [0,  0,  0, 1, -1, 1]
+], dtype=int)
+
+D = np.array([
+    [-1, 1, -1, 1]
+], dtype=int)
+
+assert np.array_equal(
+    C @ G,
+    np.zeros((4, 4), dtype=int)
+)
+
+assert np.array_equal(
+    D @ C,
+    np.zeros((1, 6), dtype=int)
+)
+</code></pre>
+<p>
+floating-point toleranceは不要です．
+結果は
+</p>
+\[
+\boxed{
+CG=0,
+\qquad
+DC=0
+}
+\tag{17}
+\]
+<p>
+という整数の恒等式です．
+</p>
+</article></div>
+
+<h2>12．これは「boundary of boundary is zero」そのもの</h2>
+<div class="news"><article class="news-item">
+<p>
+triangleのboundaryを取ると三本のedgesになり，
+さらにそのboundaryを取るとverticesが符号付きで二回現れてcancelします．
+</p>
+<p>
+同様にtetrahedronのboundary facesのboundary edgesもcancelします．
+</p>
+\[
+\boxed{
+\partial\partial=0
+}
+\tag{18}
+\]
+<p>
+のdual statementが
+\[
+CG=0,
+\qquad
+DC=0
+\]
+です．
+</p>
+<p>
+つまり
+</p>
+\[
+\boxed{
+\operatorname{curl}\nabla=0,
+\qquad
+\operatorname{div}\operatorname{curl}=0
+}
+\]
+<p>
+はfinite element basisを積分して偶然出るのではなく，
+<b>mesh topologyに埋め込まれている</b>のです．
+</p>
+</article></div>
+
+<h2>13．rank testでもlocal exactnessを監査する</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">print(np.linalg.matrix_rank(G))  # 3
+print(np.linalg.matrix_rank(C))  # 3
+print(np.linalg.matrix_rank(D))  # 1
+</code></pre>
+<p>
+single tetrahedronでは
+</p>
+\[
+\boxed{
+\operatorname{rank}G=3,
+\qquad
+\operatorname{rank}C=3,
+\qquad
+\operatorname{rank}D=1.
+}
+\tag{19}
+\]
+<p>
+dimension countと合わせればlocal exactnessをlinear algebraで確認できます．
+</p>
+</article></div>
+
+<h2>14．orientationを壊すとcomplexが壊れる</h2>
+<div class="news"><article class="news-item">
+<p>
+edge一本のorientationを反転したのに
+\(G\) のrowだけを反転し，
+\(C\) の対応columnを反転し忘れると
+</p>
+\[
+CG\neq0
+\]
+になります．
+</p>
+<p>
+同様にface orientationを変えたときは
+\(C\) のrowと \(D\) のcolumnを同時に更新する必要があります．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>orientation audit</b><br/>
+edge orientationは
+\[
+G\text{ のrow}
+\quad\text{と}\quad
+C\text{ のcolumn}
+\]
+に同時に現れる．<br/>
+face orientationは
+\[
+C\text{ のrow}
+\quad\text{と}\quad
+D\text{ のcolumn}
+\]
+に同時に現れる．
+</div>
+</article></div>
+
+<h2>15．finite-element basisはincidence matrixを実現する</h2>
+<div class="news"><article class="news-item">
+<p>
+topological matricesだけではPDEは解けません．
+しかしfinite-element basisを選ぶことで
+</p>
+\[
+\boxed{
+\begin{aligned}
+\nabla S_h^1
+&\subset
+N_h^0,
+\\
+\operatorname{curl}N_h^0
+&\subset
+RT_h^0,
+\\
+\operatorname{div}RT_h^0
+&\subset
+Q_h^0
+\end{aligned}
+}
+\tag{20}
+\]
+<p>
+が成立し，そのcoefficient mapが \(G,C,D\) になります．
+</p>
+</article></div>
+
+<h2>16．Piola transformsがcomplexをelement間で運ぶ</h2>
+<div class="news"><article class="news-item">
+<p>
+affine map
+\[
+F_T(\widehat x)
+=
+J_T\widehat x+b_T
+\]
+の下で，
+</p>
+\[
+\boxed{
+\begin{array}{rcl}
+\text{Lagrange}
+&:&
+u=\widehat u\circ F_T^{-1},
+\\[2mm]
+\text{Nédélec}
+&:&
+\boldsymbol v
+=
+J_T^{-\top}
+\widehat{\boldsymbol v},
+\\[2mm]
+\text{RT}
+&:&
+\boldsymbol q
+=
+\dfrac1{\det J_T}
+J_T\widehat{\boldsymbol q}
+\end{array}
+}
+\tag{21}
+\]
+<p>
+を使います．
+</p>
+<p>
+これによりgrad・curl・divの変換則がcompatibleになります．
+</p>
+</article></div>
+
+<h2>17．commuting diagram</h2>
+<div class="news"><article class="news-item">
+<p>
+十分regularなfunctionsについてcanonical interpolants / projectionsを使うと
+</p>
+\[
+\boxed{
+\begin{array}{ccccc}
+H^1
+&\xrightarrow{\nabla}&
+H(\operatorname{curl})
+&\xrightarrow{\operatorname{curl}}&
+H(\operatorname{div})
+\xrightarrow{\operatorname{div}}
+L^2
+\\
+\downarrow I_h^L
+&&
+\downarrow I_h^N
+&&
+\downarrow I_h^{RT}
+\qquad
+\downarrow \Pi_h^0
+\\
+S_h^1
+&\xrightarrow{\nabla}&
+N_h^0
+&\xrightarrow{\operatorname{curl}}&
+RT_h^0
+\xrightarrow{\operatorname{div}}
+Q_h^0
+\end{array}
+}
+\tag{22}
+\]
+<p>
+というcommuting diagramが得られます．
+</p>
+</article></div>
+
+<h2>18．最初のsquare――gradientとNédélec interpolation</h2>
+<div class="news"><article class="news-item">
+<p>
+smooth scalar function \(u\) ならedge \(e=(i\to j)\) で
+</p>
+\[
+\int_e
+\nabla u\cdot\boldsymbol t\,ds
+=
+u(p_j)-u(p_i).
+\tag{23}
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+\nabla I_h^L u
+=
+I_h^N\nabla u.
+}
+\tag{24}
+\]
+<p>
+これはfundamental theorem of calculusがcommuting diagramの最初のsquareを作っている，と読めます．
+</p>
+</article></div>
+
+<h2>19．第二のsquare――NédélecとRT</h2>
+<div class="news"><article class="news-item">
+<p>
+smooth vector field \(\boldsymbol v\) ならface \(F\) で
+</p>
+\[
+\int_F
+\operatorname{curl}\boldsymbol v\cdot\boldsymbol n\,dS
+=
+\int_{\partial F}
+\boldsymbol v\cdot\boldsymbol t\,ds.
+\tag{25}
+\]
+<p>
+Nédélec interpolationはright-hand sideのedge momentsを保存し，
+RT interpolationはleft-hand sideのface fluxを保存するので
+</p>
+\[
+\boxed{
+\operatorname{curl}I_h^N\boldsymbol v
+=
+I_h^{RT}
+\operatorname{curl}\boldsymbol v.
+}
+\tag{26}
+\]
+</p>
+</article></div>
+
+<h2>20．第三のsquare――RTとP0</h2>
+<div class="news"><article class="news-item">
+<p>
+Gaussの定理から
+</p>
+\[
+\int_T
+\operatorname{div}\boldsymbol q\,dx
+=
+\int_{\partial T}
+\boldsymbol q\cdot\boldsymbol n\,dS.
+\tag{27}
+\]
+<p>
+RT interpolationがface fluxを保存するので
+</p>
+\[
+\boxed{
+\operatorname{div}I_h^{RT}\boldsymbol q
+=
+\Pi_h^0
+\operatorname{div}\boldsymbol q.
+}
+\tag{28}
+\]
+<p>
+第14回で見たcommuting relationがde Rham sequenceの最後のsquareです．
+</p>
+</article></div>
+
+<h2>21．canonical interpolationの定義域には注意する</h2>
+<div class="news"><article class="news-item">
+<p>
+commuting diagramを綺麗に書けるからといって，
+canonical DoFsが各energy spaceの全てのfunctionに古典的に定義できるとは限りません．
+</p>
+<p>
+例えば
+</p>
+<ul>
+<li>Lagrange nodal interpolationは3次元generic \(H^1\) functionのpoint valueにそのまま使えない，</li>
+<li>Nédélec edge momentsはgeneric \(H(\operatorname{curl})\) fieldにclassical edge integralとして自動的には定義できない，</li>
+<li>RT face momentsもgeneric \(H(\operatorname{div})\) fieldでfacewise classical momentsを扱うときはtrace regularityに注意が要る，</li>
+</ul>
+<p>
+という問題があります．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>理論での安全策</b><br/>
+smooth functions上のcanonical interpolantで構造を理解し，
+energy space全体へは
+<b>bounded commuting quasi-interpolation / projection</b>
+を使う．
+</div>
+</article></div>
+
+<h2>22．topologyとmetricを分離する</h2>
+<div class="news"><article class="news-item">
+<p>
+\(G,C,D\) のentriesは
+\[
+-1,\ 0,\ +1
+\]
+だけです．
+element length，angle，Jacobian，material coefficientは一切入りません．
+</p>
+<p>
+一方，geometryとmetricはfinite-element mass matrices
+</p>
+\[
+\boxed{
+M_0,\quad M_1,\quad M_2,\quad M_3
+}
+\tag{29}
+\]
+<p>
+へ入ります．
+</p>
+<p>
+ここで
+</p>
+\[
+\begin{aligned}
+M_0&:\text{ Lagrange / 0-form mass},\\
+M_1&:\text{ Nédélec / 1-form mass},\\
+M_2&:\text{ RT / 2-form mass},\\
+M_3&:\text{ P0 / 3-form mass}.
+\end{aligned}
+\]
+</p>
+</article></div>
+
+<h2>23．Poisson stiffnessも \(G\) とmass matrixで見える</h2>
+<div class="news"><article class="news-item">
+<p>
+nodal coefficient vectorを \(\boldsymbol u\) とすると，
+gradientのedge coefficientは \(G\boldsymbol u\) です．
+従ってNédélec \(L^2\) mass matrix \(M_1\) を使えば
+</p>
+\[
+\boxed{
+K_{\mathrm{Poisson}}
+=
+G^{\top}M_1G.
+}
+\tag{30}
+\]
+<p>
+通常のP1 stiffness matrixを
+<b>topological derivative \(G\) とmetric \(M_1\)</b>
+へ分解して見ることができます．
+</p>
+</article></div>
+
+<h2>24．Maxwell curl–curlも \(C\) とmass matrixで見える</h2>
+<div class="news"><article class="news-item">
+<p>
+Nédélec coefficient vectorを \(\boldsymbol e\) とすると，
+curlのRT coefficientは \(C\boldsymbol e\) です．
+従って
+</p>
+\[
+\boxed{
+K_{\mathrm{curl}}
+=
+C^{\top}M_2C.
+}
+\tag{31}
+\]
+<p>
+pure curl–curl operatorのkernelに
+\[
+\operatorname{im}G
+\]
+が入ることも
+</p>
+\[
+CG=0
+\]
+<p>
+から一行で分かります．
+</p>
+</article></div>
+
+<h2>25．mixed \(H(\operatorname{div})\) methodでは \(D\) がconservationを作る</h2>
+<div class="news"><article class="news-item">
+<p>
+RT face flux vector \(\boldsymbol f\) に対し，
+cell balanceは
+</p>
+\[
+D\boldsymbol f.
+\]
+<p>
+従ってmixed Poissonのdiscrete divergence matrixは
+本質的にsigned face-cell incidenceです．
+</p>
+\[
+\boxed{
+\text{local conservation}
+=
+\text{oriented face fluxesのalgebraic balance}
+}
+\tag{32}
+\]
+<p>
+第16回で見た局所保存がde Rham complexの最後のarrowに戻ってきます．
+</p>
+</article></div>
+
+<h2>26．topologyがあるとharmonic fieldsが残る</h2>
+<div class="news"><article class="news-item">
+<p>
+contractible domainなら
+\[
+\ker C
+=
+\operatorname{im}G
+\]
+が期待できます．
+しかしdomainにholeがあると
+</p>
+\[
+\boxed{
+\ker C/
+\operatorname{im}G
+}
+\tag{33}
+\]
+<p>
+が非自明になります．
+これはdiscrete first cohomologyであり，
+circulationを持つharmonic componentに対応します．
+</p>
+<p>
+同様に
+\[
+\ker D/
+\operatorname{im}C
+\]
+もtopologyを検出します．
+</p>
+</article></div>
+
+<h2>27．Euler characteristicもdimension countに現れる</h2>
+<div class="news"><article class="news-item">
+<p>
+single tetrahedronでは
+</p>
+\[
+N_V-N_E+N_F-N_T
+=
+4-6+4-1
+=
+1.
+\tag{34}
+\]
+<p>
+contractible tetrahedral complexでも
+\[
+\boxed{
+N_V-N_E+N_F-N_T
+=
+\chi(\Omega)
+}
+\tag{35}
+\]
+<p>
+となり，Euler characteristicがdiscrete de Rham complexのdimension balanceに現れます．
+</p>
+</article></div>
+
+<h2>28．Hodge decompositionへの入口</h2>
+<div class="news"><article class="news-item">
+<p>
+de Rham complexとmass matricesを組み合わせると，
+discrete fieldを
+</p>
+\[
+\boxed{
+\text{exact}
++
+\text{coexact}
++
+\text{harmonic}
+}
+\tag{36}
+\]
+<p>
+へ分けるdiscrete Hodge decompositionにつながります．
+</p>
+<p>
+ここで
+</p>
+\[
+\text{exact part}
+\sim
+\operatorname{im}G,
+\qquad
+\text{harmonic part}
+\sim
+\ker C/\operatorname{im}G
+\]
+<p>
+というtopological meaningが明確になります．
+</p>
+</article></div>
+
+<h2>29．spurious modesを防ぐのは「高い次数」ではなくstructure</h2>
+<div class="news"><article class="news-item">
+<p>
+Maxwell eigenproblemでnodal vector elementsを無理に使うと，
+continuous de Rham structureと異なるkernelを作り，
+spurious modesの原因になります．
+</p>
+<p>
+Nédélec elementが重要なのは単にvector polynomialだからではなく
+</p>
+\[
+\boxed{
+\nabla S_h^1
+\subset
+N_h^0,
+\qquad
+\operatorname{curl}N_h^0
+\subset
+RT_h^0
+}
+\tag{37}
+\]
+<p>
+を保つからです．
+</p>
+</article></div>
+
+<h2>30．anisotropic meshでもtopological identityは壊れない</h2>
+<div class="news"><article class="news-item">
+<p>
+triangleやtetrahedronが極端に細長くなっても，
+orientationとconnectivityが正しければ
+</p>
+\[
+CG=0,
+\qquad
+DC=0
+\]
+<p>
+はexactly成立します．
+</p>
+<p>
+anisotropyが影響するのは
+</p>
+\[
+\boxed{
+\text{mass matrices},
+\quad
+\text{Piola scaling},
+\quad
+\text{interpolation stability},
+\quad
+\text{conditioning}
+}
+\tag{38}
+\]
+<p>
+です．
+</p>
+<p>
+つまり
+<b>topological correctnessとmetric stabilityは別々に監査できる</b>
+ということです．
+</p>
+</article></div>
+
+<h2>31．mesh-wide incidence matricesを作る</h2>
+<div class="news"><article class="news-item">
+<p>
+実際のmeshではまずglobal numberingを作ります．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;"># concept only
+vertices = global_vertex_ids
+edges    = oriented_global_edges
+faces    = oriented_global_faces
+cells    = positively_oriented_tetrahedra
+
+# G[e, v] : vertex -> edge
+# C[f, e] : edge   -> face
+# D[t, f] : face   -> cell
+
+G = build_vertex_edge_incidence(
+    vertices,
+    edges
+)
+
+C = build_edge_face_incidence(
+    edges,
+    faces
+)
+
+D = build_face_cell_incidence(
+    faces,
+    cells
+)
+
+assert (C @ G).nnz == 0
+assert (D @ C).nnz == 0
+</code></pre>
+<p>
+大規模meshではdense arrayではなく
+\[
+\texttt{scipy.sparse}
+\]
+のinteger matricesで持つのが自然です．
+</p>
+</article></div>
+
+<h2>32．geometry bugとtopology bugを切り分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+de Rham codeではdebuggingの順番が重要です．
+</p>
+\[
+\boxed{
+\begin{aligned}
+1.&\quad CG=0,\ DC=0,\\
+2.&\quad \text{rank / topology check},\\
+3.&\quad \text{Piola invariance},\\
+4.&\quad \text{commuting interpolation},\\
+5.&\quad \text{PDE convergence}
+\end{aligned}
+}
+\tag{39}
+\]
+<p>
+最初の二つが失敗しているならmesh connectivity / orientationのbugです．
+後半だけ失敗するならgeometry mapping，quadrature，basis transformの可能性が高くなります．
+</p>
+</article></div>
+
+<h2>33．AIがde Rham complexで間違えやすい点</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">mistake</th><th style="border:1px solid #777; padding:7px;">何が壊れるか</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">2Dと3Dのsequenceを混同</td><td style="border:1px solid #777; padding:7px;">Nédélec→RTの意味が変わる</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">edge orientationを局所任せにする</td><td style="border:1px solid #777; padding:7px;">\(CG=0\) が壊れる</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">face orientationを揃えない</td><td style="border:1px solid #777; padding:7px;">\(DC=0\) が壊れる</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">NédélecにRT Piolaを使う</td><td style="border:1px solid #777; padding:7px;">commuting diagramが壊れる</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">topologyとmetricを同じmatrixへ埋め込む</td><td style="border:1px solid #777; padding:7px;">debuggingが困難になる</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">complexならglobal exactと思う</td><td style="border:1px solid #777; padding:7px;">holes / cohomologyを見落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">canonical interpolantをenergy space全体に無条件適用</td><td style="border:1px solid #777; padding:7px;">trace / point-value regularityを誤る</td></tr>
+</table>
+</article></div>
+
+<h2>34．de Rham implementation audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このtetrahedral lowest-order finite-element de Rham codeを数学的に監査してください．<br/>
+(1) sequenceを \(P_1\to N_0\to RT_0\to P_0\) と3次元で定義しているか，<br/>
+(2) vertex・edge・face・cellのglobal orientationを一意に決めているか，<br/>
+(3) \(G\) がvertex-edge signed incidenceか，<br/>
+(4) \(C\) がedge-face signed incidenceか，<br/>
+(5) \(D\) がface-cell signed incidenceか，<br/>
+(6) integer arithmeticで \(CG=0\) と \(DC=0\) を確認しているか，<br/>
+(7) single tetrahedronでrank \(3,3,1\) を確認しているか，<br/>
+(8) Lagrange・Nédélec・RTにそれぞれscalar・covariant・contravariant transformを使っているか，<br/>
+(9) \(\nabla I_h^L=I_h^N\nabla\) を十分smoothなdataで確認しているか，<br/>
+(10) \(\operatorname{curl}I_h^N=I_h^{RT}\operatorname{curl}\) を確認しているか，<br/>
+(11) \(\operatorname{div}I_h^{RT}=\Pi_h^0\operatorname{div}\) を確認しているか，<br/>
+(12) canonical interpolationのregularity domainを過大評価していないか，<br/>
+(13) incidence matricesとmass matricesをtopology / metricとして分離しているか，<br/>
+(14) contractibleでないdomainではcomplexとglobal exactnessを区別しているか，<br/>
+(15) Maxwell kernelを \(CG=0\) と関連付けているか，<br/>
+(16) anisotropic meshでもtopological identitiesとmetric stabilityを分けて監査しているか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>35．第22回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+de Rham complexをコードで見ると，
+</p>
+\[
+\boxed{
+\text{vertex}
+\xrightarrow{G}
+\text{edge}
+\xrightarrow{C}
+\text{face}
+\xrightarrow{D}
+\text{cell}
+}
+\tag{40}
+\]
+<p>
+がそのまま
+</p>
+\[
+\boxed{
+P_1
+\xrightarrow{\nabla}
+N_0
+\xrightarrow{\operatorname{curl}}
+RT_0
+\xrightarrow{\operatorname{div}}
+P_0
+}
+\tag{41}
+\]
+<p>
+になります．
+</p>
+<p>
+そして最も重要なidentityは
+</p>
+\[
+\boxed{
+CG=0,
+\qquad
+DC=0.
+}
+\tag{42}
+\]
+<p>
+これはgeometryに依存しません．
+</p>
+<p>
+geometry・material・anisotropyはmass matricesとPiola transformsへ入り，
+topologyはincidence matricesへ入ります．
+</p>
+\[
+\boxed{
+\text{structure-preserving FEM}
+=
+\text{topology}
++
+\text{metric}
++
+\text{commuting projection}
+}
+\tag{43}
+\]
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 2 第10回の原則</b><br/>
+grad・curl・divを別々の微分演算として実装する前に，
+<b>vertex→edge→face→cellのoriented incidenceとして実装する</b>．
+</div>
+<p>
+次回はこの構造を誤差保証へ使い，
+<b>第23回：有限要素解の誤差を保証する — equilibrated fluxとhypercircle</b>
+へ進みます．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>J.-C. Nédélec, “Mixed finite elements in \(\mathbb R^3\)”, <i>Numerische Mathematik</i> 35 (1980), 315–341.</li>
+<li>P.-A. Raviart and J.-M. Thomas, “A mixed finite element method for 2nd order elliptic problems”, in <i>Mathematical Aspects of Finite Element Methods</i>, Lecture Notes in Mathematics 606, Springer, 1977, 292–315.</li>
+<li>R. Hiptmair, “Finite elements in computational electromagnetism”, <i>Acta Numerica</i> 11 (2002), 237–339.</li>
+<li>D. N. Arnold, R. S. Falk and R. Winther, “Finite element exterior calculus, homological techniques, and applications”, <i>Acta Numerica</i> 15 (2006), 1–155.</li>
+<li>D. N. Arnold, R. S. Falk and R. Winther, “Finite element exterior calculus: from Hodge theory to numerical stability”, <i>Bulletin of the American Mathematical Society</i> 47 (2010), 281–354.</li>
+<li><a href="./chatgpt-fem-14.html">第14回：Raviart–Thomas要素を実装する — normal fluxとPiola変換</a></li>
+<li><a href="./chatgpt-fem-16.html">第16回：mixed Poisson問題を解く — RT0–P0と局所保存</a></li>
+<li><a href="./chatgpt-fem-21.html">第21回：Nédélec要素を実装する — edge moment・curl・covariant Piola</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 2 前回：</b><a href="./chatgpt-fem-21.html">第21回：Nédélec要素を実装する — edge moment・curl・covariant Piola</a></p>
+<p><b>次回：</b>第23回：有限要素解の誤差を保証する — equilibrated fluxとhypercircle（構想中）</p>
+<p><a href="../#chatgpt-fem-season2">Season 2一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
