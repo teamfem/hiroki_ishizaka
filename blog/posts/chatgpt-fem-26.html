@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第26回：Deep Ritzでは点をどこに置くか — quadratureとsampling geometry | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,Deep Ritz,sampling geometry,quadrature,point placement,fill distance,separation distance,discrepancy,empirical measure,anisotropic sampling,point concentration,PyTorch"/>
+<meta name="description" content="Season 3 第2回（通算第26回）として，Deep Ritz法のquadrature pointsを数値解析します．等間隔，random，Gauss，Chebyshev，片側集中，一点集中を比較し，point countではなくsampling measure・fill distance・separation・weightsが重要であることを実装と反例から確認します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-26.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-26.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-26.html",
+      "headline": "第26回：Deep Ritzでは点をどこに置くか — quadratureとsampling geometry",
+      "description": "Deep Ritzのtraining pointsをsampling measureとして捉え，点配置・weights・一点集中・異方的配置がenergy minimisationをどう変えるかを実装・監査します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-26.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 3",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 3"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第26回：Deep Ritzでは点をどこに置くか — quadratureとsampling geometry | Hiroki Ishizaka"/>
+<meta property="og:description" content="N個の点があってもN個分の情報があるとは限らない．一点集中・異方的配置まで含めてDeep Ritzのsampling geometryを数値解析します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-26.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第26回：Deep Ritzでは点をどこに置くか — quadratureとsampling geometry | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="Point count is not information count: Deep Ritz sampling geometry, quadrature weights, concentration and anisotropy."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 3 第2回（通算第26回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第26回：Deep Ritzでは点をどこに置くか — quadratureとsampling geometry</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 3 第2回（通算第26回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――\(N\) 点あることと，\(N\) 点分の情報があることは同じではない</h2>
+<div class="news"><article class="news-item">
+<p>
+前回はDeep Ritz法を
+</p>
+\[
+\min_{\theta\in\Theta}E_N(u_\theta)
+\]
+<p>
+として実装しました．
+ここで
+</p>
+\[
+E_N(u_\theta)
+=
+\sum_{i=1}^N
+w_i
+\left[
+\frac12|u_\theta'(x_i)|^2
+-
+f(x_i)u_\theta(x_i)
+\right]
+\tag{1}
+\]
+<p>
+です．
+</p>
+<p>
+今回はnetwork architecture，optimizer，点数 \(N\) をいったん固定し，
+<b>点の位置とweightsだけ</b>を変えます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>今回の問い</b><br/>
+\[
+\boxed{
+N\text{ が同じでも}
+\quad
+\{x_i,w_i\}_{i=1}^N
+\text{ が違えば，Deep Ritzは同じ問題を見ているのか？}
+}
+\tag{2}
+\]
+</div>
+</article></div>
+
+<h2>1．continuous energyとsampled energyをもう一度分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+1次元Poisson問題
+</p>
+\[
+-u''=f,
+\qquad
+u(0)=u(1)=0
+\]
+<p>
+のenergyは
+</p>
+\[
+\boxed{
+E(v)
+=
+\int_0^1
+\left[
+\frac12|v'(x)|^2-f(x)v(x)
+\right]dx.
+}
+\tag{3}
+\]
+<p>
+一方，training objectiveは式 (1) の \(E_N\) です．
+</p>
+<p>
+したがってDeep Ritzには
+</p>
+\[
+\boxed{
+E_N\approx E
+}
+\tag{4}
+\]
+<p>
+を保証するsampling / quadrature designが必要です．
+</p>
+</article></div>
+
+<h2>2．equal weightsならpoint cloudそのものがmeasureになる</h2>
+<div class="news"><article class="news-item">
+<p>
+\(w_i=1/N\) なら
+</p>
+\[
+\boxed{
+\mu_N
+=
+\frac1N
+\sum_{i=1}^N
+\delta_{x_i}
+}
+\tag{5}
+\]
+<p>
+というempirical measureを使って
+</p>
+\[
+E_N(v)
+=
+\int
+\left[
+\frac12|v'|^2-fv
+\right]d\mu_N
+\tag{6}
+\]
+<p>
+を最小化していると読めます．
+</p>
+<p>
+本来欲しいのはLebesgue measure \(dx\) に対するenergyです．
+従って
+</p>
+\[
+\boxed{
+\mu_N
+\longrightarrow
+dx
+}
+\tag{7}
+\]
+<p>
+がsampling geometryの第一の目標になります．
+</p>
+</article></div>
+
+<h2>3．point placementとquadrature weightsは別の設計変数である</h2>
+<div class="news"><article class="news-item">
+<p>
+同じpoint setでも
+</p>
+\[
+w_i=\frac1N
+\]
+<p>
+とするのか，local cell sizeを反映したweightsにするのかで
+近似しているmeasureは変わります．
+</p>
+\[
+\boxed{
+\text{point geometry}
+\neq
+\text{quadrature measure}.
+}
+\tag{8}
+\]
+<p>
+Deep Ritzで「点を増やした」とだけ報告するのでは不十分で，
+<b>点とweightをセットで記録</b>する必要があります．
+</p>
+</article></div>
+
+<h2>4．1次元のsampling geometryを測る量</h2>
+<div class="news"><article class="news-item">
+<p>
+sorted points
+\[
+0&lt;x_1&lt;\cdots&lt;x_N&lt;1
+\]
+に対して，まずcoverageを見る量として
+</p>
+\[
+\boxed{
+h_X
+=
+\max
+\{
+x_1,\,
+x_2-x_1,\ldots,
+x_N-x_{N-1},\,
+1-x_N
+\}
+}
+\tag{9}
+\]
+<p>
+を使います．
+</p>
+<p>
+clusteringを見る量として
+</p>
+\[
+\boxed{
+q_X
+=
+\frac12
+\min_{i\ne j}|x_i-x_j|
+}
+\tag{10}
+\]
+<p>
+を使い，prototype mesh ratioを
+</p>
+\[
+\boxed{
+\rho_X
+=
+\frac{h_X}{q_X}
+}
+\tag{11}
+\]
+<p>
+とします．
+</p>
+<p>
+これは今回のdiagnosticであり，
+Deep Ritzに対する普遍的なerror parameterだと主張しているわけではありません．
+</p>
+</article></div>
+
+<h2>5．比較するpoint sets</h2>
+<div class="news"><article class="news-item">
+<p>
+\(N=32\) を固定し，次を比較します．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">name</th><th style="border:1px solid #777; padding:7px;">points</th><th style="border:1px solid #777; padding:7px;">目的</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">uniform midpoint</td><td style="border:1px solid #777; padding:7px;">\((i-\tfrac12)/N\)</td><td style="border:1px solid #777; padding:7px;">baseline</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">random uniform</td><td style="border:1px solid #777; padding:7px;">\(U(0,1)\)</td><td style="border:1px solid #777; padding:7px;">Monte Carlo型</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">Gauss–Legendre</td><td style="border:1px solid #777; padding:7px;">Gauss nodes</td><td style="border:1px solid #777; padding:7px;">quadrature-oriented</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">Chebyshev-like</td><td style="border:1px solid #777; padding:7px;">両端cluster</td><td style="border:1px solid #777; padding:7px;">nonuniform geometry</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">left \(p=4\)</td><td style="border:1px solid #777; padding:7px;">\(x_i=t_i^4\)</td><td style="border:1px solid #777; padding:7px;">片側集中</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">centre band</td><td style="border:1px solid #777; padding:7px;">\(|x-\tfrac12|\lesssim0.05\)</td><td style="border:1px solid #777; padding:7px;">狭い領域への集中</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">almost one point</td><td style="border:1px solid #777; padding:7px;">\(|x-\tfrac12|\lesssim10^{-3}\)</td><td style="border:1px solid #777; padding:7px;">degenerate limit</td></tr>
+</table>
+</article></div>
+
+<h2>6．まずnetworkを外し，samplingだけを解析する</h2>
+<div class="news"><article class="news-item">
+<p>
+neural optimisationのrandomnessを混ぜる前に，
+one-parameter trial family
+</p>
+\[
+\boxed{
+u_a(x)
+=
+a\,x(1-x)
+}
+\tag{12}
+\]
+<p>
+を使います．
+</p>
+<p>
+これはDeep Ritzのhard boundary ansatzと同じ形を持ち，
+parameter \(a\) だけを最適化するので，
+sampling geometryの効果をexactly切り出せます．
+</p>
+</article></div>
+
+<h2>7．continuous energyの最適parameterはexactに計算できる</h2>
+<div class="news"><article class="news-item">
+<p>
+前回と同じ
+</p>
+\[
+f(x)=\pi^2\sin(\pi x)
+\tag{13}
+\]
+<p>
+を使います．
+\(\phi(x)=x(1-x)\) と書くと
+</p>
+\[
+E(u_a)
+=
+\frac12a^2
+\int_0^1|\phi'|^2dx
+-
+a
+\int_0^1f\phi\,dx.
+\tag{14}
+\]
+<p>
+ここで
+</p>
+\[
+\int_0^1|\phi'|^2dx
+=
+\frac13,
+\qquad
+\int_0^1f\phi\,dx
+=
+\frac4\pi.
+\tag{15}
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+a_\ast
+=
+\frac{12}{\pi}
+=
+3.819718634\ldots
+}
+\tag{16}
+\]
+<p>
+です．
+</p>
+</article></div>
+
+<h2>8．sampled minimiserも一行で求まる</h2>
+<div class="news"><article class="news-item">
+<p>
+point set \(X=\{x_i\}\) とweights \(w_i\) に対して
+</p>
+\[
+E_X(a)
+=
+\sum_i
+w_i
+\left[
+\frac12a^2|\phi'(x_i)|^2
+-
+a f(x_i)\phi(x_i)
+\right].
+\tag{17}
+\]
+<p>
+従ってdenominatorがpositiveなら
+</p>
+\[
+\boxed{
+a_X
+=
+\frac{
+\sum_iw_i f(x_i)\phi(x_i)
+}{
+\sum_iw_i|\phi'(x_i)|^2
+}.
+}
+\tag{18}
+\]
+<p>
+つまりpoint placementだけで
+<b>optimizerが目指すparameterそのもの</b>が変わります．
+</p>
+</article></div>
+
+<h2>9．equal-weight comparison</h2>
+<div class="news"><article class="news-item">
+<p>
+Gauss–Legendreだけは標準Gauss weightsを使い，
+それ以外はequal weights \(w_i=1/N\) としたdeterministic auditです．
+random setはseed 7です．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">point set</th>
+<th style="border:1px solid #777; padding:7px;">\(a_X\)</th>
+<th style="border:1px solid #777; padding:7px;">\(h_X\)</th>
+<th style="border:1px solid #777; padding:7px;">true \(H^1\) error</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">uniform midpoint</td><td style="border:1px solid #777; padding:7px;">3.823454e0</td><td style="border:1px solid #777; padding:7px;">3.125e-2</td><td style="border:1px solid #777; padding:7px;">2.671891e-1</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">random uniform</td><td style="border:1px solid #777; padding:7px;">4.213992e0</td><td style="border:1px solid #777; padding:7px;">1.465e-1</td><td style="border:1px solid #777; padding:7px;">3.510023e-1</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">Gauss–Legendre</td><td style="border:1px solid #777; padding:7px;">3.819719e0</td><td style="border:1px solid #777; padding:7px;">4.831e-2</td><td style="border:1px solid #777; padding:7px;">2.671804e-1</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">Chebyshev-like / equal</td><td style="border:1px solid #777; padding:7px;">1.895616e0</td><td style="border:1px solid #777; padding:7px;">4.758e-2</td><td style="border:1px solid #777; padding:7px;">1.142559e0</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">left \(p=4\) / equal</td><td style="border:1px solid #777; padding:7px;">9.907830e-1</td><td style="border:1px solid #777; padding:7px;">1.158e-1</td><td style="border:1px solid #777; padding:7px;">1.654996e0</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">centre band \(\varepsilon=0.05\)</td><td style="border:1px solid #777; padding:7px;">7.824857e2</td><td style="border:1px solid #777; padding:7px;">4.530e-1</td><td style="border:1px solid #777; padding:7px;">4.495631e2</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">almost point \(\varepsilon=10^{-3}\)</td><td style="border:1px solid #777; padding:7px;">1.969936e6</td><td style="border:1px solid #777; padding:7px;">4.991e-1</td><td style="border:1px solid #777; padding:7px;">1.137341e6</td></tr>
+</table>
+<p>
+最後の二行はoptimisation failureではありません．
+<b>sampled objectiveそのものがwrong geometryを見ている</b>結果です．
+</p>
+</article></div>
+
+<h2>10．Chebyshev-like pointsにequal weightsを付けると別のmeasureを見る</h2>
+<div class="news"><article class="news-item">
+<p>
+Chebyshev-like points
+</p>
+\[
+x_i
+=
+\frac12
+\left(
+1-\cos\frac{\pi i}{N+1}
+\right)
+\tag{19}
+\]
+<p>
+へequal weightsを付けると，
+\(N\to\infty\) で点はLebesgue measureではなく
+endpoint-singularなarcsine-type distributionへ従います．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{good interpolation points}
+\not\Rightarrow
+\text{good equal-weight quadrature points}.
+}
+\tag{20}
+\]
+<p>
+「点配置の名前」だけではなく，何を積分したいかを見る必要があります．
+</p>
+</article></div>
+
+<h2>11．power-law clusteringも別のsampling measureを作る</h2>
+<div class="news"><article class="news-item">
+<p>
+\(t_i\) を一様に置き
+</p>
+\[
+x_i=t_i^p,
+\qquad
+p&gt;1
+\tag{21}
+\]
+<p>
+とすると，equal-weight empirical measureは極限で
+</p>
+\[
+\boxed{
+d\mu_p(x)
+=
+\frac1p
+x^{1/p-1}\,dx
+}
+\tag{22}
+\]
+<p>
+へ近づきます．
+</p>
+<p>
+\(p\) が大きいほど \(x=0\) へmassが集中します．
+これはLebesgue energyを解いているのではなく，
+<b>左端を過大評価したweighted energy</b>を解いていることになります．
+</p>
+</article></div>
+
+<h2>12．一点集中の極限はもっと劇的である</h2>
+<div class="news"><article class="news-item">
+<p>
+pointsを
+</p>
+\[
+\boxed{
+x_i
+=
+\frac12
++
+\varepsilon\xi_i,
+\qquad
+-1\le\xi_i\le1
+}
+\tag{23}
+\]
+<p>
+と置き，
+\(\varepsilon\to0\) とします．
+</p>
+<p>
+equal weightsなら
+</p>
+\[
+\boxed{
+\mu_N
+\longrightarrow
+\delta_{1/2}.
+}
+\tag{24}
+\]
+<p>
+つまりdomain全体のenergyではなく
+\(x=1/2\) のenergy densityだけを見る極限になります．
+</p>
+</article></div>
+
+<h2>13．一点集中ではsampled minimiserが発散する</h2>
+<div class="news"><article class="news-item">
+<p>
+\(\phi(x)=x(1-x)\) について
+</p>
+\[
+\phi'\left(\frac12+\varepsilon\xi\right)
+=
+-2\varepsilon\xi,
+\]
+<p>
+一方
+</p>
+\[
+f\left(\frac12+\varepsilon\xi\right)
+\phi\left(\frac12+\varepsilon\xi\right)
+=
+\frac{\pi^2}{4}
++
+O(\varepsilon^2).
+\]
+<p>
+従って式 (18) から
+</p>
+\[
+\boxed{
+a_X
+\sim
+\frac{\pi^2}{
+16\varepsilon^2
+\left(
+N^{-1}\sum_i\xi_i^2
+\right)
+}
+}
+\tag{25}
+\]
+<p>
+となり，
+</p>
+\[
+\boxed{
+a_X=O(\varepsilon^{-2})
+\longrightarrow\infty.
+}
+\tag{26}
+\]
+<p>
+「点数を増やした」のにglobal approximationは改善しないどころか，
+objectiveのdegeneracyによってparameterが爆発します．
+</p>
+</article></div>
+
+<h2>14．全点をexactly \(x=1/2\) に置くとenergyは下に有界でなくなる</h2>
+<div class="news"><article class="news-item">
+<p>
+さらに極端に
+\[
+x_i=\frac12
+\quad
+\forall i
+\]
+とします．
+</p>
+<p>
+この点では
+\[
+\phi'(1/2)=0,
+\qquad
+f(1/2)\phi(1/2)=\frac{\pi^2}{4}.
+\]
+従って
+</p>
+\[
+\boxed{
+E_N(u_a)
+=
+-\frac{\pi^2}{4}a.
+}
+\tag{27}
+\]
+<p>
+よって
+</p>
+\[
+\boxed{
+\inf_{a\in\mathbb R}E_N(u_a)
+=
+-\infty.
+}
+\tag{28}
+\]
+<p>
+continuous energyはcoerciveなのに，
+<b>samplingだけでdiscrete training objectiveのcoercivityを失う</b>
+ことがあります．
+</p>
+</article></div>
+
+<h2>15．これは「optimizerが悪い」問題ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+一点集中でlossが崩れると，
+learning rateやnetwork depthを調整したくなります．
+しかし式 (27)–(28) はoptimizerを一切使わずに得られました．
+</p>
+\[
+\boxed{
+\text{sampling instability}
+\neq
+\text{optimisation instability}.
+}
+\tag{29}
+\]
+<p>
+Season 3ではこの二つを分離して診断します．
+</p>
+</article></div>
+
+<h2>16．weightsを直せばclusteringは救えるか</h2>
+<div class="news"><article class="news-item">
+<p>
+sorted points \(x_i\) に対し，
+隣接点のmidpointをcell boundaryとして
+local Voronoi-type weightsを付けることができます．
+</p>
+\[
+\boxed{
+w_i
+\approx
+\text{point }x_i\text{ が代表するlocal interval length}.
+}
+\tag{30}
+\]
+<p>
+このweightsは
+\[
+\sum_iw_i=1
+\]
+を満たし，nonuniform densityをある程度補正します．
+</p>
+</article></div>
+
+<h2>17．weightsは重要だが，coverageの欠損までは直せない</h2>
+<div class="news"><article class="news-item">
+<p>
+同じ32点でVoronoi-type weightsを使うと，
+Chebyshev-like配置では
+</p>
+\[
+a_X=3.802711
+\]
+までcontinuous optimum \(12/\pi\) に近づきます．
+</p>
+<p>
+一方，centre bandだけに点がある場合は
+</p>
+\[
+a_X\approx2.93\times10^2
+\]
+となり，依然として破綻しています．
+</p>
+<p>
+理由は単純です．
+</p>
+\[
+\boxed{
+\text{weightsはdensity biasを補正できても，
+観測していない領域の情報は作れない．}
+}
+\tag{31}
+\]
+</article></div>
+
+<h2>18．point generatorsをコード化する</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">import numpy as np
+
+def make_points(name, N, seed=7, eps=0.05):
+    i = np.arange(1, N + 1)
+    t = i / (N + 1)
+
+    if name == "uniform_midpoint":
+        return (np.arange(N) + 0.5) / N
+
+    if name == "random":
+        rng = np.random.default_rng(seed)
+        return np.sort(rng.random(N))
+
+    if name == "chebyshev":
+        return 0.5 * (
+            1.0 - np.cos(np.pi * i / (N + 1))
+        )
+
+    if name == "left_p4":
+        return t ** 4
+
+    if name == "centre_band":
+        return 0.5 + eps * (2.0 * t - 1.0)
+
+    raise ValueError(name)
+</code></pre>
+</article></div>
+
+<h2>19．geometry diagnosticsもコードにする</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def point_geometry(x):
+    x = np.sort(np.asarray(x))
+
+    gaps = np.diff(
+        np.concatenate(([0.0], x, [1.0]))
+    )
+
+    hX = gaps.max()
+
+    sep = np.diff(x).min()
+    qX = 0.5 * sep
+
+    rhoX = hX / qX
+
+    return {
+        "hX": hX,
+        "qX": qX,
+        "rhoX": rhoX
+    }
+</code></pre>
+<p>
+一点集中では
+\[
+h_X
+\]
+が大きいまま，
+\[
+q_X
+\]
+だけが小さくなるため
+\[
+\rho_X
+\]
+が急激に増大します．
+</p>
+</article></div>
+
+<h2>20．one-parameter auditは数行で再現できる</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def phi(x):
+    return x * (1.0 - x)
+
+def dphi(x):
+    return 1.0 - 2.0 * x
+
+def rhs(x):
+    return np.pi ** 2 * np.sin(np.pi * x)
+
+def sampled_minimizer(x, w):
+    numerator = np.sum(
+        w * rhs(x) * phi(x)
+    )
+
+    denominator = np.sum(
+        w * dphi(x) ** 2
+    )
+
+    return numerator / denominator
+</code></pre>
+<p>
+このtestをfull neural networkより前に行うことで，
+sampling geometryそのもののfailureを切り出せます．
+</p>
+</article></div>
+
+<h2>21．full Deep Ritz experimentでは何を固定するか</h2>
+<div class="news"><article class="news-item">
+<p>
+点配置比較でnetworkまで使う場合には，
+</p>
+\[
+\boxed{
+\begin{aligned}
+&\text{architecture},\\
+&\text{initial parameter seed},\\
+&\text{dtype},\\
+&\text{optimizer},\\
+&\text{number of steps},\\
+&N
+\end{aligned}
+}
+\tag{32}
+\]
+<p>
+を固定し，
+point setとweightsだけを変更します．
+</p>
+<p>
+random samplingでは複数seedを使い，
+meanだけでなくdispersionも報告します．
+</p>
+</article></div>
+
+<h2>22．training pointsとは別のreference quadratureで評価する</h2>
+<div class="news"><article class="news-item">
+<p>
+trainingに使ったpointsでtest errorまで測ると，
+sampling biasを二重に見落とします．
+</p>
+<p>
+そこでevaluationには独立なhigh-order quadrature
+\[
+\{x_j^{\mathrm{ref}},w_j^{\mathrm{ref}}\}
+\]
+を使い，
+</p>
+\[
+\boxed{
+E_{\mathrm{ref}}(u_\theta),
+\quad
+\|u_\theta-u^\ast\|_{L^2},
+\quad
+|u_\theta-u^\ast|_{H^1}
+}
+\tag{33}
+\]
+<p>
+を計算します．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>重要</b><br/>
+<b>training measureとevaluation measureを同じにしない．</b><br/>
+sampled lossが小さいことと，continuous-domain errorが小さいことを分離する．
+</div>
+</article></div>
+
+<h2>23．2次元では本当の異方的点配置が現れる</h2>
+<div class="news"><article class="news-item">
+<p>
+1次元では「集中」「非一様性」が中心でした．
+2次元ではdirectionごとにsampling scaleを変えられます．
+例えば
+</p>
+\[
+h_x\sim N_x^{-1},
+\qquad
+h_y\sim N_y^{-1}
+\tag{34}
+\]
+<p>
+として
+</p>
+\[
+\boxed{
+N_y=N_x^2
+}
+\tag{35}
+\]
+<p>
+とすれば
+</p>
+\[
+\boxed{
+\kappa_X
+=
+\frac{h_x}{h_y}
+\sim
+N_x
+\longrightarrow\infty.
+}
+\tag{36}
+\]
+<p>
+これはpoint cloud版のanisotropic refinementの最も単純なmodelです．
+</p>
+</article></div>
+
+<h2>24．点群を一本のlineへ潰すこともできる</h2>
+<div class="news"><article class="news-item">
+<p>
+2次元domainで
+</p>
+\[
+\boxed{
+y_j
+=
+\frac12
++
+\varepsilon\eta_j,
+\qquad
+\varepsilon\to0
+}
+\tag{37}
+\]
+<p>
+とすると，
+sampling cloudはほぼ
+\[
+y=\frac12
+\]
+というlineへcollapseします．
+</p>
+<p>
+PDEは2次元なのに，training measureは1次元measureへ退化します．
+</p>
+\[
+\boxed{
+\text{ambient dimension}
+\neq
+\text{effective sampling dimension}.
+}
+\tag{38}
+\]
+<p>
+これは第31回のanisotropic samplingで本格的に調べます．
+</p>
+</article></div>
+
+<h2>25．directional fill scalesという発想</h2>
+<div class="news"><article class="news-item">
+<p>
+2次元のpoint cloudに対し，
+一つのscalar \(h_X\) だけでなく
+</p>
+\[
+\boxed{
+h_{X,1},
+\qquad
+h_{X,2}
+}
+\tag{39}
+\]
+<p>
+のようなdirectional coverage scalesを測る発想が自然に出てきます．
+</p>
+<p>
+例えばprototype anisotropy indicatorとして
+</p>
+\[
+\boxed{
+\kappa_X
+=
+\frac{
+\max_j h_{X,j}
+}{
+\min_j h_{X,j}
+}
+}
+\tag{40}
+\]
+<p>
+を考えられます．
+</p>
+<p>
+ただしこれはここで導入するdiagnosticであり，
+一般のDeep Ritz errorを支配するcanonical parameterだという定理ではありません．
+</p>
+</article></div>
+
+<h2>26．point countではなくinformation geometryを見る</h2>
+<div class="news"><article class="news-item">
+<p>
+同じ \(N\) 点でも
+</p>
+<ul>
+<li>domain全体をcoverする \(N\) 点，</li>
+<li>左端にclusterした \(N\) 点，</li>
+<li>ほぼ同じ位置に重なった \(N\) 点，</li>
+</ul>
+<p>
+は全く違います．
+</p>
+\[
+\boxed{
+N
+\text{ points}
+\neq
+N
+\text{ independent pieces of information}.
+}
+\tag{41}
+\]
+<p>
+この考え方は後半のoperator learningでsensor placementを考えるときに，
+さらに直接的なinformation-loss problemになります．
+</p>
+</article></div>
+
+<h2>27．FEMのmesh geometryとの対応はどこまで本物か</h2>
+<div class="news"><article class="news-item">
+<p>
+対応は有用ですが，同一視してはいけません．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">FEM</th><th style="border:1px solid #777; padding:7px;">Deep Ritz</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">mesh covers domain</td><td style="border:1px solid #777; padding:7px;">point set samples domain</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">element size / shape</td><td style="border:1px solid #777; padding:7px;">fill / separation / sampling density</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">quadrature on each element</td><td style="border:1px solid #777; padding:7px;">global or local empirical quadrature</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">linear trial space</td><td style="border:1px solid #777; padding:7px;">nonlinear neural trial manifold</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">mesh refinement</td><td style="border:1px solid #777; padding:7px;">point-cloud refinement / resampling</td></tr>
+</table>
+<p>
+共通しているのは
+</p>
+\[
+\boxed{
+\text{finite-dimensional computationにはgeometryが入る}
+}
+\tag{42}
+\]
+<p>
+ということです．
+</p>
+</article></div>
+
+<h2>28．AIがpoint-placement studyで間違えやすい点</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">mistake</th><th style="border:1px solid #777; padding:7px;">何が壊れるか</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">点数だけを比較する</td><td style="border:1px solid #777; padding:7px;">coverage / clusteringを無視する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">nonuniform pointsにequal weightsを無条件使用</td><td style="border:1px solid #777; padding:7px;">別のsampling measureを最小化する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">Gauss pointsとequal-weight samplesを同じカテゴリで比較</td><td style="border:1px solid #777; padding:7px;">point geometryとquadrature ruleを混同する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">一点集中の破綻をoptimizer failureと呼ぶ</td><td style="border:1px solid #777; padding:7px;">objective degeneracyを見落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">training pointsでtest errorも評価</td><td style="border:1px solid #777; padding:7px;">sampling biasを検出できない</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">1次元のclusterをanisotropyとだけ呼ぶ</td><td style="border:1px solid #777; padding:7px;">directionalityとnonuniformityを混同する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">prototype indicatorを普遍定理として扱う</td><td style="border:1px solid #777; padding:7px;">理論的裏付けを過大評価する</td></tr>
+</table>
+</article></div>
+
+<h2>29．sampling-geometry audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このDeep Ritz point-placement experimentを数学的に監査してください．<br/>
+(1) continuous energy \(E\) とsampled energy \(E_N\) を区別しているか，<br/>
+(2) point coordinatesとquadrature weightsを両方保存しているか，<br/>
+(3) equal-weight samplingがどのempirical measureを近似するか確認しているか，<br/>
+(4) nonuniform point cloudでequal weightsを使う理由を明示しているか，<br/>
+(5) fill scale \(h_X\)，separation \(q_X\)，clusteringを記録しているか，<br/>
+(6) point-placement comparisonではnetwork・optimizer・seed・dtype・\(N\) を固定しているか，<br/>
+(7) random pointsでは複数seedのvariationを確認しているか，<br/>
+(8) trainingとは独立なreference quadratureでcontinuous-domain errorを評価しているか，<br/>
+(9) point concentrationでsampled objectiveのcoercivityが失われないか確認しているか，<br/>
+(10) weightingでdensity biasを直す問題とcoverage不足を直す問題を区別しているか，<br/>
+(11) 2D anisotropic studyではdirectional sampling scalesを記録しているか，<br/>
+(12) point countをinformation countと同一視していないか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>30．第26回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+Deep Ritzでは点は単なるimplementation detailではありません．
+</p>
+\[
+\boxed{
+\{x_i,w_i\}
+\longrightarrow
+\mu_N
+\longrightarrow
+E_N
+\longrightarrow
+\text{trained solution}
+}
+\tag{43}
+\]
+<p>
+という順に，
+点配置がtraining objectiveそのものを決めます．
+</p>
+<p>
+特に一点集中では
+</p>
+\[
+\boxed{
+\mu_N\to\delta_{x_0}
+}
+\tag{44}
+\]
+<p>
+となり，domain全体のvariational problemから離れてしまいます．
+今回の \(x_0=1/2\) の例ではさらに
+</p>
+\[
+\boxed{
+\inf E_N=-\infty
+}
+\tag{45}
+\]
+<p>
+というcoercivity lossまで起きました．
+</p>
+<p>
+従ってSeason 3では
+</p>
+\[
+\boxed{
+\text{point count}
+\quad\text{ではなく}\quad
+\text{point geometry}
++
+\text{weights}
++
+\text{coverage}
+}
+\tag{46}
+\]
+<p>
+を見る必要があります．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 3 第2回の原則</b><br/>
+<b>点を増やすことと，domainについての情報を増やすことは同じではない．</b>
+</div>
+<p>
+次回はstrong-form residualへ移り，
+<b>第27回：PINNsを作る — strong residualを点で最小化する</b>
+へ進みます．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>W. E and B. Yu, “The Deep Ritz Method: A Deep Learning-Based Numerical Algorithm for Solving Variational Problems”, <i>Communications in Mathematics and Statistics</i> 6 (2018), 1–12.</li>
+<li>J. Dick and F. Pillichshammer, <i>Digital Nets and Sequences: Discrepancy Theory and Quasi-Monte Carlo Integration</i>, Cambridge University Press, 2010.</li>
+<li>H. Wendland, <i>Scattered Data Approximation</i>, Cambridge University Press, 2005.</li>
+<li><a href="./chatgpt-fem-25.html">第25回：Deep Ritz法を作る — FEMのenergy minimisationからneural trial spaceへ</a></li>
+<li><a href="./pinns-02.html">関連する先行ノート：残差点の配置を変えると何が起きるか</a></li>
+<li><a href="./pinns-03.html">関連する先行ノート：PINNsの点配置と幾何量</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 3 前回：</b><a href="./chatgpt-fem-25.html">第25回：Deep Ritz法を作る — FEMのenergy minimisationからneural trial spaceへ</a></p>
+<p><b>次回：</b>第27回：PINNsを作る — strong residualを点で最小化する（構想中）</p>
+<p><a href="../#chatgpt-fem-season3">Season 3一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
