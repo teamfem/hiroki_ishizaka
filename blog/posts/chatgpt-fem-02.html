@@ -671,6 +671,7 @@ E_{H^1}^{\mathrm{rel}}=O(h)
 \]
 が期待されます．
 </p>
+<p>相対誤差の計算には，第1回で用いた <code>compute_relative_errors</code> と同じ5点Gauss積分を使います．</p>
 <table style="width:100%; border-collapse:collapse; margin:14px 0;">
 <tr><th style="border:1px solid #777; padding:7px;">\(N\)</th><th style="border:1px solid #777; padding:7px;">\(L^2\) relative error</th><th style="border:1px solid #777; padding:7px;">rate</th><th style="border:1px solid #777; padding:7px;">\(H^1\) seminorm relative error</th><th style="border:1px solid #777; padding:7px;">rate</th></tr>
 <tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">1.4030e-2</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">1.1307e-1</td><td style="border:1px solid #777; padding:7px;">—</td></tr>
@@ -724,7 +725,7 @@ E_{H^1}^{\mathrm{rel}}=O(h)
 <p>
 有限要素プログラムの中心は線形ソルバーではなく，
 <b>弱形式から局所量を作り，それを正しくassemblyする過程</b>にあります．
-次回はこの構造を2次元三角形P1要素へ移し，reference triangle，Jacobian，\(J^{-T}\)，\(|\det J|\) がコードのどこに現れるかを確認します．
+次回はこの構造を2次元三角形P1要素へ移し，reference triangle，Jacobian，\(J^{-\top}\)，\(|\det J|\) がコードのどこに現れるかを確認します．
 </p>
 </article></div>
 
