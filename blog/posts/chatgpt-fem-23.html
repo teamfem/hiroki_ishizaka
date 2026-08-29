@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第23回：有限要素解の誤差を保証する — equilibrated fluxとhypercircle | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,equilibrated flux,hypercircle,Prager Synge,Raviart Thomas,Crouzeix Raviart,Marini,a posteriori error,guaranteed error,verified computation,Newton Kantorovich,anisotropic mesh,Python"/>
+<meta name="description" content="Season 2 第11回（通算第23回）として，equilibrated H(div) fluxとPrager–Synge hypercircle identityから有限要素解のenergy errorを保証します．CR–RT Marini型再構成，mean equilibrationとoscillation，anisotropic mesh，semilinear Newton–Kantorovich certificationまで実装・監査します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-23.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-23.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-23.html",
+      "headline": "第23回：有限要素解の誤差を保証する — equilibrated fluxとhypercircle",
+      "description": "equilibrated fluxとhypercircle identityからguaranteed energy error boundを作り，CR–RT reconstructionとsemilinear certificationへ接続します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-23.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 2",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 2"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第23回：有限要素解の誤差を保証する — equilibrated fluxとhypercircle | Hiroki Ishizaka"/>
+<meta property="og:description" content="誤差を推定するだけでなく，上から保証する．H(div) equilibrated flux，hypercircle，CR–RT reconstruction，Newton–Kantorovich certificationまで実装します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-23.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第23回：有限要素解の誤差を保証する — equilibrated fluxとhypercircle | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="Guaranteed FEM error bounds from equilibrated H(div) fluxes and hypercircle identities."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 2 第11回（通算第23回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第23回：有限要素解の誤差を保証する — equilibrated fluxとhypercircle</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 2 第11回（通算第23回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――「小さそう」ではなく「この値以下」と言いたい</h2>
+<div class="news"><article class="news-item">
+<p>
+mesh refinementで誤差が減っている．
+residual estimatorも小さくなっている．
+それだけでは，exact solutionが本当にどこにいるかは分かりません．
+</p>
+<p>
+この回では，finite-element solution \(\widetilde u_h\) に対して
+</p>
+\[
+\boxed{
+\|u-\widetilde u_h\|_V
+\le
+\eta_h
+}
+\tag{1}
+\]
+<p>
+という<b>guaranteed upper bound</b>を作ります．
+中心になるのが
+</p>
+\[
+\boxed{
+H(\operatorname{div})\text{-conforming equilibrated flux}
++
+\text{hypercircle identity}
+}
+\tag{2}
+\]
+<p>
+です．
+</p>
+<p>
+さらに後半では，このlinear error certificationを
+semilinear problemのNewton–Kantorovich verificationへ接続します．
+</p>
+</article></div>
+
+<h2>1．まずPoisson型問題で符号を固定する</h2>
+<div class="news"><article class="news-item">
+<p>
+bounded Lipschitz domain \(\Omega\subset\mathbb R^d\) で
+</p>
+\[
+-\nabla\cdot(A\nabla u)=f,
+\qquad
+u=0
+\quad\text{on }\partial\Omega
+\tag{3}
+\]
+<p>
+を考えます．
+\(A(x)\) はsymmetric uniformly positive definiteとします．
+</p>
+<p>
+本記事ではphysical fluxを
+</p>
+\[
+\boxed{
+\boldsymbol q
+=
+A\nabla u
+}
+\tag{4}
+\]
+<p>
+と定義します．
+従って
+</p>
+\[
+\boxed{
+\nabla\cdot\boldsymbol q=-f.
+}
+\tag{5}
+\]
+<p>
+文献によっては \(-A\nabla u\) をfluxと呼ぶので，
+<b>最初に符号を固定すること</b>が重要です．
+</p>
+</article></div>
+
+<h2>2．energy normとdual residual norm</h2>
+<div class="news"><article class="news-item">
+<p>
+\(V=H_0^1(\Omega)\) に
+</p>
+\[
+\boxed{
+\|v\|_V
+=
+\left(
+\int_\Omega
+A\nabla v\cdot\nabla v\,dx
+\right)^{1/2}
+}
+\tag{6}
+\]
+<p>
+を入れます．
+</p>
+<p>
+computed conforming state \(\widetilde u_h\in V_h\subset V\) のresidual functionalは
+</p>
+\[
+\boxed{
+\langle F(\widetilde u_h),v\rangle
+=
+\int_\Omega
+A\nabla\widetilde u_h\cdot\nabla v\,dx
+-
+\int_\Omega
+fv\,dx.
+}
+\tag{7}
+\]
+<p>
+dual normは
+\[
+\|F(\widetilde u_h)\|_{V^\ast}
+=
+\sup_{0\ne v\in V}
+\frac{
+|\langle F(\widetilde u_h),v\rangle|
+}{
+\|v\|_V
+}.
+\tag{8}
+\]
+</p>
+</article></div>
+
+<h2>3．任意の \(H(\operatorname{div})\) fluxでresidualを書き直す</h2>
+<div class="news"><article class="news-item">
+<p>
+\(\boldsymbol\sigma_h\in H(\operatorname{div};\Omega)\) を任意に取ります．
+integration by partsすると
+</p>
+\[
+\boxed{
+\langle F(\widetilde u_h),v\rangle
+=
+\int_\Omega
+(A\nabla\widetilde u_h-\boldsymbol\sigma_h)
+\cdot\nabla v\,dx
++
+\int_\Omega
+(-f-\nabla\cdot\boldsymbol\sigma_h)v\,dx.
+}
+\tag{9}
+\]
+<p>
+ここで重要なのは，
+\(\boldsymbol\sigma_h\) がelementwise vector polynomialであるだけでなく
+<b>global \(H(\operatorname{div})\)-conforming</b>であることです．
+</p>
+<p>
+normal fluxがinterior faceでsingle-valuedだから，
+element boundary termsがglobalにcancelします．
+</p>
+</article></div>
+
+<h2>4．exact equilibrationならresidualはflux mismatchだけになる</h2>
+<div class="news"><article class="news-item">
+<p>
+もし
+</p>
+\[
+\boxed{
+\nabla\cdot\boldsymbol\sigma_h=-f
+}
+\tag{10}
+\]
+<p>
+がexactly成立すれば，式 (9) のvolume residualは消えて
+</p>
+\[
+\boxed{
+\langle F(\widetilde u_h),v\rangle
+=
+\int_\Omega
+(A\nabla\widetilde u_h-\boldsymbol\sigma_h)
+\cdot\nabla v\,dx.
+}
+\tag{11}
+\]
+<p>
+従ってweighted Cauchy–Schwarzから
+</p>
+\[
+\boxed{
+\|F(\widetilde u_h)\|_{V^\ast}
+\le
+\|
+\boldsymbol\sigma_h
+-
+A\nabla\widetilde u_h
+\|_{A^{-1}}.
+}
+\tag{12}
+\]
+<p>
+右辺はexact solutionを含まず，完全にcomputableです．
+</p>
+</article></div>
+
+<h2>5．hypercircle identity――保証が等式から出る</h2>
+<div class="news"><article class="news-item">
+<p>
+\(\widetilde u_h\in H_0^1(\Omega)\) と
+\(\boldsymbol\sigma_h\in H(\operatorname{div};\Omega)\) が
+\[
+\nabla\cdot\boldsymbol\sigma_h=-f
+\]
+を満たすとします．
+するとPrager–Synge型のhypercircle identity
+</p>
+\[
+\boxed{
+\begin{aligned}
+&
+\|u-\widetilde u_h\|_V^2
++
+\|
+\boldsymbol\sigma_h-A\nabla u
+\|_{A^{-1}}^2
+\\
+&\qquad=
+\|
+\boldsymbol\sigma_h
+-
+A\nabla\widetilde u_h
+\|_{A^{-1}}^2
+\end{aligned}
+}
+\tag{13}
+\]
+<p>
+が成立します．
+</p>
+<p>
+これは単なるinequalityではなく<b>exact identity</b>です．
+</p>
+</article></div>
+
+<h2>6．hypercircle identityの証明スケッチ</h2>
+<div class="news"><article class="news-item">
+<p>
+右辺を
+\[
+\boldsymbol\sigma_h-A\nabla\widetilde u_h
+=
+(\boldsymbol\sigma_h-A\nabla u)
++
+A\nabla(u-\widetilde u_h)
+\]
+と分けます．
+</p>
+<p>
+cross termは
+</p>
+\[
+\int_\Omega
+(\boldsymbol\sigma_h-A\nabla u)
+\cdot
+\nabla(u-\widetilde u_h)\,dx.
+\tag{14}
+\]
+<p>
+ここで
+\[
+\nabla\cdot\boldsymbol\sigma_h
+=
+\nabla\cdot(A\nabla u)
+=
+-f
+\]
+なので
+</p>
+\[
+\nabla\cdot
+(\boldsymbol\sigma_h-A\nabla u)
+=
+0.
+\tag{15}
+\]
+<p>
+さらに
+\[
+u-\widetilde u_h\in H_0^1(\Omega)
+\]
+だからintegration by partsによりcross termは0です．
+Pythagorasがそのまま式 (13) を与えます．
+</p>
+</article></div>
+
+<h2>7．guaranteed energy error bound</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (13) の第二項はnonnegativeなので
+</p>
+\[
+\boxed{
+\|u-\widetilde u_h\|_V
+\le
+\|
+\boldsymbol\sigma_h
+-
+A\nabla\widetilde u_h
+\|_{A^{-1}}.
+}
+\tag{16}
+\]
+<p>
+これがequilibrated-flux error certificationの最も透明な形です．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>hypercircleの原則</b><br/>
+approximate solutionとequilibrated fluxを
+<b>同じphysical flux \(A\nabla u\)</b>
+へ近づければ，
+その二つのmismatchがexact energy errorを上から囲む．
+</div>
+</article></div>
+
+<h2>8．しかし \(f\) がRT divergence spaceに入らないことがある</h2>
+<div class="news"><article class="news-item">
+<p>
+lowest-order \(RT_0\) では
+\[
+\nabla\cdot RT_0(T)=P_0(T).
+\]
+従って一般の
+\[
+f\in L^2(\Omega)
+\]
+に対して
+\[
+\nabla\cdot\boldsymbol\sigma_h=-f
+\]
+をcellwise exactly満たすことはできません．
+</p>
+<p>
+そこで
+\[
+f_h=\Pi_h^0f
+\]
+を使い，
+</p>
+\[
+\boxed{
+\nabla\cdot\boldsymbol\sigma_h
+=
+-f_h
+}
+\tag{17}
+\]
+<p>
+とします．
+このときhypercircleのpure identityにはdata oscillationが追加されます．
+</p>
+</article></div>
+
+<h2>9．必要なのはelementwise mean equilibration</h2>
+<div class="news"><article class="news-item">
+<p>
+より一般にelement residual
+</p>
+\[
+R_T(\boldsymbol\sigma_h)
+=
+-f-\nabla\cdot\boldsymbol\sigma_h
+\tag{18}
+\]
+<p>
+が
+</p>
+\[
+\boxed{
+\int_T
+R_T(\boldsymbol\sigma_h)\,dx
+=
+0
+\qquad
+\forall T\in\mathcal T_h
+}
+\tag{19}
+\]
+<p>
+を満たせば十分です．
+</p>
+<p>
+element average
+\[
+\overline v_T
+=
+\frac1{|T|}
+\int_Tv\,dx
+\]
+を引けば
+\[
+\int_T
+R_Tv\,dx
+=
+\int_T
+R_T(v-\overline v_T)\,dx.
+\tag{20}
+\]
+</p>
+</article></div>
+
+<h2>10．simplexのPoincaré boundはangle conditionを使わない</h2>
+<div class="news"><article class="news-item">
+<p>
+convex simplex \(T\) ではPayne–Weinberger型のboundとして
+</p>
+\[
+\boxed{
+\|v-\overline v_T\|_{L^2(T)}
+\le
+\frac{h_T}{\pi}
+\|\nabla v\|_{L^2(T)}.
+}
+\tag{21}
+\]
+<p>
+ここで
+\[
+h_T=\operatorname{diam}(T).
+\]
+</p>
+<p>
+このconstantはtriangleのminimum angleを直接要求しません．
+従ってresidual certificationのこの部分は，
+強いanisotropyに対しても形状正則性を前提にしない構造を持ちます．
+</p>
+</article></div>
+
+<h2>11．flux mismatchとoscillation</h2>
+<div class="news"><article class="news-item">
+<p>
+\(A(x)\xi\cdot\xi\ge\alpha_0|\xi|^2\) とします．
+</p>
+<p>
+flux mismatchを
+\[
+\boxed{
+\eta_{\mathrm{mis}}
+=
+\|
+\boldsymbol\sigma_h
+-
+A\nabla\widetilde u_h
+\|_{A^{-1}},
+}
+\tag{22}
+\]
+oscillation termを
+\[
+\boxed{
+\eta_{\mathrm{osc}}
+=
+\left[
+\sum_{T\in\mathcal T_h}
+\left(
+\frac{h_T}{\pi}
+\right)^2
+\|
+R_T(\boldsymbol\sigma_h)
+\|_{L^2(T)}^2
+\right]^{1/2}
+}
+\tag{23}
+\]
+とします．
+</p>
+<p>
+すると
+</p>
+\[
+\boxed{
+\|F(\widetilde u_h)\|_{V^\ast}
+\le
+\eta_{\mathrm{mis}}
++
+\alpha_0^{-1/2}
+\eta_{\mathrm{osc}}.
+}
+\tag{24}
+\]
+<p>
+exact equilibrationなら \(\eta_{\mathrm{osc}}=0\) で，
+hypercircle型のmismatch boundへ戻ります．
+</p>
+</article></div>
+
+<h2>12．なぜRT fluxが必要なのか</h2>
+<div class="news"><article class="news-item">
+<p>
+elementwise gradient
+\[
+A\nabla\widetilde u_h
+\]
+は通常interior faceでnormal componentがjumpするので
+\[
+H(\operatorname{div};\Omega)
+\]
+には入りません．
+</p>
+<p>
+一方，RT spaceは
+</p>
+\[
+\boxed{
+\text{single-valued normal flux}
+}
+\tag{25}
+\]
+<p>
+をfinite-element conformityとして持っています．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{equilibration}
++
+\text{normal continuity}
+}
+\]
+<p>
+を有限次元で実現する自然なcertificate spaceがRTです．
+</p>
+</article></div>
+
+<h2>13．CR–RT route――certificate fluxをscalar problemから作る</h2>
+<div class="news"><article class="news-item">
+<p>
+低次では，patchwise mixed reconstructionを毎回解く代わりに，
+auxiliary CR problemとMarini型relationから
+\(RT_0\) certificate fluxを作れます．
+</p>
+<p>
+semilinear diffusion–reaction residualに合わせて
+</p>
+\[
+s_h
+=
+c(\cdot,\widetilde u_h)-f,
+\qquad
+r_h|_T
+=
+\Pi_T^0s_h
+\tag{26}
+\]
+<p>
+と置きます．
+Poissonなら
+\[
+c=0,
+\qquad
+r_h=-f_h.
+\]
+</p>
+</article></div>
+
+<h2>14．auxiliary CR problem</h2>
+<div class="news"><article class="news-item">
+<p>
+\(A_{0,T}\) をelementwise constant tensorとします．
+\(\widetilde u_h^{CR}\in V_{h,0}^{CR}\) を
+</p>
+\[
+\boxed{
+\sum_{T\in\mathcal T_h}
+\int_T
+A_{0,T}
+\nabla_h\widetilde u_h^{CR}
+\cdot
+\nabla_hv_h\,dx
+=
+-\int_\Omega
+r_hv_h\,dx
+}
+\tag{27}
+\]
+<p>
+for all \(v_h\in V_{h,0}^{CR}\) から求めます．
+</p>
+<p>
+このsolveはprimal solutionを置き換えるためではありません．
+<b>certificate fluxを作るためだけのauxiliary scalar solve</b>です．
+</p>
+</article></div>
+
+<h2>15．Marini型のcellwise field</h2>
+<div class="news"><article class="news-item">
+<p>
+element barycentreを \(x_T\) とし，
+</p>
+\[
+\boxed{
+\boldsymbol\sigma_T^\ast(x)
+=
+A_{0,T}
+\nabla_h\widetilde u_h^{CR}|_T
++
+\frac{r_h|_T}{d}
+(x-x_T).
+}
+\tag{28}
+\]
+<p>
+これは \(RT_0(T)\) に属し，
+</p>
+\[
+\boxed{
+\nabla\cdot\boldsymbol\sigma_T^\ast
+=
+r_h|_T.
+}
+\tag{29}
+\]
+<p>
+Poissonでは
+\[
+\boldsymbol\sigma_T^\ast
+=
+\nabla_hu_h^{CR}
+-
+\frac{f_h|_T}{d}(x-x_T).
+\tag{30}
+\]
+</p>
+</article></div>
+
+<h2>16．CR equationがRT normal continuityを作る</h2>
+<div class="news"><article class="news-item">
+<p>
+interior face \(F\) のCR basis function \(\phi_F\) を
+auxiliary problemのtest functionに選ぶと，
+隣接element \(T^+,T^-\) のface flux balanceが得られます．
+</p>
+<p>
+その結果，式 (28) のface flux DoFsは
+</p>
+\[
+\boxed{
+\int_F
+[\![\boldsymbol\sigma_h\cdot\boldsymbol n]\!]
+\,ds
+=
+0.
+}
+\tag{31}
+\]
+<p>
+lowest-order RTではnormal componentがface上constantなので
+</p>
+\[
+\boxed{
+[\![\boldsymbol\sigma_h\cdot\boldsymbol n]\!]
+=
+0
+\quad\text{a.e. on }F.
+}
+\tag{32}
+\]
+<p>
+従って
+\[
+\boldsymbol\sigma_h\in H(\operatorname{div};\Omega).
+\]
+</p>
+<p>
+第15回で見たCR–RTの相性が，
+ここでは<b>error certificateを作る代数</b>として現れます．
+</p>
+</article></div>
+
+<h2>17．実装ではface flux DoFをglobal orientationでassembleする</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;"># T: one simplex
+# xT: barycentre
+# rh_T: cellwise constant target divergence
+# grad_cr: broken CR gradient on T
+# A0: cellwise constant diffusion tensor
+
+def sigma_star(x, A0, grad_cr, rh_T, xT, dim):
+    return (
+        A0 @ grad_cr
+        + (rh_T / dim) * (x - xT)
+    )
+
+# For each oriented face F:
+#   flux_F = integral_F sigma_star · n_global ds
+# Store one global value per face.
+#
+# Local RT coefficients are recovered using
+# the local/global face orientation signs.
+</code></pre>
+<p>
+ここでも第14回と同じく，
+<b>normal orientationのsign管理</b>が必要です．
+</p>
+</article></div>
+
+<h2>18．certificate algorithm</h2>
+<div class="news"><article class="news-item">
+<p>
+低次CR–RT routeをまとめると，
+</p>
+\[
+\boxed{
+\begin{aligned}
+1.&\quad \widetilde u_h\text{ を通常のconforming FEMで計算},\\
+2.&\quad r_h=\Pi_h^0(c(\widetilde u_h)-f),\\
+3.&\quad \text{auxiliary CR problemを解く},\\
+4.&\quad \text{Marini型式で }RT_0\text{ fluxを再構成},\\
+5.&\quad H(\operatorname{div})\text{ continuityを監査},\\
+6.&\quad \eta_{\mathrm{mis}},\eta_{\mathrm{osc}}\text{ を計算},\\
+7.&\quad \|F(\widetilde u_h)\|_{V^\ast}\text{ を上から保証}
+\end{aligned}
+}
+\tag{33}
+\]
+<p>
+となります．
+</p>
+</article></div>
+
+<h2>19．hypercircleとresidual certificationを混同しない</h2>
+<div class="news"><article class="news-item">
+<p>
+二つは近いですが，同じstatementではありません．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">setting</th>
+<th style="border:1px solid #777; padding:7px;">result</th>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">exact equilibration \(\nabla\cdot\sigma_h=-f\)</td>
+<td style="border:1px solid #777; padding:7px;">Prager–Synge hypercircle identity，energy errorをmismatchだけで保証</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">mean equilibration only</td>
+<td style="border:1px solid #777; padding:7px;">dual residual bound，mismatch + oscillation</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">semilinear problem</td>
+<td style="border:1px solid #777; padding:7px;">residual boundをNK verificationの(C1)として使用</td>
+</tr>
+</table>
+</article></div>
+
+<h2>20．guaranteed estimatorとeffectivity</h2>
+<div class="news"><article class="news-item">
+<p>
+guaranteed upper bound
+\[
+\|u-\widetilde u_h\|_V\le\eta_h
+\]
+があっても，\(\eta_h\) が非常に大きければ実用性は低くなります．
+</p>
+<p>
+exact solutionを知るmanufactured testでは
+</p>
+\[
+\boxed{
+I_{\mathrm{eff}}
+=
+\frac{\eta_h}{
+\|u-\widetilde u_h\|_V
+}
+\ge1
+}
+\tag{34}
+\]
+<p>
+を見ればsharpnessを診断できます．
+</p>
+<p>
+ただし実問題ではtrue errorは未知なので，
+effectivityは<b>開発時の診断</b>であってcertification条件そのものではありません．
+</p>
+</article></div>
+
+<h2>21．anisotropic meshで何が嬉しいのか</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (21) のlocal mean-zero Poincaré boundは
+\[
+h_T/\pi
+\]
+だけで書けるため，residual boundそのものにshape regularity constantを直接入れずに済みます．
+</p>
+<p>
+しかし，ここから
+</p>
+\[
+\boxed{
+\text{anisotropic estimator efficiency is automatically uniform}
+}
+\]
+<p>
+と結論してはいけません．
+</p>
+<p>
+本当に重要なのは
+\[
+\eta_{\mathrm{mis}}
+=
+\|\boldsymbol\sigma_h-A\nabla\widetilde u_h\|_{A^{-1}}
+\]
+がanisotropic mesh familyでどう振る舞うかです．
+</p>
+</article></div>
+
+<h2>22．低次Poissonでのanisotropic consistency</h2>
+<div class="news"><article class="news-item">
+<p>
+\(A=I\) のPoisson problemで
+\[
+f_h=\Pi_h^0f
+\]
+とし，
+\[
+\boldsymbol\sigma_h|_T
+=
+\nabla_hu_h^{CR}|_T
+-
+\frac{f_h|_T}{d}(x-x_T)
+\]
+とします．
+triangle inequalityから
+</p>
+\[
+\boxed{
+\begin{aligned}
+\|
+\boldsymbol\sigma_h-\nabla\widetilde u_h
+\|_{L^2}
+\le{}&
+\|
+\nabla_hu_h^{CR}-\nabla u
+\|_{L^2}
+\\
+&+
+\|
+\nabla(u-\widetilde u_h)
+\|_{L^2}
++
+h\|f_h\|_{L^2}.
+\end{aligned}
+}
+\tag{35}
+\]
+<p>
+従ってCR approximationとconforming approximationが
+そのanisotropic mesh family上でenergy-consistentなら
+</p>
+\[
+\boxed{
+\|
+\boldsymbol\sigma_h-\nabla\widetilde u_h
+\|_{L^2}
+\longrightarrow0.
+}
+\tag{36}
+\]
+<p>
+これは<b>一般のanisotropic efficiency theoremではなくconditional consistency statement</b>です．
+</p>
+</article></div>
+
+<h2>23．実際のanisotropic testではaspect ratioを発散させる</h2>
+<div class="news"><article class="news-item">
+<p>
+一つのtest familyとして
+</p>
+\[
+h_x=M^{-1},
+\qquad
+h_y=M^{-2}
+\tag{37}
+\]
+<p>
+を使うと
+</p>
+\[
+\boxed{
+\kappa_h
+=
+\frac{h_x}{h_y}
+=
+M
+\longrightarrow\infty.
+}
+\tag{38}
+\]
+<p>
+つまりusual shape-regular regimeから外れていきます．
+</p>
+<p>
+このfamilyでも，smooth manufactured solutionに対する低次CR–RT certificationでは，
+mesh refinementとともにresidual boundとverification radiusが減少する挙動を確認できます．
+ただしこれはnumerical evidenceであり，uniform anisotropic efficiencyの証明ではありません．
+</p>
+</article></div>
+
+<h2>24．semilinear problemではerror boundをsolution existenceへ使う</h2>
+<div class="news"><article class="news-item">
+<p>
+semilinear diffusion–reaction problemを
+</p>
+\[
+F(u)=0
+\quad\text{in }V^\ast
+\tag{39}
+\]
+<p>
+と書きます．
+computed state \(\widetilde u_h\) の近くにexact solutionが存在することを示すには，
+equilibrated residualだけでは足りません．
+</p>
+<p>
+Newton–Kantorovich verificationでは三つの量を用意します．
+</p>
+\[
+\boxed{
+\begin{aligned}
+\text{(C1)}&\quad
+\|F(\widetilde u_h)\|_{V^\ast}\le r,
+\\
+\text{(C2)}&\quad
+\|DF(\widetilde u_h)^{-1}\|
+\le
+\alpha^{-1},
+\\
+\text{(C3)}&\quad
+\|DF(w)-DF(z)\|
+\le
+L(\rho)\|w-z\|_V.
+\end{aligned}
+}
+\tag{40}
+\]
+<p>
+equilibrated fluxが担当するのは<b>(C1)</b>です．
+</p>
+</article></div>
+
+<h2>25．verification radiusはscalar inequalitiesへ落ちる</h2>
+<div class="news"><article class="news-item">
+<p>
+\[
+\eta=\frac r\alpha
+\]
+とし，
+</p>
+\[
+\boxed{
+p(\rho)
+=
+\eta
++
+\frac{L(\rho)}{2\alpha}\rho^2
+-
+\rho,
+}
+\tag{41}
+\]
+\[
+\boxed{
+q(\rho)
+=
+\frac{L(\rho)}{\alpha}\rho.
+}
+\tag{42}
+\]
+<p>
+もし
+</p>
+\[
+\boxed{
+p(\rho)\le0,
+\qquad
+q(\rho)&lt;1
+}
+\tag{43}
+\]
+<p>
+なら，
+\[
+B(\widetilde u_h,\rho)
+=
+\{w\in V:\|w-\widetilde u_h\|_V\le\rho\}
+\]
+の中にexact solutionが存在し，そのball内でlocal uniquenessも得られます．
+</p>
+<p>
+つまりfinite-element post-processingが最後には
+<b>数個のscalar inequalityのverification</b>へ落ちます．
+</p>
+</article></div>
+
+<h2>26．monotone reactionならstability constantが簡単になる</h2>
+<div class="news"><article class="news-item">
+<p>
+semilinear operator
+\[
+-\nabla\cdot(A\nabla u)+c(x,u)=f
+\]
+に対し
+\[
+\partial_sc(x,\widetilde u_h)\ge0
+\]
+ならlinearizationはenergy normでcoerciveです．
+</p>
+<p>
+特に
+\[
+\|v\|_V^2
+=
+\int_\Omega
+A\nabla v\cdot\nabla v
+\]
+と正規化すれば
+</p>
+\[
+\boxed{
+\alpha\ge1
+}
+\tag{44}
+\]
+<p>
+と取れる設定があります．
+</p>
+<p>
+一方，strongly non-monotone reactionやnearly singular linearizationでは，
+この安価なcoercivity routeだけでは不十分です．
+</p>
+</article></div>
+
+<h2>27．例：\(-\Delta u+u^3=f\)</h2>
+<div class="news"><article class="news-item">
+<p>
+unit squareで
+</p>
+\[
+-\Delta u+u^3=f,
+\qquad
+u=0
+\tag{45}
+\]
+<p>
+を考え，
+\[
+u^\ast(x,y)
+=
+\sin(\pi x)\sin(\pi y)
+\]
+から \(f\) を作ります．
+</p>
+<p>
+この場合
+\[
+\partial_sc(u)=3u^2\ge0
+\]
+なので
+\[
+\alpha=1
+\]
+を使えます．
+</p>
+<p>
+また \(H_0^1(\Omega)\hookrightarrow L^4(\Omega)\) のverified embedding constantを使えば，
+\(DF\) のLipschitz boundもcomputableになります．
+</p>
+</article></div>
+
+<h2>28．uniform meshでのcertification data</h2>
+<div class="news"><article class="news-item">
+<p>
+低次 \(P_1\)–CR–RT workflowで得られる代表的なfloating-point evaluationsは次の通りです．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">\(N\)</th>
+<th style="border:1px solid #777; padding:7px;">\(h_{\max}\)</th>
+<th style="border:1px solid #777; padding:7px;">\(\eta=r/\alpha\)</th>
+<th style="border:1px solid #777; padding:7px;">\(\rho\)</th>
+<th style="border:1px solid #777; padding:7px;">\(q(\rho)\)</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">8.84e-2</td><td style="border:1px solid #777; padding:7px;">2.69e-1</td><td style="border:1px solid #777; padding:7px;">5.38e-1</td><td style="border:1px solid #777; padding:7px;">5.88e-2</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">32</td><td style="border:1px solid #777; padding:7px;">4.42e-2</td><td style="border:1px solid #777; padding:7px;">1.30e-1</td><td style="border:1px solid #777; padding:7px;">2.61e-1</td><td style="border:1px solid #777; padding:7px;">2.57e-2</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">64</td><td style="border:1px solid #777; padding:7px;">2.21e-2</td><td style="border:1px solid #777; padding:7px;">6.41e-2</td><td style="border:1px solid #777; padding:7px;">1.28e-1</td><td style="border:1px solid #777; padding:7px;">1.20e-2</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">128</td><td style="border:1px solid #777; padding:7px;">1.10e-2</td><td style="border:1px solid #777; padding:7px;">3.18e-2</td><td style="border:1px solid #777; padding:7px;">6.35e-2</td><td style="border:1px solid #777; padding:7px;">5.76e-3</td></tr>
+</table>
+<p>
+このtestでは
+\[
+\rho=2\eta
+\]
+が各levelでadmissibleでした．
+</p>
+</article></div>
+
+<h2>29．anisotropic meshでもcertification quantitiesを追う</h2>
+<div class="news"><article class="news-item">
+<p>
+\(N_y=M^2\) としたanisotropic familyでは，
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">\(M\)</th>
+<th style="border:1px solid #777; padding:7px;">\(N_y\)</th>
+<th style="border:1px solid #777; padding:7px;">\(\kappa_h\)</th>
+<th style="border:1px solid #777; padding:7px;">\(\eta\)</th>
+<th style="border:1px solid #777; padding:7px;">\(\rho\)</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">8.68e-1</td><td style="border:1px solid #777; padding:7px;">1.74</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">64</td><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">3.94e-1</td><td style="border:1px solid #777; padding:7px;">7.87e-1</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">256</td><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">1.87e-1</td><td style="border:1px solid #777; padding:7px;">3.75e-1</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">32</td><td style="border:1px solid #777; padding:7px;">1024</td><td style="border:1px solid #777; padding:7px;">32</td><td style="border:1px solid #777; padding:7px;">9.13e-2</td><td style="border:1px solid #777; padding:7px;">1.83e-1</td></tr>
+</table>
+<p>
+aspect ratioが
+\[
+4,\ 8,\ 16,\ 32
+\]
+と増えても，
+このsmooth testでは \(\eta\) と \(\rho\) はrefinementとともに減少しています．
+</p>
+<p>
+ただし繰り返しますが，
+<b>このtableはgeneral anisotropic efficiency theoremではありません</b>．
+</p>
+</article></div>
+
+<h2>30．solution ballが得られるとQoIも囲める</h2>
+<div class="news"><article class="news-item">
+<p>
+もし
+\[
+u\in B(\widetilde u_h,\rho)
+\]
+がcertifiedなら，
+quantity of interest \(J(u)\) も
+derivative boundから囲めます．
+</p>
+<p>
+\[
+\|DJ(w)\|_{L(V,\mathbb R)}
+\le
+L_J(\rho)
+\]
+がball上で成立すれば
+</p>
+\[
+\boxed{
+J(u)
+\in
+[
+J(\widetilde u_h)-L_J(\rho)\rho,\ 
+J(\widetilde u_h)+L_J(\rho)\rho
+].
+}
+\tag{46}
+\]
+<p>
+これはadjointを解かないbaseline enclosureです．
+</p>
+</article></div>
+
+<h2>31．adjointを使うとoutput boundを鋭くできる</h2>
+<div class="news"><article class="news-item">
+<p>
+linearized adjoint
+\[
+B_{\widetilde u_h}(v,z)
+=
+DJ(\widetilde u_h)v
+\tag{47}
+\]
+を解き，
+approximation \(z_h\) のadjoint residualも
+equilibrated fluxでcertifyすると，
+worst-case derivative boundより鋭いgoal-oriented enclosureを作れます．
+</p>
+<p>
+つまり
+</p>
+\[
+\boxed{
+\text{equilibrated flux}
+\longrightarrow
+\text{state residual certification}
+\longrightarrow
+\text{adjoint residual certification}
+\longrightarrow
+\text{verified QoI}
+}
+\tag{48}
+\]
+<p>
+という二重利用ができます．
+</p>
+</article></div>
+
+<h2>32．「guaranteed estimator」と「computer-assisted proof」は区別する</h2>
+<div class="news"><article class="news-item">
+<p>
+数学的に導いたupper bound formulaがrigorousでも，
+それをstandard double precisionで評価した数値を
+そのままinterval enclosureと呼ぶことはできません．
+</p>
+<p>
+strict computer-assisted proofにするなら，
+最終的なscalar quantities
+</p>
+\[
+\boxed{
+r,\quad
+\alpha,\quad
+L(\rho),\quad
+p(\rho),\quad
+q(\rho)
+}
+\tag{49}
+\]
+<p>
+をoutward rounding / interval arithmeticで評価する必要があります．
+</p>
+<p>
+一方，finite-element assembly全体をinterval化しなくても，
+最後のscalar post-processingだけでrigorを閉じられる設計は大きな利点です．
+</p>
+</article></div>
+
+<h2>33．variable coefficientでは何に注意するか</h2>
+<div class="news"><article class="news-item">
+<p>
+Marini型explicit formulaで
+\[
+A_{0,T}=\Pi_T^0A
+\]
+のようなelementwise constant tensorを使う場合，
+genuinely variable \(A(x)\) に対しては
+</p>
+\[
+\boxed{
+(A-A_{0,T})\nabla\widetilde u_h
+}
+\tag{50}
+\]
+<p>
+に由来するcoefficient-approximation contributionを
+residual budgetへ追加する必要があります．
+</p>
+<p>
+従ってlow-order formulaを
+<b>general higher-order variable-coefficient equilibrated reconstruction</b>
+と同一視してはいけません．
+</p>
+</article></div>
+
+<h2>34．higher orderでは別のreconstructionが必要</h2>
+<div class="news"><article class="news-item">
+<p>
+高次conforming stateに対して
+lowest-order \(RT_0\) certificateを固定したままでは，
+flux mismatchがapproximation orderを制限する可能性があります．
+</p>
+<p>
+その場合は
+</p>
+\[
+\boxed{
+RT_k,
+\quad
+BDM_k,
+\quad
+\text{local mixed equilibrated reconstruction}
+}
+\tag{51}
+\]
+<p>
+などへ進むのが自然です．
+</p>
+<p>
+CR–RT routeの価値は
+「全てのequilibrated estimatorより優れる」ことではなく，
+<b>low-orderでalgebraic structureが透明</b>なことにあります．
+</p>
+</article></div>
+
+<h2>35．AIがguaranteed error estimationで間違えやすい点</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">mistake</th><th style="border:1px solid #777; padding:7px;">何が壊れるか</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">flux signを途中で反転</td><td style="border:1px solid #777; padding:7px;">divergence targetとhypercircle identityが不整合</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">elementwise fluxを \(H(\operatorname{div})\) とみなす</td><td style="border:1px solid #777; padding:7px;">interior face termsが消えない</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">mean equilibrationをexact equilibrationと呼ぶ</td><td style="border:1px solid #777; padding:7px;">oscillation termを落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">hypercircle identityをnonconforming primalへそのまま適用</td><td style="border:1px solid #777; padding:7px;">conformity / companion termを落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">anisotropic Poincaré boundだけでuniform efficiencyを主張</td><td style="border:1px solid #777; padding:7px;">flux mismatchのgeometry dependenceを見落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">standard floating pointの出力をinterval proofと呼ぶ</td><td style="border:1px solid #777; padding:7px;">rounding errorのrigorがない</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">low-order CR–RT routeをuniversal reconstructionとする</td><td style="border:1px solid #777; padding:7px;">higher order / variable coefficientへの適用範囲を誤る</td></tr>
+</table>
+</article></div>
+
+<h2>36．equilibrated-flux implementation audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このequilibrated-flux / hypercircle finite-element codeを数学的に監査してください．<br/>
+(1) physical fluxのsign conventionを最初から最後まで固定しているか，<br/>
+(2) certificate fluxがglobal \(H(\operatorname{div})\)-conformingか，<br/>
+(3) interior face normal-flux jumpがzeroか，<br/>
+(4) exact equilibrationとelementwise mean equilibrationを区別しているか，<br/>
+(5) exact equilibration時だけPrager–Synge identityをそのまま使っているか，<br/>
+(6) mean equilibration時にoscillation termを入れているか，<br/>
+(7) weighted flux mismatchを \(A^{-1}\)-normで評価しているか，<br/>
+(8) local Poincaré termに \(h_T/\pi\) を使う場合，その前提を確認しているか，<br/>
+(9) CR auxiliary solveのright-hand side signがdivergence targetと一致しているか，<br/>
+(10) Marini型fieldのdivergenceが \(r_h\) になることをcellwiseに確認しているか，<br/>
+(11) global RT face orientationを管理しているか，<br/>
+(12) nonconforming primalの場合にconforming companion / nonconformity termを忘れていないか，<br/>
+(13) anisotropic meshでresidual reliabilityとestimator efficiencyを混同していないか，<br/>
+(14) semilinear certificationではresidual boundをNKの(C1)として使い，(C2)(C3)を別途検証しているか，<br/>
+(15) \(p(\rho)\le0,\ q(\rho)&lt;1\) をcertification条件として確認しているか，<br/>
+(16) fully rigorous numerical proofを主張する場合，scalar post-processingをoutward roundedにしているか，<br/>
+(17) higher-order / variable-coefficient problemへlow-order \(RT_0\) formulaを無条件で拡張していないか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>37．第23回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+有限要素解のerrorを保証するには，
+「exact solutionを推測する」のではなく
+<b>もう一つのadmissible object――equilibrated flux――を作る</b>という発想が有効です．
+</p>
+\[
+\boxed{
+\text{conforming primal state}
++
+\text{equilibrated }H(\operatorname{div})\text{ flux}
+\Longrightarrow
+\text{guaranteed energy control}
+}
+\tag{52}
+\]
+<p>
+exact equilibrationならhypercircle identityが
+</p>
+\[
+\boxed{
+\text{error}^2
++
+\text{flux error}^2
+=
+\text{computable mismatch}^2
+}
+\tag{53}
+\]
+<p>
+を与えます．
+</p>
+<p>
+low-orderではCR auxiliary solveとMarini型RT reconstructionによって，
+このcertificate fluxを明示的に作れます．
+</p>
+<p>
+さらにsemilinear problemでは
+</p>
+\[
+\boxed{
+\text{equilibrated residual}
++
+\text{linearized stability}
++
+\text{nonlinear Lipschitz bound}
+\Longrightarrow
+\text{verified solution ball}
+}
+\tag{54}
+\]
+<p>
+となり，QoI enclosureまで接続できます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 2 第11回の原則</b><br/>
+誤差保証では
+<b>「残差を小さくする」だけでなく，「equilibriumを満たす別の離散場を構成する」</b>．
+</div>
+<p>
+次回はSeason 2のまとめとして，
+<b>第24回：AI時代に有限要素法をどう設計・検証するか — 数学構造からmethodを選ぶ</b>
+へ進みます．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>W. Prager and J. L. Synge, “Approximations in elasticity based on the concept of function space”, <i>Quarterly of Applied Mathematics</i> 5 (1947), 241–269.</li>
+<li>L. D. Marini, “An inexpensive method for the evaluation of the solution of the lowest order Raviart–Thomas mixed method”, <i>SIAM Journal on Numerical Analysis</i> 22(3) (1985), 493–496. <a href="https://doi.org/10.1137/0722029">DOI</a>.</li>
+<li>D. Braess, V. Pillwein and J. Schöberl, “Equilibrated residual error estimates are p-robust”, <i>Computer Methods in Applied Mechanics and Engineering</i> 198 (2009), 1189–1197.</li>
+<li>A. Ern and M. Vohralík, “Polynomial-degree-robust a posteriori estimates in a unified setting for conforming, nonconforming, discontinuous Galerkin, and mixed discretizations”, <i>SIAM Journal on Numerical Analysis</i> 53(2) (2015), 1058–1081.</li>
+<li>A. Takayasu, X. Liu and S. Oishi, “Verified computations to semilinear elliptic boundary value problems on arbitrary polygonal domains”, <i>Nonlinear Theory and Its Applications, IEICE</i> 4(1) (2013), 34–61.</li>
+<li>M. T. Nakao, M. Plum and Y. Watanabe, <i>Numerical Verification Methods and Computer-Assisted Proofs for Partial Differential Equations</i>, Springer, 2019.</li>
+<li>H. Ishizaka, “Low-order CR–RT equilibrated-flux certification for semilinear problems on anisotropic meshes”, manuscript, 2026.</li>
+<li><a href="./chatgpt-fem-14.html">第14回：Raviart–Thomas要素を実装する — normal fluxとPiola変換</a></li>
+<li><a href="./chatgpt-fem-15.html">第15回：CRとRTはなぜ相性がよいのか — 離散部分積分とcommuting property</a></li>
+<li><a href="./chatgpt-fem-16.html">第16回：mixed Poisson問題を解く — RT0–P0と局所保存</a></li>
+<li><a href="./chatgpt-fem-22.html">第22回：de Rham complexをコードで見る — Lagrange・Nédélec・RT・P0</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 2 前回：</b><a href="./chatgpt-fem-22.html">第22回：de Rham complexをコードで見る — Lagrange・Nédélec・RT・P0</a></p>
+<p><b>次回：</b>第24回：AI時代に有限要素法をどう設計・検証するか — 数学構造からmethodを選ぶ（構想中）</p>
+<p><a href="../#chatgpt-fem-season2">Season 2一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
