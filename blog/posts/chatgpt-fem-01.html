@@ -522,7 +522,225 @@ for N in [8, 16, 32, 64]:
 </p>
 </article>
 </div>
-<h2>9．なぜ図を見るだけでは足りないのか</h2>
+<h2>9．P1要素の基本監査：厳密解が一次式なら誤差は0になる</h2>
+<div class="news">
+<article class="news-item">
+<p>
+区分一次有限要素（P1要素）には，実装を確認するための非常に重要な基本テストがあります．
+<b>厳密解が一次式なら，有限要素空間がその厳密解をそのまま含むため，理論上の離散化誤差は0になる</b>という性質です．
+実際の浮動小数点計算では，線形方程式の解法や四則演算に伴う丸め誤差だけが残ります．
+</p>
+<p>
+ここで一つ注意があります．前節までの問題は
+\[
+ u(0)=u(1)=0
+\]
+という同次Dirichlet境界条件でした．この条件を満たす一次式は \(u\equiv0\) だけなので，
+非自明な確認問題として，次の非同次Dirichlet問題を使います：
+\[
+ -u''(x)=0,\qquad 0<x<1,
+\tag{17}
+\]
+\[
+ u(0)=0,\qquad u(1)=1.
+\tag{18}
+\]
+この厳密解は
+\[
+ u(x)=x
+\tag{19}
+\]
+です．
+</p>
+
+<h3>9.1 なぜ有限要素誤差が0になるのか</h3>
+<p>
+境界値を満たすP1有限要素空間を
+\[
+ V_h^g
+ =
+ \{v_h\in C([0,1]):v_h|_T\in\mathbb P_1(T),\ v_h(0)=0,\ v_h(1)=1\}
+\]
+とし，試験関数空間を
+\[
+ V_h^0
+ =
+ \{v_h\in C([0,1]):v_h|_T\in\mathbb P_1(T),\ v_h(0)=v_h(1)=0\}
+\]
+とします．有限要素解 \(u_h\in V_h^g\) は
+\[
+ \int_0^1 u_h'(x)v_h'(x)\,dx=0
+ \qquad\forall v_h\in V_h^0
+\tag{20}
+\]
+を満たします．
+</p>
+<p>
+一方，厳密解 \(u(x)=x\) は全区間で一次式なので，どの要素上でも一次式です．従って
+\[
+ u\in V_h^g.
+\]
+また \(u'(x)=1\) なので，任意の \(v_h\in V_h^0\) に対して
+\[
+ \int_0^1 u'v_h'\,dx
+ =
+ \int_0^1 v_h'(x)\,dx
+ =
+ v_h(1)-v_h(0)
+ =
+ 0.
+\]
+従って厳密解 \(u\) 自身が離散問題 (20) を満たします．
+Poisson問題の離散解は一意なので，
+\[
+ \boxed{u_h=u}
+\tag{21}
+\]
+となります．従って
+\[
+ \|u-u_h\|_{L^2(0,1)}=0,
+ \qquad
+ |u-u_h|_{H^1(0,1)}=0.
+\]
+これはCéaの評価からも直ちに分かります．実際，\(u\in V_h^g\) なので最良近似誤差そのものが0です．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>P1要素のlinear patch test</b><br/>
+厳密解が一次式で，境界条件・要素積分・assemblyが正しく実装されているなら，
+P1有限要素解は厳密解をそのまま再現する．<br/>
+したがって，観測される誤差は理論上0であり，数値計算では機械精度程度の丸め誤差だけが残る．
+</div>
+
+<h3>9.2 Pythonで確認する</h3>
+<p>
+同じstiffness matrixを使い，非同次Dirichlet境界条件 \(u(0)=0\)，\(u(1)=1\) を正しく消去して計算します．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def solve_linear_patch_test(N):
+    nodes = np.linspace(0.0, 1.0, N + 1)
+    A = np.zeros((N + 1, N + 1))
+    b = np.zeros(N + 1)
+
+    for e in range(N):
+        xL = nodes[e]
+        xR = nodes[e + 1]
+        h = xR - xL
+
+        Ke = (1.0 / h) * np.array([[ 1.0, -1.0],
+                                    [-1.0,  1.0]])
+
+        dofs = [e, e + 1]
+        for a in range(2):
+            for c in range(2):
+                A[dofs[a], dofs[c]] += Ke[a, c]
+
+    # u(0)=0, u(1)=1
+    uh = np.zeros(N + 1)
+    uh[0] = 0.0
+    uh[N] = 1.0
+
+    interior = np.arange(1, N)
+    boundary = np.array([0, N])
+
+    rhs = b[interior] - A[np.ix_(interior, boundary)] @ uh[boundary]
+    uh[interior] = np.linalg.solve(
+        A[np.ix_(interior, interior)], rhs
+    )
+
+    return nodes, uh
+
+
+def linear_patch_relative_errors(nodes, uh):
+    gauss_x, gauss_w = np.polynomial.legendre.leggauss(5)
+
+    err_L2_sq = 0.0
+    err_H1_sq = 0.0
+    norm_L2_sq = 0.0
+    norm_H1_sq = 0.0
+
+    for e in range(len(nodes) - 1):
+        xL = nodes[e]
+        xR = nodes[e + 1]
+        h = xR - xL
+        ue = uh[e:e + 2]
+        duh = (ue[1] - ue[0]) / h
+
+        for xi, w in zip(gauss_x, gauss_w):
+            x = 0.5 * (xL + xR) + 0.5 * h * xi
+            phi = np.array([(1.0 - xi) / 2.0,
+                            (1.0 + xi) / 2.0])
+
+            uh_x = np.dot(ue, phi)
+            u_exact = x
+            du_exact = 1.0
+            jac = h / 2.0
+
+            err_L2_sq += w * (u_exact - uh_x)**2 * jac
+            err_H1_sq += w * (du_exact - duh)**2 * jac
+            norm_L2_sq += w * u_exact**2 * jac
+            norm_H1_sq += w * du_exact**2 * jac
+
+    rel_L2 = np.sqrt(err_L2_sq / norm_L2_sq)
+    rel_H1 = np.sqrt(err_H1_sq / norm_H1_sq)
+    max_nodal = np.max(np.abs(uh - nodes))
+
+    return rel_L2, rel_H1, max_nodal
+
+
+for N in [4, 8, 16, 32]:
+    nodes, uh = solve_linear_patch_test(N)
+    relL2, relH1, nodal = linear_patch_relative_errors(nodes, uh)
+    print(N, relL2, relH1, nodal)
+</code></pre>
+
+<h3>9.3 数値結果</h3>
+<p>
+実際に計算すると，誤差は \(10^{-16}\) から \(10^{-15}\) 程度で，有限要素離散化誤差ではなく浮動小数点演算の丸め誤差の水準にあります．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">\(N\)</th>
+<th style="border:1px solid #777; padding:7px;">\(L^2\) relative error</th>
+<th style="border:1px solid #777; padding:7px;">\(H^1\) seminorm relative error</th>
+<th style="border:1px solid #777; padding:7px;">max nodal error</th>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">4</td>
+<td style="border:1px solid #777; padding:7px;">1.5482e-16</td>
+<td style="border:1px solid #777; padding:7px;">2.6037e-16</td>
+<td style="border:1px solid #777; padding:7px;">1.1102e-16</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">8</td>
+<td style="border:1px solid #777; padding:7px;">1.1678e-16</td>
+<td style="border:1px solid #777; padding:7px;">3.6822e-16</td>
+<td style="border:1px solid #777; padding:7px;">1.1102e-16</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">16</td>
+<td style="border:1px solid #777; padding:7px;">7.0759e-17</td>
+<td style="border:1px solid #777; padding:7px;">2.6037e-16</td>
+<td style="border:1px solid #777; padding:7px;">5.5511e-17</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">32</td>
+<td style="border:1px solid #777; padding:7px;">2.6030e-15</td>
+<td style="border:1px solid #777; padding:7px;">5.3621e-15</td>
+<td style="border:1px solid #777; padding:7px;">2.3315e-15</td>
+</tr>
+</table>
+<p>
+\(N\) を増やしても誤差が一定の収束次数で減るわけではありません．
+そもそも離散化誤差が0だからです．残っているのは丸め誤差なので，線形方程式のサイズや計算順序によって多少増減します．
+このテストで \(10^{-3}\) や \(10^{-6}\) 程度の系統的な誤差が出るなら，
+境界条件，assembly，要素行列，あるいは誤差計算のどこかを疑うべきです．
+</p>
+<p>
+この<b>一次式再現性</b>は，今後2次元三角形P1要素を実装するときにもそのまま使えます．
+2次元では \(u(x,y)=a+bx+cy\) を厳密解に選び，三角形メッシュ上で同じlinear patch testを行うことができます．
+</p>
+</article>
+</div>
+<h2>10．なぜ図を見るだけでは足りないのか</h2>
 <div class="news">
 <article class="news-item">
 <p>
@@ -543,7 +761,7 @@ for N in [8, 16, 32, 64]:
 </p>
 </article>
 </div>
-<h2>10．ChatGPTはどこで間違えやすいか</h2>
+<h2>11．ChatGPTはどこで間違えやすいか</h2>
 <div class="news">
 <article class="news-item">
 <p>
@@ -563,7 +781,7 @@ for N in [8, 16, 32, 64]:
 </p>
 </article>
 </div>
-<h2>11．「ChatGPTだけで作れるか」への第1回の答え</h2>
+<h2>12．「ChatGPTだけで作れるか」への第1回の答え</h2>
 <div class="news">
 <article class="news-item">
 <p>
@@ -589,7 +807,7 @@ ChatGPTだけでも有限要素プログラムの形は作れる．<br/>
 </b></p>
 </article>
 </div>
-<h2>12．この連載でどこまで進むか</h2>
+<h2>13．この連載でどこまで進むか</h2>
 <div class="news">
 <article class="news-item">
 <p>
