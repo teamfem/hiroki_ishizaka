@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<title>第8回：良い異方性要素と悪い異方性要素 — shape regularity・maximum angle・semi-regularity | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,anisotropic mesh,異方性メッシュ,shape regularity,semi-regularity,maximum angle condition,minimum angle condition,H_T,Q_T,mesh geometry,Babuska Aziz,DMP"/>
+<meta name="description" content="異方性三角形をshape regularity，maximum-angle condition，semi-regularityの観点から分類します．Q_T=h_T^2/|T|とH_T/h_Tを使い，細長いが良い要素，最大角が退化する悪い要素，DMPには別条件が必要な例をPythonと数式で整理します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-08.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-08.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-08.html",
+      "headline": "第8回：良い異方性要素と悪い異方性要素 — shape regularity・maximum angle・semi-regularity",
+      "description": "異方性三角形をshape regularity，maximum-angle condition，semi-regularityの観点から分類し，Q_TとH_T/h_Tを使って有限要素コードから幾何条件を監査します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-08.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-29",
+      "dateModified": "2026-08-29",
+      "articleSection": "Computational FEM with AI",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-08.html#breadcrumbs",
+      "itemListElement": [
+        {"@type":"ListItem","position":1,"name":"Home","item":"https://teamfem.github.io/hiroki_ishizaka/"},
+        {"@type":"ListItem","position":2,"name":"Blog","item":"https://teamfem.github.io/hiroki_ishizaka/blog/"},
+        {"@type":"ListItem","position":3,"name":"第8回：良い異方性要素と悪い異方性要素 — shape regularity・maximum angle・semi-regularity","item":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-08.html"}
+      ]
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-29"/>
+<meta property="article:modified_time" content="2026-08-29"/>
+<meta property="article:section" content="Computational FEM with AI"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第8回：良い異方性要素と悪い異方性要素 — shape regularity・maximum angle・semi-regularity | Hiroki Ishizaka"/>
+<meta property="og:description" content="Q_TとH_T/h_Tを使い，shape regularity・maximum angle・semi-regularityをコードから監査します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-08.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第8回：良い異方性要素と悪い異方性要素 — shape regularity・maximum angle・semi-regularity | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="異方性要素の良否をaspect ratioだけで決めず，shape regularityとsemi-regularityを分離して診断します．"/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 第8回</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第8回：良い異方性要素と悪い異方性要素 — shape regularity・maximum angle・semi-regularity</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 第8回</b><br/><time datetime="2026-08-29">29th August 2026</time></p>
+
+<h2>はじめに――「良い要素」の意味を先に決める</h2>
+<div class="news"><article class="news-item">
+<p>
+第7回では，強いaspect ratioを持っていても最大角が悪化しないmeshと，
+最大角が \(\pi\) へ近づくmeshを実際に比較しました．
+前者では標準的なP1収束次数が保たれ，後者では観測次数が悪化しました．
+</p>
+<p>
+しかし，「良い要素」「悪い要素」という言葉は，目的を指定しないと曖昧です．
+補間誤差にとって良い要素，linear solverにとって良い要素，
+離散最大値原理にとって良い要素は，同じとは限りません．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>第8回でいう「良い」</b><br/>
+主として<b>P1補間・Galerkin誤差解析に必要な要素幾何</b>という意味で使う．<br/>
+DMP，maximum-norm estimate，linear-system conditioningには，
+これとは別の条件が必要になる場合がある．
+</div>
+<p>
+この回では，既存の
+<a href="./anisotropic-geometry-01.html">「有限要素法ではなぜメッシュの幾何条件が必要なのか」</a>，
+<a href="./anisotropic-geometry-02.html">「正則性と準正則性を角度を使わずに表す」</a>，
+<a href="./anisotropic-geometry-06.html">「長方形の三角形分割を \(Q_T\) と \(H_T/h_T\) で調べる」</a>
+で整理した幾何条件を，ChatGPT生成FEMコードの<b>mesh certificate</b>として使える形にまとめ直します．
+</p>
+</article></div>
+
+<h2>1．条件は一個の三角形ではなくmesh familyに課す</h2>
+<div class="news"><article class="news-item">
+<p>
+一つの非退化三角形を固定すれば，以下で使う幾何量はすべて有限です．
+問題になるのは，細分化して
+\[
+\{\mathcal T_h\}_{h\downarrow0}
+\]
+というmesh familyを作ったときに，最悪の要素がどのように変化するかです．
+</p>
+<p>
+したがって，コードでも一回のmeshだけを見て
+<code>good mesh</code>
+と判定するのではなく，各levelで
+\[
+\max_{T\in\mathcal T_h}Q_T,
+\qquad
+\max_{T\in\mathcal T_h}\frac{H_T}{h_T},
+\qquad
+\max_{T\in\mathcal T_h}\theta_{\max,T}
+\tag{1}
+\]
+を保存し，refinementに対するtrendを見る必要があります．
+</p>
+</article></div>
+
+<h2>2．shape regularityを測る \(Q_T\)</h2>
+<div class="news"><article class="news-item">
+<p>
+三角形 \(T\) の直径を
+\[
+h_T:=\operatorname{diam}(T)
+\]
+とし，面積を \(|T|\) とします．
+本サイトの幾何シリーズと同じく
+\[
+\boxed{
+Q_T:=\frac{h_T^2}{|T|}
+}
+\tag{2}
+\]
+と置きます．
+</p>
+<p>
+2次元では，mesh familyがshape-regularであることは
+\[
+\boxed{
+\sup_h\max_{T\in\mathcal T_h}Q_T&lt;\infty
+}
+\tag{3}
+\]
+と同値です．
+これは古典的な
+\[
+\frac{h_T}{\rho_T}\le C
+\]
+というinscribed-ball conditionや，minimum angleを0から一様に離す条件と同じ種類の制御です．
+</p>
+<p>
+従ってshape regularityは，極端に細長い三角形を基本的に排除します．
+異方性meshを積極的に使いたい場合には，この条件は強すぎることがあります．
+</p>
+</article></div>
+
+<h2>3．semi-regularityを測る \(H_T/h_T\)</h2>
+<div class="news"><article class="news-item">
+<p>
+第6回と同じstandard labellingを使います．
+最長辺を \(p_2p_3\)，反対頂点を \(p_1\) とし，
+\[
+h_1=|p_1-p_2|,
+\qquad
+h_2=|p_1-p_3|,
+\qquad
+h_2\le h_1.
+\tag{4}
+\]
+</p>
+<p>
+幾何パラメータを
+\[
+H_T
+:=
+\frac{h_1h_2}{|T|}h_T
+\tag{5}
+\]
+と定めると，
+\[
+\boxed{
+A_T
+:=
+\frac{H_T}{h_T}
+=
+\frac{h_1h_2}{|T|}
+}
+\tag{6}
+\]
+です．
+</p>
+<p>
+mesh familyがsemi-regularであるとは
+\[
+\boxed{
+\sup_h\max_{T\in\mathcal T_h}A_T&lt;\infty
+}
+\tag{7}
+\]
+という意味です．
+</p>
+</article></div>
+
+<h2>4．maximum-angle conditionとsemi-regularityは2次元で同じ幾何を測る</h2>
+<div class="news"><article class="news-item">
+<p>
+最長辺 \(p_2p_3\) の対角，すなわち \(p_1\) の角を
+\[
+\theta_{\max,T}
+\]
+とします．
+これは三角形の最大角です．
+</p>
+<p>
+面積は
+\[
+|T|
+=
+\frac12 h_1h_2\sin\theta_{\max,T}
+\]
+なので，
+\[
+\boxed{
+A_T
+=
+\frac{2}{\sin\theta_{\max,T}}
+}
+\tag{8}
+\]
+です．
+</p>
+<p>
+したがって
+\[
+A_T\le C
+\]
+という条件は，
+ある \(\gamma_0&lt;\pi\) が存在して
+\[
+\theta_{\max,T}\le\gamma_0
+\tag{9}
+\]
+とするmaximum-angle conditionと同値です．
+</p>
+<p>
+minimum angleは0へ近づいても構いません．
+つまりsemi-regularityは，強いaspect ratioを許しつつ，
+<b>最大角が \(\pi\) へ近づく種類の扁平化だけを排除する</b>条件です．
+</p>
+</article></div>
+
+<h2>5．shape regularityはsemi-regularityより強い</h2>
+<div class="news"><article class="news-item">
+<p>
+standard edge lengthsは
+\[
+h_1\le h_T,
+\qquad
+h_2\le h_T
+\]
+なので
+\[
+A_T
+=
+\frac{h_1h_2}{|T|}
+\le
+\frac{h_T^2}{|T|}
+=
+Q_T.
+\tag{10}
+\]
+</p>
+<p>
+従って
+\[
+\boxed{
+\text{shape regular}
+\Longrightarrow
+\text{semi-regular}
+}
+\tag{11}
+\]
+です．
+逆は成立しません．
+その最も分かりやすい例が，細長い直角三角形です．
+</p>
+</article></div>
+
+<h2>6．三つの典型例を分類する</h2>
+<div class="news"><article class="news-item">
+
+<h3>6.1 等方的な良い要素</h3>
+<p>
+正三角形
+\[
+T_{\mathrm{eq}}
+=
+\operatorname{conv}
+\left\{
+(0,0)^{\top},
+(1,0)^{\top},
+\left(\frac12,\frac{\sqrt3}{2}\right)^{\top}
+\right\}
+\]
+では
+\[
+Q_T
+=
+A_T
+=
+\frac{4}{\sqrt3}
+\approx2.3094.
+\tag{12}
+\]
+最大角は60°です．
+shape-regularでもsemi-regularでもあります．
+</p>
+
+<h3>6.2 細長いが「良い」異方性要素</h3>
+<p>
+\[
+T_\varepsilon^{\mathrm{ani}}
+=
+\operatorname{conv}
+\{(0,0)^{\top},(1,0)^{\top},(0,\varepsilon)^{\top}\},
+\qquad
+\varepsilon\downarrow0
+\tag{13}
+\]
+を考えます．
+</p>
+<p>
+面積は
+\[
+|T_\varepsilon^{\mathrm{ani}}|
+=
+\frac{\varepsilon}{2},
+\]
+直径は
+\[
+h_T=\sqrt{1+\varepsilon^2}
+\]
+なので，
+\[
+Q_T
+=
+\frac{2(1+\varepsilon^2)}{\varepsilon}
+\longrightarrow\infty.
+\tag{14}
+\]
+従ってshape regularityは失われます．
+</p>
+<p>
+一方，standard lengthsは
+\[
+h_1=1,
+\qquad
+h_2=\varepsilon
+\]
+なので
+\[
+A_T
+=
+\frac{h_1h_2}{|T|}
+=
+2.
+\tag{15}
+\]
+maximum angleは常に90°です．
+従ってこのfamilyは
+\[
+\boxed{
+\text{not shape-regular}
+\quad\text{but}\quad
+\text{semi-regular}
+}
+\]
+です．
+</p>
+
+<h3>6.3 最大角が退化する悪い要素</h3>
+<p>
+\[
+T_\delta^{\mathrm{flat}}
+=
+\operatorname{conv}
+\{(0,\delta)^{\top},(-1,0)^{\top},(1,0)^{\top}\},
+\qquad
+\delta\downarrow0
+\tag{16}
+\]
+を考えます．
+</p>
+<p>
+このとき
+\[
+h_T=2,
+\qquad
+|T|=\delta,
+\]
+なので
+\[
+Q_T
+=
+\frac{4}{\delta}
+\longrightarrow\infty.
+\tag{17}
+\]
+また
+\[
+h_1=h_2=\sqrt{1+\delta^2}
+\]
+なので
+\[
+A_T
+=
+\frac{1+\delta^2}{\delta}
+\longrightarrow\infty.
+\tag{18}
+\]
+最大角も
+\[
+\theta_{\max,T}\longrightarrow\pi.
+\]
+従ってshape regularityもsemi-regularityも失われます．
+</p>
+</article></div>
+
+<h2>7．数値で比べると違いがはっきりする</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">triangle</th>
+<th style="border:1px solid #777; padding:7px;">parameter</th>
+<th style="border:1px solid #777; padding:7px;">\(Q_T\)</th>
+<th style="border:1px solid #777; padding:7px;">\(A_T=H_T/h_T\)</th>
+<th style="border:1px solid #777; padding:7px;">max angle</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">equilateral</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">2.3094</td><td style="border:1px solid #777; padding:7px;">2.3094</td><td style="border:1px solid #777; padding:7px;">60°</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">thin right</td><td style="border:1px solid #777; padding:7px;">\(\varepsilon=10^{-3}\)</td><td style="border:1px solid #777; padding:7px;">2.000002e3</td><td style="border:1px solid #777; padding:7px;">2.0000</td><td style="border:1px solid #777; padding:7px;">90°</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">flat obtuse</td><td style="border:1px solid #777; padding:7px;">\(\delta=10^{-3}\)</td><td style="border:1px solid #777; padding:7px;">4.0000e3</td><td style="border:1px solid #777; padding:7px;">1.000001e3</td><td style="border:1px solid #777; padding:7px;">179.885°</td></tr>
+</table>
+<p>
+thin right triangleとflat triangleは，どちらも \(Q_T\) が非常に大きいので，
+shape regularityだけでは同じ「悪い要素」に見えます．
+</p>
+<p>
+しかし \(A_T\) を見ると，
+\[
+2
+\quad\text{と}\quad
+10^3
+\]
+で明確に分かれます．
+これが異方性解析でsemi-regularityを導入する意味です．
+</p>
+</article></div>
+
+<h2>8．aspect ratioだけでも判定できない</h2>
+<div class="news"><article class="news-item">
+<p>
+第6・7回でも見たように，aspect ratioや
+\[
+\kappa_2(J_T)
+\]
+が大きいこと自体は，maximum-angle deteriorationを意味しません．
+</p>
+<p>
+thin right triangleでは
+\[
+\kappa_2(J_T)\sim\varepsilon^{-1}
+\]
+ですが
+\[
+A_T=2.
+\]
+一方，flat triangleでもJacobian condition numberは大きくなりますが，
+同時に
+\[
+A_T\to\infty.
+\]
+</p>
+<p>
+従ってmesh geometryの監査では
+</p>
+\[
+\text{aspect ratio}
+\quad\text{or}\quad
+\kappa(J_T)
+\]
+<p>
+だけを使ってgood / badを決めるべきではありません．
+</p>
+</article></div>
+
+<h2>9．semi-regularityと \(H(h)\to0\) も同じではない</h2>
+<div class="news"><article class="news-item">
+<p>
+mesh全体について
+\[
+H(h)
+:=
+\max_{T\in\mathcal T_h}H_T
+\tag{19}
+\]
+とします．
+</p>
+<p>
+もし
+\[
+h:=\max_{T\in\mathcal T_h}h_T\to0
+\]
+かつsemi-regularity
+\[
+H_T/h_T\le C
+\]
+が成立すれば，
+\[
+H(h)
+\le
+Ch
+\longrightarrow0.
+\tag{20}
+\]
+従って
+\[
+\boxed{
+\text{semi-regularity}+h\to0
+\Longrightarrow
+H(h)\to0.
+}
+\tag{21}
+\]
+</p>
+<p>
+しかし逆は一般には成立しません．
+最大角条件を破って
+\[
+H_T/h_T\to\infty
+\]
+となっても，
+\(H_T\) 自身は0へ向かうmesh familyがあり得ます．
+</p>
+<p>
+この区別は
+<a href="./paradoxes-pitfalls-02.html">「最大角条件とBabuška–Aziz反例」</a>
+で詳しく扱っています．
+maximum-angle conditionは非常に有用な安全側の十分条件ですが，
+<b>それを破ったという事実だけから，特定の有限要素計算が必ず非収束になるとは言えません</b>．
+</p>
+</article></div>
+
+<h2>10．「良い異方性要素」は解の方向性と組み合わせて初めて有効になる</h2>
+<div class="news"><article class="news-item">
+<p>
+semi-regularな細長い要素だから，自動的に高精度になるわけではありません．
+異方性補間評価は方向別に
+\[
+|u-I_Tu|_{H^1(T)}
+\le
+C
+\sum_{i=1}^{2}
+h_i
+\left|
+\frac{\partial u}{\partial r_i}
+\right|_{H^1(T)}
+\tag{22}
+\]
+という形を持ちます．
+</p>
+<p>
+従って短い方向を
+\[
+r_2
+\]
+としたなら，その方向に解が強く変化しているときにmesh anisotropyが有効です．
+解の変化が弱い方向を過剰に細分化しても，自由度を増やすだけで効率的とは限りません．
+</p>
+<div style="padding:12px; margin:14px 0; border:1px solid #999999;">
+<b>幾何条件が保証すること</b><br/>
+semi-regularityは，異方的な方向情報を保持した補間評価を
+aspect ratioに対してrobustに扱うための幾何学的基盤である．<br/>
+mesh adaptationそのものの最適性は，解の方向微分との対応まで見なければ決まらない．
+</div>
+</article></div>
+
+<h2>11．「良い」の意味はDMPでは変わる</h2>
+<div class="news"><article class="news-item">
+<p>
+ここまでのgood / badは主として補間・energy errorの観点でした．
+しかし
+<a href="./anisotropic-geometry-12.html">「幾何条件から補間・DMP・\(L^\infty\)解析へ何が引き継げるか」</a>
+で整理したように，DMPには別の角度条件が現れます．
+</p>
+<p>
+2次元Poisson P1要素では，異なる二頂点に対応する局所剛性行列成分は
+\[
+\int_T
+\nabla\phi_i\cdot\nabla\phi_j\,dx
+=
+-\frac12\cot\theta_k
+\tag{23}
+\]
+と書けます．
+</p>
+<p>
+例えば最大角120°の<b>固定形状</b>三角形はshape-regularかつsemi-regularです．
+それでも
+\[
+-\frac12\cot120^\circ
+=
+\frac{1}{2\sqrt3}
+&gt;0.
+\tag{24}
+\]
+したがって，標準的なM-matrix型DMP条件には適しません．
+</p>
+<p>
+つまり
+\[
+\boxed{
+\text{good for interpolation}
+\not\Longrightarrow
+\text{good for DMP}.
+}
+\tag{25}
+\]
+</p>
+</article></div>
+
+<h2>12．四種類に分けると分かりやすい</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">class</th>
+<th style="border:1px solid #777; padding:7px;">shape regular</th>
+<th style="border:1px solid #777; padding:7px;">semi-regular</th>
+<th style="border:1px solid #777; padding:7px;">example</th>
+<th style="border:1px solid #777; padding:7px;">interpretation</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">I</td><td style="border:1px solid #777; padding:7px;">yes</td><td style="border:1px solid #777; padding:7px;">yes</td><td style="border:1px solid #777; padding:7px;">equilateral / fixed regular triangle</td><td style="border:1px solid #777; padding:7px;">standard isotropic theory</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">II</td><td style="border:1px solid #777; padding:7px;">no</td><td style="border:1px solid #777; padding:7px;">yes</td><td style="border:1px solid #777; padding:7px;">thin right triangle</td><td style="border:1px solid #777; padding:7px;">good anisotropy for maximum-angle-based analysis</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">III</td><td style="border:1px solid #777; padding:7px;">no</td><td style="border:1px solid #777; padding:7px;">no</td><td style="border:1px solid #777; padding:7px;">angle \(\to\pi\)</td><td style="border:1px solid #777; padding:7px;">standard uniform error constants can degenerate</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">IV</td><td style="border:1px solid #777; padding:7px;">yes</td><td style="border:1px solid #777; padding:7px;">yes</td><td style="border:1px solid #777; padding:7px;">fixed obtuse triangle</td><td style="border:1px solid #777; padding:7px;">good for interpolation, not automatically for DMP</td></tr>
+</table>
+</article></div>
+
+<h2 style="color:#111;">13．Pythonでmesh geometry certificateを作る</h2>
+<div class="news"><article class="news-item">
+<p>
+一つの三角形に対し，\(Q_T\)，\(A_T\)，最小角，最大角を返す関数を作ります．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">import numpy as np
+
+
+def triangle_geometry_certificate(P):
+    P = np.asarray(P, dtype=float)
+
+    pairs = [(0, 1), (1, 2), (2, 0)]
+
+    edge_lengths = np.array([
+        np.linalg.norm(P[i] - P[j])
+        for i, j in pairs
+    ])
+
+    hT = np.max(edge_lengths)
+
+    J = np.column_stack((
+        P[1] - P[0],
+        P[2] - P[0]
+    ))
+
+    area = 0.5 * abs(np.linalg.det(J))
+
+    if area &lt;= 0.0:
+        raise ValueError("Degenerate triangle")
+
+    QT = hT**2 / area
+
+    # standard labelling:
+    # p2-p3 is the longest edge
+    m = np.argmax(edge_lengths)
+    i2, i3 = pairs[m]
+    i1 = list(
+        {0, 1, 2} - {i2, i3}
+    )[0]
+
+    d12 = np.linalg.norm(P[i2] - P[i1])
+    d13 = np.linalg.norm(P[i3] - P[i1])
+
+    h1 = max(d12, d13)
+    h2 = min(d12, d13)
+
+    AT = h1 * h2 / area
+
+    angles = []
+
+    for i in range(3):
+        j = (i + 1) % 3
+        k = (i + 2) % 3
+
+        a = P[j] - P[i]
+        b = P[k] - P[i]
+
+        cos_theta = (
+            np.dot(a, b)
+            / (
+                np.linalg.norm(a)
+                * np.linalg.norm(b)
+            )
+        )
+
+        cos_theta = np.clip(
+            cos_theta,
+            -1.0,
+            1.0
+        )
+
+        angles.append(
+            np.arccos(cos_theta)
+        )
+
+    return {
+        "hT": hT,
+        "area": area,
+        "Q_T": QT,
+        "H_over_h": AT,
+        "min_angle_deg":
+            np.degrees(min(angles)),
+        "max_angle_deg":
+            np.degrees(max(angles)),
+        "cond_J_raw":
+            np.linalg.cond(J)
+    }
+</code></pre>
+</article></div>
+
+<h2>14．mesh familyではmax値の履歴を保存する</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def audit_mesh_geometry(nodes, triangles):
+    max_Q = 0.0
+    max_A = 0.0
+    max_angle = 0.0
+    min_angle = 180.0
+
+    for tri in triangles:
+        data = triangle_geometry_certificate(
+            nodes[tri]
+        )
+
+        max_Q = max(
+            max_Q,
+            data["Q_T"]
+        )
+
+        max_A = max(
+            max_A,
+            data["H_over_h"]
+        )
+
+        max_angle = max(
+            max_angle,
+            data["max_angle_deg"]
+        )
+
+        min_angle = min(
+            min_angle,
+            data["min_angle_deg"]
+        )
+
+    return {
+        "max_Q": max_Q,
+        "max_H_over_h": max_A,
+        "max_angle_deg": max_angle,
+        "min_angle_deg": min_angle
+    }
+</code></pre>
+<p>
+例えばrefinement levelごとに
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">history = []
+
+for n in [4, 8, 16, 32]:
+    nodes, triangles = make_mesh(n)
+
+    data = audit_mesh_geometry(
+        nodes,
+        triangles
+    )
+
+    history.append((n, data))
+
+    print(
+        n,
+        data["max_Q"],
+        data["max_H_over_h"],
+        data["max_angle_deg"]
+    )
+</code></pre>
+<p>
+として，bounded / unboundedのtrendを見ます．
+固定した一つの閾値で
+<code>good = True</code>
+と返すより，mesh familyとして診断する方が数学的に正確です．
+</p>
+</article></div>
+
+<h2>15．ChatGPTへの質問も「目的」を指定する</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+この三角形mesh familyをP1有限要素近似の観点から監査してください．<br/>
+aspect ratioだけでgood / badを決めず，levelごとに<br/>
+(1) \(Q_T=h_T^2/|T|\) の最大値，<br/>
+(2) \(H_T/h_T\) の最大値，<br/>
+(3) minimum angleとmaximum angle，<br/>
+(4) \(H(h)=\max_T H_T\)，<br/>
+を計算してください．<br/>
+shape regularity，semi-regularity，maximum-angle condition，\(H(h)\to0\)を区別し，
+どの条件が一様に成り立っているかを説明してください．
+DMPについて判断する場合は，nonobtuse / metric-angle条件を別に検査してください．
+</div>
+</article></div>
+
+<h2>16．第8回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+異方性要素を分類するとき，
+</p>
+\[
+\text{thin}
+=
+\text{bad}
+\]
+<p>
+ではありません．
+P1補間・Galerkin誤差の観点では，
+</p>
+\[
+\boxed{
+Q_T\ \text{large}
+\quad\text{but}\quad
+H_T/h_T\ \text{bounded}
+}
+\]
+<p>
+という要素は，shape regularityを破りながら
+semi-regularityを保つ「良い異方性要素」になり得ます．
+</p>
+<p>
+一方，
+\[
+H_T/h_T\to\infty
+\]
+はmaximum angleが \(\pi\) へ近づく種類の退化を表し，
+標準的な一様誤差評価を失う警告になります．
+</p>
+<p>
+ただし，maximum-angle conditionは安全側の十分条件であり，
+その破綻だけからすべての有限要素計算の非収束を結論してはいけません．
+また，semi-regularityが成立してもDMPやmaximum-norm解析には追加条件が必要です．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>mesh geometryの監査原則</b><br/>
+「何にとって良いmeshなのか」を先に決める．<br/>
+その上でshape regularity，semi-regularity，angle condition，
+\(H(h)\)，conditioningを混同せずに調べる．
+</div>
+<p>
+次回は3次元へ戻り，
+<b>異方性四面体ではなぜstandard positionがType (i) / Type (ii)に分かれるのか</b>，
+そしてsliver tetrahedronをどう見分けるかを扱います．
+</p>
+</article></div>
+
+<h2>参考文献・関連ノート</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>H. Ishizaka, K. Kobayashi and T. Tsuchiya, “General theory of interpolation error estimates on anisotropic meshes”, <i>Japan Journal of Industrial and Applied Mathematics</i> 38 (2021), 163–191.</li>
+<li>H. Ishizaka, K. Kobayashi and T. Tsuchiya, “Anisotropic interpolation error estimates using a new geometric parameter”, <i>Japan Journal of Industrial and Applied Mathematics</i> 40 (2023), 475–512.</li>
+<li><a href="./anisotropic-geometry-01.html">有限要素法ではなぜメッシュの幾何条件が必要なのか</a></li>
+<li><a href="./anisotropic-geometry-02.html">正則性と準正則性を角度を使わずに表す</a></li>
+<li><a href="./anisotropic-geometry-06.html">長方形の三角形分割を \(Q_T\) と \(H_T/h_T\) で調べる</a></li>
+<li><a href="./anisotropic-geometry-12.html">幾何条件から補間・DMP・\(L^\infty\)解析へ何が引き継げるか</a></li>
+<li><a href="./paradoxes-pitfalls-02.html">有限要素解は収束しているのに正解へ収束しない――最大角条件とBabuška–Aziz反例</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>前回：</b><a href="./chatgpt-fem-07.html">第7回：異方性P1要素は本当に正しく動くか — patch test・誤差・condition number</a></p>
+<p><b>次回：</b>第9回：3次元異方性四面体 — Type (i), Type (ii), sliver（構想中）</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
