@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第15回：CRとRTはなぜ相性がよいのか — 離散部分積分とcommuting property | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,Crouzeix-Raviart,Raviart-Thomas,CR,RT,discrete integration by parts,commuting property,consistency error,anisotropic mesh"/>
+<meta name="description" content="Season 2 第3回（通算第15回）として，Crouzeix–Raviart要素とRaviart–Thomas要素の相性を，離散部分積分，commuting property，CRのconsistency errorの分解から数学的に説明し，二三角形のPython testで検証します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-15.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-15.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-15.html",
+      "headline": "第15回：CRとRTはなぜ相性がよいのか — 離散部分積分とcommuting property",
+      "description": "CRとRTを離散部分積分，commuting property，consistency errorから結び，数式とPythonで監査します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-15.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-29",
+      "dateModified": "2026-08-29",
+      "articleSection": "Computational FEM with AI — Season 2",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-29"/>
+<meta property="article:modified_time" content="2026-08-29"/>
+<meta property="article:section" content="Computational FEM with AI — Season 2"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第15回：CRとRTはなぜ相性がよいのか — 離散部分積分とcommuting property | Hiroki Ishizaka"/>
+<meta property="og:description" content="CRのface-mean continuityとRTのnormal-flux continuityが，exactな離散Green公式を作る．そこからconsistency errorをRT interpolation errorへ移します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-15.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第15回：CRとRTはなぜ相性がよいのか — 離散部分積分とcommuting property | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="CR mean continuity + RT normal continuity = exact discrete integration by parts."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 2 第3回（通算第15回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第15回：CRとRTはなぜ相性がよいのか — 離散部分積分とcommuting property</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 2 第3回（通算第15回）</b><br/><time datetime="2026-08-29">29th August 2026</time></p>
+
+<h2>はじめに――「どちらもedge-basedだから」では足りない</h2>
+<div class="news"><article class="news-item">
+<p>
+第13回ではCrouzeix–Raviart（CR）要素のedge-mean DoFを，
+第14回ではRaviart–Thomas（RT）要素のnormal-flux DoFを実装しました．
+</p>
+<p>
+両者はどちらもface / edgeに自由度を持つので，
+見た目にも相性がよさそうです．
+しかし本質はそこではありません．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>CR–RT compatibilityの核心</b><br/>
+CRの
+\[
+\int_F[\psi_h]\,ds=0
+\]
+と，RTの
+\[
+[[\boldsymbol v_h\cdot\boldsymbol n_F]]=0
+\]
+が組み合わさると，<b>face termがexactに消える離散部分積分</b>が成立する．
+</div>
+<p>
+この恒等式が，CRのconsistency errorをRT interpolation errorへ移す鍵になります．
+</p>
+</article></div>
+
+<h2>1．二つのglobal continuityをもう一度確認する</h2>
+<div class="news"><article class="news-item">
+<p>
+homogeneous CR spaceでは，内部face \(F\) に対して
+\[
+\boxed{
+\int_F[\psi_h]\,ds=0,
+}
+\tag{1}
+\]
+境界faceでは
+\[
+\boxed{
+\int_F\psi_h\,ds=0.
+}
+\tag{2}
+\]
+</p>
+<p>
+一方，lowest-order RT spaceでは内部faceに対して
+\[
+\boxed{
+[[\boldsymbol v_h\cdot\boldsymbol n_F]]=0.
+}
+\tag{3}
+\]
+さらに
+\[
+\boldsymbol v_h\cdot\boldsymbol n_F\in P_0(F),
+\tag{4}
+\]
+つまりnormal componentは各face上でconstantです．
+</p>
+<p>
+式 (1)–(4) の組合せが重要です．
+</p>
+</article></div>
+
+<h2>2．要素ごとのGreen公式を全部足す</h2>
+<div class="news"><article class="news-item">
+<p>
+\[
+\boldsymbol v_h\in V_h^{RT0},
+\qquad
+\psi_h\in H_0^1(\Omega)+V_{h0}^{CR}
+\]
+とします．
+要素 \(T\) ごとには
+\[
+\int_T
+\boldsymbol v_h\cdot\nabla\psi_h\,dx
++
+\int_T
+(\nabla\cdot\boldsymbol v_h)\psi_h\,dx
+=
+\int_{\partial T}
+(\boldsymbol v_h\cdot\boldsymbol n_T)\psi_h\,ds.
+\tag{5}
+\]
+</p>
+<p>
+全要素で足すと
+\[
+\sum_{T\in\mathcal T_h}
+\int_T
+\boldsymbol v_h\cdot\nabla_h\psi_h\,dx
++
+\sum_{T\in\mathcal T_h}
+\int_T
+(\nabla\cdot\boldsymbol v_h)\psi_h\,dx
+=
+\sum_{T\in\mathcal T_h}
+\int_{\partial T}
+(\boldsymbol v_h\cdot\boldsymbol n_T)\psi_h\,ds.
+\tag{6}
+\]
+</p>
+</article></div>
+
+<h2>3．interior-face termをjump / averageで見る</h2>
+<div class="news"><article class="news-item">
+<p>
+内部face \(F\) の寄与は
+\[
+\int_F
+[[(\boldsymbol v_h\psi_h)\cdot\boldsymbol n_F]]
+\,ds.
+\]
+積のjumpを分けると
+\[
+[[(\boldsymbol v_h\psi_h)\cdot\boldsymbol n_F]]
+=
+[[\boldsymbol v_h\cdot\boldsymbol n_F]]
+\{\!\{\psi_h\}\!\}
++
+\{\!\{\boldsymbol v_h\}\!\}\cdot\boldsymbol n_F
+[\psi_h].
+\tag{7}
+\]
+</p>
+<p>
+第一項はRT conformityから
+\[
+[[\boldsymbol v_h\cdot\boldsymbol n_F]]=0
+\]
+なので消えます．
+</p>
+<p>
+第二項では
+\[
+\{\!\{\boldsymbol v_h\}\!\}\cdot\boldsymbol n_F
+\in P_0(F)
+\]
+なのでface上でconstantです．したがって
+\[
+\int_F
+\{\!\{\boldsymbol v_h\}\!\}\cdot\boldsymbol n_F
+[\psi_h]\,ds
+=
+\left(
+\{\!\{\boldsymbol v_h\}\!\}\cdot\boldsymbol n_F
+\right)
+\int_F[\psi_h]\,ds
+=
+0.
+\tag{8}
+\]
+</p>
+<p>
+境界faceでもCR0のface meanが0なので同様に消えます．
+</p>
+</article></div>
+
+<h2>4．CR–RT discrete integration by parts</h2>
+<div class="news"><article class="news-item">
+<p>
+従って
+\[
+\boxed{
+\int_\Omega
+\boldsymbol v_h\cdot\nabla_h\psi_h\,dx
++
+\int_\Omega
+(\nabla\cdot\boldsymbol v_h)\psi_h\,dx
+=
+0
+}
+\tag{9}
+\]
+が成立します．
+</p>
+<p>
+ここで
+\[
+\boldsymbol v_h\in V_h^{RT0},
+\qquad
+\psi_h\in H_0^1(\Omega)+V_{h0}^{CR}.
+\]
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>この式はestimateではなくidentity</b><br/>
+mesh sizeが小さいから近似的に0になるのではありません．
+CRのmean continuityとRTのnormal continuityが正しく実装されていれば，
+<b>exact arithmeticで0</b>になります．
+</div>
+</article></div>
+
+<h2>5．ここで誤解してはいけないこと</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (9) から
+\[
+\nabla_hV_h^{CR}
+\subset
+V_h^{RT0}
+\]
+と結論してはいけません．
+</p>
+<p>
+CR functionのbroken gradientは各elementでconstantなので
+\[
+(\nabla_h\psi_h)|_T\in P_0(T)^d\subset RT_0(T)
+\]
+ですが，隣接element間でnormal componentが連続とは限りません．
+従って一般には
+\[
+\boxed{
+\nabla_h\psi_h\notin V_h^{RT0}.
+}
+\tag{10}
+\]
+</p>
+<p>
+CR–RT compatibilityとは，
+「CR gradientそのものがglobal RT fieldになる」という意味ではなく，
+<b>RT fieldとCR test functionの間にexactな離散Green公式が成立する</b>
+という意味です．
+</p>
+</article></div>
+
+<h2>6．CR誤差は二つに分ける――第13回との接続</h2>
+<div class="news"><article class="news-item">
+<p>
+Poisson問題
+\[
+-\Delta u=f,
+\qquad
+u|_{\partial\Omega}=0
+\tag{11}
+\]
+のCR approximationではSecond Strang lemmaにより
+\[
+|u-u_h^{CR}|_{1,h}
+\le
+C
+\left[
+\inf_{v_h\in V_{h0}^{CR}}
+|u-v_h|_{1,h}
++
+\sup_{0\neq\phi_h\in V_{h0}^{CR}}
+\frac{
+|a_h^{CR}(u,\phi_h)-(f,\phi_h)|
+}{
+|\phi_h|_{1,h}
+}
+\right].
+\tag{12}
+\]
+</p>
+<p>
+ここで
+</p>
+\[
+\boxed{
+\text{CR error}
+=
+\text{interpolation / approximation error}
++
+\text{consistency error}
+}
+\]
+<p>
+という二分割が本質です．
+</p>
+<p>
+第15回で見るのは，第二項のconsistency errorにRTを入れる方法です．
+</p>
+</article></div>
+
+<h2>7．任意のRT fieldをconsistency termへ挿入する</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (9) を使うと，任意の
+\[
+\boldsymbol w_h\in V_h^{RT0}
+\]
+に対して
+\[
+\boxed{
+a_h^{CR}(u,\phi_h)-(f,\phi_h)
+=
+(\nabla u-\boldsymbol w_h,\nabla_h\phi_h)
+-
+(\nabla\cdot\boldsymbol w_h+f,\phi_h).
+}
+\tag{13}
+\]
+</p>
+<p>
+これはCRのnonconforming face residualを，
+</p>
+\[
+\text{vector approximation error}
++
+\text{divergence residual}
+\]
+<p>
+へ変換するidentityです．
+</p>
+<p>
+どの \(\boldsymbol w_h\) を選ぶかが次のポイントです．
+</p>
+</article></div>
+
+<h2>8．\(\boldsymbol w_h=I_h^{RT0}\nabla u\) を選ぶ</h2>
+<div class="news"><article class="news-item">
+<p>
+exact flux-like field
+\[
+\nabla u
+\]
+をlowest-order RT interpolationして
+\[
+\boldsymbol w_h
+=
+I_h^{RT0}\nabla u
+\tag{14}
+\]
+とします．
+</p>
+<p>
+第14回で見たcommuting property
+\[
+\nabla\cdot
+I_h^{RT0}\boldsymbol v
+=
+\Pi_h^0(\nabla\cdot\boldsymbol v)
+\tag{15}
+\]
+を \(\boldsymbol v=\nabla u\) に使えば
+\[
+\nabla\cdot
+I_h^{RT0}\nabla u
+=
+\Pi_h^0\Delta u
+=
+-\Pi_h^0f.
+\tag{16}
+\]
+</p>
+</article></div>
+
+<h2>9．RT interpolationのdomainに再び注意する</h2>
+<div class="news"><article class="news-item">
+<p>
+ここで
+\[
+I_h^{RT0}\nabla u
+\]
+と書くためには，RT face momentsが定義できるregularityが必要です．
+</p>
+<p>
+第14回で確認したように，
+<b>standard RT interpolationは \(H(\mathrm{div})\) 全体にそのまま定義できるわけではありません</b>．
+</p>
+<p>
+今回のPoisson settingでは，例えばconvex polygon / polyhedronで
+\[
+f\in L^2(\Omega),
+\qquad
+u\in H^2(\Omega)
+\tag{17}
+\]
+というelliptic regularityを仮定すれば
+\[
+\nabla u\in H^1(\Omega)^d
+\]
+なので，classicalなface-moment RT interpolationを使えます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>数学監査上の注意</b><br/>
+\[
+\nabla u\in H(\mathrm{div})
+\]
+だけを理由に
+\[
+I_h^{RT0}\nabla u
+\]
+を無条件に書いてはいけない．
+</div>
+</article></div>
+
+<h2>10．consistency errorが二つのbulk errorに変わる</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (13)–(16) から
+\[
+a_h^{CR}(u,\phi_h)-(f,\phi_h)
+=
+(\nabla u-I_h^{RT0}\nabla u,\nabla_h\phi_h)
+-
+(f-\Pi_h^0f,\phi_h).
+\tag{18}
+\]
+</p>
+<p>
+さらに \(L^2\)-projectionの直交性から
+\[
+(f-\Pi_h^0f,\Pi_h^0\phi_h)=0
+\]
+なので
+\[
+\boxed{
+a_h^{CR}(u,\phi_h)-(f,\phi_h)
+=
+(\nabla u-I_h^{RT0}\nabla u,\nabla_h\phi_h)
+-
+(f-\Pi_h^0f,\phi_h-\Pi_h^0\phi_h).
+}
+\tag{19}
+\]
+</p>
+<p>
+ここでface trace termが完全に消えています．
+</p>
+</article></div>
+
+<h2>11．Cauchy–Schwarzでconsistency boundへ</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (19) から
+\[
+\begin{aligned}
+|a_h^{CR}(u,\phi_h)-(f,\phi_h)|
+\le{}&
+\|\nabla u-I_h^{RT0}\nabla u\|_{L^2(\Omega)^d}
+|\phi_h|_{1,h}
+\\
+&+
+\|f-\Pi_h^0f\|_{L^2(\Omega)}
+\|\phi_h-\Pi_h^0\phi_h\|_{L^2(\Omega)}.
+\end{aligned}
+\tag{20}
+\]
+</p>
+<p>
+elementwise \(P_0\)-projectionについて
+\[
+\|\phi_h-\Pi_h^0\phi_h\|_{L^2(\Omega)}
+\le
+Ch|\phi_h|_{1,h}
+\tag{21}
+\]
+を使えば
+\[
+\boxed{
+\frac{
+|a_h^{CR}(u,\phi_h)-(f,\phi_h)|
+}{
+|\phi_h|_{1,h}
+}
+\le
+\|\nabla u-I_h^{RT0}\nabla u\|_{L^2(\Omega)^d}
++
+Ch\|f-\Pi_h^0f\|_{L^2(\Omega)}.
+}
+\tag{22}
+\]
+</p>
+<p>
+粗い評価
+\[
+\|f-\Pi_h^0f\|_{L^2}
+\le
+\|f\|_{L^2}
+\]
+を使えば第二項は \(Ch\|f\|_{L^2}\) です．
+</p>
+</article></div>
+
+<h2>12．なぜ異方性meshでこの変換が重要なのか</h2>
+<div class="news"><article class="news-item">
+<p>
+classicalなconsistency analysisでは，element boundaryに残る
+\[
+\int_F
+(\boldsymbol n_T\cdot\nabla u)
+(\phi_h-\overline{\phi}_F)
+\,ds
+\]
+をtrace theoremとscalingで直接評価します．
+</p>
+<p>
+しかし強い異方性meshでは，このtrace scalingにelement heightやdegeneration parameterが入り，
+期待するorderを失うことがあります．
+</p>
+<p>
+式 (19) はそのface termを
+\[
+\boxed{
+\|\nabla u-I_h^{RT0}\nabla u\|_{L^2}
+}
+\]
+という<b>RT interpolation error</b>へ置き換えます．
+</p>
+<p>
+従ってanisotropic RT interpolation estimateがあれば，
+CR consistency errorもdirectional geometryを保ったまま評価できます．
+これがCR–RT relationをanisotropic CR analysisに使う理由です．
+</p>
+</article></div>
+
+<h2>13．二つのcommuting propertyを並べて見る</h2>
+<div class="news"><article class="news-item">
+<p>
+十分regularなscalar function \(u\) についてlocal CR interpolationは
+\[
+\boxed{
+\nabla I_T^{CR}u
+=
+\Pi_T^0\nabla u.
+}
+\tag{23}
+\]
+</p>
+<p>
+十分regularなvector field \(\boldsymbol v\) についてRT interpolationは
+\[
+\boxed{
+\nabla\cdot I_T^{RT0}\boldsymbol v
+=
+\Pi_T^0\nabla\cdot\boldsymbol v.
+}
+\tag{24}
+\]
+</p>
+<p>
+両者はそれぞれ
+</p>
+\[
+\text{CR}
+\ \xrightarrow{\nabla_h}\
+P_0^d,
+\qquad
+\text{RT}
+\ \xrightarrow{\nabla\cdot}\
+P_0
+\]
+<p>
+という微分作用素との整合性を持っています．
+</p>
+<p>
+ただし式 (23) はlocal identityであり，
+\(\nabla_hI_h^{CR}u\) がglobal \(H(\mathrm{div})\)-conforming RT fieldになるという意味ではありません．
+</p>
+</article></div>
+
+<h2>14．CR interpolation identityの短い証明</h2>
+<div class="news"><article class="news-item">
+<p>
+\(\nabla I_T^{CR}u\) はconstantなので
+\[
+|T|\nabla I_T^{CR}u
+=
+\int_T\nabla I_T^{CR}u\,dx.
+\]
+Gaussの公式とCR face-mean reproductionを使うと
+\[
+\begin{aligned}
+|T|\nabla I_T^{CR}u
+&=
+\sum_{F\subset\partial T}
+\boldsymbol n_F
+\int_FI_T^{CR}u\,ds
+\\
+&=
+\sum_{F\subset\partial T}
+\boldsymbol n_F
+\int_Fu\,ds
+=
+\int_T\nabla u\,dx.
+\end{aligned}
+\tag{25}
+\]
+</p>
+<p>
+従って
+\[
+\nabla I_T^{CR}u
+=
+\frac1{|T|}
+\int_T\nabla u\,dx
+=
+\Pi_T^0\nabla u.
+\]
+</p>
+</article></div>
+
+<h2>15．二三角形で離散部分積分をexactにtestする</h2>
+<div class="news"><article class="news-item">
+<p>
+unit squareを対角線で二つの三角形に分けます．
+boundary CR DoFを0，interior diagonalのCR DoFを1とし，
+RT側にはglobal edge fluxとして例えば
+\[
+(0.7,-1.2,0.4,0.9,-0.3)
+\]
+を与えます．
+</p>
+<p>
+各elementで
+\[
+R_T
+=
+\int_T
+\boldsymbol v_h\cdot\nabla_h\psi_h\,dx
++
+\int_T
+(\nabla\cdot\boldsymbol v_h)\psi_h\,dx
+\tag{26}
+\]
+をexact integrationすると，
+\[
+R_{T_1}=1.2,
+\qquad
+R_{T_2}=-1.2,
+\]
+従って
+\[
+\boxed{
+R_{T_1}+R_{T_2}=0.
+}
+\tag{27}
+\]
+</p>
+<p>
+element residualはそれぞれ0ではありません．
+<b>shared faceを通じてexactにcancelする</b>ことがポイントです．
+</p>
+</article></div>
+
+<h2>16．Pythonでは何をtestすべきか</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def discrete_green_residual(
+    triangles,
+    rt_field,
+    cr_field,
+    integrate_element
+):
+    total = 0.0
+    element_residuals = []
+
+    for T in triangles:
+        rT = integrate_element(
+            T,
+            rt_field,
+            cr_field
+        )
+
+        element_residuals.append(rT)
+        total += rT
+
+    return (
+        np.array(element_residuals),
+        total
+    )
+
+
+element_r, total_r = (
+    discrete_green_residual(
+        triangles,
+        rt_field,
+        cr_field,
+        integrate_element
+    )
+)
+
+print(element_r)
+print(total_r)
+</code></pre>
+<p>
+test specificationは
+</p>
+\[
+\boxed{
+|\texttt{total\_r}|
+\le
+C\varepsilon_{\mathrm{mach}}
+\times
+\text{appropriate scale}
+}
+\tag{28}
+\]
+<p>
+です．
+</p>
+<p>
+各element residualを0と要求してはいけません．
+global cancellationをtestします．
+</p>
+</article></div>
+
+<h2>17．このtestはorientation bugにも敏感</h2>
+<div class="news"><article class="news-item">
+<p>
+第14回で扱ったRT edge signを一つ反転すると，
+shared edgeのnormal continuityが壊れます．
+すると式 (3) が成立せず，
+式 (9) のglobal residualも0ではなくなります．
+</p>
+<p>
+逆にCR側で同じphysical edgeを別々のglobal DoFとして扱えば，
+式 (1) が壊れ，同じtestが失敗します．
+</p>
+<p>
+つまりdiscrete Green identityは
+</p>
+\[
+\boxed{
+\text{CR connectivity}
++
+\text{RT orientation}
++
+\text{local integration}
+}
+\]
+<p>
+を同時に監査するintegration testになります．
+</p>
+</article></div>
+
+<h2>18．「CRとRTが相性よい」には三段階ある</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">level</th>
+<th style="border:1px solid #777; padding:7px;">structure</th>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">DoF level</td>
+<td style="border:1px solid #777; padding:7px;">CR face mean / RT normal flux</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">operator level</td>
+<td style="border:1px solid #777; padding:7px;">discrete integration by parts + commuting properties</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">error-analysis level</td>
+<td style="border:1px solid #777; padding:7px;">CR consistency errorをRT interpolation errorで制御</td>
+</tr>
+</table>
+<p>
+第15回で重要なのは第三段階まで見ることです．
+</p>
+</article></div>
+
+<h2>19．より強いCR–RT solution relationとは区別する</h2>
+<div class="news"><article class="news-item">
+<p>
+Poisson問題では，piecewise-constant loadやbubble enrichmentなど追加の条件の下で，
+CR solutionとRT mixed solutionの間にさらに強い関係式が得られる場合があります．
+</p>
+<p>
+しかし今回の式 (9) はそれとは別です．
+</p>
+<p>
+\[
+\boxed{
+\text{discrete integration by parts}
+}
+\]
+は有限要素空間のcontinuity structureから出るidentityであり，
+特定のdiscrete solutionを解いた後に初めて成立する関係ではありません．
+</p>
+<p>
+solution-levelのCR–RT relationは，後の回で必要になったところで扱います．
+</p>
+</article></div>
+
+<h2>20．ChatGPTへのCR–RT structure audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このCR–RT finite-element implementationを構造的に監査してください．<br/>
+(1) CRのinterior face jumpがmean zeroか，<br/>
+(2) CR0のboundary face meanがzeroか，<br/>
+(3) RT0のnormal componentが各face上でconstantか，<br/>
+(4) global RT normal componentがsingle-valuedか，<br/>
+(5) \((v_h,\nabla_h\psi_h)+(\operatorname{div}v_h,\psi_h)=0\) がglobalに成立するか，<br/>
+(6) elementwise residualではなくglobal cancellationをtestしているか，<br/>
+(7) CR gradientを誤ってglobal RT fieldと仮定していないか，<br/>
+(8) \(I_h^{RT}\nabla u\) を使うときRT interpolationのdomain regularityを確認しているか，<br/>
+(9) \(\operatorname{div}I_h^{RT}\nabla u=-\Pi_h^0f\) を使っているか，<br/>
+(10) CR consistency errorをRT interpolation errorと\(P_0\)-projection errorへ正しく変換しているか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>21．第15回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+CRとRTの相性は，単に両方がface-based elementだからではありません．
+</p>
+<p>
+CRは
+\[
+\int_F[\psi_h]\,ds=0
+\]
+を，RTは
+\[
+[[\boldsymbol v_h\cdot\boldsymbol n_F]]=0
+\]
+を持ち，RT0 normal componentがface上でconstantであるため，
+</p>
+\[
+\boxed{
+(\boldsymbol v_h,\nabla_h\psi_h)
++
+(\nabla\cdot\boldsymbol v_h,\psi_h)
+=
+0
+}
+\tag{29}
+\]
+<p>
+というexactな離散部分積分が成立します．
+</p>
+<p>
+さらに
+\[
+\boldsymbol v_h=I_h^{RT0}\nabla u
+\]
+を選び，
+\[
+\nabla\cdot I_h^{RT0}\nabla u=-\Pi_h^0f
+\]
+を使うことで，CRのconsistency errorは
+\[
+\boxed{
+\text{RT interpolation error}
++
+\text{\(P_0\)-projection error}
+}
+\]
+へ変換されます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 2 第3回の原則</b><br/>
+CR–RT relationの本質は，
+<b>nonconforming face errorを\(H(\mathrm{div})\)-conforming fluxのbulk errorへ移すこと</b>にある．
+</div>
+<p>
+次回はこのRT spaceを未知量として本当に使い，
+<b>mixed Poisson問題をRT0–P0で解き，局所保存を数値的に確認</b>します．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>M. Crouzeix and P.-A. Raviart, “Conforming and nonconforming finite element methods for solving the stationary Stokes equations I”, <i>RAIRO Analyse Numérique</i> 7 (1973), 33–75.</li>
+<li>P.-A. Raviart and J.-M. Thomas, “A mixed finite element method for second order elliptic problems”, in <i>Mathematical Aspects of the Finite Element Method</i>, Lecture Notes in Mathematics 606, Springer, 1977.</li>
+<li>D. Boffi, F. Brezzi and M. Fortin, <i>Mixed Finite Element Methods and Applications</i>, Springer, 2013.</li>
+<li>H. Ishizaka, <i>Anisotropic interpolation error analysis using a new geometric parameter and its applications</i>, PhD thesis, Ehime University, 2021, Chapter 11.6.</li>
+<li>H. Ishizaka, “Anisotropic Raviart–Thomas interpolation error estimates using a new geometric parameter”, <i>Calcolo</i> 59 (2022), 50. <a href="https://doi.org/10.1007/s10092-022-00494-1">DOI</a>.</li>
+<li><a href="./chatgpt-fem-13.html">第13回：Crouzeix–Raviart要素を本当に実装する</a></li>
+<li><a href="./chatgpt-fem-14.html">第14回：Raviart–Thomas要素を実装する</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 2 前回：</b><a href="./chatgpt-fem-14.html">第14回：Raviart–Thomas要素を実装する — normal fluxとPiola変換</a></p>
+<p><b>次回：</b>第16回：mixed Poisson問題を解く — RT0–P0と局所保存（構想中）</p>
+<p><a href="../#chatgpt-fem-season2">Season 2一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
