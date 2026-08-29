@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第21回：Nédélec要素を実装する — edge moment・curl・covariant Piola | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,Nedelec,Nédélec,Hcurl,curl,edge moment,covariant Piola,Maxwell,de Rham,Whitney forms,Python"/>
+<meta name="description" content="Season 2 第9回（通算第21回）として，lowest-order Nédélec first-family elementを実装します．edge tangential moment，global orientation，covariant Piola，curl commuting，H(curl) conformity，RTとの違いを数式とPythonで監査します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-21.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-21.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-21.html",
+      "headline": "第21回：Nédélec要素を実装する — edge moment・curl・covariant Piola",
+      "description": "lowest-order Nédélec first-family elementをedge moment，orientation，covariant Piola，curl commutingまで含めて実装・監査します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-21.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 2",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 2"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第21回：Nédélec要素を実装する — edge moment・curl・covariant Piola | Hiroki Ishizaka"/>
+<meta property="og:description" content="Nédélec要素ではvertex valueでもnormal fluxでもなく，oriented edge circulationを自由度にする．covariant Piolaとcurl commutingを実装します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-21.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第21回：Nédélec要素を実装する — edge moment・curl・covariant Piola | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="Edge tangential moments, H(curl), covariant Piola and commuting curl."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 2 第9回（通算第21回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第21回：Nédélec要素を実装する — edge moment・curl・covariant Piola</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 2 第9回（通算第21回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――今度は「接線成分」をつなぐ</h2>
+<div class="news"><article class="news-item">
+<p>
+第14回のRaviart–Thomas（RT）要素では，
+faceを横切る
+\[
+\boldsymbol q\cdot\boldsymbol n
+\]
+を自由度にしました．
+Nédélec要素では逆に，edgeに沿う
+\[
+\boldsymbol v\cdot\boldsymbol t
+\]
+を自由度にします．
+</p>
+\[
+\boxed{
+\text{Nédélec}
+=
+\text{edge tangential moment}
++
+H(\operatorname{curl})\text{ conformity}
++
+\text{covariant Piola}
+}
+\tag{1}
+\]
+<p>
+Maxwell方程式だけでなく，de Rham complex，Hodge decomposition，
+compatible discretisationを理解するための中心的な有限要素です．
+</p>
+<p>
+なおNédélec elementにもfirst family / second family，さらに各次数があります．
+<b>本記事ではlowest-order Nédélec first family</b>に限定します．
+</p>
+</article></div>
+
+<h2>1．\(H(\operatorname{curl})\) とは何か</h2>
+<div class="news"><article class="news-item">
+<p>
+2次元ではvector field
+\[
+\boldsymbol v=(v_1,v_2)^{\top}
+\]
+に対しscalar curlを
+\[
+\boxed{
+\operatorname{curl}\boldsymbol v
+=
+\partial_xv_2-\partial_yv_1
+}
+\tag{2}
+\]
+とします．
+</p>
+<p>
+そして
+\[
+\boxed{
+H(\operatorname{curl};\Omega)
+=
+\left\{
+\boldsymbol v\in L^2(\Omega)^2:
+\operatorname{curl}\boldsymbol v\in L^2(\Omega)
+\right\}.
+}
+\tag{3}
+\]
+</p>
+<p>
+3次元では通常のvector curl
+\[
+\nabla\times\boldsymbol v
+\]
+を使います．
+</p>
+</article></div>
+
+<h2>2．\(H(\operatorname{curl})\) conformityが要求するcontinuity</h2>
+<div class="news"><article class="news-item">
+<p>
+\(H^1\)-conforming elementはfunction valueをつなぎ，
+RTはnormal componentをつなぎました．
+Nédélecでは
+</p>
+\[
+\boxed{
+\text{tangential trace}
+}
+\tag{4}
+\]
+<p>
+をelement間で整合させます．
+</p>
+<p>
+2次元interior edge \(E\) では，
+固定したunit tangent \(\boldsymbol t_E\) に対して
+\[
+[\boldsymbol v_h\cdot\boldsymbol t_E]_E=0
+\tag{5}
+\]
+という形です．
+lowest-order first-family elementではedge上のtangential componentがconstantなので，
+一つのedge line integralを共有すればこのcontinuityが実現します．
+</p>
+</article></div>
+
+<h2>3．local Nédélec space</h2>
+<div class="news"><article class="news-item">
+<p>
+2次元triangle \(T\) ではlowest-order first-family spaceを
+\[
+\boxed{
+\mathcal N_0(T)
+=
+P_0(T)^2
+\oplus
+\operatorname{span}
+\left\{
+(-y,x)^{\top}
+\right\}.
+}
+\tag{6}
+\]
+</p>
+<p>
+従って
+\[
+\dim\mathcal N_0(T)=3,
+\]
+triangleの三つのedgesに一つずつDoFを置きます．
+</p>
+<p>
+3次元tetrahedronでは六つのedgesに対応して
+\[
+\dim\mathcal N_0(T)=6
+\]
+です．
+</p>
+</article></div>
+
+<h2>4．DoFはoriented edge circulation</h2>
+<div class="news"><article class="news-item">
+<p>
+edge
+\[
+E=[p_i,p_j]
+\]
+にorientation \(p_i\to p_j\) を与え，
+unit tangentを \(\boldsymbol t_E\) とします．
+自由度は
+</p>
+\[
+\boxed{
+m_E(\boldsymbol v)
+=
+\int_E
+\boldsymbol v\cdot\boldsymbol t_E\,ds.
+}
+\tag{7}
+\]
+<p>
+orientationを反転すると
+\[
+m_{-E}(\boldsymbol v)
+=
+-
+m_E(\boldsymbol v).
+\tag{8}
+\]
+</p>
+<p>
+ここがscalar CRと違い，
+RTと同じく<b>global sign管理が必須</b>になる理由です．
+</p>
+</article></div>
+
+<h2>5．barycentric coordinateでbasisを書く</h2>
+<div class="news"><article class="news-item">
+<p>
+triangleのbarycentric coordinatesを
+\[
+\lambda_0,\lambda_1,\lambda_2
+\]
+とします．
+oriented edge \(i\to j\) に対応するbasisを
+\[
+\boxed{
+\boldsymbol\theta_{ij}
+=
+\lambda_i\nabla\lambda_j
+-
+\lambda_j\nabla\lambda_i.
+}
+\tag{9}
+\]
+</p>
+<p>
+この式は2次元だけでなくsimplex上のlowest-order Whitney 1-form / Nédélec basisとして使えます．
+</p>
+</article></div>
+
+<h2>6．edge momentのKronecker property</h2>
+<div class="news"><article class="news-item">
+<p>
+edge \(E_{ij}\) を \(p_i\to p_j\) に向けると
+\[
+\boxed{
+\int_{E_{kl}}
+\boldsymbol\theta_{ij}
+\cdot
+\boldsymbol t_{kl}\,ds
+=
+\delta_{(ij),(kl)}.
+}
+\tag{10}
+\]
+</p>
+<p>
+実装の最初のunit testは，basisの値そのものではなく
+<b>このline-integral Kronecker property</b>です．
+</p>
+</article></div>
+
+<h2>7．reference triangleではbasisを手で書ける</h2>
+<div class="news"><article class="news-item">
+<p>
+reference triangle
+\[
+\widehat T
+=
+\operatorname{conv}
+\left\{
+(0,0)^{\top},
+(1,0)^{\top},
+(0,1)^{\top}
+\right\}
+\]
+で
+\[
+\widehat\lambda_0=1-\xi-\eta,
+\qquad
+\widehat\lambda_1=\xi,
+\qquad
+\widehat\lambda_2=\eta.
+\]
+edgesを
+\[
+0\to1,\qquad1\to2,\qquad2\to0
+\]
+と向けると
+</p>
+\[
+\boxed{
+\begin{aligned}
+\widehat{\boldsymbol\theta}_{01}
+&=
+(1-\eta,\xi)^{\top},
+\\
+\widehat{\boldsymbol\theta}_{12}
+&=
+(-\eta,\xi)^{\top},
+\\
+\widehat{\boldsymbol\theta}_{20}
+&=
+(-\eta,\xi-1)^{\top}.
+\end{aligned}
+}
+\tag{11}
+\]
+<p>
+三つともscalar curlは
+\[
+\boxed{
+\widehat{\operatorname{curl}}
+\widehat{\boldsymbol\theta}_{e}
+=
+2.
+}
+\tag{12}
+\]
+</p>
+</article></div>
+
+<h2>8．なぜusual compositionではだめなのか</h2>
+<div class="news"><article class="news-item">
+<p>
+affine map
+\[
+F_T(\widehat x)
+=
+J_T\widehat x+b_T
+\tag{13}
+\]
+を考えます．
+scalar P1なら
+\[
+v=\widehat v\circ F_T^{-1}
+\]
+でよいのですが，
+vector fieldを同じようにcompositionするだけではedge circulationが保存されません．
+</p>
+<p>
+Nédélec elementでは
+<b>covariant Piola transform</b>を使います．
+</p>
+</article></div>
+
+<h2>9．covariant Piola transform</h2>
+<div class="news"><article class="news-item">
+<p>
+\(\det J_T&gt;0\) とし，
+</p>
+\[
+\boxed{
+\boldsymbol v(x)
+=
+J_T^{-\top}
+\widehat{\boldsymbol v}(\widehat x),
+\qquad
+x=F_T(\widehat x).
+}
+\tag{14}
+\]
+<p>
+これがNédélecのcovariant Piola transformです．
+</p>
+<p>
+RTのcontravariant Piola
+\[
+\boldsymbol q
+=
+\frac1{\det J_T}
+J_T\widehat{\boldsymbol q}
+\tag{15}
+\]
+とは全く違うtransformです．
+</p>
+</article></div>
+
+<h2>10．covariant Piolaはedge line integralを保存する</h2>
+<div class="news"><article class="news-item">
+<p>
+reference edge tangent vectorを \(d\widehat x\) とすると
+\[
+dx
+=
+J_T\,d\widehat x.
+\]
+従って
+</p>
+\[
+\begin{aligned}
+\boldsymbol v\cdot dx
+&=
+\left(
+J_T^{-\top}
+\widehat{\boldsymbol v}
+\right)
+\cdot
+\left(
+J_T\,d\widehat x
+\right)
+\\
+&=
+\widehat{\boldsymbol v}
+\cdot
+d\widehat x.
+\end{aligned}
+\tag{16}
+\]
+<p>
+したがって
+</p>
+\[
+\boxed{
+\int_E
+\boldsymbol v\cdot\boldsymbol t_E\,ds
+=
+\int_{\widehat E}
+\widehat{\boldsymbol v}
+\cdot
+\widehat{\boldsymbol t}_{\widehat E}
+\,d\widehat s.
+}
+\tag{17}
+\]
+<p>
+これがcovariant Piolaを選ぶ本質です．
+</p>
+</article></div>
+
+<h2>11．curlはどう変換されるか――2次元</h2>
+<div class="news"><article class="news-item">
+<p>
+2次元では式 (14) の下で
+\[
+\boxed{
+\operatorname{curl}\boldsymbol v
+=
+\frac1{\det J_T}
+\widehat{\operatorname{curl}}
+\widehat{\boldsymbol v}.
+}
+\tag{18}
+\]
+</p>
+<p>
+従ってreference elementでconstantだったcurlはphysical triangleでもconstantです．
+</p>
+</article></div>
+
+<h2>12．curlはどう変換されるか――3次元</h2>
+<div class="news"><article class="news-item">
+<p>
+3次元ではcurlはvectorで，
+</p>
+\[
+\boxed{
+\nabla\times\boldsymbol v
+=
+\frac1{\det J_T}
+J_T
+\left(
+\widehat\nabla\times
+\widehat{\boldsymbol v}
+\right).
+}
+\tag{19}
+\]
+<p>
+ここで現れる
+\[
+\frac1{\det J_T}J_T
+\]
+はRTのcontravariant Piolaと同じ形です．
+</p>
+<p>
+つまり
+</p>
+\[
+\boxed{
+\text{Nédélec field}
+\xrightarrow{\operatorname{curl}}
+\text{RT-type field}
+}
+\tag{20}
+\]
+<p>
+というde Rham structureがPiola transformの段階ですでに見えています．
+</p>
+</article></div>
+
+<h2>13．NédélecとRTを並べる</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">element</th>
+<th style="border:1px solid #777; padding:7px;">DoF</th>
+<th style="border:1px solid #777; padding:7px;">space</th>
+<th style="border:1px solid #777; padding:7px;">Piola</th>
+<th style="border:1px solid #777; padding:7px;">operator</th>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">Nédélec</td>
+<td style="border:1px solid #777; padding:7px;">edge tangential circulation</td>
+<td style="border:1px solid #777; padding:7px;">\(H(\operatorname{curl})\)</td>
+<td style="border:1px solid #777; padding:7px;">\(J^{-\top}\)</td>
+<td style="border:1px solid #777; padding:7px;">curl</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">RT</td>
+<td style="border:1px solid #777; padding:7px;">face normal flux</td>
+<td style="border:1px solid #777; padding:7px;">\(H(\operatorname{div})\)</td>
+<td style="border:1px solid #777; padding:7px;">\((\det J)^{-1}J\)</td>
+<td style="border:1px solid #777; padding:7px;">div</td>
+</tr>
+</table>
+<p>
+両者は似ていますが，
+<b>normalとtangent，contravariantとcovariantを入れ替えてはいけません</b>．
+</p>
+</article></div>
+
+<h2>14．global edge orientation</h2>
+<div class="news"><article class="news-item">
+<p>
+global meshでは各edge
+\[
+E=\{a,b\}
+\]
+に一つorientationを決めます．
+例えばglobal vertex IDを使って
+\[
+\min(a,b)\to\max(a,b)
+\]
+と決めれば再現可能です．
+</p>
+<p>
+element-local edge orientationとglobal orientationが同じなら
+\[
+s_{T,E}=+1,
+\]
+逆なら
+\[
+s_{T,E}=-1.
+\]
+</p>
+<p>
+local basisとglobal unknownの対応には
+\[
+\boxed{
+c_{T,E}^{\mathrm{local}}
+=
+s_{T,E}\,
+c_E^{\mathrm{global}}
+}
+\tag{21}
+\]
+を使います．
+</p>
+</article></div>
+
+<h2>15．orientation signをassemblyへ入れる</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">global_edges = element_edges[t]
+signs = element_edge_signs[t]   # +1 or -1
+
+for i, I in enumerate(global_edges):
+    for j, J in enumerate(global_edges):
+        A[I, J] += (
+            signs[i]
+            * signs[j]
+            * A_local[i, j]
+        )
+</code></pre>
+<p>
+RT assemblyと同じ形ですが，
+signが表しているのはnormal orientationではなく
+<b>edge tangent orientation</b>です．
+</p>
+</article></div>
+
+<h2>16．canonical edge interpolation</h2>
+<div class="news"><article class="news-item">
+<p>
+十分regularなvector field \(\boldsymbol v\) に対し，
+local Nédélec interpolation \(I_T^N\boldsymbol v\) を
+</p>
+\[
+\boxed{
+\int_E
+I_T^N\boldsymbol v
+\cdot\boldsymbol t_E\,ds
+=
+\int_E
+\boldsymbol v
+\cdot\boldsymbol t_E\,ds
+\qquad
+\forall E\subset\partial T
+}
+\tag{22}
+\]
+<p>
+で定義します．
+</p>
+<p>
+したがって
+\[
+I_T^N\boldsymbol v
+=
+\sum_{E\subset\partial T}
+\left(
+\int_E
+\boldsymbol v\cdot\boldsymbol t_E\,ds
+\right)
+\boldsymbol\theta_E.
+\tag{23}
+\]
+</p>
+</article></div>
+
+<h2>17．重要：\(H(\operatorname{curl})\) だけではedge momentを古典的に書けない</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (22) を見て，
+</p>
+\[
+\boldsymbol v\in H(\operatorname{curl};T)
+\quad\Longrightarrow\quad
+\int_E
+\boldsymbol v\cdot\boldsymbol t_E\,ds
+\text{ が普通の積分として存在する}
+\]
+<p>
+と考えてはいけません．
+</p>
+<p>
+generic \(H(\operatorname{curl})\) fieldのtangential traceはnegative-order trace spaceで理解され，
+特に3次元ではface traceからさらにedgeへrestrictionする操作は自動的ではありません．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>この記事での安全な前提</b><br/>
+canonical interpolationを実際に評価するときは，
+例えば
+\[
+\boxed{
+\boldsymbol v\in H^1(T)^d
+}
+\tag{24}
+\]
+のようにedge momentsがclassically well-definedなregularityを仮定する．
+</div>
+<p>
+これは第14回で述べたRT interpolationのtrace regularity問題と同じ種類の注意です．
+</p>
+</article></div>
+
+<h2>18．commuting property――2次元ではStokesの定理だけで見える</h2>
+<div class="news"><article class="news-item">
+<p>
+\(I_T^N\boldsymbol v\in\mathcal N_0(T)\) なので
+\[
+\operatorname{curl}I_T^N\boldsymbol v
+\]
+はconstantです．
+Stokesの定理とedge moment preservationから
+</p>
+\[
+\begin{aligned}
+\int_T
+\operatorname{curl}
+I_T^N\boldsymbol v\,dx
+&=
+\int_{\partial T}
+I_T^N\boldsymbol v
+\cdot\boldsymbol t\,ds
+\\
+&=
+\int_{\partial T}
+\boldsymbol v
+\cdot\boldsymbol t\,ds
+\\
+&=
+\int_T
+\operatorname{curl}
+\boldsymbol v\,dx.
+\end{aligned}
+\tag{25}
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+\operatorname{curl}
+I_T^N\boldsymbol v
+=
+\Pi_T^0
+\operatorname{curl}
+\boldsymbol v.
+}
+\tag{26}
+\]
+<p>
+これがlowest-order Nédélec interpolationのcommuting identityです．
+</p>
+</article></div>
+
+<h2>19．3次元ではNédélecからRTへcommuteする</h2>
+<div class="news"><article class="news-item">
+<p>
+十分smoothな3次元fieldでは，lowest-order de Rham projectionの形として
+</p>
+\[
+\boxed{
+\operatorname{curl}
+I_T^N\boldsymbol v
+=
+I_T^{RT}
+\left(
+\operatorname{curl}\boldsymbol v
+\right)
+}
+\tag{27}
+\]
+<p>
+が現れます．
+</p>
+<p>
+edge circulationを保存するNédélecと，
+face fluxを保存するRTが
+Stokesの定理を通して接続されるわけです．
+</p>
+<p>
+次回のde Rham complexではこの関係をglobal incidence matrixまで含めて実装します．
+</p>
+</article></div>
+
+<h2>20．model variational problem</h2>
+<div class="news"><article class="news-item">
+<p>
+pure curl–curl operatorにはgradient kernelがあるので，
+最初の実装testではreaction termを加えたcoercive problemを使います．
+</p>
+<p>
+2次元で
+\[
+H_0(\operatorname{curl};\Omega)
+=
+\left\{
+\boldsymbol v\in H(\operatorname{curl};\Omega):
+\boldsymbol v\cdot\boldsymbol t=0
+\text{ on }\partial\Omega
+\right\}
+\]
+とし，
+</p>
+\[
+\boxed{
+\text{Find }\boldsymbol u\in H_0(\operatorname{curl};\Omega)
+}
+\]
+<p>
+such that
+</p>
+\[
+\boxed{
+(
+\operatorname{curl}\boldsymbol u,
+\operatorname{curl}\boldsymbol v
+)
++
+(
+\boldsymbol u,\boldsymbol v
+)
+=
+(
+\boldsymbol f,\boldsymbol v
+)
+\quad
+\forall
+\boldsymbol v\in H_0(\operatorname{curl};\Omega).
+}
+\tag{28}
+\]
+</p>
+</article></div>
+
+<h2>21．local matrix</h2>
+<div class="news"><article class="news-item">
+<p>
+local Nédélec basisを
+\[
+\boldsymbol\theta_0,
+\boldsymbol\theta_1,
+\boldsymbol\theta_2
+\]
+とすると
+</p>
+\[
+\boxed{
+A_{ij}^{(T)}
+=
+\int_T
+\boldsymbol\theta_j\cdot\boldsymbol\theta_i\,dx
++
+\int_T
+\operatorname{curl}\boldsymbol\theta_j
+\operatorname{curl}\boldsymbol\theta_i\,dx.
+}
+\tag{29}
+\]
+<p>
+curlはconstantなのでcurl–curl termはexactに
+</p>
+\[
+|T|
+\operatorname{curl}\boldsymbol\theta_j
+\operatorname{curl}\boldsymbol\theta_i
+\]
+<p>
+で計算できます．
+</p>
+</article></div>
+
+<h2>22．tangential boundary conditionはboundary edge DoFをzeroにする</h2>
+<div class="news"><article class="news-item">
+<p>
+homogeneous condition
+\[
+\boldsymbol u\cdot\boldsymbol t=0
+\qquad
+\text{on }\partial\Omega
+\tag{30}
+\]
+はlowest-order Nédélecでは
+</p>
+\[
+\boxed{
+\int_E
+\boldsymbol u_h\cdot\boldsymbol t_E\,ds
+=
+0
+\qquad
+\forall E\subset\partial\Omega
+}
+\tag{31}
+\]
+<p>
+としてboundary edge unknownを消去すれば実現できます．
+</p>
+<p>
+normal componentをzeroにするのではありません．
+</p>
+</article></div>
+
+<h2>23．patch test――Nédélec spaceそのものを再現する</h2>
+<div class="news"><article class="news-item">
+<p>
+2次元lowest-order spaceにexactに属する
+</p>
+\[
+\boxed{
+\boldsymbol v(x,y)
+=
+(1-y,\ 2+x)^{\top}
+}
+\tag{32}
+\]
+<p>
+を使います．
+</p>
+<p>
+これは
+\[
+\boldsymbol a+c(-y,x)^{\top}
+\]
+の形なので
+\[
+I_h^N\boldsymbol v
+=
+\boldsymbol v
+\]
+でなければなりません．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">\(n\)</th><th style="border:1px solid #777; padding:7px;">max pointwise interpolation error</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">1</td><td style="border:1px solid #777; padding:7px;">8.95e-16</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">1.35e-15</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">1.35e-15</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">2.25e-15</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">3.16e-15</td></tr>
+</table>
+<p>
+このtestはbasis，edge integration，orientationを一度に確認します．
+</p>
+</article></div>
+
+<h2>24．smooth interpolation test</h2>
+<div class="news"><article class="news-item">
+<p>
+次に
+</p>
+\[
+\boxed{
+\boldsymbol v(x,y)
+=
+\begin{pmatrix}
+\sin(\pi y)\\
+\sin(\pi x)
+\end{pmatrix},
+\qquad
+\operatorname{curl}\boldsymbol v
+=
+\pi\cos(\pi x)-\pi\cos(\pi y).
+}
+\tag{33}
+\]
+<p>
+uniform triangulation上でedge momentsを高精度Gauss quadratureで計算しました．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">\(n\)</th>
+<th style="border:1px solid #777; padding:7px;">relative \(L^2\)</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+<th style="border:1px solid #777; padding:7px;">relative curl \(L^2\)</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">4.2092e-1</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">2.6153e-1</td><td style="border:1px solid #777; padding:7px;">—</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">2.2290e-1</td><td style="border:1px solid #777; padding:7px;">0.917</td><td style="border:1px solid #777; padding:7px;">1.3988e-1</td><td style="border:1px solid #777; padding:7px;">0.903</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">1.1289e-1</td><td style="border:1px solid #777; padding:7px;">0.981</td><td style="border:1px solid #777; padding:7px;">7.1023e-2</td><td style="border:1px solid #777; padding:7px;">0.978</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">5.6622e-2</td><td style="border:1px solid #777; padding:7px;">0.995</td><td style="border:1px solid #777; padding:7px;">3.5646e-2</td><td style="border:1px solid #777; padding:7px;">0.995</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">32</td><td style="border:1px solid #777; padding:7px;">2.8333e-2</td><td style="border:1px solid #777; padding:7px;">0.999</td><td style="border:1px solid #777; padding:7px;">1.7840e-2</td><td style="border:1px solid #777; padding:7px;">0.999</td></tr>
+</table>
+<p>
+smooth fieldに対して
+</p>
+\[
+\boxed{
+\|\boldsymbol v-I_h^N\boldsymbol v\|_{L^2}
+=
+O(h),
+\qquad
+\|\operatorname{curl}
+(\boldsymbol v-I_h^N\boldsymbol v)\|_{L^2}
+=
+O(h)
+}
+\tag{34}
+\]
+<p>
+へ漸近しています．
+</p>
+</article></div>
+
+<h2>25．commuting identityも数値で直接監査する</h2>
+<div class="news"><article class="news-item">
+<p>
+各element \(T\) で
+\[
+\delta_T
+=
+\left|
+\operatorname{curl}
+I_T^N\boldsymbol v
+-
+\frac1{|T|}
+\int_T
+\operatorname{curl}\boldsymbol v\,dx
+\right|
+\tag{35}
+\]
+を計算すると，
+\(n=32\) でもmaximum defectは
+\[
+4.62\times10^{-14}
+\]
+程度でした．
+</p>
+<p>
+これは式 (26) を実装レベルで直接testしていることになります．
+</p>
+</article></div>
+
+<h2>26．shape-regular meshでの基本的な補間スケール</h2>
+<div class="news"><article class="news-item">
+<p>
+十分smoothなfieldとshape-regular meshでは典型的に
+</p>
+\[
+\boxed{
+\|\boldsymbol v-I_T^N\boldsymbol v\|_{L^2(T)}
+\le
+C h_T
+|\boldsymbol v|_{H^1(T)}
+}
+\tag{36}
+\]
+<p>
+であり，commuting propertyから
+</p>
+\[
+\boxed{
+\|
+\operatorname{curl}
+(\boldsymbol v-I_T^N\boldsymbol v)
+\|_{L^2(T)}
+=
+\|
+\operatorname{curl}\boldsymbol v
+-
+\Pi_T^0\operatorname{curl}\boldsymbol v
+\|_{L^2(T)}.
+}
+\tag{37}
+\]
+<p>
+従ってcurlが \(H^1\) なら右辺も \(O(h_T)\) です．
+</p>
+</article></div>
+
+<h2>27．anisotropic meshではcovariant Piolaを雑に評価しない</h2>
+<div class="news"><article class="news-item">
+<p>
+anisotropic elementでは
+\[
+J_T^{-\top}
+\]
+のsingular valuesが方向ごとに大きく異なります．
+そのため
+</p>
+\[
+\|J_T^{-\top}\|
+\]
+だけで全てをisotropicに潰すと，
+directional approximation structureを失うことがあります．
+</p>
+<p>
+さらに3次元curl transformには
+\[
+\frac1{\det J_T}J_T
+\]
+も入ります．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>anisotropic Nédélecで監査するもの</b><br/>
+\[
+\boxed{
+\text{edge directions}
++
+\text{covariant Piola}
++
+\text{curl transform}
++
+\text{mesh geometry}
+}
+\tag{38}
+\]
+</div>
+<p>
+RTで得たanisotropic estimateを，
+Piolaが違うNédélecへそのまま置き換えることはできません．
+</p>
+</article></div>
+
+<h2>28．pure curl–curlではgradient kernelを忘れない</h2>
+<div class="news"><article class="news-item">
+<p>
+Maxwell型の
+\[
+(
+\operatorname{curl}\boldsymbol u,
+\operatorname{curl}\boldsymbol v
+)
+\]
+だけをmatrixにすると，
+</p>
+\[
+\operatorname{curl}\nabla\phi=0
+\]
+<p>
+なのでgradient fieldsがkernelに入ります．
+</p>
+<p>
+これはbugではなくcontinuous operatorの構造です．
+</p>
+\[
+\boxed{
+\operatorname{grad}
+\longrightarrow
+\operatorname{curl}
+\longrightarrow
+\operatorname{div}
+}
+\tag{39}
+\]
+<p>
+というcomplexを無視してlinear solverだけを眺めると，
+「matrixがsingularだから実装失敗」と誤診します．
+</p>
+</article></div>
+
+<h2>29．Nédélec実装でAIが間違えやすい点</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">mistake</th><th style="border:1px solid #777; padding:7px;">何が壊れるか</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(J^{-1}\) や \(J\) を使う</td><td style="border:1px solid #777; padding:7px;">edge circulationが保存されない</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">RTのcontravariant Piolaを使う</td><td style="border:1px solid #777; padding:7px;">\(H(\operatorname{curl})\) conformityを失う</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">edge orientation signを無視する</td><td style="border:1px solid #777; padding:7px;">隣接elementでtangential traceの符号が反転</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">normal componentを共有する</td><td style="border:1px solid #777; padding:7px;">Nédélecではなく別のconformityを実装してしまう</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">generic \(H(\operatorname{curl})\) fieldにedge integralを無条件で適用</td><td style="border:1px solid #777; padding:7px;">interpolantの定義域を誤る</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">pure curl–curl matrixのkernelをbug扱い</td><td style="border:1px solid #777; padding:7px;">de Rham structureを見落とす</td></tr>
+</table>
+</article></div>
+
+<h2>30．Nédélec implementation audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このlowest-order Nédélec first-family finite-element codeを数学的に監査してください．<br/>
+(1) local spaceが2Dで \(P_0^2\oplus\operatorname{span}\{(-y,x)^{\top}\}\) になっているか，<br/>
+(2) DoFがoriented edge tangential line integralsか，<br/>
+(3) basis \(\lambda_i\nabla\lambda_j-\lambda_j\nabla\lambda_i\) がedge-moment Kronecker propertyを満たすか，<br/>
+(4) affine transformが \(J^{-\top}\) のcovariant Piolaか，<br/>
+(5) edge line integral preservationを数値またはsymbolicに確認しているか，<br/>
+(6) 2D curl transformが \((\det J)^{-1}\widehat{\operatorname{curl}}\) か，<br/>
+(7) 3D curl transformが \((\det J)^{-1}J\widehat{\operatorname{curl}}\) か，<br/>
+(8) global edge orientationを一意に固定しlocal/global signを管理しているか，<br/>
+(9) boundary conditionでnormalではなくtangential edge DoFを処理しているか，<br/>
+(10) canonical interpolationをgeneric \(H(\operatorname{curl})\) fieldに無条件で適用していないか，<br/>
+(11) \(\operatorname{curl}I_T^N=\Pi_T^0\operatorname{curl}\) のcommuting testを行っているか，<br/>
+(12) 3DではNédélec–RT commuting relationを意識しているか，<br/>
+(13) anisotropic meshでcovariant Piolaのdirectional scalingを潰していないか，<br/>
+(14) pure curl–curl operatorのgradient kernelを実装bugと誤認していないか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>31．第21回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+Nédélec elementでは
+</p>
+\[
+\boxed{
+\begin{aligned}
+&\text{edge circulation},\\
+&\text{tangential continuity},\\
+&\text{covariant Piola},\\
+&\text{curl commuting}
+\end{aligned}
+}
+\tag{40}
+\]
+<p>
+が一つの構造になっています．
+</p>
+<p>
+特に
+</p>
+\[
+\boxed{
+\int_E
+\boldsymbol v\cdot\boldsymbol t\,ds
+\quad\text{を保存したい}
+\quad\Longrightarrow\quad
+J^{-\top}
+}
+\tag{41}
+\]
+<p>
+というPiola transformの選択は，
+暗記ではなくDoF invarianceから導けます．
+</p>
+<p>
+そして3次元では
+</p>
+\[
+\boxed{
+P_1
+\xrightarrow{\nabla}
+\mathcal N_0
+\xrightarrow{\operatorname{curl}}
+RT_0
+\xrightarrow{\operatorname{div}}
+P_0
+}
+\tag{42}
+\]
+<p>
+というde Rham complexが見え始めます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 2 第9回の原則</b><br/>
+Nédélec要素では
+<b>「vector basisの形」を覚えるより，「どのoriented integralを保存するか」からPiola・orientation・commutingを導く</b>．
+</div>
+<p>
+次回はこの構造をまとめて，
+<b>de Rham complexをコードで見る — Lagrange・Nédélec・RT・P0</b>
+へ進みます．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>J.-C. Nédélec, “Mixed finite elements in \(\mathbb R^3\)”, <i>Numerische Mathematik</i> 35 (1980), 315–341.</li>
+<li>P. Monk, <i>Finite Element Methods for Maxwell's Equations</i>, Oxford University Press, 2003.</li>
+<li>R. Hiptmair, “Finite elements in computational electromagnetism”, <i>Acta Numerica</i> 11 (2002), 237–339.</li>
+<li>D. N. Arnold, R. S. Falk and R. Winther, “Finite element exterior calculus: from Hodge theory to numerical stability”, <i>Bulletin of the American Mathematical Society</i> 47 (2010), 281–354.</li>
+<li><a href="./chatgpt-fem-14.html">第14回：Raviart–Thomas要素を実装する — normal fluxとPiola変換</a></li>
+<li><a href="./chatgpt-fem-15.html">第15回：CRとRTはなぜ相性がよいのか</a></li>
+<li><a href="./chatgpt-fem-20.html">第20回：Morley要素を実装する — 4階問題と非適合有限要素法</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 2 前回：</b><a href="./chatgpt-fem-20.html">第20回：Morley要素を実装する — 4階問題と非適合有限要素法</a></p>
+<p><b>次回：</b>第22回：de Rham complexをコードで見る — Lagrange・Nédélec・RT・P0（構想中）</p>
+<p><a href="../#chatgpt-fem-season2">Season 2一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
