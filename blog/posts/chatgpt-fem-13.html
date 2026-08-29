@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<title>第13回：Crouzeix–Raviart要素を本当に実装する — edge DoF・assembly・broken gradient | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,Crouzeix-Raviart,CR element,nonconforming finite element,edge degree of freedom,broken gradient,Poisson equation,Python"/>
+<meta name="description" content="Season 2 第1回（通算第13回）として，Crouzeix–Raviart要素をreference basis，edge mean DoF，element-to-edge connectivity，broken gradient，Dirichlet条件，patch test，相対L2・broken H1誤差まで実装し，数学的に監査します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-13.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-13.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-13.html",
+      "headline": "第13回：Crouzeix–Raviart要素を本当に実装する — edge DoF・assembly・broken gradient",
+      "description": "Crouzeix–Raviart要素をreference basis，edge mean DoF，element-to-edge connectivity，broken gradient，patch test，収束試験まで実装して数学的に監査します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-13.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-29",
+      "dateModified": "2026-08-29",
+      "articleSection": "Computational FEM with AI — Season 2",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-29"/>
+<meta property="article:modified_time" content="2026-08-29"/>
+<meta property="article:section" content="Computational FEM with AI — Season 2"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第13回：Crouzeix–Raviart要素を本当に実装する — edge DoF・assembly・broken gradient | Hiroki Ishizaka"/>
+<meta property="og:description" content="頂点DoFをedge meanへ置き換え，CR要素を本当に実装する．nonconforming continuity，broken gradient，patch test，収束まで監査します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-13.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第13回：Crouzeix–Raviart要素を本当に実装する — edge DoF・assembly・broken gradient | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="Season 2 begins with a full CR implementation: edge DoF, connectivity, broken gradient, patch test and convergence."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 2 第1回（通算第13回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第13回：Crouzeix–Raviart要素を本当に実装する — edge DoF・assembly・broken gradient</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 2 第1回（通算第13回）</b><br/><time datetime="2026-08-29">29th August 2026</time></p>
+
+<h2>はじめに――Season 2では「自由度の構造」からコードを書く</h2>
+<div class="news"><article class="news-item">
+<p>
+Season 1では，連続P1 Lagrange要素を中心に，
+弱形式，Jacobian，assembly，3次元，異方性mesh，debugging，誤差解析まで扱いました．
+</p>
+<p>
+Season 2では，P1の延長として高次化するのではなく，
+<b>有限要素空間そのものの構造を変える</b>方向へ進みます．
+最初に扱うのはCrouzeix–Raviart（CR）要素です．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>P1 LagrangeからCRへ</b><br/>
+P1：vertex valueをglobal DoFにする．<br/>
+CR：edge meanをglobal DoFにする．<br/>
+したがってassemblyの中心も
+\[
+\text{element-to-vertex}
+\quad\longrightarrow\quad
+\text{element-to-edge}
+\]
+へ変わる．
+</div>
+</article></div>
+
+<h2>1．モデル問題とCR離散空間</h2>
+<div class="news"><article class="news-item">
+<p>
+単位正方形
+\[
+\Omega=(0,1)^2
+\]
+でPoisson問題
+\[
+-\Delta u=f
+\qquad\text{in }\Omega,
+\tag{1}
+\]
+\[
+u=0
+\qquad\text{on }\partial\Omega
+\tag{2}
+\]
+を考えます．
+</p>
+<p>
+三角形分割を \(\mathcal T_h\)，内部辺集合を \(\mathcal E_h^i\)，境界辺集合を \(\mathcal E_h^\partial\) とします．
+homogeneous CR spaceを
+\[
+V_h^{CR}
+=
+\left\{
+v_h\in L^2(\Omega):
+v_h|_T\in P_1(T),\
+\int_E[v_h]\,ds=0\ \forall E\in\mathcal E_h^i,\
+\int_Ev_h\,ds=0\ \forall E\in\mathcal E_h^\partial
+\right\}
+\tag{3}
+\]
+とします．
+</p>
+<p>
+ここで \([v_h]\) は内部辺上のjumpです．
+一般に
+\[
+V_h^{CR}\not\subset H_0^1(\Omega),
+\]
+なのでCRはnonconforming finite elementです．
+</p>
+</article></div>
+
+<h2>2．自由度はedge mean</h2>
+<div class="news"><article class="news-item">
+<p>
+三角形 \(T\) の辺を \(E_0,E_1,E_2\) とし，
+\(E_i\) は頂点 \(p_i\) の反対側の辺とします．
+local DoFは
+\[
+\boxed{
+m_i(v)
+=
+\frac1{|E_i|}
+\int_{E_i}v\,ds.
+}
+\tag{4}
+\]
+</p>
+<p>
+隣接する二三角形が内部辺 \(E\) を共有するとき，
+両側のlocal edge meanを<b>一つのglobal unknown</b>として共有します．
+この一つの設計だけで
+\[
+\int_E[v_h]\,ds=0
+\]
+が自動的に実装されます．
+</p>
+</article></div>
+
+<h2>3．reference triangle上のCR basis</h2>
+<div class="news"><article class="news-item">
+<p>
+reference triangle
+\[
+\widehat T
+=
+\operatorname{conv}
+\{(0,0)^{\top},(1,0)^{\top},(0,1)^{\top}\}
+\]
+のbarycentric coordinatesを
+\[
+\widehat\lambda_0=1-\xi-\eta,
+\qquad
+\widehat\lambda_1=\xi,
+\qquad
+\widehat\lambda_2=\eta
+\]
+とすると，CR basisは
+\[
+\boxed{
+\widehat\psi_i
+=
+1-2\widehat\lambda_i.
+}
+\tag{5}
+\]
+</p>
+<p>
+従って
+\[
+\widehat\psi_0=-1+2\xi+2\eta,
+\qquad
+\widehat\psi_1=1-2\xi,
+\qquad
+\widehat\psi_2=1-2\eta.
+\tag{6}
+\]
+そのgradientは
+\[
+\widehat\nabla\widehat\psi_0=(2,2)^{\top},
+\qquad
+\widehat\nabla\widehat\psi_1=(-2,0)^{\top},
+\qquad
+\widehat\nabla\widehat\psi_2=(0,-2)^{\top}.
+\tag{7}
+\]
+</p>
+<p>
+linear functionのedge averageはedge midpoint valueに等しいので，
+reference triangleでは
+\[
+m_j(\widehat\psi_i)=\delta_{ij}
+\tag{8}
+\]
+をmidpoint evaluationでも確認できます．
+ただしCR DoFの定義そのものはedge meanです．
+</p>
+</article></div>
+
+<h2>4．local matrixはP1と同じJacobian変換で作れる</h2>
+<div class="news"><article class="news-item">
+<p>
+affine map
+\[
+F_T(\widehat x)=p_0+J_T\widehat x
+\]
+に対してscalar CR basisは
+\[
+\psi_i
+=
+\widehat\psi_i\circ F_T^{-1}.
+\]
+従って
+\[
+\boxed{
+\nabla\psi_i
+=
+J_T^{-\top}
+\widehat\nabla\widehat\psi_i.
+}
+\tag{9}
+\]
+</p>
+<p>
+local stiffness matrixは
+\[
+K^{(T)}_{ij}
+=
+\int_T\nabla\psi_j\cdot\nabla\psi_i\,dx
+=
+|T|
+\nabla\psi_j\cdot\nabla\psi_i.
+\tag{10}
+\]
+</p>
+<p>
+reference triangle自身では
+\[
+K^{(\widehat T)}
+=
+\begin{pmatrix}
+4&-2&-2\\
+-2&2&0\\
+-2&0&2
+\end{pmatrix}.
+\tag{11}
+\]
+</p>
+<p>
+ここでも
+\[
+K^{(T)}\mathbf1=0
+\tag{12}
+\]
+です．
+なぜなら
+\[
+\psi_0+\psi_1+\psi_2=1
+\]
+だからです．
+</p>
+</article></div>
+
+<h2>5．CR離散問題ではbroken gradientを使う</h2>
+<div class="news"><article class="news-item">
+<p>
+CR functionはglobal \(H^1\) functionではないので，
+gradientはelementwiseに取ります．
+</p>
+\[
+(\nabla_hv_h)|_T
+:=
+\nabla(v_h|_T).
+\tag{13}
+\]
+<p>
+discrete bilinear formは
+\[
+a_h(u_h,v_h)
+=
+\sum_{T\in\mathcal T_h}
+\int_T
+\nabla_hu_h\cdot\nabla_hv_h\,dx.
+\tag{14}
+\]
+</p>
+<p>
+CR approximation \(u_h\in V_h^{CR}\) は
+\[
+\boxed{
+a_h(u_h,v_h)
+=
+(f,v_h)
+\qquad
+\forall v_h\in V_h^{CR}.
+}
+\tag{15}
+\]
+</p>
+<p>
+対応するbroken \(H^1\)-seminormは
+\[
+\boxed{
+|v_h|_{1,h}^2
+=
+\sum_{T\in\mathcal T_h}
+\|\nabla v_h\|_{L^2(T)}^2.
+}
+\tag{16}
+\]
+</p>
+</article></div>
+
+<h2>6．最重要データ構造はelement-to-edge connectivity</h2>
+<div class="news"><article class="news-item">
+<p>
+P1 Lagrange要素では
+\[
+\texttt{tri=[v0,v1,v2]}
+\]
+そのものがlocal-to-global mapでした．
+CRではlocal DoFが
+\[
+E_0=[v_1,v_2],
+\qquad
+E_1=[v_2,v_0],
+\qquad
+E_2=[v_0,v_1]
+\tag{17}
+\]
+なので，global edge numberを作る必要があります．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">local_edges = [
+    (1, 2),
+    (2, 0),
+    (0, 1)
+]
+
+
+def build_edges(triangles):
+    edge_dict = {}
+    element_edges = np.empty(
+        (len(triangles), 3),
+        dtype=int
+    )
+
+    counts = []
+
+    for t, tri in enumerate(triangles):
+        for le, (a, b) in enumerate(
+            local_edges
+        ):
+            key = tuple(sorted((
+                tri[a],
+                tri[b]
+            )))
+
+            if key not in edge_dict:
+                edge_dict[key] = len(edge_dict)
+                counts.append(0)
+
+            eid = edge_dict[key]
+
+            element_edges[t, le] = eid
+            counts[eid] += 1
+
+    edges = np.empty(
+        (len(edge_dict), 2),
+        dtype=int
+    )
+
+    for key, eid in edge_dict.items():
+        edges[eid] = key
+
+    return (
+        edges,
+        element_edges,
+        np.array(counts)
+    )
+</code></pre>
+<p>
+scalar CRではedge orientationによる符号反転はありません．
+したがって
+<code>sorted</code>
+したvertex pairをglobal edge keyに使えます．
+RT・Nédélecではこの点が変わります．
+</p>
+</article></div>
+
+<h2>7．boundary DoFはboundary edgeそのもの</h2>
+<div class="news"><article class="news-item">
+<p>
+conforming P1ではboundary vertexを探しました．
+CRではboundary edgeを探します．
+manifold triangulationなら，
+一つのtriangleにしか属さないedgeがboundary edgeです．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">boundary_edges = np.where(
+    edge_counts == 1
+)[0]
+
+interior_edges = np.where(
+    edge_counts == 2
+)[0]
+</code></pre>
+<p>
+homogeneous Dirichlet conditionでは
+\[
+u_E=0
+\qquad
+(E\in\mathcal E_h^\partial)
+\tag{18}
+\]
+です．
+ここで \(u_E\) はboundary edge mean DoFです．
+</p>
+<p>
+一般の非同次条件 \(u=g\) なら
+\[
+u_E
+=
+\frac1{|E|}
+\int_Eg\,ds.
+\tag{19}
+\]
+単にboundary midpointで \(g\) を評価する方法は，
+\(g\) がaffineなら厳密ですが，一般の \(g\) ではedge quadratureになります．
+</p>
+</article></div>
+
+<h2>8．assemblyはvertex番号ではなくedge番号へ足す</h2>
+<div class="news"><article class="news-item">
+<p>
+一要素のglobal edge番号を
+\[
+(e_0,e_1,e_2)
+\]
+とすると，
+</p>
+\[
+A_{e_a,e_b}
+\mathrel{+}=K^{(T)}_{ab},
+\qquad
+b_{e_a}\mathrel{+}=F^{(T)}_a.
+\tag{20}
+\]
+<p>
+Pythonでは
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">eids = element_edges[t]
+
+for a in range(3):
+    rhs[eids[a]] += Fe[a]
+
+    for b in range(3):
+        A[eids[a], eids[b]] += Ke[a, b]
+</code></pre>
+<p>
+です．
+CR実装でvertex indexをそのまま使ってしまうのは，
+最も起こりやすい構造的bugの一つです．
+</p>
+</article></div>
+
+<h2>9．load vectorはCR basisを積分する</h2>
+<div class="news"><article class="news-item">
+<p>
+local loadは
+\[
+F_i^{(T)}
+=
+\int_Tf\psi_i\,dx.
+\tag{21}
+\]
+</p>
+<p>
+今回はSeason 1と同じ
+\[
+u(x,y)=\sin(\pi x)\sin(\pi y),
+\qquad
+f=2\pi^2\sin(\pi x)\sin(\pi y)
+\tag{22}
+\]
+を使い，7点triangle quadratureでloadを評価します．
+</p>
+<p>
+CR basisは要素内で符号を変えるので，
+「P1 nodal basisと同じload vectorになる」
+とは考えてはいけません．
+</p>
+</article></div>
+
+<h2>10．CR solverの中心部分</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">grad_hat_cr = np.array([
+    [ 2.0,  2.0],
+    [-2.0,  0.0],
+    [ 0.0, -2.0]
+])
+
+
+def cr_basis(xi, eta):
+    return np.array([
+        -1.0 + 2.0 * xi + 2.0 * eta,
+         1.0 - 2.0 * xi,
+         1.0 - 2.0 * eta
+    ])
+
+
+for t, tri in enumerate(triangles):
+    P = nodes[tri]
+
+    J = np.column_stack((
+        P[1] - P[0],
+        P[2] - P[0]
+    ))
+
+    detJ = np.linalg.det(J)
+
+    if detJ &lt;= 0.0:
+        raise ValueError(
+            "Use positive triangle orientation"
+        )
+
+    grads = np.linalg.solve(
+        J.T,
+        grad_hat_cr.T
+    ).T
+
+    area = 0.5 * detJ
+
+    Ke = area * (
+        grads @ grads.T
+    )
+
+    Fe = np.zeros(3)
+
+    for xi, eta, w in quad:
+        x = (
+            P[0]
+            + J @ np.array([xi, eta])
+        )
+
+        f = (
+            2.0 * np.pi**2
+            * np.sin(np.pi * x[0])
+            * np.sin(np.pi * x[1])
+        )
+
+        Fe += (
+            w
+            * detJ
+            * f
+            * cr_basis(xi, eta)
+        )
+
+    eids = element_edges[t]
+
+    for a in range(3):
+        rhs[eids[a]] += Fe[a]
+
+        for b in range(3):
+            A[eids[a], eids[b]] += Ke[a, b]
+</code></pre>
+</article></div>
+
+<h2>11．global matrixの数学監査</h2>
+<div class="news"><article class="news-item">
+<p>
+boundary conditionをまだ課していないfull matrixでは，
+global constant CR functionに対応して
+\[
+A_{\mathrm{full}}\mathbf1=0.
+\tag{23}
+\]
+</p>
+<p>
+boundary edge DoFを除去したmatrix \(A_{II}\) は，
+connected triangulation上のhomogeneous CR spaceについて
+\[
+A_{II}=A_{II}^{\top},
+\qquad
+z^{\top}A_{II}z&gt;0
+\quad(z\neq0)
+\tag{24}
+\]
+となります．
+これはdiscrete Poincaré inequalityと対応します．
+</p>
+<p>
+従ってCRでも
+</p>
+\[
+\text{symmetry}
+\to
+\text{full row sum}
+\to
+\text{Dirichlet-reduced SPD}
+\]
+<p>
+というSeason 1のmatrix auditを引き継げます．
+</p>
+</article></div>
+
+<h2>12．CR patch testは非同次edge meanで行う</h2>
+<div class="news"><article class="news-item">
+<p>
+affine harmonic function
+\[
+u(x,y)=1+2x-3y
+\tag{25}
+\]
+を使います．
+各boundary edge \(E\) には
+\[
+u_E
+=
+\frac1{|E|}
+\int_Eu\,ds
+\tag{26}
+\]
+を与えます．
+affine functionなのでこれはedge midpoint valueに一致します．
+</p>
+<p>
+この \(u\) は各要素でP1であり，
+CR continuity conditionも満たします．
+さらにCR test functionのedge mean continuityを使うと
+discrete integration by partsのinterior edge termsが消えるため，
+exact arithmeticでは
+\[
+\boxed{
+u_h=u.
+}
+\tag{27}
+\]
+</p>
+</article></div>
+
+<h2>13．patch testの数値結果</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">\(n\)</th>
+<th style="border:1px solid #777; padding:7px;">max edge-DoF error</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">3.9320e-17</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">4.4409e-16</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">2.2204e-15</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">4.5519e-15</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">32</td><td style="border:1px solid #777; padding:7px;">3.3973e-14</td></tr>
+</table>
+<p>
+理論上のdiscretisation errorは0であり，
+表はfloating-point / linear-solver errorの水準です．
+</p>
+</article></div>
+
+<h2>14．誤差normもCR用に変更する</h2>
+<div class="news"><article class="news-item">
+<p>
+CR solutionはglobal \(H^1\) functionではないため，
+energy errorにはbroken seminormを使います．
+</p>
+\[
+E_{L^2}^{\mathrm{rel}}
+=
+\frac{
+\|u-u_h\|_{L^2(\Omega)}
+}{
+\|u\|_{L^2(\Omega)}
+},
+\tag{28}
+\]
+\[
+\boxed{
+E_{1,h}^{\mathrm{rel}}
+=
+\frac{
+\left(
+\sum_T
+\|\nabla u-\nabla_hu_h\|_{L^2(T)}^2
+\right)^{1/2}
+}{
+|u|_{H^1(\Omega)}
+}.
+}
+\tag{29}
+\]
+<p>
+CRで単に
+\[
+|u-u_h|_{H^1(\Omega)}
+\]
+と書くのは，\(u_h\notin H^1(\Omega)\) なので正確ではありません．
+</p>
+</article></div>
+
+<h2>15．smooth solutionの収束結果</h2>
+<div class="news"><article class="news-item">
+<p>
+uniform triangulation上で式 (22) のsolutionを解くと，
+次の相対誤差が得られます．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">\(n\)</th>
+<th style="border:1px solid #777; padding:7px;">\(L^2\) relative error</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+<th style="border:1px solid #777; padding:7px;">broken \(H^1\) relative error</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">6.0478e-2</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">2.8736e-1</td><td style="border:1px solid #777; padding:7px;">—</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">1.5449e-2</td><td style="border:1px solid #777; padding:7px;">1.969</td><td style="border:1px solid #777; padding:7px;">1.4568e-1</td><td style="border:1px solid #777; padding:7px;">0.980</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">3.8836e-3</td><td style="border:1px solid #777; padding:7px;">1.992</td><td style="border:1px solid #777; padding:7px;">7.3091e-2</td><td style="border:1px solid #777; padding:7px;">0.995</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">32</td><td style="border:1px solid #777; padding:7px;">9.7226e-4</td><td style="border:1px solid #777; padding:7px;">1.998</td><td style="border:1px solid #777; padding:7px;">3.6577e-2</td><td style="border:1px solid #777; padding:7px;">0.999</td></tr>
+</table>
+<p>
+unit squareのsmooth solutionとregular meshという今回の条件では，
+\[
+L^2:O(h^2),
+\qquad
+|\cdot|_{1,h}:O(h)
+\tag{30}
+\]
+が明瞭に現れます．
+</p>
+<p>
+ただしCRはnonconforming methodなので，
+このrateは「P1だからCéaで直ちに得られる」と説明してはいけません．
+Strang型評価によるapproximation errorとconsistency errorの両方の制御が必要です．
+</p>
+</article></div>
+
+<h2>16．CR interpolationのcommuting identityもunit testにできる</h2>
+<div class="news"><article class="news-item">
+<p>
+CR interpolation \(I_T^{CR}\) は
+\[
+\int_E I_T^{CR}u\,ds
+=
+\int_Eu\,ds
+\tag{31}
+\]
+で定義されます．
+Gaussの公式から
+\[
+\boxed{
+\nabla I_T^{CR}u
+=
+\Pi_T^0(\nabla u),
+}
+\tag{32}
+\]
+ここで \(\Pi_T^0\) はelementwise constantへの \(L^2\)-projectionです．
+</p>
+<p>
+したがって数値積分を十分正確に行えば，
+</p>
+\[
+\text{gradient of CR interpolant}
+\quad\text{vs}\quad
+\text{cell average of exact gradient}
+\]
+<p>
+を比較するunit testを作れます．
+これはnodal P1にはないCR固有の構造監査です．
+</p>
+</article></div>
+
+<h2>17．CRで起こりやすいChatGPTの実装ミス</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">mistake</th>
+<th style="border:1px solid #777; padding:7px;">何が壊れるか</th>
+<th style="border:1px solid #777; padding:7px;">検出test</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">vertex DoFとしてassembly</td><td style="border:1px solid #777; padding:7px;">別のspaceになる</td><td style="border:1px solid #777; padding:7px;">element-to-edge map</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">boundary vertexを0にする</td><td style="border:1px solid #777; padding:7px;">CR boundary conditionにならない</td><td style="border:1px solid #777; padding:7px;">boundary-edge count</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">edge midpoint値を一般のDoF定義と思う</td><td style="border:1px solid #777; padding:7px;">非affine boundary dataで誤差</td><td style="border:1px solid #777; padding:7px;">edge integral test</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">global \(H^1\)-seminormでerrorを書く</td><td style="border:1px solid #777; padding:7px;">nonconformityを無視</td><td style="border:1px solid #777; padding:7px;">broken norm definition</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">Céaだけでrateを説明</td><td style="border:1px solid #777; padding:7px;">consistency errorが抜ける</td><td style="border:1px solid #777; padding:7px;">Strang audit</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">edge orientation signをP1のように追加</td><td style="border:1px solid #777; padding:7px;">不要な符号反転</td><td style="border:1px solid #777; padding:7px;">scalar edge-mean DoF確認</td></tr>
+</table>
+</article></div>
+
+<h2>18．P1とCRの違いをコード構造で整理する</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">item</th>
+<th style="border:1px solid #777; padding:7px;">P1 Lagrange</th>
+<th style="border:1px solid #777; padding:7px;">CR</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">local polynomial</td><td style="border:1px solid #777; padding:7px;">\(P_1(T)\)</td><td style="border:1px solid #777; padding:7px;">\(P_1(T)\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">DoF</td><td style="border:1px solid #777; padding:7px;">vertex value</td><td style="border:1px solid #777; padding:7px;">edge mean</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">global conformity</td><td style="border:1px solid #777; padding:7px;">\(H^1\)</td><td style="border:1px solid #777; padding:7px;">nonconforming \(H^1\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">connectivity</td><td style="border:1px solid #777; padding:7px;">element-to-vertex</td><td style="border:1px solid #777; padding:7px;">element-to-edge</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">gradient</td><td style="border:1px solid #777; padding:7px;">elementwise constant</td><td style="border:1px solid #777; padding:7px;">elementwise constant</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">energy norm</td><td style="border:1px solid #777; padding:7px;">global \(H^1\)</td><td style="border:1px solid #777; padding:7px;">broken \(H^1\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">error framework</td><td style="border:1px solid #777; padding:7px;">Céa</td><td style="border:1px solid #777; padding:7px;">Strang-type</td></tr>
+</table>
+</article></div>
+
+<h2>19．ChatGPTへのCR implementation audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+この2次元Crouzeix–Raviart Poisson codeを監査してください．<br/>
+(1) local DoFがvertex valueではなくedge meanになっているか，<br/>
+(2) reference basis \(1-2\lambda_i\) がedge-mean Kronecker propertyを満たすか，<br/>
+(3) element-to-edge connectivityが正しいか，<br/>
+(4) boundary conditionをboundary edge meanへ課しているか，<br/>
+(5) physical gradientが \(J^{-\top}\widehat\nabla\widehat\psi_i\) になっているか，<br/>
+(6) full stiffness matrixがconstant null modeを持つか，<br/>
+(7) reduced matrixがSPDか，<br/>
+(8) nonhomogeneous affine patch testを通るか，<br/>
+(9) errorをbroken \(H^1\)-seminormで測っているか，<br/>
+(10) smooth solutionでbroken \(H^1\) 1次・\(L^2\) 2次が得られるか<br/>
+を順に確認してください．
+CRはnonconformingなので，Céaの補題だけでerror estimateを説明しないでください．
+</div>
+</article></div>
+
+<h2>20．第13回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+CR要素はlocal polynomialだけを見ればP1です．
+しかしglobal finite-element methodとしてはP1 Lagrangeとは別物です．
+</p>
+\[
+\boxed{
+\text{same local }P_1
+\quad+\quad
+\text{different DoF}
+\quad=\quad
+\text{different finite element}.
+}
+\tag{33}
+\]
+<p>
+実装の中心は，
+</p>
+\[
+\text{vertex}
+\to
+\text{edge},
+\qquad
+\nabla
+\to
+\nabla_h,
+\qquad
+H^1
+\to
+\text{broken }H^1,
+\qquad
+\text{Céa}
+\to
+\text{Strang-type analysis}.
+\]
+<p>
+へ切り替わります．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 2の最初の原則</b><br/>
+finite elementを実装するときは，
+basis functionの数式だけでなく，
+<b>DoF・continuity・connectivity・norm・error theoryを一つの構造として実装する</b>．
+</div>
+<p>
+次回はRaviart–Thomas要素を本当に実装し，
+normal-flux DoF，global edge orientation，
+contravariant Piola transform，divergence commuting propertyをコードで確認します．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>M. Crouzeix and P.-A. Raviart, “Conforming and nonconforming finite element methods for solving the stationary Stokes equations I”, <i>RAIRO Analyse Numérique</i> 7 (1973), 33–75.</li>
+<li>S. C. Brenner and L. R. Scott, <i>The Mathematical Theory of Finite Element Methods</i>, 3rd ed., Springer, 2008.</li>
+<li>H. Ishizaka, K. Kobayashi and T. Tsuchiya, “Crouzeix–Raviart and Raviart–Thomas finite-element error analysis on anisotropic meshes violating the maximum-angle condition”, <i>Japan Journal of Industrial and Applied Mathematics</i> 38 (2021), 645–675.</li>
+<li><a href="./chatgpt-fem-11.html">第11回：CR・RTなど，P1の次に何を見るか</a></li>
+<li><a href="./chatgpt-fem-12.html">第12回：有限要素法では，なぜ数学的誤差解析が必要なのか</a></li>
+<li><a href="../../fem/#vision20">Vision 20：anisotropic CR–RT, DMP and maximum norm</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 1：</b><a href="../#chatgpt-fem">第1回〜第12回</a></p>
+<p><b>Season 2 前回：</b>なし（この回から開始）</p>
+<p><b>次回：</b>第14回：Raviart–Thomas要素を実装する — normal fluxとPiola変換（構想中）</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
