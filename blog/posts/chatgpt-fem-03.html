@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<title>第3回：2次元三角形P1要素 — reference elementとJacobian | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,finite element method,Python,Poisson equation,三角形要素,P1 element,reference element,Jacobian,Jacobian matrix,gradient transformation,assembly"/>
+<meta name="description" content="2次元三角形P1有限要素について，reference triangleからphysical triangleへのアフィン写像，Jacobian，勾配変換 J^{-top}，|det J|，局所剛性行列，数値積分，assemblyを数式とPythonで確認します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-03.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-03.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-03.html",
+      "headline": "第3回：2次元三角形P1要素 — reference elementとJacobian",
+      "description": "2次元三角形P1有限要素について，reference triangleからphysical triangleへのアフィン写像，Jacobian，勾配変換，局所剛性行列，数値積分，assemblyを数式とPythonで確認します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-03.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-29",
+      "dateModified": "2026-08-29",
+      "articleSection": "Computational FEM with AI",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-03.html#breadcrumbs",
+      "itemListElement": [
+        {"@type":"ListItem","position":1,"name":"Home","item":"https://teamfem.github.io/hiroki_ishizaka/"},
+        {"@type":"ListItem","position":2,"name":"Blog","item":"https://teamfem.github.io/hiroki_ishizaka/blog/"},
+        {"@type":"ListItem","position":3,"name":"第3回：2次元三角形P1要素 — reference elementとJacobian","item":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-03.html"}
+      ]
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-29"/>
+<meta property="article:modified_time" content="2026-08-29"/>
+<meta property="article:section" content="Computational FEM with AI"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第3回：2次元三角形P1要素 — reference elementとJacobian | Hiroki Ishizaka"/>
+<meta property="og:description" content="reference triangleからphysical triangleへの写像，Jacobian，J^{-top}，|det J|，局所剛性行列を数式とPythonで確認します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-03.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第3回：2次元三角形P1要素 — reference elementとJacobian | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="reference triangleからphysical triangleへの写像，Jacobian，J^{-top}，|det J|，局所剛性行列を数式とPythonで確認します．"/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 第3回</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第3回：2次元三角形P1要素 — reference elementとJacobian</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 第3回</b><br/><time datetime="2026-08-29">29th August 2026</time></p>
+
+<h2>はじめに――2次元では「要素の形」が数式に入ってくる</h2>
+<div class="news"><article class="news-item">
+<p>
+第2回では，1次元Poisson方程式について，弱形式から局所行列，assemblyまでを追いました．
+2次元でも有限要素法の基本構造は同じですが，新しい要素が一つ入ります．
+<b>reference elementからphysical elementへの座標変換</b>です．
+</p>
+<p>
+三角形の形，大きさ，向きはJacobian行列に集約されます．
+そして勾配には \(J^{-\top}\)，積分には \(|\det J|\) が現れます．
+この二つを間違えると，コードは動いても別の離散問題を解くことになります．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>今回の核心</b><br/>
+P1三角形要素では，
+\[
+\nabla\phi_i=J^{-\top}\widehat\nabla\widehat\phi_i,
+\qquad
+dx=|\det J|\,d\widehat x.
+\]
+2次元有限要素コードの幾何学的な核心は，この二つの変換にある．
+</div>
+</article></div>
+
+<h2>1．モデル問題</h2>
+<div class="news"><article class="news-item">
+<p>
+単位正方形
+\[
+\Omega=(0,1)^2
+\]
+でPoisson方程式
+\[
+-\Delta u=f\qquad\text{in }\Omega,
+\tag{1}
+\]
+\[
+u=0\qquad\text{on }\partial\Omega
+\tag{2}
+\]
+を考えます．検証用の厳密解を
+\[
+u(x,y)=\sin(\pi x)\sin(\pi y)
+\tag{3}
+\]
+とすると，
+\[
+f(x,y)=2\pi^2\sin(\pi x)\sin(\pi y).
+\tag{4}
+\]
+</p>
+<p>
+弱形式は
+\[
+\text{Find }u\in H_0^1(\Omega)
+\text{ such that }
+\int_\Omega\nabla u\cdot\nabla v\,dx
+=
+\int_\Omega fv\,dx
+\quad
+\forall v\in H_0^1(\Omega).
+\tag{5}
+\]
+</p>
+</article></div>
+
+<h2>2．reference triangle</h2>
+<div class="news"><article class="news-item">
+<p>
+標準参照三角形を
+\[
+\widehat T
+=
+\operatorname{conv}
+\{(0,0)^{\top},(1,0)^{\top},(0,1)^{\top}\}
+\tag{6}
+\]
+とします．reference coordinatesを
+\[
+\widehat x=(\xi,\eta)^{\top}
+\]
+と書きます．
+</p>
+<p>
+P1 Lagrange基底は
+\[
+\widehat\phi_0(\xi,\eta)=1-\xi-\eta,
+\qquad
+\widehat\phi_1(\xi,\eta)=\xi,
+\qquad
+\widehat\phi_2(\xi,\eta)=\eta.
+\tag{7}
+\]
+従ってreference triangle上の勾配は定数で，
+\[
+\widehat\nabla\widehat\phi_0
+=
+\begin{pmatrix}-1\\-1\end{pmatrix},
+\qquad
+\widehat\nabla\widehat\phi_1
+=
+\begin{pmatrix}1\\0\end{pmatrix},
+\qquad
+\widehat\nabla\widehat\phi_2
+=
+\begin{pmatrix}0\\1\end{pmatrix}.
+\tag{8}
+\]
+</p>
+<p>
+この三つの勾配は全要素で共通です．実要素ごとの差は，次に導入するJacobianを通して現れます．
+</p>
+</article></div>
+
+<h2>3．physical triangleへのアフィン写像</h2>
+<div class="news"><article class="news-item">
+<p>
+実三角形を
+\[
+T=\operatorname{conv}\{p_0,p_1,p_2\},
+\qquad
+p_i\in\mathbb R^2
+\tag{9}
+\]
+とします．reference triangleから \(T\) へのアフィン写像を
+\[
+F_T(\widehat x)
+=
+p_0+J_T\widehat x
+\tag{10}
+\]
+とします．ここでJacobian行列は
+\[
+J_T
+=
+\begin{pmatrix}
+|&|\\
+p_1-p_0&p_2-p_0\\
+|&|
+\end{pmatrix}.
+\tag{11}
+\]
+</p>
+<p>
+つまり，Pythonでは
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">J = np.column_stack((p1 - p0, p2 - p0))
+</code></pre>
+<p>
+です．列を辺ベクトルにするという convention を固定しておくことが重要です．
+</p>
+</article></div>
+
+<h2>4．determinantは面積と向きを表す</h2>
+<div class="news"><article class="news-item">
+<p>
+reference triangleの面積は
+\[
+|\widehat T|=\frac12.
+\]
+アフィン写像によって面積は \(|\det J_T|\) 倍されるので，
+\[
+|T|
+=
+|\det J_T|\,|\widehat T|
+=
+\frac{|\det J_T|}{2}.
+\tag{12}
+\]
+</p>
+<p>
+\(\det J_T&gt;0\) なら頂点は反時計回り，\(\det J_T&lt;0\) なら時計回りです．
+積分measureには符号ではなく絶対値が必要なので，
+\[
+dx=|\det J_T|\,d\widehat x.
+\tag{13}
+\]
+</p>
+<div style="padding:12px; margin:14px 0; border:1px solid #999999;">
+<b>監査ポイント</b><br/>
+<code>detJ</code> と <code>abs(detJ)</code> を区別する．
+向きの検査には符号付き \(\det J_T\) を使い，面積積分には \(|\det J_T|\) を使う．
+</div>
+</article></div>
+
+<h2>5．なぜ勾配に \(J^{-\top}\) が現れるのか</h2>
+<div class="news"><article class="news-item">
+<p>
+実要素上の基底関数を
+\[
+\phi_i(x)
+=
+\widehat\phi_i(F_T^{-1}(x))
+\tag{14}
+\]
+で定めます．chain ruleから
+\[
+\widehat\nabla\widehat\phi_i
+=
+J_T^{\top}\nabla\phi_i.
+\]
+従って
+\[
+\boxed{
+\nabla\phi_i
+=
+J_T^{-\top}\widehat\nabla\widehat\phi_i
+}
+\tag{15}
+\]
+です．
+</p>
+<p>
+ここはAI生成コードで非常に間違えやすい部分です．
+scalar P1要素の勾配変換は \(J_T^{-1}\) ではなく
+\[
+J_T^{-\top}
+\]
+です．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">invJT = np.linalg.inv(J).T
+grad_phi = (invJT @ grad_hat.T).T
+</code></pre>
+</article></div>
+
+<h2>6．局所剛性行列</h2>
+<div class="news"><article class="news-item">
+<p>
+Poisson問題の局所剛性行列は
+\[
+K^{(T)}_{ij}
+=
+\int_T
+\nabla\phi_j\cdot\nabla\phi_i\,dx.
+\tag{16}
+\]
+式 (13)，(15) を使うと
+\[
+K^{(T)}_{ij}
+=
+|\det J_T|
+\int_{\widehat T}
+\left(
+J_T^{-\top}\widehat\nabla\widehat\phi_j
+\right)
+\cdot
+\left(
+J_T^{-\top}\widehat\nabla\widehat\phi_i
+\right)
+\,d\widehat x.
+\tag{17}
+\]
+</p>
+<p>
+P1要素では勾配もJacobianも要素内で一定なので，
+\[
+K^{(T)}_{ij}
+=
+\frac{|\det J_T|}{2}
+\left(
+J_T^{-\top}\widehat\nabla\widehat\phi_j
+\right)
+\cdot
+\left(
+J_T^{-\top}\widehat\nabla\widehat\phi_i
+\right).
+\tag{18}
+\]
+</p>
+<p>
+physical gradientsを行に並べた行列
+\[
+G_T=
+\begin{pmatrix}
+(\nabla\phi_0)^{\top}\\
+(\nabla\phi_1)^{\top}\\
+(\nabla\phi_2)^{\top}
+\end{pmatrix}
+\]
+を使えば，
+\[
+\boxed{
+K^{(T)}
+=
+\frac{|\det J_T|}{2}
+G_TG_T^{\top}
+}
+\tag{19}
+\]
+と書けます．
+</p>
+</article></div>
+
+<h2>7．具体例で \(J^{-\top}\) を確認する</h2>
+<div class="news"><article class="news-item">
+<p>
+例えば
+\[
+p_0=(0,0)^{\top},
+\qquad
+p_1=(2,0)^{\top},
+\qquad
+p_2=(0,1)^{\top}
+\]
+とします．このとき
+\[
+J_T
+=
+\begin{pmatrix}
+2&0\\
+0&1
+\end{pmatrix},
+\qquad
+J_T^{-\top}
+=
+\begin{pmatrix}
+1/2&0\\
+0&1
+\end{pmatrix}.
+\]
+従って
+\[
+\nabla\phi_0=
+\begin{pmatrix}-1/2\\-1\end{pmatrix},
+\quad
+\nabla\phi_1=
+\begin{pmatrix}1/2\\0\end{pmatrix},
+\quad
+\nabla\phi_2=
+\begin{pmatrix}0\\1\end{pmatrix}.
+\]
+</p>
+<p>
+\(|\det J_T|/2=1\) なので，
+\[
+K^{(T)}
+=
+\begin{pmatrix}
+5/4&-1/4&-1\\
+-1/4&1/4&0\\
+-1&0&1
+\end{pmatrix}.
+\tag{20}
+\]
+行和が0になることも確認できます．これは
+\[
+\phi_0+\phi_1+\phi_2=1
+\]
+から
+\[
+\nabla\phi_0+\nabla\phi_1+\nabla\phi_2=0
+\]
+となることに対応しています．
+</p>
+</article></div>
+
+<h2>8．局所荷重ベクトルと三角形上の数値積分</h2>
+<div class="news"><article class="news-item">
+<p>
+局所荷重ベクトルは
+\[
+F_i^{(T)}
+=
+\int_T f(x)\phi_i(x)\,dx
+\tag{21}
+\]
+です．reference triangleへ戻すと
+\[
+F_i^{(T)}
+=
+|\det J_T|
+\int_{\widehat T}
+f(F_T(\widehat x))
+\widehat\phi_i(\widehat x)
+\,d\widehat x.
+\tag{22}
+\]
+</p>
+<p>
+ここでも \(|\det J_T|\) が必要です．
+1次元で現れた \(h/2\) が，2次元ではJacobian determinantへ置き換わったと考えると分かりやすいです．
+</p>
+</article></div>
+
+<h2 style="color:#111;">9．三角形P1要素をPythonに書く</h2>
+<div class="news"><article class="news-item">
+<p>
+一つの三角形から局所剛性行列を作る最小コードは次です．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">import numpy as np
+
+
+grad_hat = np.array([
+    [-1.0, -1.0],
+    [ 1.0,  0.0],
+    [ 0.0,  1.0]
+])
+
+
+def local_stiffness(P):
+    # P[0], P[1], P[2] are the triangle vertices
+    J = np.column_stack((
+        P[1] - P[0],
+        P[2] - P[0]
+    ))
+
+    detJ = np.linalg.det(J)
+
+    if abs(detJ) < 1.0e-14:
+        raise ValueError("Degenerate triangle")
+
+    invJT = np.linalg.inv(J).T
+
+    # physical gradients of the three P1 basis functions
+    grads = (invJT @ grad_hat.T).T
+
+    area = 0.5 * abs(detJ)
+
+    Ke = area * (grads @ grads.T)
+
+    return Ke, detJ, grads
+</code></pre>
+<p>
+このコードでは，<code>detJ</code> の符号を残して向きを検査し，
+面積では <code>abs(detJ)</code> を使っています．
+</p>
+</article></div>
+
+<h2>10．unit squareを三角形分割する</h2>
+<div class="news"><article class="news-item">
+<p>
+単位正方形を \(n\times n\) の小正方形に分け，各小正方形を対角線で二つの三角形へ分割します．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def make_unit_square_mesh(n):
+    grid = np.linspace(0.0, 1.0, n + 1)
+
+    nodes = np.array([
+        [x, y]
+        for y in grid
+        for x in grid
+    ])
+
+    triangles = []
+
+    def idx(i, j):
+        return j * (n + 1) + i
+
+    for j in range(n):
+        for i in range(n):
+            v00 = idx(i,     j)
+            v10 = idx(i + 1, j)
+            v01 = idx(i,     j + 1)
+            v11 = idx(i + 1, j + 1)
+
+            # counter-clockwise ordering
+            triangles.append([v00, v10, v11])
+            triangles.append([v00, v11, v01])
+
+    return nodes, np.array(triangles, dtype=int)
+</code></pre>
+<p>
+ここでは三角形を反時計回りに並べています．
+ただし，面積積分に \(|\det J|\) を使えば，頂点順序を反転しても局所剛性行列そのものは正しく計算できます．
+一方で，orientationが重要な有限要素では頂点順序を無視できません．
+</p>
+</article></div>
+
+<h2>11．2次元のassembly</h2>
+<div class="news"><article class="news-item">
+<p>
+1次元では一要素あたり2自由度でしたが，三角形P1では3自由度です．
+それ以外のassemblyの考え方は同じです．
+</p>
+\[
+A_{\operatorname{dof}_T(a),\operatorname{dof}_T(b)}
+\mathrel{+}=K^{(T)}_{ab},
+\qquad
+a,b=0,1,2.
+\tag{23}
+\]
+<p>
+Pythonでは
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">for a in range(3):
+    b[tri[a]] += Fe[a]
+
+    for c in range(3):
+        A[tri[a], tri[c]] += Ke[a, c]
+</code></pre>
+<p>
+となります．
+local-to-global mapが <code>tri = [i0, i1, i2]</code> そのものになっている点が重要です．
+</p>
+</article></div>
+
+<h2>12．Poisson問題を解く完全な最小コード</h2>
+<div class="news"><article class="news-item">
+<p>
+以下では7点三角形quadratureを使って荷重ベクトルを計算します．
+dense matrixを使うのは構造を見やすくするためであり，大規模計算ではsparse matrixへ置き換える必要があります．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def triangle_quadrature_7():
+    points = [
+        [1/3, 1/3],
+
+        [0.059715871789770, 0.470142064105115],
+        [0.470142064105115, 0.059715871789770],
+        [0.470142064105115, 0.470142064105115],
+
+        [0.797426985353087, 0.101286507323456],
+        [0.101286507323456, 0.797426985353087],
+        [0.101286507323456, 0.101286507323456]
+    ]
+
+    weights = [
+        0.112500000000000,
+
+        0.066197076394253,
+        0.066197076394253,
+        0.066197076394253,
+
+        0.062969590272414,
+        0.062969590272414,
+        0.062969590272414
+    ]
+
+    return np.array(points), np.array(weights)
+
+
+def solve_poisson_2d(n):
+    nodes, triangles = make_unit_square_mesh(n)
+
+    N = len(nodes)
+
+    A = np.zeros((N, N))
+    b = np.zeros(N)
+
+    qpts, qw = triangle_quadrature_7()
+
+    grad_hat = np.array([
+        [-1.0, -1.0],
+        [ 1.0,  0.0],
+        [ 0.0,  1.0]
+    ])
+
+    for tri in triangles:
+        P = nodes[tri]
+
+        J = np.column_stack((
+            P[1] - P[0],
+            P[2] - P[0]
+        ))
+
+        detJ = np.linalg.det(J)
+        invJT = np.linalg.inv(J).T
+
+        grads = (invJT @ grad_hat.T).T
+
+        Ke = 0.5 * abs(detJ) * (grads @ grads.T)
+
+        Fe = np.zeros(3)
+
+        for (xi, eta), w in zip(qpts, qw):
+            phi = np.array([
+                1.0 - xi - eta,
+                xi,
+                eta
+            ])
+
+            x = phi @ P
+
+            f = (
+                2.0 * np.pi**2
+                * np.sin(np.pi * x[0])
+                * np.sin(np.pi * x[1])
+            )
+
+            Fe += w * abs(detJ) * f * phi
+
+        for a in range(3):
+            b[tri[a]] += Fe[a]
+
+            for c in range(3):
+                A[tri[a], tri[c]] += Ke[a, c]
+
+    on_boundary = (
+        np.isclose(nodes[:, 0], 0.0)
+        | np.isclose(nodes[:, 0], 1.0)
+        | np.isclose(nodes[:, 1], 0.0)
+        | np.isclose(nodes[:, 1], 1.0)
+    )
+
+    boundary = np.where(on_boundary)[0]
+    interior = np.where(~on_boundary)[0]
+
+    uh = np.zeros(N)
+
+    uh[interior] = np.linalg.solve(
+        A[np.ix_(interior, interior)],
+        b[interior]
+    )
+
+    return nodes, triangles, uh
+</code></pre>
+</article></div>
+
+<h2>13．相対誤差と収束次数</h2>
+<div class="news"><article class="news-item">
+<p>
+相対誤差を
+\[
+E_{L^2}^{\mathrm{rel}}
+=
+\frac{\|u-u_h\|_{L^2(\Omega)}}{\|u\|_{L^2(\Omega)}},
+\qquad
+E_{H^1}^{\mathrm{rel}}
+=
+\frac{|u-u_h|_{H^1(\Omega)}}{|u|_{H^1(\Omega)}}
+\tag{24}
+\]
+とします．shape-regularな三角形メッシュ上のP1要素では，滑らかな解に対し
+\[
+E_{L^2}^{\mathrm{rel}}=O(h^2),
+\qquad
+E_{H^1}^{\mathrm{rel}}=O(h)
+\tag{25}
+\]
+が期待されます．
+</p>
+<p>
+上のコードと同じ7点quadratureで誤差を積分すると，次の値が得られます．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">\(n\)</th>
+<th style="border:1px solid #777; padding:7px;">\(L^2\) relative error</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+<th style="border:1px solid #777; padding:7px;">\(H^1\) seminorm relative error</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">1.5818e-1</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">3.7748e-1</td><td style="border:1px solid #777; padding:7px;">—</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">4.2267e-2</td><td style="border:1px solid #777; padding:7px;">1.904</td><td style="border:1px solid #777; padding:7px;">1.9438e-1</td><td style="border:1px solid #777; padding:7px;">0.958</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">1.0755e-2</td><td style="border:1px solid #777; padding:7px;">1.975</td><td style="border:1px solid #777; padding:7px;">9.7926e-2</td><td style="border:1px solid #777; padding:7px;">0.989</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">32</td><td style="border:1px solid #777; padding:7px;">2.7009e-3</td><td style="border:1px solid #777; padding:7px;">1.994</td><td style="border:1px solid #777; padding:7px;">4.9056e-2</td><td style="border:1px solid #777; padding:7px;">0.997</td></tr>
+</table>
+<p>
+\(L^2\)相対誤差は2次へ，\(H^1\)半ノルム相対誤差は1次へ近づいています．
+Jacobianと勾配変換を正しく実装できていることを確認する重要な数値監査です．
+</p>
+</article></div>
+
+<h2>14．2次元でも一次式は厳密に再現される</h2>
+<div class="news"><article class="news-item">
+<p>
+第1回で確認したlinear patch testは2次元でも成立します．
+厳密解を
+\[
+u(x,y)=a+bx+cy
+\tag{26}
+\]
+とします．これは各三角形上でP1多項式なので，境界値を厳密に与えれば
+\[
+u\in V_h^g.
+\]
+さらに
+\[
+-\Delta u=0.
+\]
+</p>
+<p>
+任意の \(v_h\in V_h^0\) に対して，Greenの公式より
+\[
+\int_\Omega\nabla u\cdot\nabla v_h\,dx
+=
+-\int_\Omega(\Delta u)v_h\,dx
++
+\int_{\partial\Omega}
+\frac{\partial u}{\partial n}v_h\,ds
+=
+0.
+\]
+従って \(u\) 自身が離散問題を満たし，一意性から
+\[
+\boxed{u_h=u}.
+\tag{27}
+\]
+</p>
+<p>
+例えば
+\[
+u(x,y)=1+2x-3y
+\]
+を使った数値テストでは，最大節点誤差は次の程度になります．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">\(n\)</th><th style="border:1px solid #777; padding:7px;">max nodal error</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">0.0</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">2.2204e-16</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">4.4409e-16</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">1.7764e-15</td></tr>
+</table>
+<p>
+理論的な有限要素誤差は0であり，表に現れているのは丸め誤差です．
+このテストは \(J^{-\top}\)，assembly，Dirichlet境界条件を同時に検査できます．
+</p>
+</article></div>
+
+<h2>15．ChatGPTが間違えやすい場所</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li><b>\(J^{-1}\) と \(J^{-\top}\) を取り違える：</b>scalar P1の勾配は \(J^{-\top}\widehat\nabla\widehat\phi\)．</li>
+<li><b>\(|\det J|\) を落とす：</b>荷重積分も剛性積分もphysical measureへの変換が必要．</li>
+<li><b>面積を \(|\det J|\) とする：</b>reference triangleの面積は \(1/2\) なので \(|T|=|\det J|/2\)．</li>
+<li><b>頂点を行に並べるか列に並べるかを混同する：</b>Jacobian conventionを固定する．</li>
+<li><b>reference gradientをphysical gradientとして使う：</b>非標準三角形では誤り．</li>
+<li><b>determinantの符号を無視する：</b>向きの検査と積分measureでは用途が違う．</li>
+</ol>
+</article></div>
+
+<h2>16．数学とコードの対応表</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">数学</th><th style="border:1px solid #777; padding:7px;">Python</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(J_T=[p_1-p_0,\ p_2-p_0]\)</td><td style="border:1px solid #777; padding:7px;"><code>np.column_stack(...)</code></td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(\det J_T\)</td><td style="border:1px solid #777; padding:7px;"><code>np.linalg.det(J)</code></td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(J_T^{-\top}\)</td><td style="border:1px solid #777; padding:7px;"><code>np.linalg.inv(J).T</code></td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(|T|=|\det J_T|/2\)</td><td style="border:1px solid #777; padding:7px;"><code>0.5 * abs(detJ)</code></td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(\nabla\phi_i=J_T^{-\top}\widehat\nabla\widehat\phi_i\)</td><td style="border:1px solid #777; padding:7px;"><code>(invJT @ grad_hat.T).T</code></td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(K^{(T)}=(|\det J_T|/2)G_TG_T^{\top}\)</td><td style="border:1px solid #777; padding:7px;"><code>0.5 * abs(detJ) * (grads @ grads.T)</code></td></tr>
+</table>
+</article></div>
+
+<h2>まとめ</h2>
+<div class="news"><article class="news-item">
+<p>
+2次元三角形P1要素では，reference triangle上で固定された基底関数を，
+各physical triangleへアフィン写像で移します．そのとき
+\[
+\nabla\phi_i
+=
+J_T^{-\top}\widehat\nabla\widehat\phi_i,
+\qquad
+dx
+=
+|\det J_T|\,d\widehat x
+\]
+が有限要素コードの中心になります．
+</p>
+<p>
+つまり，Jacobianは単なる座標変換の補助量ではありません．
+<b>要素の形状を，微分と積分の双方を通して離散作用素へ伝える量</b>です．
+ここから先で異方性三角形を扱うと，\(J_T\) と \(J_T^{-1}\) の大きさが誤差解析や安定性に直接関わってきます．
+</p>
+</article></div>
+
+<h2>参考文献</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>P. G. Ciarlet, <i>The Finite Element Method for Elliptic Problems</i>, North-Holland, 1978.</li>
+<li>S. C. Brenner and L. R. Scott, <i>The Mathematical Theory of Finite Element Methods</i>, 3rd ed., Springer, 2008.</li>
+<li>A. Ern and J.-L. Guermond, <i>Finite Elements I: Approximation and Interpolation</i>, Springer, 2021.</li>
+</ol>
+<p>
+関連ページ：
+<a href="./chatgpt-fem-01.html">第1回：ChatGPTだけで有限要素プログラムは作れるか</a>，
+<a href="./chatgpt-fem-02.html">第2回：1次元Poisson方程式を有限要素法で解く</a>，
+<a href="./anisotropic-geometry-01.html">有限要素法ではなぜメッシュの幾何条件が必要なのか</a>，
+<a href="../">Blog一覧</a>
+</p>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>前回：</b><a href="./chatgpt-fem-02.html">第2回：1次元Poisson方程式を有限要素法で解く — 弱形式からassemblyまで</a></p>
+<p><b>次回：</b>第4回：2次元P1有限要素コードを数学的に監査する — assembly・境界条件・収束（構想中）</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
