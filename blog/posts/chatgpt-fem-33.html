@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第33回：保存則をニューラルPDEへ入れる — mixed formulationとflux | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,PINNs,mixed formulation,flux,local conservation,H(div),Raviart Thomas,equilibrated flux,neural PDE,first order system,conservation law,PyTorch"/>
+<meta name="description" content="Season 3 第9回（通算第33回）として，Poisson問題をfluxとstateのfirst-order systemへ書き換え，ニューラルPDEへ保存則を入れます．constitutive residual，equilibrium residual，cellwise flux balance，H(div) conformity，Raviart–Thomas equilibrated reconstruction，certificationまで実装・監査します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-33.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-33.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-33.html",
+      "headline": "第33回：保存則をニューラルPDEへ入れる — mixed formulationとflux",
+      "description": "Poisson問題をstateとfluxのfirst-order systemへ書き換え，constitutive relation，equilibrium，local conservation，H(div) conformity，equilibrated flux reconstructionを数値解析します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-33.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 3",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 3"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第33回：保存則をニューラルPDEへ入れる — mixed formulationとflux | Hiroki Ishizaka"/>
+<meta property="og:description" content="solutionだけでなくfluxも学ぶ．pointwise residualからlocal conservation，H(div)，equilibrated reconstructionへ進みます．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-33.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第33回：保存則をニューラルPDEへ入れる — mixed formulationとflux | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="Neural mixed formulations for PDEs: state, flux, local conservation, H(div), and equilibrated reconstruction."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 3 第9回（通算第33回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第33回：保存則をニューラルPDEへ入れる — mixed formulationとflux</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 3 第9回（通算第33回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――solutionだけを学ぶと，fluxはあとから微分するしかない</h2>
+<div class="news"><article class="news-item">
+<p>
+第27–32回では，主にstate
+\[
+u_\theta
+\]
+のstrong residualを点で観測してきました．
+</p>
+<p>
+しかしdiffusion problemでは，
+実際に知りたい量が
+</p>
+\[
+\boxed{
+\text{flux},
+\quad
+\text{mass balance},
+\quad
+\text{local conservation}
+}
+\tag{1}
+\]
+<p>
+であることも多くあります．
+</p>
+<p>
+そこで今回はfluxをあとから微分で作るのではなく，
+<b>未知量としてnetworkに持たせます</b>．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>第33回の問い</b><br/>
+\[
+\boxed{
+\text{state }u_\theta
++
+\text{flux }\boldsymbol q_\theta
+}
+\]
+<p>
+を同時に学べば，ニューラルPDEへ保存則をどこまで構造として入れられるか？
+</p>
+</div>
+</article></div>
+
+<h2>1．Poisson型問題とfluxの符号を固定する</h2>
+<div class="news"><article class="news-item">
+<p>
+bounded domain \(\Omega\subset\mathbb R^d\) で
+</p>
+\[
+\boxed{
+-\nabla\cdot(A\nabla u)
+=
+f
+\quad\text{in }\Omega,
+\qquad
+u=g
+\quad\text{on }\partial\Omega
+}
+\tag{2}
+\]
+<p>
+を考えます．
+\(A(x)\) はsymmetric uniformly positive definiteとします．
+</p>
+<p>
+本記事ではphysical fluxを
+</p>
+\[
+\boxed{
+\boldsymbol q
+=
+A\nabla u
+}
+\tag{3}
+\]
+<p>
+と定義します．
+従って
+</p>
+\[
+\boxed{
+\nabla\cdot\boldsymbol q
+=
+-f.
+}
+\tag{4}
+\]
+<p>
+文献によっては \(-A\nabla u\) をfluxと呼ぶので，
+符号は最初に固定します．
+</p>
+</article></div>
+
+<h2>2．second-order PDEをfirst-order systemへ分解する</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (2) は
+</p>
+\[
+\boxed{
+\begin{cases}
+\boldsymbol q-A\nabla u=0,
+\\[4pt]
+\nabla\cdot\boldsymbol q+f=0
+\end{cases}
+\quad\text{in }\Omega
+}
+\tag{5}
+\]
+<p>
+と書けます．
+</p>
+<p>
+上の式はconstitutive relation，
+下の式はequilibrium / conservation lawです．
+</p>
+</article></div>
+
+<h2>3．mixed neural systemでは二つのnetwork outputを持つ</h2>
+<div class="news"><article class="news-item">
+<p>
+2次元なら一つのnetworkから
+</p>
+\[
+\boxed{
+N_\theta(x,y)
+=
+\bigl(
+u_\theta^{\rm raw},
+q_{\theta,1},
+q_{\theta,2}
+\bigr)
+}
+\tag{6}
+\]
+<p>
+を出力させます．
+</p>
+<p>
+zero Dirichlet boundary conditionなら
+</p>
+\[
+\boxed{
+u_\theta(x,y)
+=
+x(1-x)y(1-y)
+u_\theta^{\rm raw}(x,y)
+}
+\tag{7}
+\]
+<p>
+としてstateだけhard constraintにできます．
+</p>
+<p>
+fluxにはこのboundary factorを掛けません．
+</p>
+</article></div>
+
+<h2>4．constitutive residual</h2>
+<div class="news"><article class="news-item">
+<p>
+fluxとstate gradientのずれを
+</p>
+\[
+\boxed{
+\boldsymbol r_{\rm c}
+=
+\boldsymbol q_\theta
+-
+A\nabla u_\theta
+}
+\tag{8}
+\]
+<p>
+とします．
+</p>
+<p>
+natural weighted normとして
+</p>
+\[
+\boxed{
+\mathcal L_{\rm c}
+=
+\int_\Omega
+\boldsymbol r_{\rm c}^{\top}
+A^{-1}
+\boldsymbol r_{\rm c}
+\,dx
+}
+\tag{9}
+\]
+<p>
+を使えます．
+</p>
+</article></div>
+
+<h2>5．equilibrium residual</h2>
+<div class="news"><article class="news-item">
+<p>
+保存則のdefectは
+</p>
+\[
+\boxed{
+r_{\rm e}
+=
+\nabla\cdot\boldsymbol q_\theta
++
+f
+}
+\tag{10}
+\]
+<p>
+です．
+</p>
+<p>
+continuous equilibrium lossを
+</p>
+\[
+\boxed{
+\mathcal L_{\rm e}
+=
+\int_\Omega
+|r_{\rm e}|^2dx
+}
+\tag{11}
+\]
+<p>
+とします．
+</p>
+</article></div>
+
+<h2>6．mixed loss</h2>
+<div class="news"><article class="news-item">
+<p>
+最も単純には
+</p>
+\[
+\boxed{
+\mathcal J_{\rm mix}
+=
+\lambda_{\rm c}
+\mathcal L_{\rm c}
++
+\lambda_{\rm e}
+\mathcal L_{\rm e}
+}
+\tag{12}
+\]
+<p>
+を最小化します．
+</p>
+<p>
+soft boundary conditionならさらに
+\[
+\lambda_{\partial}\mathcal L_{\partial}
+\]
+を加えます．
+今回はstateにhard Dirichlet conditionを入れて，
+flux structureへ集中します．
+</p>
+</article></div>
+
+<h2>7．二つのresidualは両方必要である</h2>
+<div class="news"><article class="news-item">
+<p>
+\(\mathcal L_{\rm c}\) だけ小さくても
+</p>
+\[
+\boldsymbol q_\theta
+\approx
+A\nabla u_\theta
+\]
+<p>
+というだけで，PDEを解いているとは限りません．
+</p>
+<p>
+逆に \(\mathcal L_{\rm e}\) だけ小さくても
+</p>
+\[
+\nabla\cdot\boldsymbol q_\theta
+\approx
+-f
+\]
+<p>
+というconservative fluxとstate \(u_\theta\) が無関係でも構いません．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{constitutive relation}
++
+\text{equilibrium}
+}
+\tag{13}
+\]
+<p>
+を同時に監査します．
+</p>
+</article></div>
+
+<h2>8．continuous lossがzeroなら元のPDEへ戻る</h2>
+<div class="news"><article class="news-item">
+<p>
+もし
+</p>
+\[
+\boldsymbol r_{\rm c}=0,
+\qquad
+r_{\rm e}=0
+\]
+<p>
+がcontinuousに成立すれば
+</p>
+\[
+\boldsymbol q_\theta
+=
+A\nabla u_\theta,
+\]
+<p>
+\[
+\nabla\cdot(A\nabla u_\theta)
+=
+-f.
+\]
+<p>
+従ってboundary conditionと合わせて
+</p>
+\[
+\boxed{
+-\nabla\cdot(A\nabla u_\theta)
+=
+f
+}
+\tag{14}
+\]
+<p>
+へ戻ります．
+</p>
+</article></div>
+
+<h2>9．mixed first-order systemでは微分次数を一段下げられる</h2>
+<div class="news"><article class="news-item">
+<p>
+primal strong-form PINNでは
+</p>
+\[
+-\nabla\cdot(A\nabla u_\theta)
+\]
+<p>
+を直接計算するため，\(u_\theta\) のsecond derivativesが必要です．
+</p>
+<p>
+mixed systemでは
+</p>
+\[
+\boldsymbol q_\theta-A\nabla u_\theta
+\]
+<p>
+と
+</p>
+\[
+\nabla\cdot\boldsymbol q_\theta+f
+\]
+<p>
+なので，
+</p>
+\[
+\boxed{
+u_\theta:\text{ first derivatives},
+\qquad
+\boldsymbol q_\theta:\text{ first derivatives}
+}
+\tag{15}
+\]
+<p>
+で済みます．
+</p>
+</article></div>
+
+<h2>10．ただし「mixed」と呼ぶものを区別する</h2>
+<div class="news"><article class="news-item">
+<p>
+ここまでの式 (5)–(12) は
+<b>strong first-order neural system</b>です．
+</p>
+<p>
+classical mixed variational formulationでは
+</p>
+\[
+\boxed{
+\boldsymbol q
+\in
+H(\operatorname{div};\Omega),
+\qquad
+u\in
+L^2(\Omega)
+}
+\tag{16}
+\]
+<p>
+を自然な空間として使います．
+</p>
+<p>
+strong constitutive residual
+\[
+\boldsymbol q-A\nabla u
+\]
+を使うneural formulationでは \(u\) にgradientを要求するので，
+classical mixed methodよりstrongなstate regularityを使っています．
+</p>
+</article></div>
+
+<h2>11．classical mixed variational formulation</h2>
+<div class="news"><article class="news-item">
+<p>
+\(\boldsymbol q=A\nabla u\) の符号でintegration by partsすると
+</p>
+\[
+\boxed{
+(A^{-1}\boldsymbol q,\boldsymbol v)
++
+(u,\nabla\cdot\boldsymbol v)
+=
+\langle
+g,
+\boldsymbol v\cdot\boldsymbol n
+\rangle_{\partial\Omega}
+}
+\tag{17}
+\]
+<p>
+for all
+\[
+\boldsymbol v\in H(\operatorname{div};\Omega),
+\]
+<p>
+および
+</p>
+\[
+\boxed{
+(\nabla\cdot\boldsymbol q,w)
+=
+-(f,w)
+}
+\tag{18}
+\]
+<p>
+for all
+\[
+w\in L^2(\Omega)
+\]
+となります．
+</p>
+<p>
+zero Dirichletなら式 (17) の右辺はzeroです．
+</p>
+</article></div>
+
+<h2>12．weak mixed residualをnetworkで評価することもできる</h2>
+<div class="news"><article class="news-item">
+<p>
+test functions
+\[
+\boldsymbol v_j,
+\quad
+w_k
+\]
+を有限個選び，
+</p>
+\[
+\boxed{
+R^{(1)}_j
+=
+(A^{-1}\boldsymbol q_\theta,\boldsymbol v_j)
++
+(u_\theta,\nabla\cdot\boldsymbol v_j)
+-
+\langle g,\boldsymbol v_j\cdot\boldsymbol n\rangle
+}
+\tag{19}
+\]
+<p>
+と
+</p>
+\[
+\boxed{
+R^{(2)}_k
+=
+(\nabla\cdot\boldsymbol q_\theta,w_k)
++
+(f,w_k)
+}
+\tag{20}
+\]
+<p>
+を最小化するweak neural formulationも考えられます．
+</p>
+<p>
+ここではpointwise strong residualとweak mixed residualを同一視しません．
+</p>
+</article></div>
+
+<h2>13．保存則はintegral identityとして見る</h2>
+<div class="news"><article class="news-item">
+<p>
+任意のcontrol volume \(K\subset\Omega\) に対し，
+exact fluxは
+</p>
+\[
+\int_K
+\nabla\cdot\boldsymbol q\,dx
+=
+-\int_Kf\,dx.
+\]
+<p>
+divergence theoremから
+</p>
+\[
+\boxed{
+\int_{\partial K}
+\boldsymbol q\cdot\boldsymbol n_K\,ds
++
+\int_Kf\,dx
+=
+0.
+}
+\tag{21}
+\]
+<p>
+これがlocal conservationです．
+</p>
+</article></div>
+
+<h2>14．neural fluxのcellwise balance defect</h2>
+<div class="news"><article class="news-item">
+<p>
+neural fluxに対して
+</p>
+\[
+\boxed{
+B_K(\theta)
+=
+\int_{\partial K}
+\boldsymbol q_\theta\cdot\boldsymbol n_K\,ds
++
+\int_Kf\,dx
+}
+\tag{22}
+\]
+<p>
+を定義します．
+</p>
+<p>
+\[
+B_K=0
+\]
+ならcell \(K\) のnet outgoing fluxとsourceがbalanceしています．
+</p>
+</article></div>
+
+<h2>15．pointwise residual lossとlocal balanceは同じではない</h2>
+<div class="news"><article class="news-item">
+<p>
+もしcontinuousに
+\[
+r_{\rm e}=0
+\]
+なら全 \(K\) で
+\[
+B_K=0
+\]
+です．
+</p>
+<p>
+しかしfinite collocationで
+</p>
+\[
+r_{\rm e}(x_i)\approx0
+\]
+<p>
+でも，
+</p>
+\[
+\boxed{
+B_K
+\ne
+0
+}
+\tag{23}
+\]
+<p>
+は可能です．
+</p>
+<p>
+点の間にequilibrium defectが残るからです．
+</p>
+</article></div>
+
+<h2>16．逆にbalanceだけzeroでも十分ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+\[
+B_K=0
+\]
+<p>
+はcell内でpositive / negative residualがcancelしても成立します．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+B_K=0
+\quad\not\Rightarrow\quad
+r_{\rm e}=0
+\text{ in }K.
+}
+\tag{24}
+\]
+<p>
+local conservation defectと
+\[
+\|r_{\rm e}\|_{L^2(K)}
+\]
+は別々に監査します．
+</p>
+</article></div>
+
+<h2>17．balance lossを追加する</h2>
+<div class="news"><article class="news-item">
+<p>
+audit partition
+\[
+\mathcal T_{\rm audit}
+\]
+を作り，
+</p>
+\[
+\boxed{
+\mathcal L_{\rm bal}
+=
+\sum_{K\in\mathcal T_{\rm audit}}
+\frac{
+|B_K(\theta)|^2
+}{
+|K|
+}
+}
+\tag{25}
+\]
+<p>
+を追加できます．
+</p>
+<p>
+これはFEM trial meshである必要はありません．
+<b>保存則を測るcontrol-volume partition</b>です．
+</p>
+</article></div>
+
+<h2>18．mixed neural lossを三つに分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+実装上は
+</p>
+\[
+\boxed{
+\mathcal J
+=
+\lambda_{\rm c}\mathcal L_{\rm c}
++
+\lambda_{\rm e}\mathcal L_{\rm e}
++
+\lambda_{\rm bal}\mathcal L_{\rm bal}
+}
+\tag{26}
+\]
+<p>
+とできます．
+</p>
+<p>
+ただし三つは違うquantityなので，
+</p>
+\[
+\boxed{
+\lambda_{\rm c},
+\quad
+\lambda_{\rm e},
+\quad
+\lambda_{\rm bal}
+}
+\tag{27}
+\]
+<p>
+をpoint countと混同せず記録します．
+</p>
+</article></div>
+
+<h2>19．global smooth flux networkなら \(H(\operatorname{div})\) conformityは自然に満たしやすい</h2>
+<div class="news"><article class="news-item">
+<p>
+一つのsmooth global network
+\[
+\boldsymbol q_\theta:\Omega\to\mathbb R^d
+\]
+を使えば，
+通常
+</p>
+\[
+\boxed{
+\boldsymbol q_\theta
+\in
+H(\operatorname{div};\Omega)
+}
+\tag{28}
+\]
+<p>
+を満たすだけのregularityを持ちます．
+</p>
+<p>
+artificial cell interfaceを横切っても同じglobal functionなので，
+normal fluxはsingle-valuedです．
+</p>
+</article></div>
+
+<h2>20．local networksを使うならnormal-flux jumpが現れる</h2>
+<div class="news"><article class="news-item">
+<p>
+domain decompositionでcellごとに別network
+\[
+\boldsymbol q_\theta|_K
+\]
+を持つと，
+interior face \(F=K^+\cap K^-\) で
+</p>
+\[
+\boxed{
+J_F
+=
+\boldsymbol q_\theta^+\cdot\boldsymbol n^+
++
+\boldsymbol q_\theta^-\cdot\boldsymbol n^-.
+}
+\tag{29}
+\]
+<p>
+\(H(\operatorname{div})\)-conforming fluxなら
+</p>
+\[
+\boxed{
+J_F=0.
+}
+\tag{30}
+\]
+<p>
+従ってpiecewise neural fluxではnormal continuityも独立に課す必要があります．
+</p>
+</article></div>
+
+<h2>21．jump penaltyはlocal conservationそのものではない</h2>
+<div class="news"><article class="news-item">
+<p>
+\[
+J_F\approx0
+\]
+<p>
+はinterface fluxの整合性を表します．
+</p>
+<p>
+一方
+\[
+B_K\approx0
+\]
+<p>
+はcell balanceです．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{normal continuity}
+\neq
+\text{local equilibrium}.
+}
+\tag{31}
+\]
+<p>
+RT finite elementで両方が同時に現れるからといって，
+一つのlossへ混ぜてはいけません．
+</p>
+</article></div>
+
+<h2>22．manufactured solutionでfluxまでexactに知る</h2>
+<div class="news"><article class="news-item">
+<p>
+\[
+\Omega=(0,1)^2,
+\qquad
+A=I,
+\]
+<p>
+\[
+\boxed{
+u^\ast(x,y)
+=
+\sin(\pi x)\sin(\pi y)
+}
+\tag{32}
+\]
+<p>
+とします．
+</p>
+<p>
+すると
+</p>
+\[
+\boxed{
+\boldsymbol q^\ast
+=
+\nabla u^\ast
+=
+\begin{pmatrix}
+\pi\cos(\pi x)\sin(\pi y)
+\\
+\pi\sin(\pi x)\cos(\pi y)
+\end{pmatrix},
+}
+\tag{33}
+\]
+<p>
+\[
+\boxed{
+f
+=
+2\pi^2
+\sin(\pi x)\sin(\pi y).
+}
+\tag{34}
+\]
+</article></div>
+
+<h2>23．state errorとflux errorを分けて測る</h2>
+<div class="news"><article class="news-item">
+<p>
+exact solutionが分かるtestでは
+</p>
+\[
+\boxed{
+E_u
+=
+|u_\theta-u^\ast|_{H^1(\Omega)}
+}
+\tag{35}
+\]
+<p>
+と
+</p>
+\[
+\boxed{
+E_q
+=
+\|\boldsymbol q_\theta-\boldsymbol q^\ast\|_{L^2(\Omega)}
+}
+\tag{36}
+\]
+<p>
+を別々に記録します．
+</p>
+<p>
+さらに
+</p>
+\[
+\boxed{
+E_{\rm div}
+=
+\|\nabla\cdot\boldsymbol q_\theta+f\|_{L^2(\Omega)}
+}
+\tag{37}
+\]
+<p>
+も独立なquality metricです．
+</p>
+</article></div>
+
+<h2>24．mixed networkを実装する</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">class MixedNet(torch.nn.Module):
+    def __init__(self, width=64, depth=4):
+        super().__init__()
+
+        layers = [
+            torch.nn.Linear(2, width),
+            torch.nn.Tanh()
+        ]
+
+        for _ in range(depth - 1):
+            layers += [
+                torch.nn.Linear(width, width),
+                torch.nn.Tanh()
+            ]
+
+        layers += [
+            torch.nn.Linear(width, 3)
+        ]
+
+        self.net = torch.nn.Sequential(*layers)
+
+    def forward(self, x):
+        raw = self.net(x)
+
+        xx = x[:, 0:1]
+        yy = x[:, 1:2]
+
+        u_raw = raw[:, 0:1]
+        q = raw[:, 1:3]
+
+        u = (
+            xx * (1.0 - xx)
+            * yy * (1.0 - yy)
+            * u_raw
+        )
+
+        return u, q
+</code></pre>
+</article></div>
+
+<h2>25．gradientとdivergenceを一階微分だけで作る</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def mixed_residuals(model, x):
+    x = (
+        x.clone()
+         .detach()
+         .requires_grad_(True)
+    )
+
+    u, q = model(x)
+
+    grad_u = torch.autograd.grad(
+        u,
+        x,
+        grad_outputs=torch.ones_like(u),
+        create_graph=True
+    )[0]
+
+    qx = q[:, 0:1]
+    qy = q[:, 1:2]
+
+    dqx = torch.autograd.grad(
+        qx,
+        x,
+        grad_outputs=torch.ones_like(qx),
+        create_graph=True
+    )[0][:, 0:1]
+
+    dqy = torch.autograd.grad(
+        qy,
+        x,
+        grad_outputs=torch.ones_like(qy),
+        create_graph=True
+    )[0][:, 1:2]
+
+    div_q = dqx + dqy
+
+    xx = x[:, 0:1]
+    yy = x[:, 1:2]
+
+    f = (
+        2.0 * math.pi ** 2
+        * torch.sin(math.pi * xx)
+        * torch.sin(math.pi * yy)
+    )
+
+    r_const = q - grad_u
+    r_equil = div_q + f
+
+    return r_const, r_equil
+</code></pre>
+</article></div>
+
+<h2>26．sampled mixed loss</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def mixed_loss(
+    model,
+    x,
+    lambda_const=1.0,
+    lambda_equil=1.0
+):
+    r_const, r_equil = mixed_residuals(
+        model,
+        x
+    )
+
+    loss_const = torch.mean(
+        torch.sum(r_const ** 2, dim=1)
+    )
+
+    loss_equil = torch.mean(
+        r_equil ** 2
+    )
+
+    loss = (
+        lambda_const * loss_const
+        + lambda_equil * loss_equil
+    )
+
+    return loss, loss_const, loss_equil
+</code></pre>
+<p>
+variable \(A\) では
+\[
+A^{-1}
+\]
+weighted constitutive lossへ置き換えます．
+</p>
+</article></div>
+
+<h2>27．finite samplingではmixed systemでも見落としは残る</h2>
+<div class="news"><article class="news-item">
+<p>
+collocation pointsを含まないopen set \(D\subset\Omega\) を取り，
+</p>
+\[
+\psi\in C_c^\infty(D)
+\]
+<p>
+をnonzeroとします．
+</p>
+<p>
+\[
+\boxed{
+\widetilde u
+=
+u^\ast+\psi,
+\qquad
+\widetilde{\boldsymbol q}
+=
+\nabla\widetilde u
+}
+\tag{38}
+\]
+<p>
+とすればconstitutive residualはeverywhere zeroです．
+</p>
+<p>
+さらにtraining pointsは \(\psi\) のsupport外なので
+</p>
+\[
+\boxed{
+r_{\rm e}(x_i)=0
+}
+\tag{39}
+\]
+<p>
+も成立します．
+</p>
+<p>
+従ってmixed formulationにしても
+<b>finite observation problemそのものは消えません</b>．
+</p>
+</article></div>
+
+<h2>28．local balance auditはfinite samplingの穴を別方向から見る</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (38) のperturbationがあるcell \(K\) に対し，
+independent face / volume quadratureで
+</p>
+\[
+B_K
+\]
+<p>
+を測れば，
+training pointsでは見えなかったequilibrium defectを検出できる場合があります．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{point residual audit}
++
+\text{integral flux-balance audit}
+}
+\tag{40}
+\]
+<p>
+を組み合わせる意味があります．
+</p>
+</article></div>
+
+<h2>29．ただしlocal balanceだけでもoscillationを見落とす</h2>
+<div class="news"><article class="news-item">
+<p>
+cell内で
+\[
+r_{\rm e}
+\]
+が正負にoscillateすれば
+</p>
+\[
+\int_Kr_{\rm e}\,dx=0
+\]
+<p>
+でも
+</p>
+\[
+\|r_{\rm e}\|_{L^2(K)}
+\]
+<p>
+は大きくなれます．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{integral conservation}
++
+\text{residual norm}
+}
+\tag{41}
+\]
+<p>
+を両方見る必要があります．
+</p>
+</article></div>
+
+<h2>30．Raviart–Thomas reconstructionでfluxを構造化する</h2>
+<div class="news"><article class="news-item">
+<p>
+neural fluxをそのまま使う代わりに，
+audit mesh \(\mathcal T_h\) 上で
+</p>
+\[
+\boxed{
+\boldsymbol\sigma_h
+\in
+RT_0(\mathcal T_h)
+}
+\tag{42}
+\]
+<p>
+へreconstructできます．
+</p>
+<p>
+cell mean
+</p>
+\[
+\boxed{
+f_K
+=
+\frac1{|K|}
+\int_Kf\,dx
+}
+\tag{43}
+\]
+<p>
+を使い，
+</p>
+\[
+\boxed{
+\nabla\cdot\boldsymbol\sigma_h|_K
+=
+-f_K
+}
+\tag{44}
+\]
+<p>
+をexactly課します．
+</p>
+</article></div>
+
+<h2>31．equilibrated projectionとして定義する</h2>
+<div class="news"><article class="news-item">
+<p>
+equilibrated RT spaceを
+</p>
+\[
+\boxed{
+\Sigma_h^{\rm eq}
+=
+\{
+\boldsymbol\tau_h\in RT_0(\mathcal T_h):
+\nabla\cdot\boldsymbol\tau_h|_K=-f_K
+\ \forall K
+\}
+}
+\tag{45}
+\]
+<p>
+とします．
+</p>
+<p>
+neural fluxへ近いequilibrated fieldを
+</p>
+\[
+\boxed{
+\boldsymbol\sigma_h
+=
+\operatorname*{arg\,min}_{
+\boldsymbol\tau_h\in\Sigma_h^{\rm eq}
+}
+\|
+A^{-1/2}
+(
+\boldsymbol\tau_h-\boldsymbol q_\theta
+)
+\|_{L^2(\Omega)}
+}
+\tag{46}
+\]
+<p>
+として作れます．
+</p>
+</article></div>
+
+<h2>32．reconstructed fluxはcellwise conservationをexactに満たす</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (44) とdivergence theoremから
+</p>
+\[
+\int_{\partial K}
+\boldsymbol\sigma_h\cdot\boldsymbol n_K\,ds
+=
+-|K|f_K.
+\]
+<p>
+cell meanの定義より
+</p>
+\[
+|K|f_K
+=
+\int_Kf\,dx.
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+\int_{\partial K}
+\boldsymbol\sigma_h\cdot\boldsymbol n_K\,ds
++
+\int_Kf\,dx
+=
+0
+}
+\tag{47}
+\]
+<p>
+が各cellでexactly成立します．
+</p>
+</article></div>
+
+<h2>33．これは「neural fluxがexactly conservative」という意味ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+exact conservationを持つのは
+</p>
+\[
+\boxed{
+\boldsymbol\sigma_h
+}
+\]
+<p>
+というpostprocessed / reconstructed fluxです．
+</p>
+<p>
+raw neural output
+\[
+\boldsymbol q_\theta
+\]
+がexactly conservativeだと主張してはいけません．
+</p>
+<p>
+両者の差
+</p>
+\[
+\boxed{
+\|
+A^{-1/2}
+(
+\boldsymbol\sigma_h-\boldsymbol q_\theta
+)
+\|_{L^2}
+}
+\tag{48}
+\]
+<p>
+自体がflux-structure defectの一つになります．
+</p>
+</article></div>
+
+<h2>34．equilibrated fluxはcertificationへ接続できる</h2>
+<div class="news"><article class="news-item">
+<p>
+もしconforming state \(u_\theta\in H_0^1(\Omega)\) と，
+exactly equilibrated flux
+</p>
+\[
+\nabla\cdot\boldsymbol\sigma=-f
+\]
+<p>
+があれば，hypercircle型評価から
+</p>
+\[
+\boxed{
+\|u-u_\theta\|_A
+\le
+\|
+A^{-1/2}
+(
+\boldsymbol\sigma-A\nabla u_\theta
+)
+\|_{L^2}
+}
+\tag{49}
+\]
+<p>
+を得られます．
+</p>
+<p>
+RT\(_0\) で非piecewise-constant \(f\) を投影して使う場合は，
+data oscillationを別に扱う必要があります．
+</p>
+</article></div>
+
+<h2>35．保存則，accuracy，certificationは三段階に分ける</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">level</th><th style="border:1px solid #777; padding:7px;">確認するもの</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">neural residual</td><td style="border:1px solid #777; padding:7px;">constitutive / equilibrium sampled loss</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">conservation audit</td><td style="border:1px solid #777; padding:7px;">cellwise flux balance，normal continuity</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">certification</td><td style="border:1px solid #777; padding:7px;">equilibrated \(H(\mathrm{div})\) flux + guaranteed bound</td></tr>
+</table>
+<p>
+この三つを同じ「physics-informed」という言葉でまとめない方が安全です．
+</p>
+</article></div>
+
+<h2>36．mixed lossをpoint placementへ接続する</h2>
+<div class="news"><article class="news-item">
+<p>
+mixed formulationでは一種類のindicatorではなく
+</p>
+\[
+\boxed{
+\eta_{{\rm c},K}^2
+\approx
+\int_K
+\boldsymbol r_{\rm c}^{\top}
+A^{-1}
+\boldsymbol r_{\rm c}\,dx,
+}
+\tag{50}
+\]
+<p>
+\[
+\boxed{
+\eta_{{\rm e},K}^2
+\approx
+\int_K
+|r_{\rm e}|^2dx,
+\qquad
+b_K=|B_K|
+}
+\tag{51}
+\]
+<p>
+を分けて持てます．
+</p>
+<p>
+次のsampling pointsを
+<b>constitutive defect</b>から増やすのか，
+<b>equilibrium defect</b>から増やすのか，
+<b>balance defect</b>から増やすのかを選べます．
+</p>
+</article></div>
+
+<h2>37．保存則から見たadaptive sampling</h2>
+<div class="news"><article class="news-item">
+<p>
+例えば
+</p>
+\[
+\boxed{
+\eta_K^2
+=
+\alpha_{\rm c}\eta_{{\rm c},K}^2
++
+\alpha_{\rm e}\eta_{{\rm e},K}^2
++
+\alpha_{\rm b}\frac{|B_K|^2}{|K|}
+}
+\tag{52}
+\]
+<p>
+というcombined indicatorを作り，
+第32回のDörfler-like markingへ渡せます．
+</p>
+<p>
+ただしweights
+\[
+\alpha_{\rm c},\alpha_{\rm e},\alpha_{\rm b}
+\]
+はmethod design parameterであり，
+guaranteed estimatorの係数ではありません．
+</p>
+</article></div>
+
+<h2>38．AIがmixed neural PDEで間違えやすい点</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">mistake</th><th style="border:1px solid #777; padding:7px;">何が壊れるか</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">flux signを途中で変える</td><td style="border:1px solid #777; padding:7px;">equilibrium式の符号が反転する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">constitutive lossだけでmixed PDEを解いたとする</td><td style="border:1px solid #777; padding:7px;">保存則を課していない</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">equilibrium lossだけでstateも正しいとする</td><td style="border:1px solid #777; padding:7px;">fluxとstateがdecoupleできる</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">pointwise div residualをlocal conservationと呼ぶ</td><td style="border:1px solid #777; padding:7px;">integral balanceを確認していない</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">cell balance zeroならresidualもzeroとする</td><td style="border:1px solid #777; padding:7px;">cell内cancellationを見落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">global smooth fluxとpiecewise local fluxを同じに扱う</td><td style="border:1px solid #777; padding:7px;">normal continuity conditionを落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">RT reconstruction後の保存則をraw neural fluxの性質と呼ぶ</td><td style="border:1px solid #777; padding:7px;">postprocessingとtrainingを混同する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">sampled residual proxyをcertified boundと呼ぶ</td><td style="border:1px solid #777; padding:7px;">equilibration / oscillation条件を飛ばす</td></tr>
+</table>
+</article></div>
+
+<h2>39．mixed-flux audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このmixed neural PDE implementationを数学的に監査してください．<br/>
+(1) flux convention \(\boldsymbol q=A\nabla u\) と \(\nabla\cdot\boldsymbol q=-f\) の符号が一貫しているか，<br/>
+(2) constitutive residualとequilibrium residualを別々に定義しているか，<br/>
+(3) strong first-order neural systemとclassical mixed variational formulationを区別しているか，<br/>
+(4) flux outputが必要な \(H(\operatorname{div})\) regularityを持つか，またpiecewise networkならnormal jumpを監査しているか，<br/>
+(5) pointwise divergence residualとcellwise conservationを同一視していないか，<br/>
+(6) cell balanceだけでcell内residual normを置き換えていないか，<br/>
+(7) state error，flux error，divergence defectを別々に報告しているか，<br/>
+(8) finite collocationによるbetween-point failureを残しているか，<br/>
+(9) RT reconstructionを使う場合，raw neural fluxとequilibrated fluxを区別しているか，<br/>
+(10) \(f\) のcell mean projectionとdata oscillationの扱いを明示しているか，<br/>
+(11) guaranteed error boundを使う場合，exact equilibrationまたはoscillation correctionを確認しているか，<br/>
+(12) adaptive samplingではconstitutive・equilibrium・balance indicatorsの役割を分離しているか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>40．第33回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+solutionだけを出力するPINNでは，
+fluxは
+</p>
+\[
+A\nabla u_\theta
+\]
+<p>
+として後から作ります．
+</p>
+<p>
+mixed neural formulationでは
+</p>
+\[
+\boxed{
+(u_\theta,\boldsymbol q_\theta)
+}
+\tag{53}
+\]
+<p>
+を同時に持ち，
+</p>
+\[
+\boxed{
+\boldsymbol q_\theta
+\approx
+A\nabla u_\theta,
+\qquad
+\nabla\cdot\boldsymbol q_\theta
+\approx
+-f
+}
+\tag{54}
+\]
+<p>
+を別々に監査できます．
+</p>
+<p>
+さらにcontrol-volume balance
+</p>
+\[
+\boxed{
+\int_{\partial K}
+\boldsymbol q_\theta\cdot\boldsymbol n_K\,ds
++
+\int_Kf\,dx
+}
+\tag{55}
+\]
+<p>
+を見ることで，
+pointwise residualとは別の保存則auditを持てます．
+</p>
+<p>
+そしてRT reconstructionを加えれば
+</p>
+\[
+\boxed{
+\text{neural approximation}
+\longrightarrow
+\text{equilibrated }H(\operatorname{div})\text{ flux}
+\longrightarrow
+\text{certification}
+}
+\tag{56}
+\]
+<p>
+まで接続できます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 3 第9回の原則</b><br/>
+<b>保存則を入れるとは，residual lossに一項足すことではない．
+fluxという未知量，normal trace，local balance，equilibrationを区別して設計することである．</b>
+</div>
+<p>
+次回は一つのright-hand sideに対するsolutionではなく，
+<b>第34回：解を学ぶのではなくsolution operatorを学ぶ</b>
+へ進みます．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>P.-A. Raviart and J.-M. Thomas, “A mixed finite element method for 2nd order elliptic problems”, in <i>Mathematical Aspects of Finite Element Methods</i>, Lecture Notes in Mathematics 606, Springer, 1977, 292–315.</li>
+<li>D. Boffi, F. Brezzi and M. Fortin, <i>Mixed Finite Element Methods and Applications</i>, Springer, 2013.</li>
+<li>M. Raissi, P. Perdikaris and G. E. Karniadakis, “Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations”, <i>Journal of Computational Physics</i> 378 (2019), 686–707.</li>
+<li><a href="./chatgpt-fem-14.html">第14回：Raviart–Thomas要素を実装する — normal flux・Piola変換・向き</a></li>
+<li><a href="./chatgpt-fem-16.html">第16回：mixed Poissonを実装する — RT0–P0と局所保存</a></li>
+<li><a href="./chatgpt-fem-23.html">第23回：有限要素解の誤差を保証する — equilibrated fluxとhypercircle</a></li>
+<li><a href="./chatgpt-fem-32.html">第32回：点配置を誤差から変える — residual-adaptive sampling</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 3 前回：</b><a href="./chatgpt-fem-32.html">第32回：点配置を誤差から変える — residual-adaptive sampling</a></p>
+<p><b>次回：</b>第34回：解を学ぶのではなくsolution operatorを学ぶ（構想中）</p>
+<p><a href="../#chatgpt-fem-season3">Season 3一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
