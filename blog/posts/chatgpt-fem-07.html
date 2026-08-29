@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<title>第7回：異方性P1要素は本当に正しく動くか — patch test・誤差・condition number | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,finite element method,anisotropic mesh,異方性メッシュ,P1 element,patch test,condition number,semi-regularity,maximum angle,Poisson equation,Python"/>
+<meta name="description" content="異方性三角形P1有限要素について，semi-regularな強異方性メッシュとmaximum angleが悪化する扁平メッシュを比較し，linear patch test，相対L2・H1誤差，Jacobianと大域剛性行列のcondition numberを数値的に監査します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-07.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-07.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-07.html",
+      "headline": "第7回：異方性P1要素は本当に正しく動くか — patch test・誤差・condition number",
+      "description": "semi-regularな強異方性メッシュとmaximum angleが悪化する扁平メッシュを比較し，linear patch test，相対誤差，Jacobianと剛性行列のcondition numberを監査します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-07.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-29",
+      "dateModified": "2026-08-29",
+      "articleSection": "Computational FEM with AI",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-07.html#breadcrumbs",
+      "itemListElement": [
+        {"@type":"ListItem","position":1,"name":"Home","item":"https://teamfem.github.io/hiroki_ishizaka/"},
+        {"@type":"ListItem","position":2,"name":"Blog","item":"https://teamfem.github.io/hiroki_ishizaka/blog/"},
+        {"@type":"ListItem","position":3,"name":"第7回：異方性P1要素は本当に正しく動くか — patch test・誤差・condition number","item":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-07.html"}
+      ]
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-29"/>
+<meta property="article:modified_time" content="2026-08-29"/>
+<meta property="article:section" content="Computational FEM with AI"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第7回：異方性P1要素は本当に正しく動くか — patch test・誤差・condition number | Hiroki Ishizaka"/>
+<meta property="og:description" content="強異方性と悪い扁平化を区別し，patch test，相対誤差，Jacobian・剛性行列のcondition numberからP1実装を監査します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-07.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第7回：異方性P1要素は本当に正しく動くか — patch test・誤差・condition number | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="異方性P1要素をpatch test，相対誤差，condition numberで数学的に監査します．"/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 第7回</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第7回：異方性P1要素は本当に正しく動くか — patch test・誤差・condition number</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 第7回</b><br/><time datetime="2026-08-29">29th August 2026</time></p>
+
+<h2>はじめに――「細長い要素」を一括りにしない</h2>
+<div class="news"><article class="news-item">
+<p>
+第6回では，異方性三角形のJacobianを
+\[
+J_T=A_T\widetilde A\widehat A
+\]
+と分け，
+\[
+\widehat A
+\]
+に方向別scale，
+\[
+\widetilde A
+\]
+に角度・flatness，
+\[
+A_T
+\]
+にrotation/reflectionを持たせました．
+</p>
+<p>
+今回はその考え方を実際のP1有限要素計算へ入れます．
+比較するのは，
+</p>
+<ol>
+<li><b>semi-regularな強異方性メッシュ</b>，</li>
+<li><b>maximum angleが \(\pi\) に近づく扁平メッシュ</b></li>
+</ol>
+<p>
+です．
+どちらもJacobianのcondition numberは大きくなりますが，
+有限要素近似の幾何として同じ意味ではありません．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>今回の問い</b><br/>
+大きなaspect ratio，large \(\kappa(J_T)\)，large \(\kappa(A)\)，
+maximum-angle deteriorationは同じ現象なのか？<br/>
+答えは<b>no</b>です．
+</div>
+</article></div>
+
+<h2>1．モデル問題</h2>
+<div class="news"><article class="news-item">
+<p>
+単位正方形
+\[
+\Omega=(0,1)^2
+\]
+で
+\[
+-\Delta u=f
+\qquad\text{in }\Omega,
+\tag{1}
+\]
+\[
+u=0
+\qquad\text{on }\partial\Omega
+\tag{2}
+\]
+を考えます．
+厳密解は
+\[
+u(x,y)=\sin(\pi x)\sin(\pi y),
+\tag{3}
+\]
+従って
+\[
+f(x,y)=2\pi^2\sin(\pi x)\sin(\pi y).
+\tag{4}
+\]
+</p>
+<p>
+有限要素法は第3・4回と同じ連続P1 Galerkin法です．
+つまり，今回変更するのは<b>mesh geometryだけ</b>です．
+</p>
+</article></div>
+
+<h2>2．Mesh A：semi-regularな強異方性メッシュ</h2>
+<div class="news"><article class="news-item">
+<p>
+\(x\) 方向を \(n\) 分割，\(y\) 方向を \(n^2\) 分割します．
+従って
+\[
+h_x=\frac1n,
+\qquad
+h_y=\frac1{n^2},
+\tag{5}
+\]
+なのでaspect ratioは
+\[
+\frac{h_x}{h_y}=n
+\longrightarrow\infty.
+\tag{6}
+\]
+</p>
+<p>
+各長方形を対角線で二分して三角形にします．
+各三角形は直角三角形なので最大角は常に
+\[
+\theta_{\max}=\frac{\pi}{2}.
+\]
+第6回のstandard positionを使うと
+\[
+\frac{H_T}{h_T}=2
+\tag{7}
+\]
+であり，\(n\) に依存しません．
+</p>
+<p>
+一方，標準化したJacobianはscaleの違いを直接持つため
+\[
+\kappa_2(J_T)=n.
+\tag{8}
+\]
+つまり，
+</p>
+\[
+\boxed{
+\kappa_2(J_T)\to\infty
+\quad\text{でも}\quad
+H_T/h_T=2
+}
+\]
+<p>
+です．
+</p>
+</article></div>
+
+<h2>3．Mesh B：最大角が \(\pi\) に近づくメッシュ</h2>
+<div class="news"><article class="news-item">
+<p>
+今度は単位正方形を \(n\times n\) の正方形に分けます．
+各cellの幅を
+\[
+h=\frac1n
+\]
+とします．
+</p>
+<p>
+各cell
+\[
+[ih,(i+1)h]\times[jh,(j+1)h]
+\]
+の内部に
+\[
+c_{ij}
+=
+\left(
+\left(i+\frac12\right)h,\,
+jh+h^2
+\right)
+\tag{9}
+\]
+を置き，cellの四隅と \(c_{ij}\) を結んで4個の三角形にします．
+</p>
+<p>
+bottom edgeを底辺とする三角形は，高さが
+\[
+h^2
+\]
+しかありません．
+その最大角は細分化とともに \(\pi\) へ近づきます．
+</p>
+<p>
+このbad triangleでは
+\[
+h_1=h_2
+=
+h\sqrt{\frac14+h^2},
+\]
+\[
+|T|
+=
+\frac{h^3}{2},
+\]
+したがって
+\[
+\boxed{
+\frac{H_T}{h_T}
+=
+\frac{1}{2h}+2h
+=
+\frac n2+\frac2n
+}
+\tag{10}
+\]
+です．従って
+\[
+\frac{H_T}{h_T}\to\infty.
+\]
+</p>
+<p>
+さらに
+\[
+H_T
+=
+\frac12+\frac{2}{n^2}
+\longrightarrow\frac12,
+\tag{11}
+\]
+なので，このmesh familyでは
+\[
+\max_T H_T\to0
+\]
+というより弱いanisotropic convergence conditionさえ満たしません．
+</p>
+</article></div>
+
+<h2>4．まず幾何だけを診断する</h2>
+<div class="news"><article class="news-item">
+<p>
+第6回のstandard positionに直して，各mesh familyで
+\[
+\max_T\kappa_2(J_T),
+\qquad
+\max_T\frac{H_T}{h_T},
+\qquad
+\max_T\theta_{\max}(T)
+\]
+を計算します．
+</p>
+
+<h3>4.1 Mesh A</h3>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">\(n\)</th><th style="border:1px solid #777; padding:7px;">max \(\kappa_2(J_T)\)</th><th style="border:1px solid #777; padding:7px;">max \(H_T/h_T\)</th><th style="border:1px solid #777; padding:7px;">max angle</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">90°</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">90°</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">90°</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">90°</td></tr>
+</table>
+
+<h3>4.2 Mesh B</h3>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">\(n\)</th><th style="border:1px solid #777; padding:7px;">max \(\kappa_2(J_T)\)</th><th style="border:1px solid #777; padding:7px;">max \(H_T/h_T\)</th><th style="border:1px solid #777; padding:7px;">max angle</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">1</td><td style="border:1px solid #777; padding:7px;">2.000</td><td style="border:1px solid #777; padding:7px;">90.00°</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">2.500</td><td style="border:1px solid #777; padding:7px;">126.87°</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">4.250</td><td style="border:1px solid #777; padding:7px;">151.93°</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">8.125</td><td style="border:1px solid #777; padding:7px;">165.75°</td></tr>
+</table>
+<p>
+両方ともJacobian condition numberは増えます．
+しかしMesh Aでは \(H_T/h_T\) が一定，Mesh Bでは発散します．
+</p>
+</article></div>
+
+<h2>5．linear patch testは両方とも通る</h2>
+<div class="news"><article class="news-item">
+<p>
+厳密解を
+\[
+u(x,y)=1+2x-3y
+\tag{12}
+\]
+とし，
+\[
+-\Delta u=0
+\]
+を解きます．
+P1空間はこの一次式を厳密に含むので，非退化な三角形で正しくassemblyされている限り
+\[
+u_h=u.
+\tag{13}
+\]
+</p>
+
+<h3>5.1 Mesh A</h3>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">\(n\)</th><th style="border:1px solid #777; padding:7px;">max nodal error</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">0.0</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">1.3323e-15</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">1.5321e-14</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">1.0125e-13</td></tr>
+</table>
+
+<h3>5.2 Mesh B</h3>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">\(n\)</th><th style="border:1px solid #777; padding:7px;">max nodal error</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">1.1102e-16</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">8.8818e-16</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">8.8818e-16</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">7.5495e-15</td></tr>
+</table>
+<p>
+Mesh Bの最大角が165°を超えてもpatch testは通っています．
+したがって，
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>patch testが教えること</b><br/>
+P1の一次式再現性とassemblyの整合性を確認できる．<br/>
+しかし，mesh familyがsemi-regularかどうかは判定できない．
+</div>
+</article></div>
+
+<h2>6．Mesh AではP1の標準収束次数が保たれる</h2>
+<div class="news"><article class="news-item">
+<p>
+厳密解 (3) に対する相対誤差
+\[
+E_{L^2}^{\mathrm{rel}}
+=
+\frac{\|u-u_h\|_{L^2(\Omega)}}{\|u\|_{L^2(\Omega)}},
+\qquad
+E_{H^1}^{\mathrm{rel}}
+=
+\frac{|u-u_h|_{H^1(\Omega)}}{|u|_{H^1(\Omega)}}
+\tag{14}
+\]
+を測ります．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">\(n\)</th>
+<th style="border:1px solid #777; padding:7px;">nodes</th>
+<th style="border:1px solid #777; padding:7px;">\(L^2\) rel.</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+<th style="border:1px solid #777; padding:7px;">\(H^1\) rel.</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">15</td><td style="border:1px solid #777; padding:7px;">3.4953e-1</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">5.6894e-1</td><td style="border:1px solid #777; padding:7px;">—</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">85</td><td style="border:1px solid #777; padding:7px;">8.4058e-2</td><td style="border:1px solid #777; padding:7px;">2.056</td><td style="border:1px solid #777; padding:7px;">2.8146e-1</td><td style="border:1px solid #777; padding:7px;">1.015</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">585</td><td style="border:1px solid #777; padding:7px;">2.0378e-2</td><td style="border:1px solid #777; padding:7px;">2.044</td><td style="border:1px solid #777; padding:7px;">1.3939e-1</td><td style="border:1px solid #777; padding:7px;">1.014</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">4369</td><td style="border:1px solid #777; padding:7px;">5.0459e-3</td><td style="border:1px solid #777; padding:7px;">2.014</td><td style="border:1px solid #777; padding:7px;">6.9492e-2</td><td style="border:1px solid #777; padding:7px;">1.004</td></tr>
+</table>
+<p>
+aspect ratioは \(n\) とともに増えていますが，
+\[
+L^2:\ 2\text{次},
+\qquad
+H^1:\ 1\text{次}
+\]
+が非常にきれいに出ています．
+</p>
+</article></div>
+
+<h2>7．Mesh Bでは観測収束次数が悪化する</h2>
+<div class="news"><article class="news-item">
+<p>
+同じ問題をMesh Bで解きます．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">\(n\)</th>
+<th style="border:1px solid #777; padding:7px;">nodes</th>
+<th style="border:1px solid #777; padding:7px;">\(L^2\) rel.</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+<th style="border:1px solid #777; padding:7px;">\(H^1\) rel.</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">13</td><td style="border:1px solid #777; padding:7px;">1.9572e-1</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">4.1141e-1</td><td style="border:1px solid #777; padding:7px;">—</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">41</td><td style="border:1px solid #777; padding:7px;">6.3564e-2</td><td style="border:1px solid #777; padding:7px;">1.623</td><td style="border:1px solid #777; padding:7px;">2.3788e-1</td><td style="border:1px solid #777; padding:7px;">0.790</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">145</td><td style="border:1px solid #777; padding:7px;">2.1329e-2</td><td style="border:1px solid #777; padding:7px;">1.575</td><td style="border:1px solid #777; padding:7px;">1.3913e-1</td><td style="border:1px solid #777; padding:7px;">0.774</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">545</td><td style="border:1px solid #777; padding:7px;">6.3577e-3</td><td style="border:1px solid #777; padding:7px;">1.746</td><td style="border:1px solid #777; padding:7px;">7.6408e-2</td><td style="border:1px solid #777; padding:7px;">0.865</td></tr>
+</table>
+<p>
+この範囲では誤差自体は減っていますが，
+Mesh Aのような明確な2次・1次は得られていません．
+</p>
+<div style="padding:12px; margin:14px 0; border:1px solid #999999;">
+<b>ここで過剰な結論を出さない</b><br/>
+semi-regularityや \(H(h)\to0\) は，所定の誤差評価を一様に得るための十分条件です．
+それを破ったからといって，あらゆる右辺・あらゆる解で有限要素解が必ず発散するわけではありません．
+今回のMesh Bとsmooth solutionでは，少なくとも計算した範囲で誤差は減っています．
+</div>
+</article></div>
+
+<h2>8．Jacobianのcondition numberは両方で大きくなる</h2>
+<div class="news"><article class="news-item">
+<p>
+standard positionで見ると，
+Mesh Aでは
+\[
+\kappa_2(J_T)=n,
+\tag{15}
+\]
+Mesh Bの最も扁平な三角形では
+\[
+\kappa_2(J_T)
+=
+\frac{n}{2}
+\qquad(n\ge4).
+\tag{16}
+\]
+</p>
+<p>
+つまり両方とも
+\[
+\kappa_2(J_T)=O(n)
+\]
+です．
+ところが
+\[
+\frac{H_T}{h_T}
+=
+2
+\]
+と
+\[
+\frac{H_T}{h_T}
+\sim\frac n2
+\]
+で幾何学的意味は全く違います．
+</p>
+<p>
+この事実だけでも，
+</p>
+\[
+\boxed{
+\text{large }\kappa(J_T)
+\not\Longleftrightarrow
+\text{bad maximum angle}
+}
+\]
+<p>
+であることが分かります．
+</p>
+</article></div>
+
+<h2>9．大域剛性行列のcondition numberはさらに別の量</h2>
+<div class="news"><article class="news-item">
+<p>
+Dirichlet自由度を除いたstiffness matrixを \(A_{II}\) とし，
+\[
+\kappa_2(A_{II})
+=
+\frac{\lambda_{\max}(A_{II})}
+{\lambda_{\min}(A_{II})}
+\tag{17}
+\]
+を計算します．
+</p>
+
+<h3>9.1 Mesh A</h3>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">\(n\)</th><th style="border:1px solid #777; padding:7px;">interior DOFs</th><th style="border:1px solid #777; padding:7px;">\(\kappa_2(A_{II})\)</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">3</td><td style="border:1px solid #777; padding:7px;">3.605</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">45</td><td style="border:1px solid #777; padding:7px;">55.636</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">441</td><td style="border:1px solid #777; padding:7px;">847.502</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">3825</td><td style="border:1px solid #777; padding:7px;">1.3353e4</td></tr>
+</table>
+
+<h3>9.2 Mesh B</h3>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">\(n\)</th><th style="border:1px solid #777; padding:7px;">interior DOFs</th><th style="border:1px solid #777; padding:7px;">\(\kappa_2(A_{II})\)</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">5</td><td style="border:1px solid #777; padding:7px;">3.000</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">25</td><td style="border:1px solid #777; padding:7px;">14.868</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">113</td><td style="border:1px solid #777; padding:7px;">84.783</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">481</td><td style="border:1px solid #777; padding:7px;">545.313</td></tr>
+</table>
+<p>
+semi-regularなMesh Aの方が，この比較ではむしろ大きなglobal condition numberを持っています．
+これはMesh Aが \(y\) 方向を \(n^2\) 分割し，非常に短いmesh scale \(1/n^2\) を持つためです．
+</p>
+<p>
+ただし両familyは自由度数が違うので，この表を同一costでの優劣比較として読むべきではありません．
+ここでの目的は，
+</p>
+\[
+\boxed{
+\text{approximation geometry}
+\neq
+\text{algebraic conditioning}
+}
+\]
+<p>
+を確認することです．
+</p>
+</article></div>
+
+<h2>10．patch testの丸め誤差にもconditioningが見える</h2>
+<div class="news"><article class="news-item">
+<p>
+Mesh Aのpatch-test errorは
+\[
+10^{-15},10^{-14},10^{-13}
+\]
+と少しずつ大きくなりました．
+離散化誤差は0なので，この増加は主に浮動小数点演算とlinear-system conditioningの影響です．
+</p>
+<p>
+したがって
+\[
+u_h=u
+\]
+という数学的exactnessと，
+computer arithmeticで得られる誤差の大きさは区別する必要があります．
+</p>
+</article></div>
+
+<h2 style="color:#111;">11．二つのmesh familyをPythonで作る</h2>
+<div class="news"><article class="news-item">
+
+<h3>11.1 semi-regularな強異方性mesh</h3>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def make_good_anisotropic_mesh(n):
+    nx = n
+    ny = n * n
+
+    xs = np.linspace(0.0, 1.0, nx + 1)
+    ys = np.linspace(0.0, 1.0, ny + 1)
+
+    nodes = np.array([
+        [x, y]
+        for y in ys
+        for x in xs
+    ])
+
+    def idx(i, j):
+        return j * (nx + 1) + i
+
+    triangles = []
+
+    for j in range(ny):
+        for i in range(nx):
+            v00 = idx(i,     j)
+            v10 = idx(i + 1, j)
+            v01 = idx(i,     j + 1)
+            v11 = idx(i + 1, j + 1)
+
+            triangles.append(
+                [v00, v10, v11]
+            )
+            triangles.append(
+                [v00, v11, v01]
+            )
+
+    return nodes, np.array(
+        triangles,
+        dtype=int
+    )
+</code></pre>
+
+<h3>11.2 maximum angleが悪化するmesh</h3>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def make_bad_flat_mesh(n):
+    h = 1.0 / n
+
+    nodes = [
+        [i * h, j * h]
+        for j in range(n + 1)
+        for i in range(n + 1)
+    ]
+
+    def idx(i, j):
+        return j * (n + 1) + i
+
+    triangles = []
+
+    for j in range(n):
+        for i in range(n):
+            v00 = idx(i,     j)
+            v10 = idx(i + 1, j)
+            v11 = idx(i + 1, j + 1)
+            v01 = idx(i,     j + 1)
+
+            center = [
+                (i + 0.5) * h,
+                j * h + h * h
+            ]
+
+            vc = len(nodes)
+            nodes.append(center)
+
+            triangles += [
+                [v00, v10, vc],
+                [v10, v11, vc],
+                [v11, v01, vc],
+                [v01, v00, vc]
+            ]
+
+    return (
+        np.array(nodes, dtype=float),
+        np.array(triangles, dtype=int)
+    )
+</code></pre>
+</article></div>
+
+<h2>12．anisotropic geometry auditをsolverと分離する</h2>
+<div class="news"><article class="news-item">
+<p>
+有限要素solverは第3・4回のstandard Jacobianでそのままassemblyします．
+一方，mesh auditでは第6回のstandard-position decompositionを使い，
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">max_cond_J = 0.0
+max_H_over_h = 0.0
+max_angle = 0.0
+
+for tri in triangles:
+    data = anisotropic_triangle_decomposition(
+        nodes[tri]
+    )
+
+    max_cond_J = max(
+        max_cond_J,
+        np.linalg.cond(
+            data["J_direct"]
+        )
+    )
+
+    max_H_over_h = max(
+        max_H_over_h,
+        data["H_over_h"]
+    )
+
+    theta = np.arcsin(
+        min(1.0, 2.0 / data["H_over_h"])
+    )
+
+    # for the standard-labelled triangle,
+    # theta is the maximum angle only after
+    # selecting the correct branch;
+    # compute it directly in production code.
+</code></pre>
+<p>
+といった診断を別に持ちます．
+angleについては \(\sin\theta\) だけではacute/obtuseのbranchが区別できないため，
+実装ではdot productや余弦定理から最大角を直接計算する方が安全です．
+</p>
+</article></div>
+
+<h2>13．この実験から何が分かるか</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">quantity</th><th style="border:1px solid #777; padding:7px;">Mesh A</th><th style="border:1px solid #777; padding:7px;">Mesh B</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">aspect ratio</td><td style="border:1px solid #777; padding:7px;">large</td><td style="border:1px solid #777; padding:7px;">bad triangles become flat</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(\kappa(J_T)\)</td><td style="border:1px solid #777; padding:7px;">large</td><td style="border:1px solid #777; padding:7px;">large</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(H_T/h_T\)</td><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">unbounded</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">maximum angle</td><td style="border:1px solid #777; padding:7px;">90°</td><td style="border:1px solid #777; padding:7px;">\(\to180^\circ\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">patch test</td><td style="border:1px solid #777; padding:7px;">pass</td><td style="border:1px solid #777; padding:7px;">pass</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">observed smooth-solution rates</td><td style="border:1px solid #777; padding:7px;">\(L^2\approx2,\ H^1\approx1\)</td><td style="border:1px solid #777; padding:7px;">reduced in tested range</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">global conditioning</td><td style="border:1px solid #777; padding:7px;">can be very poor</td><td style="border:1px solid #777; padding:7px;">also deteriorates</td></tr>
+</table>
+</article></div>
+
+<h2>14．ChatGPTに「細長いから悪い」と言わせない</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+この異方性P1メッシュを評価してください．
+単にaspect ratioや \(\kappa(J_T)\) だけで良否を判定せず，<br/>
+(1) standard-position \(h_1,h_2\)，<br/>
+(2) \(H_T/h_T\)，<br/>
+(3) maximum angle，<br/>
+(4) linear patch test，<br/>
+(5) \(L^2\)・\(H^1\)相対誤差とobserved rate，<br/>
+(6) stiffness matrixのcondition number，<br/>
+を別々に計算し，approximation geometryとalgebraic conditioningを混同しないでください．
+</div>
+<p>
+このように指定しないと，AIはしばしば
+「aspect ratioが大きい → bad mesh」
+と短絡します．
+異方性有限要素法では，そこを分ける必要があります．
+</p>
+</article></div>
+
+<h2>15．第7回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+今回の数値実験から，少なくとも次の四つを区別する必要があります．
+</p>
+\[
+\text{anisotropic scale},
+\qquad
+\text{angle degeneration},
+\qquad
+\text{polynomial reproduction},
+\qquad
+\text{linear-system conditioning}.
+\]
+<p>
+特に，
+\[
+\kappa(J_T)\to\infty
+\]
+でもsemi-regularなmeshは作れます．
+また，maximum angleが悪化してもlinear patch testは通ります．
+逆に，semi-regularな強異方性meshでも大域剛性行列はかなりill-conditionedになり得ます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>異方性FEMの監査では，一つの数値だけを見てはいけない</b><br/>
+geometry，approximation，exactness，conditioningを分離して診断する．
+</div>
+<p>
+次回はこの結果を受けて，
+<b>「良い異方性要素」と「悪い異方性要素」を幾何条件としてどう分類するか</b>
+を整理します．
+</p>
+</article></div>
+
+<h2>参考文献</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>H. Ishizaka, K. Kobayashi and T. Tsuchiya, “General theory of interpolation error estimates on anisotropic meshes”, <i>Japan Journal of Industrial and Applied Mathematics</i> 38 (2021), 163–191.</li>
+<li>H. Ishizaka, K. Kobayashi and T. Tsuchiya, “Crouzeix–Raviart and Raviart–Thomas finite-element error analysis on anisotropic meshes violating the maximum-angle condition”, <i>Japan Journal of Industrial and Applied Mathematics</i> 38 (2021), 645–675.</li>
+<li>H. Ishizaka, K. Kobayashi and T. Tsuchiya, “Anisotropic interpolation error estimates using a new geometric parameter”, <i>Japan Journal of Industrial and Applied Mathematics</i> 40 (2023), 475–512.</li>
+<li>S. C. Brenner and L. R. Scott, <i>The Mathematical Theory of Finite Element Methods</i>, 3rd ed., Springer, 2008.</li>
+</ol>
+<p>
+関連ページ：
+<a href="./chatgpt-fem-06.html">第6回：異方性三角形ではJacobianをどう作るか</a>，
+<a href="./anisotropic-geometry-02.html">正則性と準正則性を角度を使わずに表す</a>，
+<a href="./anisotropic-geometry-06.html">長方形の三角形分割を \(Q_T\) と \(H_T/h_T\) で調べる</a>，
+<a href="../">Blog一覧</a>
+</p>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>前回：</b><a href="./chatgpt-fem-06.html">第6回：異方性三角形ではJacobianをどう作るか — standard positionとtwo-step affine mapping</a></p>
+<p><b>次回：</b>第8回：良い異方性要素と悪い異方性要素 — shape regularity・maximum angle・semi-regularity（構想中）</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
