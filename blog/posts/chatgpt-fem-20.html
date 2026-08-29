@@ -216,6 +216,211 @@ nonconvex cornerやboundary singularityがあるとglobal \(H^3\) regularityは�
 を確認する．
 </p>
 </div>
+
+<h3>2.1　角特異性の局所モデル――\(r^\lambda\Phi(\theta)\)</h3>
+<p>
+polygonのcorner近傍をopening angle \(\omega\) のwedge
+\[
+\mathcal S_\omega
+=
+\left\{
+(r,\theta):
+0&lt;r&lt;r_0,\ 
+0&lt;\theta&lt;\omega
+\right\}
+\]
+でmodel化します．
+Kondrat'ev–Grisvard–Dauge型のcorner theoryでは，
+elliptic boundary-value problemの解は局所的に
+\[
+u
+=
+\sum_{j,k}
+c_{jk}\,
+r^{\lambda_j}
+(\log r)^k
+\Phi_{jk}(\theta)
++
+u_{\mathrm{reg}}
+\]
+というsingular modesとregular partに分解されます．
+\(\lambda_j\) はMellin transformにより得られる
+<b>operator pencilのspectral values</b>です．
+</p>
+<p>
+二次元でgenuine singular mode
+\[
+u_s=r^\lambda\Phi(\theta)
+\]
+を考えると，
+\[
+D^m u_s
+\sim
+r^{\operatorname{Re}\lambda-m}.
+\]
+したがってinteger derivativeについて
+\[
+\int_0^\varepsilon
+r^{2(\operatorname{Re}\lambda-m)}
+r\,dr
+&lt;
+\infty
+\]
+となる条件は
+\[
+m&lt;1+\operatorname{Re}\lambda.
+\]
+fractional Sobolev scaleまで含めると，non-polynomial singular modeに対する基本thresholdは
+\[
+\boxed{
+s
+&lt;
+1+\operatorname{Re}\lambda.
+}
+\]
+</p>
+<p>
+ただしこれは<b>実際にsingular coefficientが非零であるmode</b>に対するthresholdです．
+\(\lambda\) が整数でも，そのmodeが単なるpolynomialならregularity barrierにはなりません．
+またrepeated root / resonanceでは
+\[
+r^\lambda(\log r)^k
+\]
+が現れ，endpoint regularityはさらに慎重に扱う必要があります．
+したがって
+<b>「形式的に最小の \(\lambda\) を見つけて \(H^{1+\lambda-\varepsilon}\) と結論する」だけでは不十分</b>
+です．
+</p>
+
+<h3>2.2　Poissonなら角指数を明示できる</h3>
+<p>
+Poisson–Dirichlet problemでは
+\[
+u=r^\lambda\Phi(\theta)
+\]
+を入れると
+\[
+\Phi''+\lambda^2\Phi=0,
+\qquad
+\Phi(0)=\Phi(\omega)=0,
+\]
+従って
+\[
+\boxed{
+\lambda_k
+=
+\frac{k\pi}{\omega},
+\qquad
+k=1,2,\ldots
+}
+\]
+となります．
+特にre-entrant corner
+\[
+\omega&gt;\pi
+\]
+では
+\[
+\lambda_1
+=
+\frac{\pi}{\omega}
+&lt;
+1,
+\]
+なのでglobal \(H^2\)-regularityを期待できないのが典型です．
+</p>
+
+<h3>2.3　Morleyのrateは「余分に何階smoothか」で決まる</h3>
+<p>
+Morley methodではenergyがHessianなので，
+\(H^2\) より何階分regularityが上にあるかが直接rateへ入ります．
+standardなquasi-uniform settingで
+\[
+u\in H^{2+\alpha}(\Omega),
+\qquad
+0&lt;\alpha\le1
+\]
+なら，典型的なbest-approximation scaleは
+\[
+\boxed{
+|u-I_h^M u|_{2,h}
+\lesssim
+h^\alpha
+|u|_{H^{2+\alpha}(\Omega)}.
+}
+\]
+したがって
+\[
+\alpha=1
+\]
+すなわち \(H^3\)-regularityがあると一次rateへ到達しますが，
+corner singularityによって
+\[
+0&lt;\alpha&lt;1
+\]
+ならquasi-uniform mesh上ではその \(\alpha\) がrateの天井になります．
+</p>
+<p>
+このときgraded meshや\(hp\)-FEMを使う理由は，
+<b>corner singularityにDoFを集中させて，global regularity不足を局所mesh designで補う</b>
+ことにあります．
+具体的なgrading exponentはoperator，boundary condition，polynomial degree，target normに依存するため，
+単一の公式を全問題へ流用してはいけません．
+</p>
+
+<h3>2.4　重調和ではboundary conditionごとにoperator pencilが変わる</h3>
+<p>
+biharmonic equationのgeneric separated formでは
+\[
+\Delta^2
+\bigl(
+r^\lambda\Phi(\theta)
+\bigr)
+=
+r^{\lambda-4}
+\left(
+\partial_\theta^2+(\lambda-2)^2
+\right)
+\left(
+\partial_\theta^2+\lambda^2
+\right)
+\Phi.
+\]
+従ってgeneric \(\lambda\) では
+\[
+\Phi(\theta)
+=
+A\sin(\lambda\theta)
++
+B\cos(\lambda\theta)
++
+C\sin((\lambda-2)\theta)
++
+D\cos((\lambda-2)\theta).
+\]
+</p>
+<p>
+しかしclamped，
+simply supported，
+free boundaryでは課す四本のboundary conditionsが異なり，
+<b>corner spectrumも異なります</b>．
+さらに
+\[
+\lambda=0,\ 1,\ 2
+\]
+などでは上のgeneric basis自体がdegenerateするので，
+generalised solutionsやlogarithmic termsを含めて別扱いが必要です．
+</p>
+<div style="padding:12px; margin:14px 0; border:2px solid #a66; background:#fffaf7;">
+<b>重要な数学的注意</b><br/>
+right-angle clamped problemについて，
+genericな4×4 determinantへ形式的に \(\lambda=2\) を代入し，
+ただちに
+「\(\lambda_{\min}=2\)，従って \(H^{3-\varepsilon}\)」
+と結論してはいけません．
+\(\lambda=2\) はgeneric separated basisのdegenerate valueであり，
+proper operator pencil / generalised singular modesで判定する必要があります．
+</div>
 </article></div>
 
 <h2>3．\(L^2\)-errorはさらにdual regularityに依存する</h2>
@@ -381,6 +586,73 @@ meshを細かくしても別のlimit problemへ収束し得ます．
 <p>
 従って「Morley要素ならBabuška paradoxが自動的に消える」と考えてはいけません．
 nonconforming methodとdomain approximationの極限は別途監査する必要があります．
+</p>
+
+<h3>7.1　物理的simple supportと簡略Navierを区別する</h3>
+<p>
+Kirchhoff–Love isotropic plateのsimple supportは，
+schematically
+\[
+\boxed{
+u=0,
+\qquad
+M_{nn}=0
+}
+\]
+で与えられます．
+曲げモーメントはstraight Cartesian frameでは
+\[
+M_{nn}
+=
+-D
+\left(
+\partial_{nn}u
++
+\nu\,
+\partial_{\tau\tau}u
+\right)
+\]
+の形を取ります．
+</p>
+<p>
+一方，解析上よく使われる
+\[
+\boxed{
+u=0,
+\qquad
+\Delta u=0
+}
+\]
+はsimplified Navier conditionです．
+straight boundary segment上では，
+十分smoothで \(u=0\) がedge全体に成立するとき，
+tangential second derivativeとの関係により両者が対応する設定があります．
+しかしcurved boundaryでは，
+\(u|_{\partial\Omega}=0\) をtangential directionへ二回微分したとき
+boundary curvatureとnormal derivativeが結合します．
+そのためphysical moment conditionと
+\(\Delta u=0\) を一般のcurved boundaryで同一視してはいけません．
+</p>
+<p>
+Babuška paradoxの核心もここにあります．
+polygonal approximationではgeometryだけでなく，
+<b>natural boundary operatorがどのようなlimitを持つか</b>
+まで追わなければなりません．
+したがって
+「polygon化すると必ずclampedになる」
+という単純な一語でまとめるより，
+</p>
+\[
+\boxed{
+\text{geometry approximation}
+\quad+\quad
+\text{support realisation}
+\quad\Longrightarrow\quad
+\text{limit boundary problem}
+}
+\]
+<p>
+として監査する方が正確です．
 </p>
 </article></div>
 
@@ -1348,6 +1620,9 @@ Babuška paradoxが示すように，
 <ol>
 <li>L. S. D. Morley, “The triangular equilibrium element in the solution of plate bending problems”, <i>Aeronautical Quarterly</i> 19 (1968), 149–169.</li>
 <li>W. Ming and J. Xu, “The Morley element for fourth order elliptic equations in any dimensions”, <i>Numerische Mathematik</i> 103 (2006), 155–169.</li>
+<li>P. Grisvard, <i>Elliptic Problems in Nonsmooth Domains</i>, Pitman, 1985.</li>
+<li>M. Dauge, <i>Elliptic Boundary Value Problems on Corner Domains</i>, Lecture Notes in Mathematics 1341, Springer, 1988.</li>
+<li>M. Costabel and M. Dauge, “Construction of Corner Singularities for Agmon–Douglis–Nirenberg Elliptic Systems”, <i>Mathematische Nachrichten</i> 162 (1993), 209–237. <a href="https://doi.org/10.1002/mana.19931620117">DOI</a>.</li>
 <li>R. Rannacher, “Finite Element Approximation of Simply Supported Plates and the Babuška Paradox”, <i>Zeitschrift für Angewandte Mathematik und Mechanik</i> 59 (1979), T73–T76.</li>
 <li>R. Rannacher, “On nonconforming and mixed finite element methods for plate bending problems: The linear case”, <i>RAIRO. Analyse numérique</i> 13 (1979), 369–387.</li>
 <li>H. Ishizaka, “Morley finite element analysis for fourth-order elliptic equations under a semi-regular mesh condition”, <i>Applications of Mathematics</i> 69(6) (2024), 769–805. <a href="https://doi.org/10.21136/AM.2024.0103-24">DOI</a>.</li>
