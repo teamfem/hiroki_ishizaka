@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第25回：Deep Ritz法を作る — FEMのenergy minimisationからneural trial spaceへ | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,Deep Ritz,neural network,PINNs,energy minimization,Ritz method,quadrature,point placement,collocation,sampling,PyTorch"/>
+<meta name="description" content="Season 3 第1回（通算第25回）として，Poisson問題のRitz energy minimisationを有限要素空間からneural trial manifoldへ置き換え，Deep Ritz法をPyTorchで実装します．連続energyとsampled energyの違い，quadrature pointsの役割，approximation・optimisation・sampling errorを数学的に監査します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-25.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-25.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-25.html",
+      "headline": "第25回：Deep Ritz法を作る — FEMのenergy minimisationからneural trial spaceへ",
+      "description": "Ritz法のenergy minimisationをneural trial manifoldへ移し，Deep Ritz法を実装しながらquadrature pointsとsampling geometryを監査します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-25.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 3",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 3"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第25回：Deep Ritz法を作る — FEMのenergy minimisationからneural trial spaceへ | Hiroki Ishizaka"/>
+<meta property="og:description" content="メッシュを捨てても幾何は消えない．Deep Ritz法を作り，quadrature pointsがenergyの見え方をどう決めるかをFEMの視点から調べます．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-25.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第25回：Deep Ritz法を作る — FEMのenergy minimisationからneural trial spaceへ | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="From FEM Ritz minimisation to a neural trial manifold, with point placement as quadrature geometry."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 3 第1回（通算第25回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第25回：Deep Ritz法を作る — FEMのenergy minimisationからneural trial spaceへ</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 3 第1回（通算第25回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――Season 3では「mesh-free」をそのまま信じない</h2>
+<div class="news"><article class="news-item">
+<p>
+Season 1・2では，有限要素法を
+mesh geometry，DoF，trace，Piola transform，stability，consistency，certification
+から組み立てました．
+Season 3では，その視点をDeep Ritz，PINNs，operator learningへ移します．
+</p>
+<p>
+出発点となる問いは
+</p>
+\[
+\boxed{
+\text{meshを使わなくても，geometryの問題は本当に消えるのか？}
+}
+\tag{1}
+\]
+<p>
+です．
+</p>
+<p>
+結論を先に言えば，消えません．
+elementの代わりに
+</p>
+\[
+\boxed{
+\text{quadrature points},
+\quad
+\text{collocation points},
+\quad
+\text{sensor points}
+}
+\tag{2}
+\]
+<p>
+の配置が近似の見え方を決めます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 3の原則</b><br/>
+<b>メッシュを捨てても，点はどこかに置かなければならない．</b><br/>
+FEMではelement geometryを監査した．
+Season 3ではsampling geometryを監査する．
+</div>
+</article></div>
+
+<h2>1．Poisson問題をRitz minimisationとして書く</h2>
+<div class="news"><article class="news-item">
+<p>
+まず最も単純な1次元Poisson問題
+</p>
+\[
+-u''(x)=f(x),
+\qquad
+0&lt;x&lt;1,
+\qquad
+u(0)=u(1)=0
+\tag{3}
+\]
+<p>
+を考えます．
+</p>
+<p>
+energy spaceは
+\[
+V=H_0^1(0,1)
+\]
+で，energy functionalを
+</p>
+\[
+\boxed{
+E(v)
+=
+\frac12
+\int_0^1
+|v'(x)|^2\,dx
+-
+\int_0^1
+f(x)v(x)\,dx
+}
+\tag{4}
+\]
+<p>
+とします．
+</p>
+</article></div>
+
+<h2>2．weak solutionはenergy minimiserである</h2>
+<div class="news"><article class="news-item">
+<p>
+\(u\in V\) がPoisson problemのweak solutionなら
+</p>
+\[
+\int_0^1
+u'v'\,dx
+=
+\int_0^1
+fv\,dx
+\qquad
+\forall v\in V.
+\tag{5}
+\]
+<p>
+そして
+</p>
+\[
+\boxed{
+u
+=
+\operatorname*{arg\,min}_{v\in V}
+E(v).
+}
+\tag{6}
+\]
+<p>
+これがRitz principleです．
+Deep Ritzは，このvariational principleをneural networkへ移した方法です．
+</p>
+</article></div>
+
+<h2>3．linear Poissonではenergy gapがerrorそのものになる</h2>
+<div class="news"><article class="news-item">
+<p>
+任意の \(v\in V\) に対して
+</p>
+\[
+\boxed{
+E(v)-E(u)
+=
+\frac12
+\int_0^1
+|v'-u'|^2\,dx.
+}
+\tag{7}
+\]
+<p>
+つまり
+</p>
+\[
+\boxed{
+\|v-u\|_{H_0^1\text{-energy}}
+=
+\sqrt{
+2\bigl(E(v)-E(u)\bigr)
+}.
+}
+\tag{8}
+\]
+<p>
+これはDeep Ritzを監査するうえで非常に強いidentityです．
+ただし後で見るように，
+実際にoptimizerが最小化するのはcontinuous energy \(E\) ではなく
+sampled energy \(E_N\) です．
+</p>
+</article></div>
+
+<h2>4．FEMのRitz法では何をしていたのか</h2>
+<div class="news"><article class="news-item">
+<p>
+conforming FEMではfinite-dimensional linear space
+</p>
+\[
+V_h
+=
+\operatorname{span}
+\{
+\phi_1,\ldots,\phi_M
+\}
+\subset
+H_0^1(0,1)
+\tag{9}
+\]
+<p>
+を選び，
+</p>
+\[
+\boxed{
+u_h
+=
+\operatorname*{arg\,min}_{v_h\in V_h}
+E(v_h).
+}
+\tag{10}
+\]
+<p>
+この最小化はlinear system
+\[
+K\boldsymbol u=\boldsymbol f
+\]
+へ落ちます．
+</p>
+</article></div>
+
+<h2>5．Deep Ritzではlinear spaceをneural trial manifoldに置き換える</h2>
+<div class="news"><article class="news-item">
+<p>
+neural network \(N_\theta(x)\) を使って
+</p>
+\[
+\boxed{
+\mathcal V_\Theta
+=
+\{
+u_\theta:
+\theta\in\Theta
+\}
+}
+\tag{11}
+\]
+<p>
+というnonlinear trial familyを作ります．
+</p>
+<p>
+Deep Ritzの理想形は
+</p>
+\[
+\boxed{
+\theta^\ast
+\in
+\operatorname*{arg\,min}_{\theta\in\Theta}
+E(u_\theta).
+}
+\tag{12}
+\]
+<p>
+したがって
+</p>
+\[
+\boxed{
+\text{FEM}
+:
+\text{linear finite-dimensional space},
+\qquad
+\text{Deep Ritz}
+:
+\text{nonlinear finite-dimensional manifold}
+}
+\tag{13}
+\]
+<p>
+と見ることができます．
+</p>
+</article></div>
+
+<h2>6．boundary conditionはhard constraintで入れる</h2>
+<div class="news"><article class="news-item">
+<p>
+今回は
+\[
+u(0)=u(1)=0
+\]
+をpenaltyにせず，
+</p>
+\[
+\boxed{
+u_\theta(x)
+=
+x(1-x)N_\theta(x)
+}
+\tag{14}
+\]
+<p>
+と置きます．
+</p>
+<p>
+すると任意のparameter \(\theta\) に対し
+</p>
+\[
+u_\theta(0)=u_\theta(1)=0.
+\tag{15}
+\]
+<p>
+これによりboundary penalty weightという別の要因を排除し，
+energy discretisationとpoint placementに集中できます．
+</p>
+</article></div>
+
+<h2>7．ここでFEMとの大きな違いが一つ現れる</h2>
+<div class="news"><article class="news-item">
+<p>
+\(V_h\) はlinear spaceなので
+\[
+u_h+tv_h\in V_h
+\]
+が成り立ちます．
+一方，neural trial family \(\mathcal V_\Theta\) は一般にlinear spaceではありません．
+</p>
+<p>
+従ってstandard Galerkin orthogonality
+</p>
+\[
+a(u-u_h,v_h)=0
+\qquad
+\forall v_h\in V_h
+\tag{16}
+\]
+<p>
+をそのままneural trial manifoldへ移してはいけません．
+</p>
+<p>
+Deep Ritzの基本構造は
+<b>Galerkin orthogonalityではなくenergy minimisation</b>
+です．
+</p>
+</article></div>
+
+<h2>8．実際にはcontinuous energyを計算できない</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (4) はintegralを含みます．
+network trainingでは
+quadrature points
+\[
+x_1,\ldots,x_N
+\]
+とweights
+\[
+w_1,\ldots,w_N
+\]
+を用いて
+</p>
+\[
+\boxed{
+E_N(u_\theta)
+=
+\sum_{i=1}^N
+w_i
+\left[
+\frac12
+|u_\theta'(x_i)|^2
+-
+f(x_i)u_\theta(x_i)
+\right].
+}
+\tag{17}
+\]
+<p>
+これを最小化します．
+</p>
+</article></div>
+
+<h2>9．Deep Ritzの点配置はquadrature geometryである</h2>
+<div class="news"><article class="news-item">
+<p>
+したがってDeep Ritzにおけるtraining pointsは，
+PINNsのcollocation pointsとは役割が少し違います．
+</p>
+\[
+\boxed{
+\text{Deep Ritz point placement}
+=
+\text{energy integralをどう観測するか}
+}
+\tag{18}
+\]
+<p>
+です．
+</p>
+<p>
+point setが悪ければ，
+optimizerは \(E\) ではなく
+歪んだ \(E_N\) を忠実に最小化します．
+</p>
+</article></div>
+
+<h2>10．「training lossが小さい」はcontinuous energyが小さいとは限らない</h2>
+<div class="news"><article class="news-item">
+<p>
+trainingで分かるのは
+</p>
+\[
+E_N(u_\theta)
+\]
+<p>
+だけです．
+本当に知りたいのは
+</p>
+\[
+E(u_\theta).
+\]
+<p>
+差
+</p>
+\[
+\boxed{
+E(u_\theta)-E_N(u_\theta)
+}
+\tag{19}
+\]
+<p>
+はquadrature / sampling errorです．
+</p>
+<p>
+したがって
+</p>
+\[
+\boxed{
+\text{small sampled loss}
+\not\Rightarrow
+\text{small continuous error}
+}
+\tag{20}
+\]
+<p>
+というSeason 3の基本問題がすでに現れます．
+</p>
+</article></div>
+
+<h2>11．Deep Ritz errorには少なくとも三つの層がある</h2>
+<div class="news"><article class="news-item">
+<p>
+理想化すると，
+Deep Ritzの誤差要因は
+</p>
+\[
+\boxed{
+\text{representation}
++
+\text{optimisation}
++
+\text{quadrature / sampling}
+}
+\tag{21}
+\]
+<p>
+に分けて考える必要があります．
+</p>
+<ul>
+<li><b>representation error</b>：network familyがexact solutionをどこまで表現できるか，</li>
+<li><b>optimisation error</b>：parameter optimisationがglobal minimumへ届いたか，</li>
+<li><b>quadrature error</b>：sampled energyがcontinuous energyをどこまで再現するか，</li>
+</ul>
+<p>
+です．
+</p>
+</article></div>
+
+<h2>12．FEMのquadrature errorとの違いと共通点</h2>
+<div class="news"><article class="news-item">
+<p>
+FEMでもnumerical quadratureを使えばvariational crimeが起きます．
+</p>
+<p>
+共通点は
+\[
+\boxed{
+\text{integralを有限個の点から近似する}
+}
+\tag{22}
+\]
+ことです．
+</p>
+<p>
+違いは，Deep Ritzではintegrand自体がtraining中に
+\(\theta\) とともに変化することです．
+つまり固定されたpolynomialだけを積分しているわけではありません．
+</p>
+</article></div>
+
+<h2>13．baseline problemを決める</h2>
+<div class="news"><article class="news-item">
+<p>
+exact solutionを
+</p>
+\[
+\boxed{
+u^\ast(x)
+=
+\sin(\pi x)
+}
+\tag{23}
+\]
+<p>
+とします．
+すると
+</p>
+\[
+\boxed{
+f(x)
+=
+\pi^2\sin(\pi x).
+}
+\tag{24}
+\]
+<p>
+exact energyは
+</p>
+\[
+\boxed{
+E(u^\ast)
+=
+-\frac{\pi^2}{4}
+=
+-2.4674011002723395\ldots
+}
+\tag{25}
+\]
+<p>
+です．
+</p>
+</article></div>
+
+<h2>14．network architecture</h2>
+<div class="news"><article class="news-item">
+<p>
+今回はtanh network
+</p>
+\[
+1
+\to
+32
+\to
+32
+\to
+32
+\to
+1
+\]
+<p>
+を使い，
+最後に式 (14) のboundary factorを掛けます．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">class Net(torch.nn.Module):
+    def __init__(self, width=32, depth=3):
+        super().__init__()
+
+        layers = [
+            torch.nn.Linear(1, width),
+            torch.nn.Tanh()
+        ]
+
+        for _ in range(depth - 1):
+            layers += [
+                torch.nn.Linear(width, width),
+                torch.nn.Tanh()
+            ]
+
+        layers += [torch.nn.Linear(width, 1)]
+        self.net = torch.nn.Sequential(*layers)
+
+    def forward(self, x):
+        raw = self.net(x)
+        return x * (1.0 - x) * raw
+</code></pre>
+</article></div>
+
+<h2>15．baselineでは64点Gauss–Legendre quadratureを使う</h2>
+<div class="news"><article class="news-item">
+<p>
+第1回ではpoint placementの比較をまだ行わず，
+かなり高精度なbaselineとして
+</p>
+\[
+\boxed{
+N=64
+\text{ Gauss--Legendre points}
+}
+\tag{26}
+\]
+<p>
+を使います．
+</p>
+<p>
+次回はnetwork，optimizer，point数を固定し，
+<b>点配置だけ</b>を変えます．
+</p>
+</article></div>
+
+<h2>16．Gauss pointsとweightsを作る</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">import numpy as np
+import torch
+import math
+
+torch.manual_seed(7)
+torch.set_default_dtype(torch.float64)
+
+Nq = 64
+
+xi, wi = np.polynomial.legendre.leggauss(Nq)
+
+# [-1, 1] -> [0, 1]
+xq = (xi + 1.0) / 2.0
+wq = wi / 2.0
+
+xq = torch.tensor(xq[:, None])
+wq = torch.tensor(wq[:, None])
+</code></pre>
+</article></div>
+
+<h2>17．energy lossを自動微分で作る</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def energy(model, xq, wq):
+    x = xq.clone().detach().requires_grad_(True)
+
+    u = model(x)
+
+    ux = torch.autograd.grad(
+        u,
+        x,
+        grad_outputs=torch.ones_like(u),
+        create_graph=True
+    )[0]
+
+    f = (
+        math.pi ** 2
+        * torch.sin(math.pi * x)
+    ).detach()
+
+    density = (
+        0.5 * ux ** 2
+        - f * u
+    )
+
+    return torch.sum(wq * density)
+</code></pre>
+<p>
+PINNsと違って二階微分 \(u_\theta''\) は使っていません．
+Poisson energyではfirst derivativeだけです．
+</p>
+</article></div>
+
+<h2>18．optimiserもmethodの一部として分けて記録する</h2>
+<div class="news"><article class="news-item">
+<p>
+今回は
+</p>
+\[
+\boxed{
+4000\text{ Adam steps}
+\quad+\quad
+\text{L-BFGS refinement}
+}
+\tag{27}
+\]
+<p>
+とします．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">model = Net()
+
+optimizer = torch.optim.Adam(
+    model.parameters(),
+    lr=1.0e-3
+)
+
+for epoch in range(4000):
+    optimizer.zero_grad()
+
+    loss = energy(model, xq, wq)
+    loss.backward()
+    optimizer.step()
+
+lbfgs = torch.optim.LBFGS(
+    model.parameters(),
+    lr=1.0,
+    max_iter=500,
+    tolerance_grad=1.0e-12,
+    tolerance_change=1.0e-14,
+    line_search_fn="strong_wolfe"
+)
+
+def closure():
+    lbfgs.zero_grad()
+    loss = energy(model, xq, wq)
+    loss.backward()
+    return loss
+
+lbfgs.step(closure)
+</code></pre>
+</article></div>
+
+<h2>19．baseline実行結果</h2>
+<div class="news"><article class="news-item">
+<p>
+double precision，seed 7で実行したbaselineでは
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">quantity</th>
+<th style="border:1px solid #777; padding:7px;">value</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">sampled Deep Ritz energy</td><td style="border:1px solid #777; padding:7px;">\(-2.4674010603560346\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">exact energy</td><td style="border:1px solid #777; padding:7px;">\(-2.4674011002723395\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(L^2\) error</td><td style="border:1px solid #777; padding:7px;">\(9.34\times10^{-6}\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(H^1\) seminorm error</td><td style="border:1px solid #777; padding:7px;">\(2.83\times10^{-4}\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">max pointwise error</td><td style="border:1px solid #777; padding:7px;">\(1.70\times10^{-5}\)</td></tr>
+</table>
+<p>
+これは「Deep Ritzは常にこの精度になる」という意味ではありません．
+次回のpoint-placement comparisonのためのbaselineです．
+</p>
+</article></div>
+
+<h2>20．energy identityを数値監査する</h2>
+<div class="news"><article class="news-item">
+<p>
+energy gapは
+</p>
+\[
+E(u_\theta)-E(u^\ast)
+\approx
+3.99163\times10^{-8}.
+\tag{28}
+\]
+<p>
+式 (8) から予測されるenergy errorは
+</p>
+\[
+\boxed{
+\sqrt{
+2\bigl(E(u_\theta)-E(u^\ast)\bigr)
+}
+\approx
+2.82547\times10^{-4}.
+}
+\tag{29}
+\]
+<p>
+直接計算した
+\[
+|u_\theta-u^\ast|_{H^1}
+\approx
+2.82551\times10^{-4}
+\]
+と一致しています．
+</p>
+<p>
+このtestは単にsolution plotを見るより強い数学的auditです．
+</p>
+</article></div>
+
+<h2>21．なぜこの一致が重要なのか</h2>
+<div class="news"><article class="news-item">
+<p>
+Deep Ritz trainingではnetwork optimisationという複雑な処理をしています．
+しかし最後に
+</p>
+\[
+\boxed{
+2(E(u_\theta)-E(u^\ast))
+=
+|u_\theta-u^\ast|_{H^1}^2
+}
+\tag{30}
+\]
+<p>
+というcontinuous identityへ戻せます．
+</p>
+<p>
+つまり
+</p>
+\[
+\boxed{
+\text{neural computation}
+\longrightarrow
+\text{classical variational identity}
+\longrightarrow
+\text{audit}
+}
+\tag{31}
+\]
+<p>
+というSeason 3の基本方針が作れます．
+</p>
+</article></div>
+
+<h2>22．ただしbaselineではquadrature errorを小さくしている</h2>
+<div class="news"><article class="news-item">
+<p>
+64-point Gauss–Legendreを使った理由は，
+まずsampling errorを十分小さくして
+network representationとoptimisationを観察するためです．
+</p>
+<p>
+しかし実際のDeep Ritzでは
+</p>
+\[
+\boxed{
+\{x_i,w_i\}_{i=1}^N
+}
+\tag{32}
+\]
+<p>
+の選び方がtraining objectiveそのものを変えます．
+</p>
+</article></div>
+
+<h2>23．同じ点数なら同じ情報量とは限らない</h2>
+<div class="news"><article class="news-item">
+<p>
+例えば \(N=32\) を固定しても
+</p>
+\[
+\boxed{
+\begin{aligned}
+&\text{equispaced},\\
+&\text{random},\\
+&\text{Gauss--Legendre},\\
+&\text{Chebyshev-like},\\
+&\text{boundary-clustered}
+\end{aligned}
+}
+\tag{33}
+\]
+<p>
+ではsampled energyが違います．
+</p>
+<p>
+「network parameter数」だけをmodel complexityとして見るのではなく，
+<b>where the PDE is observed</b>
+も計算設計の一部です．
+</p>
+</article></div>
+
+<h2>24．sampling measureとして見るとさらに分かりやすい</h2>
+<div class="news"><article class="news-item">
+<p>
+equal-weight samplingなら
+</p>
+\[
+\mu_N
+=
+\frac1N
+\sum_{i=1}^N
+\delta_{x_i}
+\tag{34}
+\]
+<p>
+というempirical measureを使って
+\[
+E_N
+\]
+を作っていると見なせます．
+</p>
+<p>
+continuous energyはLebesgue measure
+\[
+dx
+\]
+に対するintegralです．
+</p>
+<p>
+したがってpoint placement problemは
+</p>
+\[
+\boxed{
+\mu_N
+\longrightarrow
+dx
+\quad\text{をどの意味で要求するか}
+}
+\tag{35}
+\]
+<p>
+という問題になります．
+</p>
+</article></div>
+
+<h2>25．点が密なら十分，とは限らない</h2>
+<div class="news"><article class="news-item">
+<p>
+maximum gap
+\[
+h_X
+=
+\max_i(x_{i+1}-x_i)
+\]
+が小さいことは重要なgeometry indicatorです．
+しかしhigher dimensionでは
+</p>
+\[
+\boxed{
+\text{fill distance},
+\quad
+\text{separation distance},
+\quad
+\text{discrepancy},
+\quad
+\text{weights}
+}
+\tag{36}
+\]
+<p>
+など複数の量が現れます．
+</p>
+<p>
+FEMでmesh qualityが一種類ではなかったのと同じです．
+</p>
+</article></div>
+
+<h2>26．Deep RitzとPINNsでは点配置の意味が違う</h2>
+<div class="news"><article class="news-item">
+<p>
+Deep Ritzでは
+</p>
+\[
+\boxed{
+\text{points}
+\longrightarrow
+\text{energy quadrature}
+}
+\tag{37}
+\]
+<p>
+です．
+</p>
+<p>
+PINNsでは
+</p>
+\[
+\boxed{
+\text{points}
+\longrightarrow
+\text{strong residual sampling}.
+}
+\tag{38}
+\]
+<p>
+operator learningではさらに
+</p>
+\[
+\boxed{
+\text{sensor points}
+\longrightarrow
+\text{input information itself}.
+}
+\tag{39}
+\]
+<p>
+Season 3ではこの三種類の「点」を区別します．
+</p>
+</article></div>
+
+<h2>27．AIがDeep Ritzで間違えやすい点</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">mistake</th><th style="border:1px solid #777; padding:7px;">問題</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">sampled lossとcontinuous energyを同一視</td><td style="border:1px solid #777; padding:7px;">quadrature errorを消してしまう</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">neural trial familyをlinear spaceとして扱う</td><td style="border:1px solid #777; padding:7px;">Galerkin orthogonalityを誤用する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">boundary penaltyとhard constraintを混同</td><td style="border:1px solid #777; padding:7px;">別のerror sourceを混ぜる</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">optimizer convergenceをfunction approximation convergenceと呼ぶ</td><td style="border:1px solid #777; padding:7px;">optimisation / representationを混同する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">point数だけを記録して配置を記録しない</td><td style="border:1px solid #777; padding:7px;">experimentが再現不能になる</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">一つのseedだけでmethod superiorityを主張</td><td style="border:1px solid #777; padding:7px;">stochastic variabilityを無視する</td></tr>
+</table>
+</article></div>
+
+<h2>28．Deep Ritz implementation audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このDeep Ritz implementationを数学的に監査してください．<br/>
+(1) continuous PDEとenergy functionalがEuler–Lagrange equationで一致するか，<br/>
+(2) Dirichlet boundary conditionをhard constraintかpenaltyか明示しているか，<br/>
+(3) neural trial familyをlinear finite-element spaceと混同していないか，<br/>
+(4) continuous energy \(E\) とsampled energy \(E_N\) を区別しているか，<br/>
+(5) quadrature pointsとweightsを全て記録しているか，<br/>
+(6) automatic differentiationで必要な微分次数が正しいか，<br/>
+(7) representation・optimisation・quadrature errorを区別しているか，<br/>
+(8) exact solutionがあるtestではenergy gap identityを確認しているか，<br/>
+(9) optimizer・dtype・seedを記録しているか，<br/>
+(10) training lossだけでsolution accuracyを判断していないか，<br/>
+(11) point placementを固定せずmethod comparisonをしていないか，<br/>
+(12) point-placement studyではnetwork・optimizer・point数を固定しているか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>29．第25回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+Deep Ritz法は，FEMと完全に別の世界ではありません．
+出発点は同じRitz principleです．
+</p>
+\[
+\boxed{
+\text{Ritz FEM}
+:
+\min_{v_h\in V_h}E(v_h)
+}
+\tag{40}
+\]
+<p>
+を
+</p>
+\[
+\boxed{
+\text{Deep Ritz}
+:
+\min_{\theta\in\Theta}E_N(u_\theta)
+}
+\tag{41}
+\]
+<p>
+へ置き換えています．
+</p>
+<p>
+しかしこの一文字の違い
+</p>
+\[
+\boxed{
+E
+\quad\longrightarrow\quad
+E_N
+}
+\tag{42}
+\]
+<p>
+にpoint placementの問題が入っています．
+</p>
+<p>
+Season 3ではここを中心に，
+</p>
+\[
+\boxed{
+\text{mesh geometry}
+\longrightarrow
+\text{sampling geometry}
+}
+\tag{43}
+\]
+<p>
+という対応を追います．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 3 第1回の原則</b><br/>
+Deep Ritzではnetwork architectureだけでなく，
+<b>energyをどの点で観測したか</b>までmethodの一部である．
+</div>
+<p>
+次回はnetwork，optimizer，point数を固定して，
+<b>第26回：Deep Ritzでは点をどこに置くか — quadratureとsampling geometry</b>
+へ進みます．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>W. E and B. Yu, “The Deep Ritz Method: A Deep Learning-Based Numerical Algorithm for Solving Variational Problems”, <i>Communications in Mathematics and Statistics</i> 6 (2018), 1–12.</li>
+<li>P. G. Ciarlet, <i>The Finite Element Method for Elliptic Problems</i>, North-Holland, 1978.</li>
+<li>S. C. Brenner and L. R. Scott, <i>The Mathematical Theory of Finite Element Methods</i>, 3rd ed., Springer, 2008.</li>
+<li><a href="./chatgpt-fem-24.html">第24回：AI時代に有限要素法をどう設計・検証するか — 数学構造からmethodを選ぶ</a></li>
+<li><a href="./pinns-01.html">関連する先行ノート：1次元Poisson問題でPINNsを動かす</a></li>
+<li><a href="./pinns-02.html">関連する先行ノート：残差点の配置を変えると何が起きるか</a></li>
+<li><a href="./pinns-04.html">関連する先行ノート：PINNs / Deep Ritz / VPINN / WANを並べて比べる</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 2 最終回：</b><a href="./chatgpt-fem-24.html">第24回：AI時代に有限要素法をどう設計・検証するか — 数学構造からmethodを選ぶ</a></p>
+<p><b>次回：</b>第26回：Deep Ritzでは点をどこに置くか — quadratureとsampling geometry（構想中）</p>
+<p><a href="../#chatgpt-fem-season3">Season 3一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
