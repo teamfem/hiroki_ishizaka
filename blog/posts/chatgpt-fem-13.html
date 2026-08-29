@@ -733,7 +733,93 @@ CRで単に
 </p>
 </article></div>
 
-<h2>15．smooth solutionの収束結果</h2>
+<h2>15．CRの誤差評価は「補間誤差」と「整合性誤差」に分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+CR要素はnonconformingなので，誤差評価の核心は
+<b>broken \(H^1\)-誤差を二つに分けること</b>です．
+Second Strang lemmaの形では，
+\[
+\boxed{
+|u-u_h|_{1,h}
+\le
+C
+\left[
+\inf_{v_h\in V_h^{CR}}
+|u-v_h|_{1,h}
++
+\sup_{0\neq w_h\in V_h^{CR}}
+\frac{
+|a_h(u,w_h)-(f,w_h)|
+}{
+|w_h|_{1,h}
+}
+\right].
+}
+\tag{30}
+\]
+</p>
+<p>
+第一項は
+\[
+\boxed{
+\text{interpolation / approximation error}
+}
+\]
+であり，たとえばCR interpolation \(I_h^{CR}u\) を使えば
+\[
+\inf_{v_h\in V_h^{CR}}
+|u-v_h|_{1,h}
+\le
+|u-I_h^{CR}u|_{1,h}.
+\tag{31}
+\]
+これは「exact solutionをCR finite-element functionsがどれだけよく近似できるか」を測ります．
+</p>
+<p>
+第二項は
+\[
+\boxed{
+\text{consistency error}
+}
+\]
+であり，
+\[
+a_h(u,w_h)-(f,w_h)
+\tag{32}
+\]
+がnonconforming test functionに対してどれだけ残るかを測ります．
+conforming P1ではGalerkin orthogonalityに吸収される部分が，
+CRでは独立した誤差成分として現れます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>CR誤差解析の最重要ポイント</b><br/>
+\[
+\boxed{
+\text{CR error}
+=
+\text{interpolation error}
++
+\text{consistency error}
+}
+\]
+と分けて考える．
+</div>
+<p>
+異方性meshでは，第一項はCR interpolation error estimateで扱えます．
+難しいのは第二項です．
+shape-regularityに依存するstandard scaling argumentとtrace estimateをそのまま使うと，
+anisotropic meshで期待するorderを失うことがあります．
+そこでCR–RTの離散部分積分とlowest-order RT interpolationを使って
+consistency termを評価する，というのが重要な構造です．
+</p>
+<p>
+つまりRTは，CR法の「別の近似法」としてだけでなく，
+<b>CR consistency errorを制御するための解析道具</b>として現れます．
+</p>
+</article></div>
+
+<h2>16．smooth solutionの収束結果</h2>
 <div class="news"><article class="news-item">
 <p>
 uniform triangulation上で式 (22) のsolutionを解くと，
@@ -758,7 +844,7 @@ unit squareのsmooth solutionとregular meshという今回の条件では，
 L^2:O(h^2),
 \qquad
 |\cdot|_{1,h}:O(h)
-\tag{30}
+\tag{36}
 \]
 が明瞭に現れます．
 broken \(H^1\) 1次はstandard CR approximation/consistency estimateから得られ，\(L^2\) 2次にはさらにdual problemのregularityを使う議論が必要です．
@@ -771,7 +857,7 @@ Strang型評価によるapproximation errorとconsistency errorの両方の制�
 </p>
 </article></div>
 
-<h2>16．CR interpolationのcommuting identityもunit testにできる</h2>
+<h2>17．CR interpolationのcommuting identityもunit testにできる</h2>
 <div class="news"><article class="news-item">
 <p>
 十分なtrace regularityを持つ \(u\) に対し，CR interpolation \(I_T^{CR}\) は
@@ -779,7 +865,7 @@ Strang型評価によるapproximation errorとconsistency errorの両方の制�
 \int_E I_T^{CR}u\,ds
 =
 \int_Eu\,ds
-\tag{31}
+\tag{34}
 \]
 で定義されます．
 Gaussの公式から
@@ -789,7 +875,7 @@ Gaussの公式から
 =
 \Pi_T^0(\nabla u),
 }
-\tag{32}
+\tag{35}
 \]
 ここで \(\Pi_T^0\) はelementwise constantへの \(L^2\)-projectionです．
 </p>
@@ -807,7 +893,7 @@ Gaussの公式から
 </p>
 </article></div>
 
-<h2>17．CRで起こりやすいChatGPTの実装ミス</h2>
+<h2>18．CRで起こりやすいChatGPTの実装ミス</h2>
 <div class="news"><article class="news-item">
 <table style="width:100%; border-collapse:collapse; margin:14px 0;">
 <tr>
@@ -824,7 +910,7 @@ Gaussの公式から
 </table>
 </article></div>
 
-<h2>18．P1とCRの違いをコード構造で整理する</h2>
+<h2>19．P1とCRの違いをコード構造で整理する</h2>
 <div class="news"><article class="news-item">
 <table style="width:100%; border-collapse:collapse; margin:14px 0;">
 <tr>
@@ -842,7 +928,7 @@ Gaussの公式から
 </table>
 </article></div>
 
-<h2>19．ChatGPTへのCR implementation audit prompt</h2>
+<h2>20．ChatGPTへのCR implementation audit prompt</h2>
 <div class="news"><article class="news-item">
 <div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
 <b>Audit prompt</b><br/>
@@ -862,11 +948,13 @@ CRはnonconformingなので，Céaの補題だけでerror estimateを説明し�
 </div>
 </article></div>
 
-<h2>20．第13回の結論</h2>
+<h2>21．第13回の結論</h2>
 <div class="news"><article class="news-item">
 <p>
 CR要素はlocal polynomialだけを見ればP1です．
 しかしglobal finite-element methodとしてはP1 Lagrangeとは別物です．
+さらに誤差解析でも，conforming P1のようにbest approximationだけを見るのではなく，
+<b>interpolation / approximation errorとconsistency errorを分離する</b>ことが本質です．
 </p>
 \[
 \boxed{
@@ -876,7 +964,7 @@ CR要素はlocal polynomialだけを見ればP1です．
 \quad=\quad
 \text{different finite element}.
 }
-\tag{33}
+\tag{36}
 \]
 <p>
 実装の中心は，
