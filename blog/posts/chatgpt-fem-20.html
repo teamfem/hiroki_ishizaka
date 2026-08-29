@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第20回：Morley要素を実装する — 4階問題と非適合有限要素法 | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,Morley element,biharmonic,fourth-order elliptic,plate bending,nonconforming,Babuska paradox,Babuška paradox,regularity,anisotropic mesh,Python"/>
+<meta name="description" content="Season 2 第8回（通算第20回）として，Morley要素を用いて4階楕円問題を実装します．vertex valueとedge normal-derivative mean，broken Hessian，orientation，誤差のapproximation/consistency分解，解の滑らかさ，Babuška paradoxとの関係まで数学的に監査します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-20.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-20.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-20.html",
+      "headline": "第20回：Morley要素を実装する — 4階問題と非適合有限要素法",
+      "description": "Morley要素をvertex value，edge normal-derivative mean，broken Hessian，regularity，Babuška paradoxとの関係まで含めて実装・監査します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-20.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 2",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 2"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第20回：Morley要素を実装する — 4階問題と非適合有限要素法 | Hiroki Ishizaka"/>
+<meta property="og:description" content="4階問題ではHessian・境界条件・解のregularity・geometryが同時に重要になる．Morley要素を実装してその構造を監査します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-20.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第20回：Morley要素を実装する — 4階問題と非適合有限要素法 | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="Morley element, broken Hessians, solution regularity and the connection to Babuška's plate paradox."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 2 第8回（通算第20回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第20回：Morley要素を実装する — 4階問題と非適合有限要素法</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 2 第8回（通算第20回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――4階問題では「二階微分を近似する」</h2>
+<div class="news"><article class="news-item">
+<p>
+Poisson問題ではenergyにgradientが現れました．
+biharmonic型の4階問題では，今度はHessian
+\[
+D^2u
+\]
+がenergyの中心になります．
+</p>
+<p>
+conforming Galerkin法をそのまま作ろうとすると，
+\[
+V_h\subset H^2(\Omega)
+\]
+が必要になり，piecewise polynomialの一階微分までelement間で整合させる
+\(C^1\)-type elementが必要になります．
+</p>
+<p>
+Morley要素はこの難しさを避け，
+</p>
+\[
+\boxed{
+\text{vertex value}
++
+\text{edge normal-derivative mean}
+}
+\tag{1}
+\]
+<p>
+だけをweakly共有するnonconforming \(P_2\) elementです．
+</p>
+</article></div>
+
+<h2>1．model problemはclamped biharmonic equation</h2>
+<div class="news"><article class="news-item">
+<p>
+まずpolygonal domain \(\Omega\subset\mathbb R^2\) 上で
+\[
+\Delta^2u=f
+\qquad\text{in }\Omega,
+\tag{2}
+\]
+\[
+u=0,
+\qquad
+\partial_nu=0
+\qquad\text{on }\partial\Omega
+\tag{3}
+\]
+を考えます．
+</p>
+<p>
+clamped boundary conditionに対応するenergy spaceは
+\[
+\boxed{
+V=H_0^2(\Omega).
+}
+\tag{4}
+\]
+</p>
+<p>
+weak formulationは
+\[
+\boxed{
+a(u,v)
+=
+(f,v)
+\qquad
+\forall v\in H_0^2(\Omega),
+}
+\tag{5}
+\]
+ただし
+\[
+a(u,v)
+=
+\int_\Omega
+D^2u:D^2v\,dx.
+\tag{6}
+\]
+</p>
+</article></div>
+
+<h2>2．4階問題では解の滑らかさが特に重要</h2>
+<div class="news"><article class="news-item">
+<p>
+weak solutionが
+\[
+u\in H_0^2(\Omega)
+\]
+に存在することと，
+finite-element error estimateに必要な
+\[
+u\in H^3(\Omega)
+\quad\text{や}\quad
+u\in H^4(\Omega)
+\]
+を持つことは別問題です．
+</p>
+<p>
+Morley \(P_2\) のbroken \(H^2\)-errorで一次収束
+\[
+|u-u_h|_{2,h}=O(h)
+\]
+を期待するには，典型的には少なくとも
+\[
+\boxed{
+u\in H^3(\Omega)
+}
+\tag{7}
+\]
+程度のregularityが必要です．
+</p>
+<p>
+convex polygonでは4階問題に対して \(H^3\)-regularityが得られる設定がありますが，
+nonconvex cornerやboundary singularityがあるとglobal \(H^3\) regularityは失われ得ます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>4階問題の収束率を見る前に確認すること</b><br/>
+\[
+\boxed{
+\text{polynomial degree}
+\quad\text{だけでなく}\quad
+\text{solution regularity}
+}
+\]
+<p>
+を確認する．
+</p>
+</div>
+</article></div>
+
+<h2>3．\(L^2\)-errorはさらにdual regularityに依存する</h2>
+<div class="news"><article class="news-item">
+<p>
+smooth manufactured solutionでは
+\[
+\|u-u_h\|_{L^2}
+=
+O(h^2)
+\]
+が観測されます．
+しかしこれはbroken \(H^2\)-errorの一次収束から自動的に出るわけではありません．
+</p>
+<p>
+\(L^2\)-estimateにはdual fourth-order problemのregularityが入ります．
+したがってcorner singularityを持つdomainで
+</p>
+\[
+\boxed{
+P_2\text{だから }L^2\text{ は必ず }O(h^2)
+}
+\]
+<p>
+と断言してはいけません．
+</p>
+</article></div>
+
+<h2>4．Morley elementのlocal space</h2>
+<div class="news"><article class="news-item">
+<p>
+triangle
+\[
+T=\operatorname{conv}\{p_0,p_1,p_2\}
+\]
+上で
+\[
+\boxed{
+P_T=P_2(T)
+}
+\tag{8}
+\]
+を使います．
+</p>
+<p>
+dimensionは
+\[
+\dim P_2(T)=6.
+\]
+従ってlocal DoFも6個です．
+</p>
+</article></div>
+
+<h2>5．六つの自由度</h2>
+<div class="news"><article class="news-item">
+<p>
+最初の三つはvertex values
+\[
+\boxed{
+m_i(v)=v(p_i),
+\qquad
+i=0,1,2.
+}
+\tag{9}
+\]
+</p>
+<p>
+残りの三つは，頂点 \(p_i\) の反対edge \(E_i\) 上の
+normal derivative mean
+\[
+\boxed{
+m_{3+i}(v)
+=
+\frac1{|E_i|}
+\int_{E_i}
+\frac{\partial v}{\partial n_i}
+\,ds,
+\qquad
+i=0,1,2.
+}
+\tag{10}
+\]
+</p>
+<p>
+ここで \(n_i\) はelement \(T\) から見たoutward unit normalです．
+</p>
+</article></div>
+
+<h2>6．normal derivativeはmidpoint valueと一致するのか</h2>
+<div class="news"><article class="news-item">
+<p>
+\(v_h\in P_2(T)\) なら
+\[
+\nabla v_h\in P_1(T)^2.
+\]
+従ってstraight edge上の
+\[
+\partial_nv_h
+\]
+は一次関数です．
+</p>
+<p>
+そのため2次元のstraight edgeでは
+\[
+\boxed{
+\frac1{|E|}
+\int_E
+\partial_nv_h\,ds
+=
+\partial_nv_h(m_E)
+}
+\tag{11}
+\]
+が成立します．
+</p>
+<p>
+ただし実装・写像・高次元への拡張を考えると，
+<b>DoFはnormal-derivative meanとして定義しておく</b>方が構造が明確です．
+</p>
+</article></div>
+
+<h2>7．Babuška paradoxとの関係――同じ4階板問題だが境界条件は別</h2>
+<div class="news"><article class="news-item">
+<p>
+4階問題を扱うとき，別の記事で扱った
+<a href="./paradoxes-pitfalls-01.html">Babuška paradox</a>
+を無視できません．
+</p>
+<p>
+ただし，今回のclamped problem
+\[
+u=0,
+\qquad
+\partial_nu=0
+\]
+と，Babuška paradoxで問題になるsimply supported plateは
+<b>同じboundary conditionではありません</b>．
+</p>
+<p>
+simply supported plateではenergy spaceは概略
+\[
+H^2(\Omega)\cap H_0^1(\Omega)
+\]
+であり，smooth curved boundaryでは自然境界条件にboundary curvatureが現れます．
+polygonal domain approximationがそのboundary operatorを変えてしまうと，
+meshを細かくしても別のlimit problemへ収束し得ます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>MorleyとBabuška paradoxを結ぶ視点</b><br/>
+\[
+\boxed{
+\text{fourth-order operator}
++
+\text{boundary conditions}
++
+\text{geometry approximation}
+}
+\]
+<p>
+を一体として考える必要がある．
+</p>
+</div>
+<p>
+従って「Morley要素ならBabuška paradoxが自動的に消える」と考えてはいけません．
+nonconforming methodとdomain approximationの極限は別途監査する必要があります．
+</p>
+</article></div>
+
+<h2>8．reference basisをそのままscalar pullbackしてはいけない</h2>
+<div class="news"><article class="news-item">
+<p>
+Morley elementではnormal derivativeがDoFに入るため，
+P1やCRのようにreference polynomialを単純compositionするだけでは
+physical DoFの変換を見失いやすくなります．
+</p>
+<p>
+特にanisotropic triangleではnormal vectorの変換とedge scaleが関係します．
+</p>
+<p>
+今回の実装では事故を避けるため，
+<b>physical triangle上で6×6 DoF matrixを直接作り，local basisを生成</b>します．
+</p>
+</article></div>
+
+<h2>9．physical triangle上でMorley basisを作る</h2>
+<div class="news"><article class="news-item">
+<p>
+polynomial basisを
+\[
+\boldsymbol m(x,y)
+=
+(1,x,y,x^2,xy,y^2)
+\tag{12}
+\]
+とします．
+</p>
+<p>
+DoF matrix
+\[
+D_{ij}
+=
+m_i(\boldsymbol m_j)
+\tag{13}
+\]
+を作り，
+\[
+\boxed{
+C=D^{-1}
+}
+\tag{14}
+\]
+とすれば，local Morley basisは
+\[
+\phi_k(x,y)
+=
+\sum_{j=0}^{5}
+C_{jk}\boldsymbol m_j(x,y)
+\tag{15}
+\]
+です．
+</p>
+</article></div>
+
+<h2>10．Pythonでlocal basisを生成する</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def monomials(x, y):
+    return np.array([
+        1.0,
+        x,
+        y,
+        x*x,
+        x*y,
+        y*y
+    ])
+
+
+def grad_monomials(x, y):
+    return np.array([
+        [0.0, 1.0, 0.0, 2.0*x, y, 0.0],
+        [0.0, 0.0, 1.0, 0.0, x, 2.0*y]
+    ])
+
+
+local_edges = [
+    (1, 2),
+    (2, 0),
+    (0, 1)
+]
+
+
+def morley_coefficients(P):
+    D = np.zeros((6, 6))
+
+    # vertex values
+    for i in range(3):
+        D[i, :] = monomials(*P[i])
+
+    # edge mean normal derivatives
+    # for a quadratic polynomial this equals
+    # the midpoint value on a straight edge
+    for le, (a, b) in enumerate(local_edges):
+        pa = P[a]
+        pb = P[b]
+
+        midpoint = 0.5 * (pa + pb)
+        n_out = right_normal(pa, pb)
+
+        D[3 + le, :] = (
+            n_out
+            @ grad_monomials(*midpoint)
+        )
+
+    return np.linalg.inv(D)
+</code></pre>
+</article></div>
+
+<h2>11．最初のunit testはDoF Kronecker property</h2>
+<div class="news"><article class="news-item">
+<p>
+生成したbasisについて
+\[
+\boxed{
+m_i(\phi_j)=\delta_{ij}
+}
+\tag{16}
+\]
+を必ず確認します．
+</p>
+<p>
+これは
+\[
+DC=I_6
+\]
+を数値的に監査するだけです．
+</p>
+<p>
+AIが生成したclosed-form basisを目視で信用するより，
+<b>有限要素を定義している六つのDoFを直接testする</b>方が安全です．
+</p>
+</article></div>
+
+<h2>12．Morley basisのHessianはelementwise constant</h2>
+<div class="news"><article class="news-item">
+<p>
+\[
+\phi_i\in P_2(T)
+\]
+なので
+\[
+D^2\phi_i
+\]
+はconstant matrixです．
+</p>
+<p>
+従ってlocal stiffness matrixは
+\[
+\boxed{
+K_{ij}^{(T)}
+=
+|T|
+\left(
+D^2\phi_j:D^2\phi_i
+\right).
+}
+\tag{17}
+\]
+</p>
+<p>
+volume stiffness integralにはquadratureさえ必要ありません．
+</p>
+</article></div>
+
+<h2>13．Morley interpolationにはHessian平均のidentityがある</h2>
+<div class="news"><article class="news-item">
+<p>
+local Morley interpolation \(I_T^Mu\) は六つのDoFを再現するように定義します．
+</p>
+<p>
+このとき十分regularな \(u\) に対し，
+各Hessian componentについて
+\[
+\boxed{
+\frac{\partial^2}{\partial x_j\partial x_k}
+I_T^Mu
+=
+\Pi_T^0
+\left(
+\frac{\partial^2u}{\partial x_j\partial x_k}
+\right).
+}
+\tag{18}
+\]
+</p>
+<p>
+つまりcompactに
+\[
+\boxed{
+D^2I_T^Mu
+=
+\Pi_T^0D^2u.
+}
+\tag{19}
+\]
+</p>
+<p>
+第13回のCR interpolation
+\[
+\nabla I_T^{CR}u
+=
+\Pi_T^0\nabla u
+\]
+の，一階上のanalogueと見ることができます．
+</p>
+</article></div>
+
+<h2>14．global Morley spaceはどこまでcontinuousか</h2>
+<div class="news"><article class="news-item">
+<p>
+global Morley spaceでは，
+interior vertexでfunction valueをsingle-valuedにし，
+interior edge \(E\) で
+\[
+\boxed{
+\int_E
+\left[
+\frac{\partial v_h}{\partial n_E}
+\right]
+ds
+=
+0.
+}
+\tag{20}
+\]
+</p>
+<p>
+しかしedge上で \(v_h\) 自体がpointwise continuousとは限りません．
+従って一般に
+\[
+\boxed{
+V_h^M
+\not\subset
+H^1(\Omega),
+\qquad
+V_h^M
+\not\subset
+H^2(\Omega).
+}
+\tag{21}
+\]
+</p>
+<p>
+error normにはbroken Hessianを使います．
+</p>
+</article></div>
+
+<h2>15．broken \(H^2\)-seminorm</h2>
+<div class="news"><article class="news-item">
+<p>
+\[
+\boxed{
+|v|_{2,h}^2
+=
+\sum_{T\in\mathcal T_h}
+\|D^2v\|_{L^2(T)}^2.
+}
+\tag{22}
+\]
+</p>
+<p>
+discrete bilinear formは
+\[
+\boxed{
+a_h(u_h,v_h)
+=
+\sum_T
+\int_T
+D^2u_h:D^2v_h\,dx.
+}
+\tag{23}
+\]
+</p>
+<p>
+Morley approximationではこのbroken \(H^2\)-energyが基本量です．
+</p>
+</article></div>
+
+<h2>16．clamped boundary DoF</h2>
+<div class="news"><article class="news-item">
+<p>
+homogeneous clamped condition
+\[
+u=0,
+\qquad
+\partial_nu=0
+\]
+はMorley spaceでは
+</p>
+\[
+\boxed{
+\begin{aligned}
+&v_h(p)=0
+&&\text{for boundary vertices},\\
+&
+\int_E
+\partial_nv_h\,ds=0
+&&\text{for boundary edges}
+\end{aligned}
+}
+\tag{24}
+\]
+<p>
+として入れます．
+</p>
+<p>
+boundary edge上のfunction trace全体を0にするわけではありません．
+ここがnonconforming boundary realisationです．
+</p>
+</article></div>
+
+<h2>17．edge normal orientationはRTと同じく符号管理が必要</h2>
+<div class="news"><article class="news-item">
+<p>
+normal derivative DoFはnormalを反転すると符号が変わります．
+各global edge \(E\) にnormal \(n_E\) を一つ固定し，
+element outward normal \(n_{T,E}\) に対して
+\[
+\boxed{
+s_{T,E}
+=
+n_{T,E}\cdot n_E
+\in\{-1,+1\}
+}
+\tag{25}
+\]
+とします．
+</p>
+<p>
+global edge DoF
+\[
+G_E
+=
+\frac1{|E|}
+\int_E
+\nabla v_h\cdot n_E\,ds
+\]
+に対し，local outward-normal DoFは
+\[
+\boxed{
+G_{T,E}^{\mathrm{local}}
+=
+s_{T,E}G_E.
+}
+\tag{26}
+\]
+</p>
+<p>
+第14回のRT orientationと非常によく似た管理が必要です．
+</p>
+</article></div>
+
+<h2>18．global assembly</h2>
+<div class="news"><article class="news-item">
+<p>
+2次元Morleyではglobal unknownは
+</p>
+\[
+\boxed{
+\text{global vertex values}
++
+\text{global edge normal-derivative means}
+}
+\tag{27}
+\]
+<p>
+です．
+</p>
+<p>
+element-local DoF vectorを
+\[
+(u_0,u_1,u_2,g_0,g_1,g_2)^{\top}
+\]
+とすると，vertex partにはsignは不要ですが，
+edge derivative partには式 (25) のsignが入ります．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">global_ids = np.r_[
+    triangle_vertices,
+    n_vertices + element_edges[t]
+]
+
+local_sign = np.r_[
+    np.ones(3),
+    element_edge_signs[t]
+]
+
+for i, I in enumerate(global_ids):
+    for j, J in enumerate(global_ids):
+        A[I, J] += (
+            local_sign[i]
+            * local_sign[j]
+            * K_local[i, j]
+        )
+</code></pre>
+</article></div>
+
+<h2>19．usual Morley method</h2>
+<div class="news"><article class="news-item">
+<p>
+\(f\in L^2(\Omega)\) とし，
+homogeneous Morley spaceを \(V_{h0}^M\) とします．
+求める \(u_h\in V_{h0}^M\) は
+\[
+\boxed{
+a_h(u_h,v_h)
+=
+(f,v_h)
+\qquad
+\forall v_h\in V_{h0}^M.
+}
+\tag{28}
+\]
+</p>
+<p>
+なお \(V_h^M\not\subset H_0^1(\Omega)\) なので，
+dataが単に
+\[
+f\in H^{-1}(\Omega)
+\]
+しかない場合，通常のdual pairingを \(v_h\) に直接作用させることはできません．
+</p>
+<p>
+4階問題ではsolution regularityだけでなく，
+<b>right-hand sideをdiscrete test functionへどう作用させるか</b>も確認する必要があります．
+</p>
+</article></div>
+
+<h2>20．Morley errorも二つに分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+nonconforming Morley methodのerror analysisは，
+第13回のCRと同じ基本構造を一階上げた形になります．
+</p>
+\[
+\boxed{
+|u-u_h|_{2,h}
+\le
+C
+\left[
+\inf_{v_h\in V_{h0}^M}
+|u-v_h|_{2,h}
++
+\sup_{0\neq w_h\in V_{h0}^M}
+\frac{
+|a_h(u,w_h)-(f,w_h)|
+}{
+|w_h|_{2,h}
+}
+\right].
+}
+\tag{29}
+\]
+<p>
+つまり
+\[
+\boxed{
+\text{Morley error}
+=
+\text{approximation / interpolation error}
++
+\text{consistency error}.
+}
+\tag{30}
+\]
+</p>
+</article></div>
+
+<h2>21．interpolation errorには \(H^3\)-regularityが現れる</h2>
+<div class="news"><article class="news-item">
+<p>
+regular meshなら
+\[
+\boxed{
+|u-I_h^Mu|_{2,h}
+\le
+Ch|u|_{H^3(\Omega)}.
+}
+\tag{31}
+\]
+</p>
+<p>
+anisotropic elementではより方向別に
+\[
+\boxed{
+|u-I_T^Mu|_{H^2(T)}
+\le
+C
+\sum_{i=1}^{2}
+h_i
+\left\|
+\frac{\partial u}{\partial r_i}
+\right\|_{H^2(T)}.
+}
+\tag{32}
+\]
+</p>
+<p>
+従って \(u\) がglobal \(H^3\) でない場合，
+uniform \(O(h)\) convergenceをそのまま期待する根拠は失われます．
+</p>
+</article></div>
+
+<h2>22．consistency errorはtraceだけで評価しない</h2>
+<div class="news"><article class="news-item">
+<p>
+Morley consistency errorではelement boundaryに
+gradientやHessianに由来するface termsが現れます．
+</p>
+<p>
+isotropic meshではstandard trace estimateで処理できますが，
+強いanisotropyではscalingが悪化し得ます．
+</p>
+<p>
+そのためCRの場合と同様に，
+lowest-order RT interpolationとdiscrete integration by partsを利用して
+consistency termをbulk approximation errorへ移す方法が有効です．
+</p>
+<p>
+つまりSeason 2で見てきた
+</p>
+\[
+\boxed{
+\text{CR}
+\longrightarrow
+\text{RT}
+\longrightarrow
+\text{Morley consistency}
+}
+\]
+<p>
+は別々の話ではありません．
+</p>
+</article></div>
+
+<h2>23．semi-regular anisotropic meshでは何を見るか</h2>
+<div class="news"><article class="news-item">
+<p>
+anisotropic Morley analysisでは，
+</p>
+\[
+\boxed{
+\text{directional interpolation}
++
+\text{consistency}
++
+\text{mesh geometry}
+}
+\]
+<p>
+を同時に追います．
+</p>
+<p>
+semi-regular mesh conditionの下では，
+shape regularityを要求せずに
+式 (32) のdirectional scaleを保ったerror estimateを導ける設定があります．
+</p>
+<p>
+ただし3次元では2次元と全く同じanisotropic consistency argumentが使えるとは限らず，
+RT interpolation側の幾何条件も別途必要になります．
+</p>
+</article></div>
+
+<h2>24．manufactured solution</h2>
+<div class="news"><article class="news-item">
+<p>
+unit squareで
+\[
+\boxed{
+u(x,y)
+=
+x^2(1-x)^2
+y^2(1-y)^2
+}
+\tag{33}
+\]
+を使います．
+</p>
+<p>
+この関数は
+\[
+u=0,
+\qquad
+\partial_nu=0
+\qquad
+\text{on }\partial\Omega
+\]
+を満たし，smoothです．
+</p>
+<p>
+sourceは
+\[
+f=\Delta^2u
+\tag{34}
+\]
+をsymbolically生成しました．
+</p>
+<p>
+local basisは式 (12)–(15) の6×6 physical-element construction，
+stiffnessはconstant Hessianからexactに計算し，
+loadとerror integralには高次quadratureを使っています．
+</p>
+</article></div>
+
+<h2>25．数値結果</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">\(n\)</th>
+<th style="border:1px solid #777; padding:7px;">\(L^2\) relative error</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+<th style="border:1px solid #777; padding:7px;">broken \(H^2\) relative error</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">2.1945e+0</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">1.4557e+0</td><td style="border:1px solid #777; padding:7px;">—</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">9.0051e-1</td><td style="border:1px solid #777; padding:7px;">1.285</td><td style="border:1px solid #777; padding:7px;">9.3316e-1</td><td style="border:1px solid #777; padding:7px;">0.641</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">2.6400e-1</td><td style="border:1px solid #777; padding:7px;">1.770</td><td style="border:1px solid #777; padding:7px;">5.0517e-1</td><td style="border:1px solid #777; padding:7px;">0.885</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">6.9430e-2</td><td style="border:1px solid #777; padding:7px;">1.927</td><td style="border:1px solid #777; padding:7px;">2.5899e-1</td><td style="border:1px solid #777; padding:7px;">0.964</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">32</td><td style="border:1px solid #777; padding:7px;">1.7613e-2</td><td style="border:1px solid #777; padding:7px;">1.979</td><td style="border:1px solid #777; padding:7px;">1.3041e-1</td><td style="border:1px solid #777; padding:7px;">0.990</td></tr>
+</table>
+<p>
+今回のsmooth solutionでは漸近的に
+\[
+\boxed{
+|u-u_h|_{2,h}
+=
+O(h),
+\qquad
+\|u-u_h\|_{L^2}
+\approx
+O(h^2).
+}
+\tag{35}
+\]
+</p>
+<p>
+粗いmeshではasymptotic regimeに入っていないため，
+最初から綺麗な整数rateにならないことも確認できます．
+</p>
+</article></div>
+
+<h2>26．regularityが足りないとき何が起こるか</h2>
+<div class="news"><article class="news-item">
+<p>
+re-entrant cornerを持つdomainやsingular loadでは，
+exact solutionが
+\[
+H^3(\Omega)
+\]
+に入らないことがあります．
+</p>
+<p>
+その場合，
+</p>
+\[
+\boxed{
+\text{observed low convergence rate}
+}
+\]
+<p>
+をただちに「Morley implementationのbug」と判断してはいけません．
+</p>
+<p>
+確認すべき順序は
+</p>
+\[
+\boxed{
+\begin{aligned}
+&\text{solution regularity},\\
+&\text{mesh resolution near singularities},\\
+&\text{interpolation geometry},\\
+&\text{consistency error},\\
+&\text{implementation}
+\end{aligned}
+}
+\tag{36}
+\]
+<p>
+です．
+</p>
+</article></div>
+
+<h2>27．Babuška paradoxとregularity lossは別のfailure mode</h2>
+<div class="news"><article class="news-item">
+<p>
+4階問題では二種類の問題を混同しやすいので分けておきます．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">phenomenon</th>
+<th style="border:1px solid #777; padding:7px;">何が悪いか</th>
+<th style="border:1px solid #777; padding:7px;">典型的な症状</th>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">regularity loss</td>
+<td style="border:1px solid #777; padding:7px;">exact solutionが十分smoothでない</td>
+<td style="border:1px solid #777; padding:7px;">正しい解へ収束するがrateが低下</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">Babuška paradox</td>
+<td style="border:1px solid #777; padding:7px;">geometryとboundary problemのlimitが不整合</td>
+<td style="border:1px solid #777; padding:7px;">綺麗に収束しても別のlimit problemへ向かう</td>
+</tr>
+</table>
+<p>
+したがって
+</p>
+\[
+\boxed{
+\text{convergence rate}
+\quad\text{と}\quad
+\text{correct variational limit}
+}
+\tag{37}
+\]
+<p>
+は別々に監査しなければなりません．
+</p>
+</article></div>
+
+<h2>28．Morley implementation audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+この2次元Morley finite-element codeを数学的に監査してください．<br/>
+(1) local polynomial spaceが \(P_2(T)\) か，<br/>
+(2) DoFが3 vertex values + 3 edge mean normal derivativesか，<br/>
+(3) six DoFsがunisolventでKronecker propertyを満たすか，<br/>
+(4) reference scalar pullbackだけでnormal-derivative DoFを処理していないか，<br/>
+(5) global edge normal orientationとsignを管理しているか，<br/>
+(6) clamped boundaryでboundary vertex valuesとboundary normal-derivative meansをzeroにしているか，<br/>
+(7) stiffness matrixがbroken Hessian inner productから作られているか，<br/>
+(8) \(D^2I_T^Mu=\Pi_T^0D^2u\) を確認できるか，<br/>
+(9) Morley errorをapproximation + consistencyに分けているか，<br/>
+(10) \(O(h)\) broken \(H^2\) rateを主張する前に \(H^3\)-regularityを確認しているか，<br/>
+(11) \(L^2\) rateにdual regularityが必要なことを認識しているか，<br/>
+(12) anisotropic meshではdirectional interpolationとconsistencyを別々に監査しているか，<br/>
+(13) Babuška paradoxをclamped Morley problemそのものと混同していないか，<br/>
+(14) curved-domain plate problemではgeometry・boundary operator・discretisationを同時に確認しているか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>29．第20回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+Morley要素では4階問題を
+</p>
+\[
+\boxed{
+\begin{aligned}
+&\text{quadratic polynomial},\\
+&\text{vertex continuity},\\
+&\text{mean normal-derivative continuity},\\
+&\text{broken Hessian}
+\end{aligned}
+}
+\tag{38}
+\]
+<p>
+で離散化します．
+</p>
+<p>
+error analysisでは
+\[
+\boxed{
+\text{approximation}
++
+\text{consistency}
+}
+\]
+というnonconforming structureが再び現れ，
+その精度はsolution regularityに強く依存します．
+</p>
+<p>
+さらにplate problemでは，
+mesh refinementだけを見ていても十分ではありません．
+Babuška paradoxが示すように，
+</p>
+\[
+\boxed{
+\text{solution regularity}
++
+\text{geometry}
++
+\text{boundary conditions}
++
+\text{variational limit}
+}
+\tag{39}
+\]
+<p>
+を分けて監査する必要があります．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 2 第8回の原則</b><br/>
+4階問題では
+<b>「どの二階微分を近似しているか」だけでなく，「解がどれだけ滑らかか」「どの境界問題へ収束しているか」まで確認する</b>．
+</div>
+<p>
+次回はedge tangent momentを自由度とする
+<b>Nédélec要素</b>へ進み，
+\(H(\operatorname{curl})\) conformityとcovariant Piola transformを実装します．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>L. S. D. Morley, “The triangular equilibrium element in the solution of plate bending problems”, <i>Aeronautical Quarterly</i> 19 (1968), 149–169.</li>
+<li>W. Ming and J. Xu, “The Morley element for fourth order elliptic equations in any dimensions”, <i>Numerische Mathematik</i> 103 (2006), 155–169.</li>
+<li>R. Rannacher, “Finite Element Approximation of Simply Supported Plates and the Babuška Paradox”, <i>Zeitschrift für Angewandte Mathematik und Mechanik</i> 59 (1979), T73–T76.</li>
+<li>R. Rannacher, “On nonconforming and mixed finite element methods for plate bending problems: The linear case”, <i>RAIRO. Analyse numérique</i> 13 (1979), 369–387.</li>
+<li>H. Ishizaka, “Morley finite element analysis for fourth-order elliptic equations under a semi-regular mesh condition”, <i>Applications of Mathematics</i> 69(6) (2024), 769–805. <a href="https://doi.org/10.21136/AM.2024.0103-24">DOI</a>.</li>
+<li><a href="./paradoxes-pitfalls-01.html">領域が収束しても解は正しく収束しない――バブシュカ・パラドックス</a></li>
+<li><a href="./chatgpt-fem-13.html">第13回：Crouzeix–Raviart要素を本当に実装する</a></li>
+<li><a href="./chatgpt-fem-14.html">第14回：Raviart–Thomas要素を実装する</a></li>
+<li><a href="./chatgpt-fem-19.html">第19回：DG法では何が変わるか</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 2 前回：</b><a href="./chatgpt-fem-19.html">第19回：DG法では何が変わるか — jump・average・penalty</a></p>
+<p><b>次回：</b>第21回：Nédélec要素を実装する — edge moment・curl・covariant Piola（構想中）</p>
+<p><a href="../#chatgpt-fem-season2">Season 2一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
