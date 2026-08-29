@@ -189,7 +189,7 @@ AIが作ったプログラムの誤差を直接測れるからです．
 1次元Poisson方程式 \(-u''=f\)，\(0&lt;x&lt;1\)，\(u(0)=u(1)=0\) を，
 一様メッシュ上のP1有限要素法で解くPythonコードを書いてください．
 有限要素ライブラリは使わず，NumPyだけで要素行列，assembly，Dirichlet境界条件を実装してください．
-厳密解を \(u(x)=\sin(\pi x)\) とし，\(L^2\)誤差と \(H^1\)半ノルム誤差も計算してください．
+厳密解を \(u(x)=\sin(\pi x)\) とし，\(L^2\)相対誤差と \(H^1\)半ノルム相対誤差も計算してください．
 </div>
 <p>
 このpromptには重要な指定がいくつかあります．
@@ -199,7 +199,7 @@ AIが作ったプログラムの誤差を直接測れるからです．
 <li><b>NumPyだけ：</b>有限要素ライブラリの内部処理を隠さない．</li>
 <li><b>要素行列とassembly：</b>有限要素法の核心を明示的に書かせる．</li>
 <li><b>厳密解：</b>生成コードを検証できるようにする．</li>
-<li><b>二種類の誤差：</b>単に図がそれらしく見えるだけで終わらせない．</li>
+<li><b>二種類の相対誤差：</b>単に図がそれらしく見えるだけで終わらせない．</li>
 </ul>
 </article>
 </div>
@@ -367,12 +367,14 @@ def solve_fem(N):
     return nodes, u
 
 
-def compute_errors(nodes, uh):
-    # 5-point Gauss quadrature for error integration
+def compute_relative_errors(nodes, uh):
+    # 5-point Gauss quadrature for error and exact-solution norms
     gauss_x, gauss_w = np.polynomial.legendre.leggauss(5)
 
     err_L2_sq = 0.0
     err_H1_sq = 0.0
+    norm_L2_sq = 0.0
+    norm_H1_sq = 0.0
 
     for e in range(len(nodes) - 1):
         xL = nodes[e]
@@ -389,17 +391,22 @@ def compute_errors(nodes, uh):
             uh_x = np.dot(ue, phi)
             u_exact = np.sin(np.pi * x)
             du_exact = np.pi * np.cos(np.pi * x)
+            jac = h / 2.0
 
-            err_L2_sq += w * (u_exact - uh_x)**2 * (h / 2.0)
-            err_H1_sq += w * (du_exact - duh)**2 * (h / 2.0)
+            err_L2_sq += w * (u_exact - uh_x)**2 * jac
+            err_H1_sq += w * (du_exact - duh)**2 * jac
+            norm_L2_sq += w * u_exact**2 * jac
+            norm_H1_sq += w * du_exact**2 * jac
 
-    return np.sqrt(err_L2_sq), np.sqrt(err_H1_sq)
+    rel_L2 = np.sqrt(err_L2_sq / norm_L2_sq)
+    rel_H1 = np.sqrt(err_H1_sq / norm_H1_sq)
+    return rel_L2, rel_H1
 
 
 for N in [8, 16, 32, 64]:
     nodes, uh = solve_fem(N)
-    eL2, eH1 = compute_errors(nodes, uh)
-    print(N, eL2, eH1)
+    relL2, relH1 = compute_relative_errors(nodes, uh)
+    print(N, relL2, relH1)
 </code></pre>
 </article>
 </div>
@@ -454,42 +461,58 @@ for N in [8, 16, 32, 64]:
 が期待されます．
 </p>
 <p>
+本記事では，絶対誤差ではなく
+\[
+ E_{L^2}^{\mathrm{rel}}
+ :=\frac{\|u-u_h\|_{L^2(0,1)}}{\|u\|_{L^2(0,1)}},
+ \qquad
+ E_{H^1}^{\mathrm{rel}}
+ :=\frac{|u-u_h|_{H^1(0,1)}}{|u|_{H^1(0,1)}}
+\tag{16}
+\]
+を用います．今回の厳密解では
+\[
+ \|u\|_{L^2(0,1)}=\frac{1}{\sqrt2},
+ \qquad
+ |u|_{H^1(0,1)}=\frac{\pi}{\sqrt2}.
+\]
+分母はメッシュ幅に依存しないため，相対誤差でも期待される収束次数はそれぞれ2次と1次です．
 上のコードを実行すると，例えば次の値が得られます．
 </p>
 <table style="width:100%; border-collapse:collapse; margin:14px 0;">
 <tr>
 <th style="border:1px solid #777; padding:7px;">\(N\)</th>
-<th style="border:1px solid #777; padding:7px;">\(L^2\) error</th>
+<th style="border:1px solid #777; padding:7px;">\(L^2\) relative error</th>
 <th style="border:1px solid #777; padding:7px;">rate</th>
-<th style="border:1px solid #777; padding:7px;">\(H^1\) seminorm error</th>
+<th style="border:1px solid #777; padding:7px;">\(H^1\) seminorm relative error</th>
 <th style="border:1px solid #777; padding:7px;">rate</th>
 </tr>
 <tr>
 <td style="border:1px solid #777; padding:7px;">8</td>
-<td style="border:1px solid #777; padding:7px;">9.9104e-3</td>
+<td style="border:1px solid #777; padding:7px;">1.4015e-2</td>
 <td style="border:1px solid #777; padding:7px;">—</td>
-<td style="border:1px solid #777; padding:7px;">2.5118e-1</td>
+<td style="border:1px solid #777; padding:7px;">1.1307e-1</td>
 <td style="border:1px solid #777; padding:7px;">—</td>
 </tr>
 <tr>
 <td style="border:1px solid #777; padding:7px;">16</td>
-<td style="border:1px solid #777; padding:7px;">2.4858e-3</td>
+<td style="border:1px solid #777; padding:7px;">3.5155e-3</td>
 <td style="border:1px solid #777; padding:7px;">1.995</td>
-<td style="border:1px solid #777; padding:7px;">1.2583e-1</td>
+<td style="border:1px solid #777; padding:7px;">5.6645e-2</td>
 <td style="border:1px solid #777; padding:7px;">0.997</td>
 </tr>
 <tr>
 <td style="border:1px solid #777; padding:7px;">32</td>
-<td style="border:1px solid #777; padding:7px;">6.2198e-4</td>
+<td style="border:1px solid #777; padding:7px;">8.7961e-4</td>
 <td style="border:1px solid #777; padding:7px;">1.999</td>
-<td style="border:1px solid #777; padding:7px;">6.2947e-2</td>
+<td style="border:1px solid #777; padding:7px;">2.8336e-2</td>
 <td style="border:1px solid #777; padding:7px;">0.999</td>
 </tr>
 <tr>
 <td style="border:1px solid #777; padding:7px;">64</td>
-<td style="border:1px solid #777; padding:7px;">1.5553e-4</td>
+<td style="border:1px solid #777; padding:7px;">2.1995e-4</td>
 <td style="border:1px solid #777; padding:7px;">2.000</td>
-<td style="border:1px solid #777; padding:7px;">3.1477e-2</td>
+<td style="border:1px solid #777; padding:7px;">1.4170e-2</td>
 <td style="border:1px solid #777; padding:7px;">1.000</td>
 </tr>
 </table>
@@ -577,7 +600,7 @@ ChatGPTだけでも有限要素プログラムの形は作れる．<br/>
 <li>要素行列とassemblyを詳しく読む．</li>
 <li>2次元三角形P1要素を実装する．</li>
 <li>Jacobianとreference elementを監査する．</li>
-<li>\(L^2\)・\(H^1\)誤差と収束次数を自動計算する．</li>
+<li>\(L^2\)・\(H^1\)相対誤差と収束次数を自動計算する．</li>
 <li>非一様mesh・細長い三角形を入れてみる．</li>
 <li>Crouzeix–Raviart要素へ進む．</li>
 <li>Raviart–Thomas要素とPiola変換を実装する．</li>
