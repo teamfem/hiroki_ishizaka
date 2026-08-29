@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第28回：PINNsでは点配置で答えが変わるか — uniform・random・adaptive sampling | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,PINNs,Physics-Informed Neural Networks,collocation points,uniform sampling,random sampling,adaptive sampling,residual adaptive sampling,sampling geometry,fill distance,point concentration,PyTorch"/>
+<meta name="description" content="Season 3 第4回（通算第28回）として，PINNsのcollocation pointsをuniform・random・adaptive samplingで比較します．点数だけでなくcoverage，最大ギャップ，sampling measure，残差適応のexplorationとexploitationを数学的に監査し，一点集中や未観測領域のfailure modeも扱います．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-28.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-28.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-28.html",
+      "headline": "第28回：PINNsでは点配置で答えが変わるか — uniform・random・adaptive sampling",
+      "description": "PINNsのcollocation pointsをuniform・random・adaptive samplingで比較し，coverage，最大ギャップ，sampling measure，adaptive concentrationを数値解析します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-28.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 3",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 3"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第28回：PINNsでは点配置で答えが変わるか — uniform・random・adaptive sampling | Hiroki Ishizaka"/>
+<meta property="og:description" content="同じPINN，同じ点数でも，どこでPDE residualを見るかで答えは変わる．uniform・random・adaptive samplingを数学的に監査します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-28.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第28回：PINNsでは点配置で答えが変わるか — uniform・random・adaptive sampling | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="Same PINN, same number of points, different sampling geometry: uniform, random and residual-adaptive collocation."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 3 第4回（通算第28回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第28回：PINNsでは点配置で答えが変わるか — uniform・random・adaptive sampling</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 3 第4回（通算第28回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――同じPINNでも「どこで見るか」が違えば別のtraining problemになる</h2>
+<div class="news"><article class="news-item">
+<p>
+第27回では
+</p>
+\[
+r_\theta(x)
+=
+-u_\theta''(x)-f(x)
+\tag{1}
+\]
+<p>
+をcollocation pointsで観測し，
+</p>
+\[
+\mathcal L_N(\theta)
+=
+\sum_{i=1}^Nw_i|r_\theta(x_i)|^2
+\tag{2}
+\]
+<p>
+を最小化しました．
+</p>
+<p>
+今回はnetwork architecture，initial seed，optimizer，training budgetを固定し，
+<b>collocation pointsだけ</b>を変えます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>第28回の問い</b><br/>
+\[
+\boxed{
+\text{same PINN}
++
+\text{same }N
++
+\text{different point geometry}
+\Longrightarrow
+\text{different trained solution?}
+}
+\tag{3}
+\]
+</div>
+</article></div>
+
+<h2>1．比較するのは四つのsampling strategy</h2>
+<div class="news"><article class="news-item">
+<p>
+1次元Poisson problem
+</p>
+\[
+-u''=\pi^2\sin(\pi x),
+\qquad
+0&lt;x&lt;1,
+\qquad
+u(0)=u(1)=0
+\tag{4}
+\]
+<p>
+で，次を比較します．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">strategy</th><th style="border:1px solid #777; padding:7px;">点配置</th><th style="border:1px solid #777; padding:7px;">狙い</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">uniform</td><td style="border:1px solid #777; padding:7px;">等間隔</td><td style="border:1px solid #777; padding:7px;">deterministic coverage</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">random</td><td style="border:1px solid #777; padding:7px;">一様乱数</td><td style="border:1px solid #777; padding:7px;">Monte Carlo sampling</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">residual-adaptive</td><td style="border:1px solid #777; padding:7px;">large residualへ追加</td><td style="border:1px solid #777; padding:7px;">exploitation</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">concentrated control</td><td style="border:1px solid #777; padding:7px;">狭い領域へ集中</td><td style="border:1px solid #777; padding:7px;">failure baseline</td></tr>
+</table>
+</article></div>
+
+<h2>2．uniform samplingはcoverageを最優先する</h2>
+<div class="news"><article class="news-item">
+<p>
+\(N\) interior pointsを
+</p>
+\[
+\boxed{
+x_i
+=
+\frac{i}{N+1},
+\qquad
+i=1,\ldots,N
+}
+\tag{5}
+\]
+<p>
+と置きます．
+</p>
+<p>
+最大gapは
+</p>
+\[
+\boxed{
+h_X
+=
+\frac1{N+1}.
+}
+\tag{6}
+\]
+<p>
+1次元ではdomain全体を最も単純に均等coverするbaselineです．
+</p>
+</article></div>
+
+<h2>3．random samplingは平均的には一様でもgapを作る</h2>
+<div class="news"><article class="news-item">
+<p>
+random samplingでは
+</p>
+\[
+\boxed{
+x_i
+\stackrel{\mathrm{iid}}{\sim}
+U(0,1)
+}
+\tag{7}
+\]
+<p>
+とします．
+</p>
+<p>
+empirical measureはsample数を増やすとLebesgue measureへ近づきますが，
+有限 \(N\) では大きなgapと非常に近いpoint pairが同時に現れ得ます．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{distribution is uniform}
+\not\Rightarrow
+\text{each realised point cloud is geometrically uniform}.
+}
+\tag{8}
+\]
+</article></div>
+
+<h2>4．random samplingではseedもgeometry parameterである</h2>
+<div class="news"><article class="news-item">
+<p>
+同じ \(N\) でもseedが違えば
+</p>
+\[
+X_N^{(1)},
+\quad
+X_N^{(2)},
+\quad
+X_N^{(3)}
+\]
+<p>
+は別のgeometryです．
+</p>
+<p>
+従ってrandom samplingを比較するときは
+</p>
+\[
+\boxed{
+\text{network seed}
+\quad\text{と}\quad
+\text{point seed}
+}
+\tag{9}
+\]
+<p>
+を別々に固定・記録します．
+</p>
+</article></div>
+
+<h2>5．最大gapは「見ていない領域」の大きさを測る</h2>
+<div class="news"><article class="news-item">
+<p>
+sorted point set
+\[
+0&lt;x_1&lt;\cdots&lt;x_N&lt;1
+\]
+に対して
+</p>
+\[
+\boxed{
+h_X
+=
+\max
+\{
+x_1,\,
+x_2-x_1,\ldots,
+x_N-x_{N-1},\,
+1-x_N
+\}
+}
+\tag{10}
+\]
+<p>
+を今回も使います．
+</p>
+<p>
+\(h_X\) が大きいほど，
+PDE residualを直接観測していない長いintervalがあります．
+</p>
+</article></div>
+
+<h2>6．gapの中にはsampled lossから見えないerrorを埋め込める</h2>
+<div class="news"><article class="news-item">
+<p>
+collocation pointsを含まないopen interval
+\[
+I=(a,b)
+\]
+があるとします．
+</p>
+<p>
+任意のnonzero
+\[
+\psi\in C_c^\infty(I)
+\]
+を取り，
+</p>
+\[
+\boxed{
+\widetilde u
+=
+u^\ast+c\psi
+}
+\tag{11}
+\]
+<p>
+とします．
+\(\psi\) は全collocation pointsの近傍でzeroなので
+</p>
+\[
+\boxed{
+r_{\widetilde u}(x_i)
+=
+r_{u^\ast}(x_i)
+=
+0.
+}
+\tag{12}
+\]
+<p>
+しかし
+\[
+\widetilde u\ne u^\ast
+\]
+です．
+</p>
+<p>
+つまりgapは単なるvisual defectではなく，
+<b>finite observationsから完全に見えないperturbationを置ける領域</b>です．
+</p>
+</article></div>
+
+<h2>7．uniform samplingの強みは「最悪の穴」を制御できること</h2>
+<div class="news"><article class="news-item">
+<p>
+uniform pointsでは式 (6) により
+</p>
+\[
+h_X=O(N^{-1})
+\tag{13}
+\]
+<p>
+がdeterministically分かります．
+</p>
+<p>
+一方random samplingではcoverageもrandom variableです．
+</p>
+<p>
+これはrandom samplingが悪いという意味ではなく，
+</p>
+\[
+\boxed{
+\text{deterministic coverage guarantee}
+\quad\text{と}\quad
+\text{probabilistic coverage}
+}
+\tag{14}
+\]
+<p>
+を区別すべきだという意味です．
+</p>
+</article></div>
+
+<h2>8．random resamplingには別の意味がある</h2>
+<div class="news"><article class="news-item">
+<p>
+random pointsをtraining開始時に一度だけ固定する方法と，
+epochごとにresampleする方法は別物です．
+</p>
+<p>
+fixed random cloudでは
+</p>
+\[
+\boxed{
+\mathcal L_{X_N}(\theta)
+}
+\tag{15}
+\]
+<p>
+という一つのfinite objectiveを最小化します．
+</p>
+<p>
+resamplingでは各stepでmeasureが変わり，
+期待値としてcontinuous lossを狙うstochastic optimisationになります．
+</p>
+</article></div>
+
+<h2>9．adaptive samplingではpoint setがsolutionに依存する</h2>
+<div class="news"><article class="news-item">
+<p>
+residual-adaptive samplingではcurrent model
+\[
+u_{\theta_k}
+\]
+からresidual
+\[
+r_{\theta_k}
+\]
+を計算し，次のpoint setを決めます．
+</p>
+\[
+\boxed{
+X_{k+1}
+=
+\mathcal A(r_{\theta_k},X_k).
+}
+\tag{16}
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+\theta_k
+\longrightarrow
+r_{\theta_k}
+\longrightarrow
+X_{k+1}
+\longrightarrow
+\theta_{k+1}
+}
+\tag{17}
+\]
+<p>
+というcoupled dynamicsになります．
+</p>
+</article></div>
+
+<h2>10．最も単純なresidual-adaptive rule</h2>
+<div class="news"><article class="news-item">
+<p>
+dense candidate pool
+\[
+Y_M=\{y_1,\ldots,y_M\}
+\]
+でresidualを評価し，
+</p>
+\[
+\boxed{
+s_j
+=
+|r_{\theta_k}(y_j)|
+}
+\tag{18}
+\]
+<p>
+の大きいpointsを次のcollocation setへ追加します．
+</p>
+<p>
+例えばtop-\(K\) ruleは
+</p>
+\[
+\boxed{
+X_{k+1}
+=
+X_k
+\cup
+\operatorname{TopK}_{y_j\in Y_M}
+|r_{\theta_k}(y_j)|.
+}
+\tag{19}
+\]
+</article></div>
+
+<h2>11．top-\(K\)だけだと一点集中に近づくことがある</h2>
+<div class="news"><article class="news-item">
+<p>
+residualに一つ鋭いpeakがあると，
+top-\(K\) pointsはその近傍へ集中します．
+</p>
+<p>
+すると
+</p>
+\[
+\boxed{
+\text{residual exploitation}
+\uparrow
+\qquad
+\text{global coverage}
+\downarrow
+}
+\tag{20}
+\]
+<p>
+となり得ます．
+</p>
+<p>
+第26回の一点集中と同じfailure mechanismが，
+adaptive method自身によって作られる可能性があります．
+</p>
+</article></div>
+
+<h2>12．adaptive samplingにはexplorationを残す</h2>
+<div class="news"><article class="news-item">
+<p>
+一つの方法はsampling densityを
+</p>
+\[
+\boxed{
+d\nu_k
+=
+(1-\beta)\,dx
++
+\beta\,d\rho_k,
+\qquad
+0\le\beta&lt;1
+}
+\tag{21}
+\]
+<p>
+とすることです．
+</p>
+<p>
+ここで \(\rho_k\) はresidual-based densityです．
+一様成分
+\[
+(1-\beta)dx
+\]
+を残すことでdomain coverageを完全には捨てません．
+</p>
+</article></div>
+
+<h2>13．residual-based densityの一例</h2>
+<div class="news"><article class="news-item">
+<p>
+例えば
+</p>
+\[
+\boxed{
+\rho_k(x)
+=
+\frac{
+(\varepsilon+|r_{\theta_k}(x)|)^\gamma
+}{
+\displaystyle
+\int_0^1
+(\varepsilon+|r_{\theta_k}(s)|)^\gamma\,ds
+}
+}
+\tag{22}
+\]
+<p>
+とします．
+</p>
+<p>
+\(\gamma\) が大きいほどpeakへ集中し，
+\(\varepsilon&gt;0\) はzero-residual領域にもsampling probabilityを残します．
+</p>
+</article></div>
+
+<h2>14．adaptive samplingはerror estimatorではない</h2>
+<div class="news"><article class="news-item">
+<p>
+large
+\[
+|r_{\theta_k}(x)|
+\]
+は「その点でstrong residualが大きい」ことを意味します．
+しかし
+</p>
+\[
+\boxed{
+|r_{\theta_k}(x)|
+\text{ large}
+\quad\not\Leftrightarrow\quad
+|u_{\theta_k}(x)-u(x)|
+\text{ large}.
+}
+\tag{23}
+\]
+<p>
+特にPDE operator，regularity，stabilityによって
+residualからsolution errorへのmapは変わります．
+</p>
+<p>
+従ってresidual-adaptive samplingを
+<b>guaranteed a posteriori error estimator</b>と呼んではいけません．
+</p>
+</article></div>
+
+<h2>15．adaptive candidate poolにもsampling errorがある</h2>
+<div class="news"><article class="news-item">
+<p>
+adaptive algorithmがresidual peakを探すために使う
+candidate pool \(Y_M\) も有限です．
+</p>
+<p>
+もしtrue residual peakがcandidate pointsの間に隠れていれば，
+</p>
+\[
+\boxed{
+\max_{y_j\in Y_M}|r(y_j)|
+\ll
+\|r\|_{L^\infty}
+}
+\tag{24}
+\]
+<p>
+となり得ます．
+</p>
+<p>
+adaptive samplingは「sampling problemを消す」のではなく，
+<b>samplingを二段階にする</b>方法です．
+</p>
+</article></div>
+
+<h2>16．比較protocolを固定する</h2>
+<div class="news"><article class="news-item">
+<p>
+sampling methodだけを比較するため，
+</p>
+\[
+\boxed{
+\begin{aligned}
+&\text{same network},\\
+&\text{same initial parameters},\\
+&\text{same dtype},\\
+&\text{same optimiser},\\
+&\text{same total gradient steps},\\
+&\text{same total collocation budget}
+\end{aligned}
+}
+\tag{25}
+\]
+<p>
+を基本とします．
+</p>
+<p>
+adaptive methodだけpoint数を増やし続けるなら，
+計算量の差も同時に報告します．
+</p>
+</article></div>
+
+<h2>17．static budgetとcumulative budgetを区別する</h2>
+<div class="news"><article class="news-item">
+<p>
+adaptive samplingには二つの設計があります．
+</p>
+<p>
+固定budget：
+</p>
+\[
+\boxed{
+|X_k|=N
+\quad
+\text{for all }k
+}
+\tag{26}
+\]
+<p>
+でpointsをreplaceする方法．
+</p>
+<p>
+cumulative budget：
+</p>
+\[
+\boxed{
+X_{k+1}\supset X_k,
+\qquad
+|X_k|\uparrow
+}
+\tag{27}
+\]
+<p>
+でpointsを追加し続ける方法です．
+</p>
+<p>
+この二つを同じ「adaptive sampling」として精度だけ比較すると公平ではありません．
+</p>
+</article></div>
+
+<h2>18．uniform point generator</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def uniform_points(N, device):
+    x = torch.linspace(
+        0.0, 1.0, N + 2,
+        device=device
+    )[1:-1]
+
+    return x[:, None]
+</code></pre>
+</article></div>
+
+<h2>19．random point generator</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def random_points(N, device, generator=None):
+    x = torch.rand(
+        (N, 1),
+        device=device,
+        generator=generator
+    )
+
+    x, _ = torch.sort(
+        x,
+        dim=0
+    )
+
+    return x
+</code></pre>
+<p>
+point seedはnetwork initialization seedとは別に保存します．
+</p>
+</article></div>
+
+<h2>20．candidate-pool adaptive sampling</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def adaptive_candidates(M, device):
+    y = torch.linspace(
+        0.0, 1.0, M + 2,
+        device=device
+    )[1:-1]
+
+    return y[:, None]
+
+
+def topk_residual_points(model, y, K):
+    r = pde_residual(
+        model,
+        y
+    ).detach().abs().flatten()
+
+    idx = torch.topk(
+        r,
+        k=K
+    ).indices
+
+    x_new = y[idx]
+
+    x_new, _ = torch.sort(
+        x_new,
+        dim=0
+    )
+
+    return x_new
+</code></pre>
+<p>
+実装上，<code>pde_residual</code> はautomatic differentiationを使うので，
+候補点生成とresidual評価のgrad contextは分けて扱います．
+</p>
+</article></div>
+
+<h2>21．coverage-preserving adaptive rule</h2>
+<div class="news"><article class="news-item">
+<p>
+例えばtotal budget \(N\) のうち
+</p>
+\[
+\boxed{
+N_{\rm base}
++
+N_{\rm adapt}
+=
+N
+}
+\tag{28}
+\]
+<p>
+として，
+</p>
+<ul>
+<li>\(N_{\rm base}\)：uniform baseline points，</li>
+<li>\(N_{\rm adapt}\)：large-residual points，</li>
+</ul>
+<p>
+に分けます．
+</p>
+<p>
+これならadaptive concentrationが起きても
+baseline coverageを完全には失いません．
+</p>
+</article></div>
+
+<h2>22．sampling geometryも各epochで監査する</h2>
+<div class="news"><article class="news-item">
+<p>
+point setが更新されるたび
+</p>
+\[
+\boxed{
+h_X,
+\qquad
+q_X,
+\qquad
+\rho_X=\frac{h_X}{q_X}
+}
+\tag{29}
+\]
+<p>
+を記録します．
+</p>
+<p>
+adaptive residualが下がっているのに
+</p>
+\[
+h_X\uparrow
+\]
+<p>
+なら，training setが局所化しすぎている可能性があります．
+</p>
+</article></div>
+
+<h2>23．評価用pointsはtrainingから完全に独立させる</h2>
+<div class="news"><article class="news-item">
+<p>
+全sampling strategyを同じreference quadratureで評価します．
+</p>
+\[
+\boxed{
+\begin{aligned}
+R_{\rm ref}
+&=
+\|r_\theta\|_{L^2},\\
+E_{L^2}
+&=
+\|u_\theta-u^\ast\|_{L^2},\\
+E_{H^1}
+&=
+|u_\theta-u^\ast|_{H^1}.
+\end{aligned}
+}
+\tag{30}
+\]
+<p>
+training loss
+\[
+\mathcal L_N
+\]
+はperformance metricではなく，
+optimizerが見ていたobjectiveとして別列に残します．
+</p>
+</article></div>
+
+<h2>24．何をtableに記録するか</h2>
+<div class="news"><article class="news-item">
+<p>
+各runで少なくとも
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">category</th><th style="border:1px solid #777; padding:7px;">record</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">sampling</td><td style="border:1px solid #777; padding:7px;">method, \(N\), seed, \(h_X\), \(q_X\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">training</td><td style="border:1px solid #777; padding:7px;">final \(\mathcal L_N\), steps, optimiser</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">reference residual</td><td style="border:1px solid #777; padding:7px;">\(R_{\rm ref}\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">solution error</td><td style="border:1px solid #777; padding:7px;">\(E_{L^2},E_{H^1}\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">adaptive</td><td style="border:1px solid #777; padding:7px;">number of updates, base/adaptive split</td></tr>
+</table>
+</article></div>
+
+<h2>25．uniformがadaptiveより良い場合もある</h2>
+<div class="news"><article class="news-item">
+<p>
+solutionとresidualがsmoothで，
+uniform pointsが既に十分denseなら，
+adaptive samplingが大きな改善を与えないことがあります．
+</p>
+<p>
+それどころかadaptive concentrationによってcoverageが悪化すれば，
+</p>
+\[
+\boxed{
+\text{adaptive}
+\not\Rightarrow
+\text{more accurate}.
+}
+\tag{31}
+\]
+<p>
+adaptive methodはproblem structureを利用する追加mechanismであって，
+automatic superiorityではありません．
+</p>
+</article></div>
+
+<h2>26．randomがuniformより良い場合も悪い場合もある</h2>
+<div class="news"><article class="news-item">
+<p>
+random pointsはfixed gridのaliasing patternを避けやすい一方，
+finite sampleではunlucky gapを作れます．
+</p>
+<p>
+従って一つのrandom seedだけから
+</p>
+\[
+\boxed{
+\text{random is better}
+\quad\text{or}\quad
+\text{uniform is better}
+}
+\tag{32}
+\]
+<p>
+と結論してはいけません．
+</p>
+</article></div>
+
+<h2>27．一点集中をcontrol experimentとして残す</h2>
+<div class="news"><article class="news-item">
+<p>
+第26回と同様に
+</p>
+\[
+\boxed{
+x_i
+=
+x_0+\varepsilon\xi_i,
+\qquad
+\varepsilon\ll1
+}
+\tag{33}
+\]
+<p>
+というconcentrated point setもcontrolとして残します．
+</p>
+<p>
+PINNsではこの場合
+</p>
+\[
+\mathcal L_N
+\]
+がほぼ \(x_0\) 近傍のresidualしか見なくなります．
+</p>
+<p>
+これにより
+</p>
+\[
+\boxed{
+\text{small training loss}
++
+\text{large reference residual}
+}
+\tag{34}
+\]
+<p>
+というfailureを意図的に作れます．
+</p>
+</article></div>
+
+<h2>28．adaptive samplingも一点集中controlと同じgeometryへ近づき得る</h2>
+<div class="news"><article class="news-item">
+<p>
+adaptive methodで
+</p>
+\[
+q_X\to0,
+\qquad
+h_X\not\to0
+\]
+<p>
+となれば，
+大量のpointsが同じresidual peakへ集まり，
+他のdomainを見なくなっています．
+</p>
+<p>
+したがって
+</p>
+\[
+\boxed{
+\text{adaptive residual reduction}
++
+\text{geometry audit}
+}
+\tag{35}
+\]
+<p>
+をセットで行います．
+</p>
+</article></div>
+
+<h2>29．FEMのadaptive refinementとの共通点と違い</h2>
+<div class="news"><article class="news-item">
+<p>
+FEM adaptive mesh refinementでは
+</p>
+\[
+\boxed{
+\text{solve}
+\to
+\text{estimate}
+\to
+\text{mark}
+\to
+\text{refine}
+}
+\tag{36}
+\]
+<p>
+というloopを使います．
+</p>
+<p>
+PINNsのadaptive samplingも
+</p>
+\[
+\boxed{
+\text{train}
+\to
+\text{sample residual}
+\to
+\text{select points}
+\to
+\text{retrain}
+}
+\tag{37}
+\]
+<p>
+という似た形です．
+</p>
+<p>
+しかしFEMのrefinementではmesh connectivityとtrial space自体が変わるのに対し，
+PINN samplingでは主にtraining measureが変わります．
+両者を同一視してはいけません．
+</p>
+</article></div>
+
+<h2>30．将来はanisotropic adaptive samplingへ進む</h2>
+<div class="news"><article class="news-item">
+<p>
+2次元ではresidualの大きさだけでなくdirectionalityがあります．
+</p>
+<p>
+例えばlayerが
+\[
+x=x_0
+\]
+に沿って細いなら，
+</p>
+\[
+\boxed{
+h_\perp
+\ll
+h_\parallel
+}
+\tag{38}
+\]
+<p>
+というanisotropic point placementが自然です．
+</p>
+<p>
+第31回では
+<b>点を増やす場所だけでなく，どの方向に細かくするか</b>
+を扱います．
+</p>
+</article></div>
+
+<h2>31．AIがsampling comparisonで間違えやすい点</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">mistake</th><th style="border:1px solid #777; padding:7px;">何が壊れるか</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">random seedを記録しない</td><td style="border:1px solid #777; padding:7px;">geometryを再現できない</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">adaptiveだけpoint budgetを増やす</td><td style="border:1px solid #777; padding:7px;">sampling strategyと計算量を混同する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">training lossだけで比較</td><td style="border:1px solid #777; padding:7px;">各methodが別measureを見ている可能性を無視する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">large residualをlarge true errorと同一視</td><td style="border:1px solid #777; padding:7px;">stability mapを無視する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">top-\(K\) adaptiveを無条件に使う</td><td style="border:1px solid #777; padding:7px;">pointsが一つのpeakへcollapseする</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">candidate poolをtruthとみなす</td><td style="border:1px solid #777; padding:7px;">candidate間のpeakを見落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">FEM adaptivityとPINN samplingを同じと説明</td><td style="border:1px solid #777; padding:7px;">trial-space refinementとmeasure updateを混同する</td></tr>
+</table>
+</article></div>
+
+<h2>32．sampling-strategy audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このPINN sampling comparisonを数学的に監査してください．<br/>
+(1) uniform・random・adaptiveでnetworkとoptimiser条件を揃えているか，<br/>
+(2) point countだけでなくpoint coordinatesとweightsを保存しているか，<br/>
+(3) random samplingではpoint seedとnetwork seedを分離しているか，<br/>
+(4) \(h_X\) と \(q_X\) を使ってcoverage / clusteringを記録しているか，<br/>
+(5) training lossとindependent reference residualを区別しているか，<br/>
+(6) adaptive methodのcandidate pool自体のresolutionを記録しているか，<br/>
+(7) residual-adaptive samplingをguaranteed error estimatorと呼んでいないか，<br/>
+(8) top-\(K\) selectionによるpoint concentrationを監査しているか，<br/>
+(9) exploration用のuniform baselineを残すか，その理由を説明しているか，<br/>
+(10) adaptive methodのstatic / cumulative budgetを区別しているか，<br/>
+(11) random methodは複数seedでvariationを報告しているか，<br/>
+(12) 最終比較を同じreference quadratureで行っているか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>33．第28回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+PINNsでは
+</p>
+\[
+\boxed{
+\mathcal L_N(\theta)
+=
+\int
+|r_\theta|^2\,d\mu_N
+}
+\tag{39}
+\]
+<p>
+なので，
+sampling strategyは単なるdata-loaderの選択ではありません．
+</p>
+<p>
+uniform，random，adaptiveはそれぞれ
+</p>
+\[
+\boxed{
+\begin{aligned}
+\text{uniform}&:\ \text{coverageを直接制御},\\
+\text{random}&:\ \text{sampling measureを確率的に近似},\\
+\text{adaptive}&:\ \text{current residualへmeasureを集中}
+\end{aligned}
+}
+\tag{40}
+\]
+<p>
+という異なる設計です．
+</p>
+<p>
+そしてadaptive samplingでも，
+coverageを失えば
+</p>
+\[
+\boxed{
+\text{many points}
+\not\Rightarrow
+\text{much information}.
+}
+\tag{41}
+\]
+<p>
+第26回の一点集中は例外的なtoy problemではなく，
+adaptive concentrationの極限としても現れ得ます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 3 第4回の原則</b><br/>
+<b>PINNsで点を適応的に増やすなら，residualだけでなくcoverageも同時に適応させる．</b>
+</div>
+<p>
+次回はboundary samplingを独立に取り出し，
+<b>第29回：境界点は何点必要か — interior lossとboundary loss</b>
+へ進みます．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>M. Raissi, P. Perdikaris and G. E. Karniadakis, “Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations”, <i>Journal of Computational Physics</i> 378 (2019), 686–707.</li>
+<li><a href="./chatgpt-fem-26.html">第26回：Deep Ritzでは点をどこに置くか — quadratureとsampling geometry</a></li>
+<li><a href="./chatgpt-fem-27.html">第27回：PINNsを作る — strong residualを点で最小化する</a></li>
+<li><a href="./chatgpt-fem-23.html">第23回：有限要素解の誤差を保証する — equilibrated fluxとhypercircle</a></li>
+<li><a href="./pinns-02.html">関連する先行ノート：残差点の配置を変えると何が起きるか</a></li>
+<li><a href="./pinns-03.html">関連する先行ノート：どの幾何的量が誤差を支配するか</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 3 前回：</b><a href="./chatgpt-fem-27.html">第27回：PINNsを作る — strong residualを点で最小化する</a></p>
+<p><b>次回：</b>第29回：境界点は何点必要か — interior lossとboundary loss（構想中）</p>
+<p><a href="../#chatgpt-fem-season3">Season 3一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
