@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第17回：Stokes方程式を有限要素法で解く — velocity・pressure・inf-sup条件 | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,Stokes equation,Crouzeix-Raviart,CR,P0,inf-sup,LBB,velocity pressure,nonconforming,Python"/>
+<meta name="description" content="Season 2 第5回（通算第17回）として，Stokes方程式をCR–P0要素で実装し，velocity–pressure saddle point，mean-zero pressure，discrete inf-sup条件，elementwise divergence-free性，収束を数学的に監査します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-17.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-17.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-17.html",
+      "headline": "第17回：Stokes方程式を有限要素法で解く — velocity・pressure・inf-sup条件",
+      "description": "CR–P0 Stokes FEMを実装し，saddle-point system，pressure mean-zero，discrete inf-sup，elementwise divergence-free性を検証します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-17.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-29",
+      "dateModified": "2026-08-29",
+      "articleSection": "Computational FEM with AI — Season 2",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-29"/>
+<meta property="article:modified_time" content="2026-08-29"/>
+<meta property="article:section" content="Computational FEM with AI — Season 2"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第17回：Stokes方程式を有限要素法で解く — velocity・pressure・inf-sup条件 | Hiroki Ishizaka"/>
+<meta property="og:description" content="CR velocityとP0 pressureでStokes saddle pointを組み，inf-sup stabilityとdiscrete divergence-free性を監査します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-17.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第17回：Stokes方程式を有限要素法で解く — velocity・pressure・inf-sup条件 | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="CR–P0 Stokes: velocity, pressure, saddle points, inf-sup and exact discrete incompressibility."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 2 第5回（通算第17回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第17回：Stokes方程式を有限要素法で解く — velocity・pressure・inf-sup条件</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 2 第5回（通算第17回）</b><br/><time datetime="2026-08-29">29th August 2026</time></p>
+
+<h2>はじめに――Poissonにはなかった「組合せの安定性」</h2>
+<div class="news"><article class="news-item">
+<p>
+第16回のmixed Poissonでは，RT0–P0というstable pairを使い，
+fluxとscalarを同時に求めました．
+Stokes方程式でも未知量は二種類です．
+</p>
+\[
+\boxed{
+\text{velocity}
++
+\text{pressure}
+}
+\]
+<p>
+しかしStokes FEMでは，
+velocity spaceとpressure spaceを別々に選べばよいわけではありません．
+<b>二つのspaceの組合せがinf-sup stableであること</b>が必要です．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Stokes要素を選ぶ基準</b><br/>
+polynomial degreeだけを見るのではなく，
+\[
+\boxed{
+\text{velocity space}
+\times
+\text{pressure space}
+\quad\text{がinf-sup conditionを満たすか}
+}
+\]
+を確認する．
+</div>
+</article></div>
+
+<h2>1．Stokes problem</h2>
+<div class="news"><article class="news-item">
+<p>
+\(\Omega\subset\mathbb R^d\)，\(d\in\{2,3\}\) で
+\[
+-\nu\Delta\boldsymbol u+\nabla p
+=
+\boldsymbol f
+\qquad\text{in }\Omega,
+\tag{1}
+\]
+\[
+\nabla\cdot\boldsymbol u=0
+\qquad\text{in }\Omega,
+\tag{2}
+\]
+\[
+\boldsymbol u=\boldsymbol 0
+\qquad\text{on }\partial\Omega
+\tag{3}
+\]
+を考えます．
+</p>
+<p>
+pressureは定数だけ不定なので
+\[
+\boxed{
+\int_\Omega p\,dx=0
+}
+\tag{4}
+\]
+で正規化します．
+</p>
+</article></div>
+
+<h2>2．continuous variational formulation</h2>
+<div class="news"><article class="news-item">
+<p>
+\[
+V:=H_0^1(\Omega)^d,
+\qquad
+Q:=L_0^2(\Omega)
+\tag{5}
+\]
+とします．
+</p>
+<p>
+bilinear formsを
+\[
+a(\boldsymbol v,\boldsymbol w)
+=
+\nu
+\int_\Omega
+\nabla\boldsymbol v:\nabla\boldsymbol w\,dx,
+\tag{6}
+\]
+\[
+b(\boldsymbol v,q)
+=
+-
+\int_\Omega
+(\nabla\cdot\boldsymbol v)q\,dx
+\tag{7}
+\]
+と置けば，
+</p>
+\[
+\boxed{
+a(\boldsymbol u,\boldsymbol v)
++
+b(\boldsymbol v,p)
+=
+(\boldsymbol f,\boldsymbol v)
+}
+\tag{8}
+\]
+<p>
+for all \(\boldsymbol v\in V\)，および
+</p>
+\[
+\boxed{
+b(\boldsymbol u,q)=0
+}
+\tag{9}
+\]
+<p>
+for all \(q\in Q\) です．
+</p>
+</article></div>
+
+<h2>3．pressureはLagrange multiplier</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (9) は
+\[
+\nabla\cdot\boldsymbol u=0
+\]
+というincompressibility constraintです．
+pressure \(p\) はこのconstraintを課すLagrange multiplierとして現れます．
+</p>
+<p>
+従ってStokes systemはPoissonのような単純なSPD problemではなく，
+</p>
+\[
+\boxed{
+\text{saddle-point problem}
+}
+\]
+<p>
+です．
+</p>
+<p>
+この時点で，linear solverやpreconditionerの選び方もPoissonとは変わります．
+</p>
+</article></div>
+
+<h2>4．continuous inf-sup condition</h2>
+<div class="news"><article class="news-item">
+<p>
+Stokes problemのwell-posednessには
+\[
+\boxed{
+\inf_{0\neq q\in Q}
+\sup_{0\neq\boldsymbol v\in V}
+\frac{
+|b(\boldsymbol v,q)|
+}{
+|\boldsymbol v|_{H^1(\Omega)^d}
+\|q\|_{L^2(\Omega)}
+}
+\ge
+\beta
+&gt;
+0
+}
+\tag{10}
+\]
+が重要です．
+</p>
+<p>
+これはpressure modeをvelocity divergenceが十分に検出できる，
+という意味に読めます．
+</p>
+</article></div>
+
+<h2>5．finite-element pairはCR–P0を使う</h2>
+<div class="news"><article class="news-item">
+<p>
+今回は
+\[
+\boxed{
+V_h
+=
+(V_{h0}^{CR})^d,
+\qquad
+Q_h
+=
+P_0(\mathcal T_h)\cap L_0^2(\Omega)
+}
+\tag{11}
+\]
+を使います．
+</p>
+<p>
+velocityはcomponentwise CR function，
+pressureはelementwise constantです．
+</p>
+<p>
+velocityは
+\[
+V_h\not\subset H_0^1(\Omega)^d
+\]
+なのでnonconformingですが，
+このCR–P0 pairはStokes approximationの代表的なstable pairです．
+</p>
+</article></div>
+
+<h2>6．なぜ単純なP1–P1ではだめなのか</h2>
+<div class="news"><article class="news-item">
+<p>
+velocityもpressureもcontinuous P1にすれば実装は簡単そうに見えます．
+しかし
+\[
+P_1^d\times P_1
+\]
+というequal-order pairは，stabilisationなしでは一般にdiscrete inf-sup conditionを満たしません．
+</p>
+<p>
+その結果，spurious pressure modeや不安定なpressure fieldが現れ得ます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>ChatGPTにStokes codeを書かせるときの最初の質問</b><br/>
+「何次の要素か」ではなく，
+<b>そのvelocity–pressure pairはinf-sup stableか</b>
+を聞く．
+</div>
+</article></div>
+
+<h2>7．discrete Stokes problem</h2>
+<div class="news"><article class="news-item">
+<p>
+broken gradientとbroken divergenceを使い，
+\[
+a_h(\boldsymbol u_h,\boldsymbol v_h)
+=
+\nu
+\sum_{T\in\mathcal T_h}
+\int_T
+\nabla\boldsymbol u_h:
+\nabla\boldsymbol v_h\,dx,
+\tag{12}
+\]
+\[
+b_h(\boldsymbol v_h,q_h)
+=
+-
+\sum_{T\in\mathcal T_h}
+\int_T
+(\nabla\cdot\boldsymbol v_h)q_h\,dx.
+\tag{13}
+\]
+</p>
+<p>
+求めるのは
+\[
+(\boldsymbol u_h,p_h)\in V_h\times Q_h
+\]
+で，
+\[
+\boxed{
+a_h(\boldsymbol u_h,\boldsymbol v_h)
++
+b_h(\boldsymbol v_h,p_h)
+=
+(\boldsymbol f,\boldsymbol v_h)
+}
+\tag{14}
+\]
+for all \(\boldsymbol v_h\in V_h\)，
+\[
+\boxed{
+b_h(\boldsymbol u_h,q_h)=0
+}
+\tag{15}
+\]
+for all \(q_h\in Q_h\) です．
+</p>
+</article></div>
+
+<h2>8．vector CR DoF</h2>
+<div class="news"><article class="news-item">
+<p>
+scalar CRのglobal DoFは各edge meanでした．
+Stokes velocityでは各componentについて
+\[
+\frac1{|E|}
+\int_E
+u_{h,k}\,ds,
+\qquad
+k=1,\ldots,d
+\tag{16}
+\]
+を持ちます．
+</p>
+<p>
+2次元なら一つのinterior edgeにつき
+\[
+\boxed{
+2\ \text{velocity DoFs}
+}
+\]
+です．
+</p>
+<p>
+boundary edge meanはcomponentwiseに0とします．
+</p>
+</article></div>
+
+<h2>9．P0 pressureとmean-zero constraint</h2>
+<div class="news"><article class="news-item">
+<p>
+pressureは各elementでconstantです．
+\[
+p_h|_T=P_T.
+\tag{17}
+\]
+</p>
+<p>
+ただしconstant pressure modeを除くため，
+\[
+\boxed{
+\sum_{T\in\mathcal T_h}
+|T|P_T=0
+}
+\tag{18}
+\]
+を課します．
+</p>
+<p>
+実装では
+</p>
+\[
+\text{one pressure DoF elimination}
+\]
+<p>
+でもよいですし，
+mean-zero constraint用のLagrange multiplierを一つ追加しても構いません．
+</p>
+</article></div>
+
+<h2>10．block matrix</h2>
+<div class="news"><article class="news-item">
+<p>
+velocity stiffness matrixを \(A\)，divergence matrixを \(B\) とすると
+\[
+\boxed{
+\begin{pmatrix}
+\nu A&B^{\top}\\
+B&0
+\end{pmatrix}
+\begin{pmatrix}
+U\\
+P
+\end{pmatrix}
+=
+\begin{pmatrix}
+F\\
+0
+\end{pmatrix}.
+}
+\tag{19}
+\]
+</p>
+<p>
+pressure mean-zero constraintをLagrange multiplier \(\lambda\) で入れるなら
+\[
+\boxed{
+\begin{pmatrix}
+\nu A&B^{\top}&0\\
+B&0&m\\
+0&m^{\top}&0
+\end{pmatrix}
+\begin{pmatrix}
+U\\
+P\\
+\lambda
+\end{pmatrix}
+=
+\begin{pmatrix}
+F\\
+0\\
+0
+\end{pmatrix},
+}
+\tag{20}
+\]
+ここで
+\[
+m_T=|T|.
+\]
+</p>
+<p>
+これはstabilisationではなくpressure normalisationのための補助変数です．
+</p>
+</article></div>
+
+<h2>11．CR–P0 divergence matrix</h2>
+<div class="news"><article class="news-item">
+<p>
+scalar CR basisを \(\psi_{T,i}\) とします．
+velocity basis
+\[
+\psi_{T,i}\boldsymbol e_k
+\]
+に対し，
+\[
+\nabla\cdot
+(
+\psi_{T,i}\boldsymbol e_k
+)
+=
+\frac{\partial\psi_{T,i}}{\partial x_k}.
+\]
+</p>
+<p>
+従ってlocal divergence matrixは
+\[
+\boxed{
+B^{(T)}_{1,(i,k)}
+=
+-
+|T|
+\frac{\partial\psi_{T,i}}{\partial x_k}.
+}
+\tag{21}
+\]
+</p>
+<p>
+CR basisのgradientはelementwise constantなので，
+ここにquadratureは不要です．
+</p>
+</article></div>
+
+<h2>12．assemblyの中心コード</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">A = lil_matrix(
+    (n_vel, n_vel),
+    dtype=float
+)
+
+B = lil_matrix(
+    (n_cells, n_vel),
+    dtype=float
+)
+
+F = np.zeros(n_vel)
+
+
+for t, tri in enumerate(triangles):
+    P = nodes[tri]
+
+    J = np.column_stack((
+        P[1] - P[0],
+        P[2] - P[0]
+    ))
+
+    detJ = np.linalg.det(J)
+
+    if detJ &lt;= 0.0:
+        raise ValueError(
+            "Use positive triangle orientation"
+        )
+
+    area = 0.5 * detJ
+
+    grads = np.linalg.solve(
+        J.T,
+        grad_hat_cr.T
+    ).T
+
+    Kloc = (
+        nu * area
+        * (grads @ grads.T)
+    )
+
+    Floc = integrate_vector_load(
+        P,
+        source
+    )
+
+    for i in range(3):
+        edge_i = element_edges[t, i]
+        gi = edge_to_interior[edge_i]
+
+        if gi &lt; 0:
+            continue
+
+        for comp in range(2):
+            I = 2 * gi + comp
+
+            F[I] += Floc[i, comp]
+
+            B[t, I] += (
+                -area
+                * grads[i, comp]
+            )
+
+            for j in range(3):
+                edge_j = element_edges[t, j]
+                gj = edge_to_interior[edge_j]
+
+                if gj &lt; 0:
+                    continue
+
+                Jdof = 2 * gj + comp
+
+                A[I, Jdof] += Kloc[i, j]
+</code></pre>
+</article></div>
+
+<h2>13．discrete inf-sup condition</h2>
+<div class="news"><article class="news-item">
+<p>
+CR–P0 pairでは
+\[
+\boxed{
+\inf_{0\neq q_h\in Q_h}
+\sup_{0\neq\boldsymbol v_h\in V_h}
+\frac{
+|b_h(\boldsymbol v_h,q_h)|
+}{
+|\boldsymbol v_h|_{1,h}
+\|q_h\|_{L^2}
+}
+\ge
+\beta_0
+&gt;
+0
+}
+\tag{22}
+\]
+というmesh-independentなboundが必要です．
+</p>
+<p>
+一つのmeshでmatrix rankがfullだったことと，
+family of meshesで \(\beta_0\) がuniformに正であることは別です．
+</p>
+</article></div>
+
+<h2>14．CR interpolationがFortin mapになる</h2>
+<div class="news"><article class="news-item">
+<p>
+十分regularな
+\[
+\boldsymbol v\in H_0^1(\Omega)^d
+\]
+にcomponentwise CR interpolation \(I_h^{CR}\boldsymbol v\) を適用すると，
+\(q_h\in Q_h\) がelementwise constantであることから
+\[
+\boxed{
+b_h(
+I_h^{CR}\boldsymbol v,
+q_h
+)
+=
+b(
+\boldsymbol v,
+q_h
+).
+}
+\tag{23}
+\]
+</p>
+<p>
+つまりdivergence–pressure pairingを保存します．
+</p>
+<p>
+さらに
+\[
+|I_h^{CR}\boldsymbol v|_{1,h}
+\le
+C
+|\boldsymbol v|_{H^1(\Omega)^d}
+\tag{24}
+\]
+というstabilityがあれば，
+continuous inf-sup conditionをdiscrete spaceへ移せます．
+</p>
+<p>
+semi-regularなanisotropic meshを扱う場合にも，
+このinterpolation stabilityをgeometryに一様に制御できるかが重要です．
+</p>
+</article></div>
+
+<h2>15．CR–P0 velocityはelementwise divergence-free</h2>
+<div class="news"><article class="news-item">
+<p>
+CR velocityは各elementでaffineなので
+\[
+\nabla\cdot\boldsymbol u_h
+\in
+P_0(T).
+\]
+</p>
+<p>
+さらにCR0のedge-mean continuityとboundary conditionから
+\[
+\int_\Omega
+\nabla_h\cdot\boldsymbol u_h\,dx
+=
+0.
+\tag{25}
+\]
+したがって
+\[
+\nabla_h\cdot\boldsymbol u_h
+\in Q_h.
+\]
+</p>
+<p>
+式 (15) で
+\[
+q_h=
+\nabla_h\cdot\boldsymbol u_h
+\]
+を選べば
+\[
+\boxed{
+\nabla_h\cdot\boldsymbol u_h
+=
+0
+\qquad
+\text{on every element}.
+}
+\tag{26}
+\]
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>CR–P0の重要な構造</b><br/>
+incompressibilityはglobal averageだけではなく，
+<b>elementwise constant divergenceがexactly zero</b>になる．
+</div>
+</article></div>
+
+<h2>16．ただし「elementwise divergence-free = pressure robust」ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (26) は非常に強い性質ですが，
+standard CR methodが自動的にpressure robustになるという意味ではありません．
+</p>
+<p>
+CR velocity spaceは
+\[
+V_h\not\subset H_0^1(\Omega)^d
+\]
+なので，discrete divergence-free test functionにgradient forceを作用させたとき，
+nonconforming face termが残り得ます．
+</p>
+<p>
+従ってstandard CR velocity errorはpressure approximationや
+\(\boldsymbol f\) のgradient componentの影響を受けることがあります．
+</p>
+<p>
+pressure-robust modificationは後の回で改めて扱います．
+</p>
+</article></div>
+
+<h2>17．Stokesの誤差解析は「nonconforming + mixed」</h2>
+<div class="news"><article class="news-item">
+<p>
+Poisson CRでは
+\[
+\text{approximation}
++
+\text{consistency}
+\]
+に分けました．
+Stokes CR–P0ではさらにpressureとinf-sup stabilityが加わります．
+</p>
+<p>
+fixed \(\nu&gt;0\) の下でschematically，
+\[
+\begin{aligned}
+|\boldsymbol u-\boldsymbol u_h|_{1,h}
++
+\|p-p_h\|_{L^2}
+\le
+C_\nu
+\Bigg[
+&
+\inf_{\boldsymbol v_h\in V_h}
+|\boldsymbol u-\boldsymbol v_h|_{1,h}
+\\
+&+
+\inf_{q_h\in Q_h}
+\|p-q_h\|_{L^2}
+\\
+&+
+\sup_{0\neq\boldsymbol w_h\in V_h}
+\frac{
+|\mathcal R_h(\boldsymbol w_h)|
+}{
+|\boldsymbol w_h|_{1,h}
+}
+\Bigg],
+\end{aligned}
+\tag{27}
+\]
+</p>
+<p>
+ここで
+\[
+\mathcal R_h(\boldsymbol w_h)
+=
+a_h(\boldsymbol u,\boldsymbol w_h)
++
+b_h(\boldsymbol w_h,p)
+-
+(\boldsymbol f,\boldsymbol w_h)
+\tag{28}
+\]
+がnonconforming consistency residualです．
+</p>
+</article></div>
+
+<h2>18．manufactured solution</h2>
+<div class="news"><article class="news-item">
+<p>
+unit square
+\[
+\Omega=(0,1)^2
+\]
+で
+\[
+\varphi(x,y)
+=
+x^2(x-1)^2y^2(y-1)^2
+\tag{29}
+\]
+とし，
+\[
+\boxed{
+\boldsymbol u
+=
+\operatorname{rot}\varphi
+=
+\begin{pmatrix}
+\partial_y\varphi\\
+-\partial_x\varphi
+\end{pmatrix},
+\qquad
+p=x^2-y^2.
+}
+\tag{30}
+\]
+</p>
+<p>
+このvelocityは
+\[
+\nabla\cdot\boldsymbol u=0,
+\qquad
+\boldsymbol u|_{\partial\Omega}=0,
+\]
+pressureは
+\[
+\int_\Omega p\,dx=0
+\]
+を満たします．
+</p>
+<p>
+\(\nu=1\) とし，
+\[
+\boldsymbol f
+=
+-\Delta\boldsymbol u+\nabla p
+\tag{31}
+\]
+をexact sourceとして使います．
+</p>
+</article></div>
+
+<h2>19．数値結果</h2>
+<div class="news"><article class="news-item">
+<p>
+uniform triangulationでCR–P0を解きました．
+error integralは高次quadratureで評価しています．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">\(n\)</th>
+<th style="border:1px solid #777; padding:7px;">velocity \(L^2\) rel.</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+<th style="border:1px solid #777; padding:7px;">broken \(H^1\) rel.</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+<th style="border:1px solid #777; padding:7px;">pressure \(L^2\) rel.</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">7.6203e-1</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">1.3023e+0</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">1.9213e-1</td><td style="border:1px solid #777; padding:7px;">—</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">2.2476e-1</td><td style="border:1px solid #777; padding:7px;">1.761</td><td style="border:1px solid #777; padding:7px;">7.1173e-1</td><td style="border:1px solid #777; padding:7px;">0.872</td><td style="border:1px solid #777; padding:7px;">9.3751e-2</td><td style="border:1px solid #777; padding:7px;">1.035</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">6.0005e-2</td><td style="border:1px solid #777; padding:7px;">1.905</td><td style="border:1px solid #777; padding:7px;">3.6715e-1</td><td style="border:1px solid #777; padding:7px;">0.955</td><td style="border:1px solid #777; padding:7px;">4.6025e-2</td><td style="border:1px solid #777; padding:7px;">1.026</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">32</td><td style="border:1px solid #777; padding:7px;">1.5353e-2</td><td style="border:1px solid #777; padding:7px;">1.967</td><td style="border:1px solid #777; padding:7px;">1.8552e-1</td><td style="border:1px solid #777; padding:7px;">0.985</td><td style="border:1px solid #777; padding:7px;">2.2803e-2</td><td style="border:1px solid #777; padding:7px;">1.013</td></tr>
+</table>
+<p>
+asymptotically
+\[
+\boxed{
+|\boldsymbol u-\boldsymbol u_h|_{1,h}
+=
+O(h),
+\qquad
+\|p-p_h\|_{L^2}
+=
+O(h),
+}
+\tag{32}
+\]
+そしてこのsmooth solution / regular meshでは
+\[
+\|\boldsymbol u-\boldsymbol u_h\|_{L^2}
+\approx
+O(h^2)
+\tag{33}
+\]
+が観測されています．
+</p>
+<p>
+\(L^2\)-velocity 2次収束を一般条件なしに断言するのではなく，
+ここでは今回のsmooth problemでのnumerical observationとして扱います．
+</p>
+</article></div>
+
+<h2>20．discrete divergenceの数値監査</h2>
+<div class="news"><article class="news-item">
+<p>
+計算したvelocityについて
+\[
+\|\nabla_h\cdot\boldsymbol u_h\|_{L^2(\Omega)}
+\]
+を出力すると，
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">\(n\)</th><th style="border:1px solid #777; padding:7px;">\(\|\nabla_h\cdot\boldsymbol u_h\|_{L^2}\)</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">3.60e-16</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">1.49e-15</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">4.17e-15</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">32</td><td style="border:1px solid #777; padding:7px;">2.19e-14</td></tr>
+</table>
+<p>
+theoretical valueは0であり，
+表はfloating-point / linear-solver errorです．
+</p>
+</article></div>
+
+<h2>21．pressure meanを必ず監査する</h2>
+<div class="news"><article class="news-item">
+<p>
+pressureは定数分だけ不定なので，
+comparisonの前に
+\[
+\int_\Omega p_h\,dx=0
+\tag{34}
+\]
+を確認します．
+</p>
+<p>
+pressure errorが大きいとき，
+最初に疑うべきなのは
+</p>
+\[
+\text{sign},
+\quad
+\text{pressure normalisation},
+\quad
+\text{inf-sup pair}
+\]
+<p>
+です．
+単にmeshを細かくする前にここを監査します．
+</p>
+</article></div>
+
+<h2>22．matrix rankだけではinf-sup testにならない</h2>
+<div class="news"><article class="news-item">
+<p>
+pressure constant modeを除いたsaddle matrixがnonsingularなら，
+そのmesh上ではdiscrete problemを解けます．
+</p>
+<p>
+しかしfinite-element methodとして必要なのは，
+mesh familyに対して
+\[
+\beta_h\ge\beta_0&gt;0
+\]
+が一様に成立することです．
+</p>
+<p>
+従ってdebuggingでは
+</p>
+\[
+\boxed{
+\text{algebraic nonsingularity}
+\neq
+\text{uniform inf-sup stability}
+}
+\]
+<p>
+を明確に区別します．
+</p>
+</article></div>
+
+<h2>23．anisotropic meshでは何を追加監査するか</h2>
+<div class="news"><article class="news-item">
+<p>
+強いanisotropyを許す場合は，
+CR interpolationのstabilityとdiscrete inf-sup constantが
+mesh geometryに対して一様かを確認する必要があります．
+</p>
+<p>
+semi-regularity condition
+\[
+\frac{H_T}{h_T}\le C
+\tag{35}
+\]
+の下では，shape regularityを要求せずに扱えるanisotropic mesh familyがあります．
+</p>
+<p>
+このときも
+</p>
+\[
+\boxed{
+\text{mesh geometry}
++
+\text{CR interpolation stability}
++
+\text{discrete inf-sup}
+}
+\]
+<p>
+を一組として見ることが重要です．
+</p>
+</article></div>
+
+<h2>24．ChatGPTへのStokes implementation audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このCR–P0 Stokes codeを数学的に監査してください．<br/>
+(1) velocity spaceがvector-valued CR0，pressure spaceがmean-zero \(P_0\) か，<br/>
+(2) bilinear formが \(a_h(u_h,v_h)=\nu(\nabla_hu_h,\nabla_hv_h)\) か，<br/>
+(3) \(b_h(v_h,q_h)=-(\operatorname{div}_hv_h,q_h)\) のsignが一貫しているか，<br/>
+(4) pressure constant null modeを正しく除いているか，<br/>
+(5) saddle matrixをSPDと誤認していないか，<br/>
+(6) unstabilised P1–P1などinf-sup unstable pairを使っていないか，<br/>
+(7) CR interpolationがpressure pairingを保存するFortin propertyを持つか，<br/>
+(8) discrete inf-supを一つのmatrix rankだけで判断していないか，<br/>
+(9) \(\operatorname{div}_hu_h=0\) がelementwiseに成立するか，<br/>
+(10) elementwise divergence-free性とpressure robustnessを混同していないか，<br/>
+(11) broken \(H^1\) velocity errorとpressure \(L^2\) errorが期待orderで収束するか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>25．第17回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+Stokes FEMでは，
+velocity spaceとpressure spaceを別々に実装するだけでは不十分です．
+</p>
+\[
+\boxed{
+\text{velocity approximation}
++
+\text{pressure approximation}
++
+\text{inf-sup stability}
++
+\text{incompressibility}
+}
+\tag{36}
+\]
+<p>
+を一つのmethodとして設計する必要があります．
+</p>
+<p>
+CR–P0では
+\[
+\nabla_h\cdot\boldsymbol u_h=0
+\]
+がelementwiseに成立し，
+同時にstable velocity–pressure couplingを得られます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 2 第5回の原則</b><br/>
+Stokes elementを選ぶときは，
+<b>polynomial degreeではなくinf-sup structureを見る</b>．
+</div>
+<p>
+次回はDirichlet conditionをstrongly imposeせず，
+<b>Nitsche法で弱く課す</b>方法へ進みます．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>M. Crouzeix and P.-A. Raviart, “Conforming and nonconforming finite element methods for solving the stationary Stokes equations I”, <i>RAIRO Analyse Numérique</i> 7 (1973), 33–75.</li>
+<li>V. Girault and P.-A. Raviart, <i>Finite Element Methods for Navier–Stokes Equations</i>, Springer, 1986.</li>
+<li>A. Ern and J.-L. Guermond, <i>Theory and Practice of Finite Elements</i>, Springer, 2004.</li>
+<li>H. Ishizaka, “Anisotropic modified Crouzeix–Raviart finite element method for the stationary Navier–Stokes equation”, <i>Numerische Mathematik</i> 157 (2025), 855–895. <a href="https://doi.org/10.1007/s00211-025-01460-z">DOI</a>.</li>
+<li><a href="./chatgpt-fem-13.html">第13回：Crouzeix–Raviart要素を本当に実装する</a></li>
+<li><a href="./chatgpt-fem-15.html">第15回：CRとRTはなぜ相性がよいのか</a></li>
+<li><a href="./chatgpt-fem-16.html">第16回：mixed Poisson問題を解く</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 2 前回：</b><a href="./chatgpt-fem-16.html">第16回：mixed Poisson問題を解く — RT0–P0と局所保存</a></p>
+<p><b>次回：</b>第18回：Nitsche法とは何か — Dirichlet境界条件を弱く課す（構想中）</p>
+<p><a href="../#chatgpt-fem-season2">Season 2一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
