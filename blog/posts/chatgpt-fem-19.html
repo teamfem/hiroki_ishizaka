@@ -908,7 +908,234 @@ anisotropic Poisson problemでも利用できます．
 </p>
 </article></div>
 
-<h2>23．DGとCRはどこが似ていて，どこが違うか</h2>
+<h2>23．hybridisationのメリットとデメリット</h2>
+<div class="news"><article class="news-item">
+<p>
+hybridisationの目的は，
+単に新しいunknownを増やすことではありません．
+element unknownをlocalに閉じ込め，
+<b>global couplingをmesh skeleton上のunknownへ集約する</b>ことです．
+</p>
+
+<h3>メリット1：static condensationでglobal systemをskeletonへ縮約できる</h3>
+<p>
+element unknownを \(\boldsymbol u_T\)，
+skeleton unknownを \(\boldsymbol\lambda\) とすると，
+local systemはschematicallyに
+\[
+\begin{pmatrix}
+A_T & C_T^{\top}\\
+C_T & D_T
+\end{pmatrix}
+\begin{pmatrix}
+\boldsymbol u_T\\
+\boldsymbol\lambda_T
+\end{pmatrix}
+=
+\begin{pmatrix}
+\boldsymbol f_T\\
+\boldsymbol g_T
+\end{pmatrix}
+\]
+と書けます．
+</p>
+<p>
+\(A_T\) をelementごとにlocalにinvertすれば，
+\(\boldsymbol u_T\) を消去して
+\[
+\boxed{
+S_T
+=
+D_T
+-
+C_TA_T^{-1}C_T^{\top}
+}
+\]
+というlocal Schur complementをskeletonへassembleできます．
+</p>
+<p>
+global solveでは主として \(\lambda_h\) だけを解き，
+最後に各elementで \(\boldsymbol u_T\) をrecoverします．
+</p>
+
+<h3>メリット2：element local solveを並列化しやすい</h3>
+<p>
+\(A_T^{-1}\) を使うlocal eliminationとsolution recoveryは
+elementごとに独立です．
+したがって
+</p>
+\[
+\boxed{
+\text{local factorisation}
+\quad\longrightarrow\quad
+\text{parallel / GPU-friendly computation}
+}
+\]
+<p>
+という構造を持ちます．
+高次要素では，full DG unknownをglobalに全部coupleするより
+skeleton systemへ縮約する利点が大きくなる場合があります．
+</p>
+
+<h3>メリット3：single-valued trace / fluxをglobal unknownとして持てる</h3>
+<p>
+face上の \(\lambda_h\) はsingle-valuedなので，
+element間のcommunicationをskeleton variableへ明示的に集約できます．
+</p>
+<p>
+この構造は
+domain decomposition，
+local conservation，
+flux reconstruction，
+interface coupling
+とも相性がよいです．
+</p>
+
+<h3>メリット4：local post-processingを設計しやすい</h3>
+<p>
+一部のHDG familyでは，
+computed fluxやtraceを使ったelementwise post-processingによって
+より高次のsolution approximationを得られる場合があります．
+</p>
+<p>
+ただしこれは<b>hybridisationしただけで自動的に得られる性質ではありません</b>．
+superconvergenceにはscheme，polynomial degrees，regularityなど追加条件が必要です．
+</p>
+
+<h3>デメリット1：実装は明らかに複雑になる</h3>
+<p>
+通常のDGではglobal matrixへ直接assembleすればよいところを，
+hybrid methodでは
+</p>
+\[
+\text{local matrix}
+\to
+\text{local elimination}
+\to
+\text{Schur complement assembly}
+\to
+\text{skeleton solve}
+\to
+\text{local recovery}
+\]
+<p>
+という複数段階に分ける必要があります．
+</p>
+<p>
+local-to-global face numbering，orientation，
+trace polynomial space，
+boundary trace treatmentまで正しく管理しなければなりません．
+</p>
+
+<h3>デメリット2：unknown数が必ず減るわけではない</h3>
+<p>
+hybridisationするとfull DGのelement unknownはglobal systemから消せます．
+しかし新しくface unknown \(\lambda_h\) を導入するため，
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>重要な注意</b><br/>
+<b>hybridisation = global DoF数が必ず少なくなる</b>
+とは言えない．
+</div>
+<p>
+standard DGと比べてglobal coupled dimensionが小さくなるかは，
+dimension，polynomial degree，mesh topology，trace degreeによって変わります．
+特に低次法では，conforming FEMよりunknownが多くなることも普通です．
+</p>
+
+<h3>デメリット3：local eliminationにも計算・memory costがある</h3>
+<p>
+各elementで \(A_T\) のfactorisationやinverse actionが必要です．
+高次3次元ではlocal block自体が大きくなるため，
+static condensationが無料というわけではありません．
+</p>
+<p>
+同じlocal matrix structureを再利用できる場合には有利ですが，
+variable coefficient，nonlinear problem，moving meshでは
+local factorisationを繰り返すcostも考える必要があります．
+</p>
+
+<h3>デメリット4：Schur complement用solver / preconditionerが必要になる</h3>
+<p>
+縮約後のsystemはskeleton上にありますが，
+そのconditioningが自動的によくなるわけではありません．
+</p>
+<p>
+methodによってはSPDになりますが，
+一般のHDG・mixed・convection-dominated problemでは
+nonsymmetric / indefinite structureもあり得ます．
+したがって
+</p>
+\[
+\boxed{
+\text{hybridisation}
+\neq
+\text{solver problemの自動解決}
+}
+\]
+<p>
+です．
+</p>
+
+<h3>デメリット5：stabilisation parameterとtrace spaceの設計が増える</h3>
+<p>
+HDGでは
+\[
+\tau_F
+\]
+のようなstabilisation parameterや，
+element polynomial degreeとtrace polynomial degreeの組合せを選びます．
+</p>
+<p>
+これらはaccuracy，stability，conditioning，local conservationに影響するため，
+「hybrid化すれば何でも安定」というわけではありません．
+anisotropic meshではface-normal geometryも引き続き監査が必要です．
+</p>
+
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">観点</th>
+<th style="border:1px solid #777; padding:7px;">メリット</th>
+<th style="border:1px solid #777; padding:7px;">デメリット</th>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">global system</td>
+<td style="border:1px solid #777; padding:7px;">skeleton unknownへ縮約可能</td>
+<td style="border:1px solid #777; padding:7px;">DoF削減は次数・mesh依存</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">parallelism</td>
+<td style="border:1px solid #777; padding:7px;">local elimination / recoveryをelement並列化しやすい</td>
+<td style="border:1px solid #777; padding:7px;">local factorisation costが必要</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">interface</td>
+<td style="border:1px solid #777; padding:7px;">single-valued skeleton traceを明示的に持てる</td>
+<td style="border:1px solid #777; padding:7px;">face orientation・trace space実装が複雑</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">solver</td>
+<td style="border:1px solid #777; padding:7px;">static condensation可能</td>
+<td style="border:1px solid #777; padding:7px;">Schur complement用preconditionerが必要</td>
+</tr>
+<tr>
+<td style="border:1px solid #777; padding:7px;">accuracy</td>
+<td style="border:1px solid #777; padding:7px;">一部HDGではlocal post-processingが有効</td>
+<td style="border:1px solid #777; padding:7px;">superconvergenceは自動ではない</td>
+</tr>
+</table>
+
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>hybridisationを使う判断</b><br/>
+低次小規模問題で単純なimplementationを優先するなら，
+standard DGの方が扱いやすいことがあります．<br/>
+一方，高次・大規模・並列計算では，
+<b>local elimination + skeleton solve</b>
+の構造が大きな利点になり得ます．
+</div>
+</article></div>
+
+<h2>24．DGとCRはどこが似ていて，どこが違うか</h2>
 <div class="news"><article class="news-item">
 <table style="width:100%; border-collapse:collapse; margin:14px 0;">
 <tr><th style="border:1px solid #777; padding:7px;">method</th><th style="border:1px solid #777; padding:7px;">element間continuity</th><th style="border:1px solid #777; padding:7px;">coupling</th></tr>
@@ -922,7 +1149,7 @@ faceの低次momentを中心にcouplingする点にあります．
 </p>
 </article></div>
 
-<h2>24．anisotropic DGで何を監査するか</h2>
+<h2>25．anisotropic DGで何を監査するか</h2>
 <div class="news"><article class="news-item">
 <p>
 anisotropic meshでは，単に
@@ -954,7 +1181,7 @@ h_F
 </p>
 </article></div>
 
-<h2>25．ChatGPTへのDG implementation audit prompt</h2>
+<h2>26．ChatGPTへのDG implementation audit prompt</h2>
 <div class="news"><article class="news-item">
 <div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
 <b>Audit prompt</b><br/>
@@ -972,12 +1199,15 @@ h_F
 (11) \(L^2\) とbroken \(H^1\) errorが期待orderで収束するか，<br/>
 (12) anisotropic meshではnormal thicknessとtrace estimateを監査しているか，<br/>
 (13) WOPSIPをSIPGと同じbilinear formだと誤認していないか，<br/>
-(14) hybrid DGではskeleton unknownとelement unknownを区別しているか<br/>
+(14) hybrid DGではskeleton unknownとelement unknownを区別しているか，<br/>
+(15) static condensationでelement unknownをlocal eliminationしているか，<br/>
+(16) hybridisationによるglobal DoF削減を無条件に主張していないか，<br/>
+(17) Schur complementのconditioningとpreconditionerを別途監査しているか<br/>
 を順に確認してください．
 </div>
 </article></div>
 
-<h2>26．第19回の結論</h2>
+<h2>27．第19回の結論</h2>
 <div class="news"><article class="news-item">
 <p>
 DG法で最も大きく変わるのは，
