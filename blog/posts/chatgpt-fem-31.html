@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第31回：boundary layerでは点をどこに置くか — anisotropic sampling | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,PINNs,boundary layer,anisotropic sampling,Shishkin mesh,layer-adapted sampling,singular perturbation,collocation points,sampling geometry,directional fill distance,importance sampling"/>
+<meta name="description" content="Season 3 第7回（通算第31回）として，singularly perturbed convection-diffusion problemのboundary layerをPINNsでどうsamplingするかを考えます．Shishkin型transition point，normal/tangential sampling scales，anisotropic point cloud，importance weights，metric-scaled fill distanceを実装・監査します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-31.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-31.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-31.html",
+      "headline": "第31回：boundary layerでは点をどこに置くか — anisotropic sampling",
+      "description": "Singularly perturbed convection-diffusion problemのboundary layerに対し，Shishkin型transition pointとdirectional sampling scalesからanisotropic collocationを設計します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-31.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 3",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 3"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第31回：boundary layerでは点をどこに置くか — anisotropic sampling | Hiroki Ishizaka"/>
+<meta property="og:description" content="Layer thickness O(epsilon)を一様点群で追う必要はあるのか．Shishkin型anisotropic samplingをPINNsへ移します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-31.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第31回：boundary layerでは点をどこに置くか — anisotropic sampling | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="Boundary layers, Shishkin-type point placement and anisotropic sampling geometry for PINNs."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 3 第7回（通算第31回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第31回：boundary layerでは点をどこに置くか — anisotropic sampling</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 3 第7回（通算第31回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――layerは「点を増やす」だけでは足りない</h2>
+<div class="news"><article class="news-item">
+<p>
+前回はcorner singularityに対してradial graded samplingを導入しました．
+今回はsolutionが一方向にだけ急変するboundary layerを扱います．
+</p>
+<p>
+layerがboundaryに沿って長く，normal directionにだけ薄いなら，
+必要なのは
+</p>
+\[
+\boxed{
+h_\perp
+\ll
+h_\parallel
+}
+\tag{1}
+\]
+<p>
+というdirectional resolutionです．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>第31回の問い</b><br/>
+\[
+\boxed{
+\text{boundary layerの厚さが }O(\varepsilon)
+\text{ のとき，
+collocation pointsをどの方向に細かく置くべきか？}
+}
+\tag{2}
+\]
+</div>
+</article></div>
+
+<h2>1．model problemはsingularly perturbed convection–diffusion</h2>
+<div class="news"><article class="news-item">
+<p>
+単位正方形
+</p>
+\[
+\Omega=(0,1)^2
+\]
+<p>
+で
+</p>
+\[
+\boxed{
+-\varepsilon u_{xx}
++
+u_x
+-
+u_{yy}
+=
+f
+\quad\text{in }\Omega,
+\qquad
+0&lt;\varepsilon\ll1
+}
+\tag{3}
+\]
+<p>
+を考えます．
+</p>
+<p>
+\(x\)-directionにsmall diffusion，
+\(y\)-directionにはorder-one diffusionがあるanisotropic singular perturbation modelです．
+</p>
+</article></div>
+
+<h2>2．exact layer solutionを選ぶ</h2>
+<div class="news"><article class="news-item">
+<p>
+manufactured solutionを
+</p>
+\[
+\boxed{
+u^\ast(x,y)
+=
+\exp\left(
+-\frac{1-x}{\varepsilon}
+\right)
+\sin(\pi y)
+}
+\tag{4}
+\]
+<p>
+とします．
+</p>
+<p>
+これは \(x=1\) 近傍に厚さ \(O(\varepsilon)\) のboundary layerを持ち，
+\(y\)-directionにはsmoothです．
+</p>
+</article></div>
+
+<h2>3．PDEの右辺は簡単になる</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (4) から
+</p>
+\[
+u_x^\ast
+=
+\frac1\varepsilon u^\ast,
+\qquad
+u_{xx}^\ast
+=
+\frac1{\varepsilon^2}u^\ast,
+\qquad
+u_{yy}^\ast
+=
+-\pi^2u^\ast.
+\tag{5}
+\]
+<p>
+従って
+</p>
+\[
+-\varepsilon u_{xx}^\ast
++
+u_x^\ast
+-
+u_{yy}^\ast
+=
+\pi^2u^\ast.
+\]
+<p>
+つまり
+</p>
+\[
+\boxed{
+f(x,y)
+=
+\pi^2
+\exp\left(
+-\frac{1-x}{\varepsilon}
+\right)
+\sin(\pi y).
+}
+\tag{6}
+\]
+</article></div>
+
+<h2>4．boundary layerはderivative scaleを変える</h2>
+<div class="news"><article class="news-item">
+<p>
+layer normal derivativeは
+</p>
+\[
+\boxed{
+\partial_x^k u^\ast
+=
+\varepsilon^{-k}u^\ast.
+}
+\tag{7}
+\]
+<p>
+従って
+</p>
+\[
+|u_x^\ast|
+=
+O(\varepsilon^{-1}),
+\qquad
+|u_{xx}^\ast|
+=
+O(\varepsilon^{-2})
+\tag{8}
+\]
+<p>
+という大きなderivativeが幅 \(O(\varepsilon)\) のstripに集中します．
+</p>
+</article></div>
+
+<h2>5．global derivative normもparameter依存になる</h2>
+<div class="news"><article class="news-item">
+<p>
+\(x\)-integralについて
+</p>
+\[
+\int_0^1
+\exp\left(
+-\frac{2(1-x)}{\varepsilon}
+\right)dx
+=
+\frac{\varepsilon}{2}
+\left(
+1-e^{-2/\varepsilon}
+\right).
+\]
+<p>
+従って \(\varepsilon\to0\) で
+</p>
+\[
+\boxed{
+\|u^\ast\|_{L^2}^2
+\sim
+\frac{\varepsilon}{4},
+}
+\tag{9}
+\]
+<p>
+\[
+\boxed{
+\|u_x^\ast\|_{L^2}^2
+\sim
+\frac1{4\varepsilon},
+\qquad
+\|u_{xx}^\ast\|_{L^2}^2
+\sim
+\frac1{4\varepsilon^3}.
+}
+\tag{10}
+\]
+<p>
+solutionは各固定 \(\varepsilon&gt;0\) でsmoothでも，
+regularity constantsは \(\varepsilon\) に一様ではありません．
+</p>
+</article></div>
+
+<h2>6．layer coordinateに移すと必要なresolutionが見える</h2>
+<div class="news"><article class="news-item">
+<p>
+stretched coordinateを
+</p>
+\[
+\boxed{
+\xi
+=
+\frac{1-x}{\varepsilon},
+\qquad
+\eta=y
+}
+\tag{11}
+\]
+<p>
+とすると
+</p>
+\[
+u^\ast
+=
+e^{-\xi}\sin(\pi\eta).
+\]
+<p>
+layer directionでは \(O(1)\) scaleに戻ります．
+</p>
+<p>
+physical spacing \(h_x\) はstretched coordinateでは
+</p>
+\[
+\boxed{
+h_\xi
+=
+\frac{h_x}{\varepsilon}.
+}
+\tag{12}
+\]
+<p>
+従ってlayerをresolveするには少なくとも
+\[
+h_x
+\ll
+\varepsilon
+\]
+というdirectional conditionが自然です．
+</p>
+</article></div>
+
+<h2>7．uniform gridでは \(N_x\gtrsim\varepsilon^{-1}\) が必要になる</h2>
+<div class="news"><article class="news-item">
+<p>
+uniform \(x\)-spacing
+</p>
+\[
+h_x
+\approx
+\frac1{N_x}
+\]
+<p>
+で
+\[
+h_x\lesssim\varepsilon
+\]
+を要求すると
+</p>
+\[
+\boxed{
+N_x
+\gtrsim
+\varepsilon^{-1}.
+}
+\tag{13}
+\]
+<p>
+例えば \(\varepsilon=10^{-3}\) なら，
+\(x\)-directionだけでorder \(10^3\) pointsが必要になります．
+</p>
+</article></div>
+
+<h2>8．2次元で一様に増やすとさらに高価になる</h2>
+<div class="news"><article class="news-item">
+<p>
+もし
+\[
+N_x\sim N_y\sim\varepsilon^{-1}
+\]
+とすればtotal tensor pointsは
+</p>
+\[
+\boxed{
+N_{\rm total}
+\sim
+\varepsilon^{-2}.
+}
+\tag{14}
+\]
+<p>
+しかしsolutionは \(y\)-directionには \(\sin(\pi y)\) というsmooth scaleしか持ちません．
+</p>
+<p>
+つまりisotropic point refinementは
+<b>不要な方向にもDoFならぬsampling budgetを使う</b>ことになります．
+</p>
+</article></div>
+
+<h2>9．layer stripに何点入るかを数える</h2>
+<div class="news"><article class="news-item">
+<p>
+layer stripを
+</p>
+\[
+\boxed{
+S_c
+=
+\{
+(x,y):
+1-c\varepsilon
+&lt;
+x
+&lt;
+1
+\}
+}
+\tag{15}
+\]
+<p>
+とします．
+</p>
+<p>
+area-uniform random samplingでは
+</p>
+\[
+\boxed{
+\mathbb P(X\in S_c)
+=
+c\varepsilon
+}
+\tag{16}
+\]
+<p>
+なので，\(N\) points中のexpected layer countは
+</p>
+\[
+\boxed{
+N_{\rm layer}^{\rm unif}
+=
+c\varepsilon N.
+}
+\tag{17}
+\]
+</article></div>
+
+<h2>10．\(\varepsilon=10^{-3}\) ではlayer pointsが急減する</h2>
+<div class="news"><article class="news-item">
+<p>
+例えば \(c=5\)，\(\varepsilon=10^{-3}\) ならlayer stripのarea fractionは
+</p>
+\[
+5\times10^{-3}=0.005.
+\]
+<p>
+従って \(N=1000\) pointsでもexpected layer countは
+</p>
+\[
+\boxed{
+N_{\rm layer}^{\rm unif}
+=
+5.
+}
+\tag{18}
+\]
+<p>
+これはpoint cloudとしては非常に薄い観測です．
+</p>
+</article></div>
+
+<h2>11．Shishkin型transition pointをsamplingへ移す</h2>
+<div class="news"><article class="news-item">
+<p>
+layer-adapted meshの考え方を，
+まずdeterministic collocation pointsへ移します．
+</p>
+<p>
+transition widthを
+</p>
+\[
+\boxed{
+\tau
+=
+\min
+\left\{
+\frac12,\,
+\sigma\varepsilon\ln N_x
+\right\}
+}
+\tag{19}
+\]
+<p>
+とします．
+</p>
+<p>
+ここで \(\sigma&gt;0\) は普遍定数ではありません．
+target accuracy，layer decay，trial representation，lossに応じて選ぶparameterです．
+</p>
+</article></div>
+
+<h2>12．\(\sigma\) の意味はlayer tailから直接読める</h2>
+<div class="news"><article class="news-item">
+<p>
+\(\tau=\sigma\varepsilon\ln N_x&lt;1/2\) の場合，
+coarse regionの入口
+\[
+x=1-\tau
+\]
+でlayer amplitudeは
+</p>
+\[
+\exp\left(
+-\frac{\tau}{\varepsilon}
+\right)
+=
+\exp(-\sigma\ln N_x).
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+e^{-\tau/\varepsilon}
+=
+N_x^{-\sigma}.
+}
+\tag{20}
+\]
+<p>
+つまり \(\sigma\) は
+<b>fine regionの外へ残すlayer tailをどのalgebraic orderまで小さくするか</b>
+を決めています．
+</p>
+</article></div>
+
+<h2>13．係数 \(\sigma\) を固定公式にしてはいけない</h2>
+<div class="news"><article class="news-item">
+<p>
+classical Shishkin FEMではpolynomial degreeや証明したいuniform error boundに応じた代表的選択があります．
+</p>
+<p>
+しかしPINNsではtrial classがpolynomial spaceではないため，
+</p>
+\[
+\boxed{
+\sigma=k+1
+}
+\]
+<p>
+のようなFEM由来の選択をそのまま「PINNの最適値」として移してはいけません．
+</p>
+<p>
+ここでは
+</p>
+\[
+\boxed{
+\sigma
+=
+\text{layer tailを制御するdesign parameter}
+}
+\tag{21}
+\]
+<p>
+として扱います．
+</p>
+</article></div>
+
+<h2>14．Shishkin型 \(x\)-points</h2>
+<div class="news"><article class="news-item">
+<p>
+\(N_x\) を偶数として
+</p>
+\[
+\boxed{
+x_i
+=
+\begin{cases}
+\displaystyle
+\frac{2(1-\tau)}{N_x}\,i,
+&
+0\le i\le N_x/2,
+\\[8pt]
+\displaystyle
+1-\tau
++
+\frac{2\tau}{N_x}
+\left(
+i-\frac{N_x}{2}
+\right),
+&
+N_x/2&lt;i\le N_x
+\end{cases}
+}
+\tag{22}
+\]
+<p>
+とします．
+</p>
+<p>
+つまりcoarse region
+\[
+[0,1-\tau]
+\]
+とlayer region
+\[
+[1-\tau,1]
+\]
+へそれぞれ \(N_x/2\) intervalsを割り当てます．
+</p>
+</article></div>
+
+<h2>15．二種類のnormal spacing</h2>
+<div class="news"><article class="news-item">
+<p>
+coarse regionでは
+</p>
+\[
+\boxed{
+h_x^{\rm c}
+=
+\frac{2(1-\tau)}{N_x},
+}
+\tag{23}
+\]
+<p>
+layer regionでは
+</p>
+\[
+\boxed{
+h_x^{\rm f}
+=
+\frac{2\tau}{N_x}.
+}
+\tag{24}
+\]
+<p>
+\(\tau=\sigma\varepsilon\ln N_x\) なら
+</p>
+\[
+\boxed{
+h_x^{\rm f}
+=
+O\left(
+\frac{\varepsilon\ln N_x}{N_x}
+\right).
+}
+\tag{25}
+\]
+</article></div>
+
+<h2>16．\(y\)-directionは一様でよい</h2>
+<div class="news"><article class="news-item">
+<p>
+今回のexact solutionは
+\[
+\sin(\pi y)
+\]
+なので，tangential directionにはlayer scaleがありません．
+</p>
+<p>
+そこで
+</p>
+\[
+\boxed{
+y_j
+=
+\frac{j}{N_y},
+\qquad
+h_y
+=
+\frac1{N_y}.
+}
+\tag{26}
+\]
+<p>
+とします．
+</p>
+<p>
+layer regionでは
+</p>
+\[
+\boxed{
+h_x^{\rm f}
+\ll
+h_y
+}
+\tag{27}
+\]
+<p>
+となるanisotropic point cloudが自然です．
+</p>
+</article></div>
+
+<h2>17．anisotropy ratioをsampling geometryとして記録する</h2>
+<div class="news"><article class="news-item">
+<p>
+tensor-like point cloudならprototype indicatorとして
+</p>
+\[
+\boxed{
+\kappa_X^{\rm layer}
+=
+\frac{h_y}{h_x^{\rm f}}
+}
+\tag{28}
+\]
+<p>
+を記録できます．
+</p>
+<p>
+\(N_x\sim N_y=N\) なら
+</p>
+\[
+\boxed{
+\kappa_X^{\rm layer}
+\sim
+\frac1{2\sigma\varepsilon\ln N}.
+}
+\tag{29}
+\]
+<p>
+\(\varepsilon\to0\) で強いanisotropyが必要になります．
+</p>
+</article></div>
+
+<h2>18．数値例：\(\varepsilon=10^{-3}\)，\(N_x=128\)，\(\sigma=2\)</h2>
+<div class="news"><article class="news-item">
+<p>
+このとき
+</p>
+\[
+\tau
+=
+2\times10^{-3}\ln128
+\approx
+9.7041\times10^{-3}.
+\]
+<p>
+layer spacingは
+</p>
+\[
+\boxed{
+h_x^{\rm f}
+=
+\frac{2\tau}{128}
+\approx
+1.5163\times10^{-4}.
+}
+\tag{30}
+\]
+<p>
+uniform spacing
+\[
+1/128\approx7.8125\times10^{-3}
+\]
+と比べると，
+layer normal directionでは約51.5倍細かくなります．
+</p>
+<p>
+さらにtransition pointでのlayer tailは
+</p>
+\[
+\boxed{
+e^{-\tau/\varepsilon}
+=
+128^{-2}
+=
+6.1035\times10^{-5}.
+}
+\tag{31}
+\]
+</article></div>
+
+<h2>19．anisotropic samplingは「boundaryに点を置く」ことではない</h2>
+<div class="news"><article class="news-item">
+<p>
+boundary layerを見て
+\[
+x=1
+\]
+上へ大量のpointsを置くだけでは，
+boundary traceは詳しく見えてもnormal profile
+</p>
+\[
+e^{-(1-x)/\varepsilon}
+\]
+<p>
+をresolveできません．
+</p>
+<p>
+必要なのは
+</p>
+\[
+\boxed{
+\text{boundary上のdensity}
+\quad\text{ではなく}\quad
+\text{layer thicknessを横切るnormal resolution}.
+}
+\tag{32}
+\]
+</article></div>
+
+<h2>20．point cloudをlineへcollapseさせてもいけない</h2>
+<div class="news"><article class="news-item">
+<p>
+逆に
+</p>
+\[
+x_i\approx1
+\]
+<p>
+へ全pointsを集めると，
+第28回の一点集中の2次元版になります．
+</p>
+<p>
+layerへ集中していても，
+coarse regionのcoverageを失えば
+</p>
+\[
+\boxed{
+\text{anisotropic refinement}
+\quad\not\Rightarrow\quad
+\text{dimensional collapse}.
+}
+\tag{33}
+\]
+</article></div>
+
+<h2>21．metric-scaled fill distanceで見る</h2>
+<div class="news"><article class="news-item">
+<p>
+layer coordinateに合わせたmetricを
+</p>
+\[
+\boxed{
+M_\varepsilon
+=
+\begin{pmatrix}
+\varepsilon^{-2} & 0\\
+0 & 1
+\end{pmatrix}
+}
+\tag{34}
+\]
+<p>
+とします．
+</p>
+<p>
+point cloud \(X\) に対し
+</p>
+\[
+\boxed{
+h_{X,M_\varepsilon}
+=
+\sup_{z\in\Omega}
+\min_{x_i\in X}
+\sqrt{
+(z-x_i)^{\top}
+M_\varepsilon
+(z-x_i)
+}
+}
+\tag{35}
+\]
+<p>
+を考えると，
+physical Euclidean geometryではなく
+<b>layer-scaled geometry</b>でcoverageを測れます．
+</p>
+</article></div>
+
+<h2>22．uniform physical pointsはstretched coordinatesでは粗い</h2>
+<div class="news"><article class="news-item">
+<p>
+uniform physical spacing
+\[
+h_x=1/N_x
+\]
+はlayer coordinateでは
+</p>
+\[
+\boxed{
+h_\xi
+=
+\frac1{\varepsilon N_x}.
+}
+\tag{36}
+\]
+<p>
+\(\varepsilon N_x\ll1\) なら
+\[
+h_\xi\gg1
+\]
+なので，layer profileを1点より粗いscaleでしか見ていないことになります．
+</p>
+</article></div>
+
+<h2>23．random anisotropic samplerも作れる</h2>
+<div class="news"><article class="news-item">
+<p>
+deterministic Shishkin-type points以外に，
+layer density
+</p>
+\[
+\boxed{
+q_{\rm lay}(x)
+=
+\frac{
+e^{-(1-x)/\varepsilon}
+}{
+\varepsilon
+\left(
+1-e^{-1/\varepsilon}
+\right)
+}
+}
+\tag{37}
+\]
+<p>
+からrandom samplingする方法も考えられます．
+</p>
+<p>
+これはlayer amplitudeに比例して \(x=1\) へpointsを集めます．
+</p>
+</article></div>
+
+<h2>24．layer distributionはinverse CDFでsampleできる</h2>
+<div class="news"><article class="news-item">
+<p>
+\(U\sim U(0,1)\) とすると
+</p>
+\[
+\boxed{
+x
+=
+1
++
+\varepsilon
+\log
+\left[
+e^{-1/\varepsilon}
++
+U
+\left(
+1-e^{-1/\varepsilon}
+\right)
+\right]
+}
+\tag{38}
+\]
+<p>
+はdensity \(q_{\rm lay}\) に従います．
+</p>
+<p>
+\(y\) は一様にsampleすれば，
+normal directionだけをbiasedにできます．
+</p>
+</article></div>
+
+<h2>25．explorationとlayer exploitationをmixする</h2>
+<div class="news"><article class="news-item">
+<p>
+全pointsをlayer distributionから取るとcoarse regionを失います．
+そこで
+</p>
+\[
+\boxed{
+q_\beta(x)
+=
+(1-\beta)
++
+\beta q_{\rm lay}(x),
+\qquad
+0\le\beta&lt;1
+}
+\tag{39}
+\]
+<p>
+というmixtureを使えます．
+</p>
+<p>
+一様成分がglobal coverage，
+layer成分がnormal resolutionを担当します．
+</p>
+</article></div>
+
+<h2>26．equal weightsならlayer-weighted objectiveになる</h2>
+<div class="news"><article class="news-item">
+<p>
+\(q_\beta\) からsampleしてequal weightsで
+</p>
+\[
+\frac1N\sum_i|r_\theta(x_i,y_i)|^2
+\]
+<p>
+を使えば，期待値は
+</p>
+\[
+\boxed{
+\int_\Omega
+|r_\theta|^2
+q_\beta(x)\,dx\,dy.
+}
+\tag{40}
+\]
+<p>
+つまりcontinuous area residualではなく
+layer-weighted residualを学習します．
+</p>
+</article></div>
+
+<h2>27．same residual normを保つならimportance correction</h2>
+<div class="news"><article class="news-item">
+<p>
+area-uniform residual
+</p>
+\[
+\int_\Omega|r_\theta|^2\,dx\,dy
+\]
+<p>
+をtargetに保つなら，
+sample density \(q_\beta\) に対して
+</p>
+\[
+\boxed{
+w(x)
+=
+\frac1{q_\beta(x)}
+}
+\tag{41}
+\]
+<p>
+を使うimportance correctionが考えられます．
+</p>
+<p>
+ただし \(q_\beta\) が非常に小さい領域を作るとweightsのvarianceが大きくなるため，
+\[
+\beta&lt;1
+\]
+としてuniform floorを残す意味があります．
+</p>
+</article></div>
+
+<h2>28．Shishkin-type pointsをコード化する</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def shishkin_x_points(Nx, eps, sigma, device):
+    assert Nx % 2 == 0
+
+    tau = min(
+        0.5,
+        sigma * eps * math.log(Nx)
+    )
+
+    n2 = Nx // 2
+
+    left = torch.linspace(
+        0.0,
+        1.0 - tau,
+        n2 + 1,
+        device=device
+    )
+
+    right = torch.linspace(
+        1.0 - tau,
+        1.0,
+        n2 + 1,
+        device=device
+    )[1:]
+
+    x = torch.cat(
+        [left, right]
+    )
+
+    return x, tau
+</code></pre>
+</article></div>
+
+<h2>29．tensor point cloudを作る</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def anisotropic_tensor_points(
+    Nx,
+    Ny,
+    eps,
+    sigma,
+    device
+):
+    x, tau = shishkin_x_points(
+        Nx,
+        eps,
+        sigma,
+        device
+    )
+
+    y = torch.linspace(
+        0.0, 1.0,
+        Ny + 1,
+        device=device
+    )
+
+    X, Y = torch.meshgrid(
+        x,
+        y,
+        indexing="ij"
+    )
+
+    pts = torch.stack(
+        [X.reshape(-1), Y.reshape(-1)],
+        dim=1
+    )
+
+    return pts, tau
+</code></pre>
+<p>
+trainingでboundary pointsを別管理するなら，
+ここからinterior rowsだけを抽出します．
+</p>
+</article></div>
+
+<h2>30．layer-aware random sampler</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def layer_x_random(
+    N,
+    eps,
+    device,
+    generator=None
+):
+    U = torch.rand(
+        (N, 1),
+        device=device,
+        generator=generator
+    )
+
+    a = math.exp(-1.0 / eps)
+
+    x = (
+        1.0
+        + eps * torch.log(
+            a + U * (1.0 - a)
+        )
+    )
+
+    return x
+</code></pre>
+</article></div>
+
+<h2>31．PINN residualにもcancellation scaleがある</h2>
+<div class="news"><article class="news-item">
+<p>
+exact layerでは
+</p>
+\[
+-\varepsilon u_{xx}^\ast
+=
+-\frac1\varepsilon u^\ast,
+\qquad
+u_x^\ast
+=
+\frac1\varepsilon u^\ast.
+\]
+<p>
+二つのlarge termsがcancelします．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{small residual}
+=
+\text{each differential term is small}
+}
+\tag{42}
+\]
+<p>
+ではありません．
+</p>
+<p>
+automatic differentiationのprecisionやloss scalingを監査するときは，
+operator termごとのmagnitudeも記録した方が安全です．
+</p>
+</article></div>
+
+<h2>32．evaluationもdirectionalに分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+global \(L^2\) errorだけでなく
+</p>
+\[
+\boxed{
+E_x
+=
+\sqrt{\varepsilon}
+\,
+\|(u_\theta-u^\ast)_x\|_{L^2},
+}
+\tag{43}
+\]
+<p>
+\[
+\boxed{
+E_y
+=
+\|(u_\theta-u^\ast)_y\|_{L^2}
+}
+\tag{44}
+\]
+<p>
+のようなdirectional errorsを分けて記録します．
+</p>
+<p>
+またlayer strip
+\[
+S_c
+\]
+でのlocal errorも別に測ります．
+</p>
+</article></div>
+
+<h2>33．AIがanisotropic samplingで間違えやすい点</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">mistake</th><th style="border:1px solid #777; padding:7px;">何が壊れるか</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">layerだから全方向を同じ密度で増やす</td><td style="border:1px solid #777; padding:7px;">sampling budgetを浪費する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">boundary上だけに点を集める</td><td style="border:1px solid #777; padding:7px;">normal layer profileを解像できない</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">Shishkinの \(\sigma\) を普遍定数とする</td><td style="border:1px solid #777; padding:7px;">target accuracy / trial class依存性を無視する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">biased pointsにequal weightsを付けて同じlossと呼ぶ</td><td style="border:1px solid #777; padding:7px;">training measureを変える</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">Euclidean fill distanceだけを見る</td><td style="border:1px solid #777; padding:7px;">layer-normal resolutionを見落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">small residualから各operator termもsmallと判断</td><td style="border:1px solid #777; padding:7px;">large-term cancellationを見落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">anisotropic samplingをline collapseと同一視</td><td style="border:1px solid #777; padding:7px;">global coverageを失う</td></tr>
+</table>
+</article></div>
+
+<h2>34．anisotropic-sampling audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このPINN boundary-layer sampling experimentを数学的に監査してください．<br/>
+(1) layer directionとtangential directionを明示しているか，<br/>
+(2) layer thickness \(O(\varepsilon)\) とderivative scalesを確認しているか，<br/>
+(3) uniform samplingでlayer stripに何点入るかを記録しているか，<br/>
+(4) \(h_x^{\rm f}\)，\(h_y\)，anisotropy ratioを記録しているか，<br/>
+(5) Shishkin transition pointの \(\sigma\) を普遍定数として扱っていないか，<br/>
+(6) \(e^{-\tau/\varepsilon}=N_x^{-\sigma}\) を使ってfine-region widthの意味を確認しているか，<br/>
+(7) biased samplingとimportance-weighted samplingを区別しているか，<br/>
+(8) boundary上へのpoint concentrationとnormal layer resolutionを混同していないか，<br/>
+(9) Euclidean geometryだけでなくlayer-scaled metricも確認しているか，<br/>
+(10) operator termsのlarge cancellationを監査しているか，<br/>
+(11) global errorとlayer-local / directional errorを分けて評価しているか，<br/>
+(12) anisotropic samplingがglobal coverageを失っていないか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>35．第31回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+boundary layerではsolution variation scaleがdirectionによって違います．
+</p>
+\[
+\boxed{
+\text{normal scale}
+=
+O(\varepsilon),
+\qquad
+\text{tangential scale}
+=
+O(1).
+}
+\tag{45}
+\]
+<p>
+従ってsamplingにも
+</p>
+\[
+\boxed{
+h_\perp
+\ll
+h_\parallel
+}
+\tag{46}
+\]
+<p>
+というanisotropyが必要です．
+</p>
+<p>
+Shishkin型transition point
+</p>
+\[
+\tau
+=
+\min
+\left\{
+\frac12,\,
+\sigma\varepsilon\ln N_x
+\right\}
+\]
+<p>
+は，layer tailを
+</p>
+\[
+\boxed{
+e^{-\tau/\varepsilon}
+=
+N_x^{-\sigma}
+}
+\tag{47}
+\]
+<p>
+まで落とすfine regionを設計する考え方として，
+PINN point placementにも移せます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 3 第7回の原則</b><br/>
+<b>layer problemではpoint countではなく，
+solutionが急変するnormal directionのsampling scaleを設計する．</b>
+</div>
+<p>
+次回はここまでのuniform・graded・anisotropic samplingをまとめ，
+<b>第32回：点配置を誤差から変える — residual-adaptive sampling</b>
+へ進みます．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>H.-G. Roos, M. Stynes and L. Tobiska, <i>Robust Numerical Methods for Singularly Perturbed Differential Equations</i>, 2nd ed., Springer, 2008.</li>
+<li>M. Raissi, P. Perdikaris and G. E. Karniadakis, “Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations”, <i>Journal of Computational Physics</i> 378 (2019), 686–707.</li>
+<li><a href="./anisotropic-geometry-07.html">Shishkin meshは正則か，準正則か</a></li>
+<li><a href="./chatgpt-fem-26.html">第26回：Deep Ritzでは点をどこに置くか — quadratureとsampling geometry</a></li>
+<li><a href="./chatgpt-fem-28.html">第28回：PINNsでは点配置で答えが変わるか — uniform・random・adaptive sampling</a></li>
+<li><a href="./chatgpt-fem-30.html">第30回：角特異性をPINNsは捉えられるか — regularityとgraded sampling</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 3 前回：</b><a href="./chatgpt-fem-30.html">第30回：角特異性をPINNsは捉えられるか — regularityとgraded sampling</a></p>
+<p><b>次回：</b>第32回：点配置を誤差から変える — residual-adaptive sampling（構想中）</p>
+<p><a href="../#chatgpt-fem-season3">Season 3一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
