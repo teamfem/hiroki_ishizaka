@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第29回：境界点は何点必要か — interior lossとboundary loss | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,PINNs,boundary loss,interior loss,boundary sampling,collocation points,Dirichlet boundary condition,hard constraint,soft constraint,penalty method,sampling geometry,trace,PyTorch"/>
+<meta name="description" content="Season 3 第5回（通算第29回）として，PINNsのinterior lossとboundary lossを分離して設計します．境界点数の幾何学的スケーリング，境界samplingのfill distance，raw sumとmean lossの違い，有限個の境界点ではDirichlet traceを保証できない明示的harmonic counterexample，hard constraintとの違いを実装・監査します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-29.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-29.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-29.html",
+      "headline": "第29回：境界点は何点必要か — interior lossとboundary loss",
+      "description": "PINNsのinterior lossとboundary lossを分離し，境界点数，boundary sampling geometry，loss weighting，hard/soft Dirichlet enforcementを数値解析します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-29.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 3",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 3"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第29回：境界点は何点必要か — interior lossとboundary loss | Hiroki Ishizaka"/>
+<meta property="og:description" content="境界点を増やせばDirichlet条件は保証できるのか．interior lossとboundary lossを分離し，境界sampling geometryとloss weightingを監査します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-29.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第29回：境界点は何点必要か — interior lossとboundary loss | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="How many boundary points does a PINN need? Boundary sampling geometry, loss normalisation, and an explicit harmonic counterexample."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 3 第5回（通算第29回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第29回：境界点は何点必要か — interior lossとboundary loss</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 3 第5回（通算第29回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――境界条件はPDE residualとは別の情報である</h2>
+<div class="news"><article class="news-item">
+<p>
+これまでの1次元実験では
+</p>
+\[
+u_\theta(x)=x(1-x)N_\theta(x)
+\]
+<p>
+としてDirichlet boundary conditionをhardに満たしていました．
+そのため「境界点をどこに置くか」という問題を意図的に消していました．
+</p>
+<p>
+今回はsoft enforcementに戻り，
+</p>
+\[
+\boxed{
+\text{interior PDE information}
+\quad+\quad
+\text{boundary trace information}
+}
+\tag{1}
+\]
+<p>
+を別々にsamplingします．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>第29回の問い</b><br/>
+\[
+\boxed{
+N_{\partial}
+\text{ 個のboundary pointsで}
+\quad
+u_\theta=g
+\text{ on }\partial\Omega
+\quad
+\text{をどこまで保証できるか？}
+}
+\tag{2}
+\]
+</div>
+</article></div>
+
+<h2>1．2次元Poisson problemへ進む</h2>
+<div class="news"><article class="news-item">
+<p>
+境界samplingを本格的に見るため，
+</p>
+\[
+\Omega=(0,1)^2
+\]
+<p>
+で
+</p>
+\[
+\boxed{
+-\Delta u=f
+\quad\text{in }\Omega,
+\qquad
+u=g
+\quad\text{on }\partial\Omega
+}
+\tag{3}
+\]
+<p>
+を考えます．
+</p>
+<p>
+manufactured solutionとして
+</p>
+\[
+\boxed{
+u^\ast(x,y)
+=
+\sin(\pi x)\sin(\pi y),
+\qquad
+g=0,
+}
+\tag{4}
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+f(x,y)
+=
+2\pi^2
+\sin(\pi x)\sin(\pi y)
+}
+\tag{5}
+\]
+<p>
+を使います．
+</p>
+</article></div>
+
+<h2>2．interior lossとboundary lossを分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+interior collocation pointsを
+\[
+X_\Omega=\{x_i\}_{i=1}^{N_\Omega}
+\]
+boundary pointsを
+\[
+X_{\partial}=\{z_j\}_{j=1}^{N_{\partial}}
+\]
+とします．
+</p>
+<p>
+strong residualは
+</p>
+\[
+r_\theta(x)
+=
+-\Delta u_\theta(x)-f(x)
+\tag{6}
+\]
+<p>
+です．
+</p>
+<p>
+sampled lossesを
+</p>
+\[
+\boxed{
+\mathcal L_{\Omega,N}
+=
+\frac1{N_\Omega}
+\sum_{i=1}^{N_\Omega}
+|r_\theta(x_i)|^2
+}
+\tag{7}
+\]
+<p>
+と
+</p>
+\[
+\boxed{
+\mathcal L_{\partial,N}
+=
+\frac1{N_{\partial}}
+\sum_{j=1}^{N_{\partial}}
+|u_\theta(z_j)-g(z_j)|^2
+}
+\tag{8}
+\]
+<p>
+に分けます．
+</p>
+</article></div>
+
+<h2>3．total lossにはbalance parameterが必要である</h2>
+<div class="news"><article class="news-item">
+<p>
+最も単純には
+</p>
+\[
+\boxed{
+\mathcal J_N(\theta)
+=
+\mathcal L_{\Omega,N}
++
+\lambda_{\partial}
+\mathcal L_{\partial,N}
+}
+\tag{9}
+\]
+<p>
+とします．
+</p>
+<p>
+ここで
+\[
+\lambda_{\partial}&gt;0
+\]
+はboundary loss weightです．
+</p>
+<p>
+このparameterは単なるoptimizer trickではなく，
+<b>異なるnorm・異なるdimensionの情報をどうbalanceするか</b>
+というmethod designです．
+</p>
+</article></div>
+
+<h2>4．raw sumを使うと点数を変えただけでmethodが変わる</h2>
+<div class="news"><article class="news-item">
+<p>
+もしmeanではなく
+</p>
+\[
+\widetilde{\mathcal J}_N
+=
+\sum_{i=1}^{N_\Omega}|r_\theta(x_i)|^2
++
+\lambda_{\partial}
+\sum_{j=1}^{N_{\partial}}
+|u_\theta(z_j)-g(z_j)|^2
+\tag{10}
+\]
+<p>
+とすると，
+\(N_{\partial}\) を2倍にしただけでboundary termのrelative weightもほぼ2倍になります．
+</p>
+<p>
+つまり
+</p>
+\[
+\boxed{
+\text{point count change}
+\Longrightarrow
+\text{effective penalty change}
+}
+\tag{11}
+\]
+<p>
+です．
+</p>
+<p>
+sampling strategyとloss weightingを分離したいなら，
+mean lossまたは適切なquadrature weightsを使う方が透明です．
+</p>
+</article></div>
+
+<h2>5．continuous targetもdomainとboundaryで別のmeasureを持つ</h2>
+<div class="news"><article class="news-item">
+<p>
+continuous analogueをnormalised averageで書けば
+</p>
+\[
+\boxed{
+\mathcal J(u)
+=
+\frac1{|\Omega|}
+\int_\Omega
+|-\Delta u-f|^2\,dx
++
+\lambda_{\partial}
+\frac1{|\partial\Omega|}
+\int_{\partial\Omega}
+|u-g|^2\,ds.
+}
+\tag{12}
+\]
+<p>
+interiorは\(d\)-dimensional measure，
+boundaryは\((d-1)\)-dimensional measureです．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+N_\Omega
+\quad\text{と}\quad
+N_{\partial}
+\text{ を単純に同数にする理由はない．}
+}
+\tag{13}
+\]
+</article></div>
+
+<h2>6．同じgeometric resolutionなら点数のscalingが違う</h2>
+<div class="news"><article class="news-item">
+<p>
+quasi-uniform sampling scaleを \(h\) とすると，
+\(d\) 次元domain内では概ね
+</p>
+\[
+\boxed{
+N_\Omega
+\asymp
+h^{-d},
+}
+\tag{14}
+\]
+<p>
+一方boundary上では
+</p>
+\[
+\boxed{
+N_{\partial}
+\asymp
+h^{-(d-1)}.
+}
+\tag{15}
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+N_{\partial}
+\asymp
+N_\Omega^{(d-1)/d}.
+}
+\tag{16}
+\]
+<p>
+2次元ならprototype relationは
+</p>
+\[
+\boxed{
+N_{\partial}
+\asymp
+N_\Omega^{1/2}.
+}
+\tag{17}
+\]
+<p>
+これは「必要十分なboundary point数」の定理ではなく，
+<b>同じ幾何学的resolutionを揃えるときのscaling rule</b>です．
+</p>
+</article></div>
+
+<h2>7．2次元squareならedgewise spacingを見る</h2>
+<div class="news"><article class="news-item">
+<p>
+各edge \(F\subset\partial\Omega\) に
+\(N_F\) pointsを置くなら
+</p>
+\[
+\boxed{
+h_{\partial,F}
+=
+\sup_{z\in F}
+\min_{z_j\in X_{\partial}\cap F}
+|z-z_j|
+}
+\tag{18}
+\]
+<p>
+をboundary fill scaleとして使えます．
+</p>
+<p>
+globalには
+</p>
+\[
+\boxed{
+h_{\partial X}
+=
+\max_{F}
+h_{\partial,F}.
+}
+\tag{19}
+\]
+<p>
+点数だけでなく，
+<b>どのedgeに大きなboundary gapが残っているか</b>
+を記録します．
+</p>
+</article></div>
+
+<h2>8．boundary separationも必要である</h2>
+<div class="news"><article class="news-item">
+<p>
+boundary pointsが一部へ集中しているかを見るため
+</p>
+\[
+\boxed{
+q_{\partial X}
+=
+\frac12
+\min_{i\ne j}
+d_{\partial\Omega}(z_i,z_j)
+}
+\tag{20}
+\]
+<p>
+を使います．
+</p>
+<p>
+polygonではedge arclengthとcorner connectivityを考慮したboundary distanceを使えます．
+</p>
+<p>
+prototype ratioは
+</p>
+\[
+\boxed{
+\rho_{\partial X}
+=
+\frac{h_{\partial X}}{q_{\partial X}}.
+}
+\tag{21}
+\]
+</article></div>
+
+<h2>9．有限個のboundary pointsだけではDirichlet traceを保証できない</h2>
+<div class="news"><article class="news-item">
+<p>
+これは単なる注意ではなく，明示的に示せます．
+</p>
+<p>
+top edge
+\[
+y=1
+\]
+に
+</p>
+\[
+\boxed{
+x_j
+=
+\frac{j}{m},
+\qquad
+j=1,\ldots,m-1
+}
+\tag{22}
+\]
+<p>
+というboundary sampleを置きます．
+</p>
+<p>
+次のharmonic functionを考えます．
+</p>
+\[
+\boxed{
+h_m(x,y)
+=
+\sin(m\pi x)
+\frac{\sinh(m\pi y)}{\sinh(m\pi)}.
+}
+\tag{23}
+\]
+</article></div>
+
+<h2>10．このfunctionはinterior PDE residualを全く変えない</h2>
+<div class="news"><article class="news-item">
+<p>
+直接計算すると
+</p>
+\[
+\partial_{xx}h_m
+=
+-(m\pi)^2h_m,
+\qquad
+\partial_{yy}h_m
+=
+(m\pi)^2h_m.
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+\Delta h_m=0
+\quad\text{in }\Omega.
+}
+\tag{24}
+\]
+<p>
+つまり
+</p>
+\[
+\widetilde u
+=
+u^\ast+c\,h_m
+\tag{25}
+\]
+<p>
+としても
+</p>
+\[
+\boxed{
+-\Delta\widetilde u-f=0
+\quad\text{everywhere in }\Omega.
+}
+\tag{26}
+\]
+</article></div>
+
+<h2>11．sampled boundary lossもzeroにできる</h2>
+<div class="news"><article class="news-item">
+<p>
+\(h_m\) は
+</p>
+\[
+h_m(0,y)=h_m(1,y)=h_m(x,0)=0.
+\]
+<p>
+top edgeでは
+</p>
+\[
+h_m(x,1)=\sin(m\pi x).
+\]
+<p>
+従って式 (22) のsamplesでは
+</p>
+\[
+\boxed{
+h_m(x_j,1)
+=
+\sin(j\pi)
+=
+0.
+}
+\tag{27}
+\]
+<p>
+他の3 edgesでもzeroなので，
+これらのfinite boundary samplesに対して
+</p>
+\[
+\boxed{
+\mathcal L_{\partial,N}(\widetilde u)=0.
+}
+\tag{28}
+\]
+</article></div>
+
+<h2>12．それでもboundary conditionは点の間で破れている</h2>
+<div class="news"><article class="news-item">
+<p>
+top edgeのsample間では
+</p>
+\[
+\widetilde u(x,1)
+=
+c\sin(m\pi x),
+\]
+<p>
+なので \(c\ne0\) ならzero boundary conditionを満たしません．
+</p>
+<p>
+しかも式 (26) と (28) から
+</p>
+\[
+\boxed{
+\mathcal L_{\Omega,N}=0,
+\qquad
+\mathcal L_{\partial,N}=0
+}
+\tag{29}
+\]
+<p>
+が同時に起こり得ます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>境界samplingの本質</b><br/>
+<b>interior PDEをeverywhere満たし，boundary samplesも全部満たしていても，
+finite boundary observationsだけでは正しいDirichlet traceを決められない．</b>
+</div>
+</article></div>
+
+<h2>13．「境界点を何点置けば十分か」に普遍的な答えはない</h2>
+<div class="news"><article class="news-item">
+<p>
+上のcounterexampleでは
+\(m\) をboundary point数に合わせて大きくできます．
+</p>
+<p>
+従ってunrestricted smooth trial classに対して
+</p>
+\[
+\boxed{
+N_{\partial}
+=
+\text{fixed finite number}
+}
+\tag{30}
+\]
+<p>
+だけからcontinuous boundary traceを保証することはできません．
+</p>
+<p>
+保証には追加情報が必要です．
+例えば
+</p>
+<ul>
+<li>hard boundary enforcement，</li>
+<li>trial classのfrequency / smoothness control，</li>
+<li>boundary sampling inequality，</li>
+<li>independent boundary quadrature，</li>
+<li>verified trace norm，</li>
+</ul>
+<p>
+などです．
+</p>
+</article></div>
+
+<h2>14．hard constraintならboundary sampling problemを消せる</h2>
+<div class="news"><article class="news-item">
+<p>
+zero Dirichletならsquareでは例えば
+</p>
+\[
+\boxed{
+u_\theta(x,y)
+=
+x(1-x)y(1-y)N_\theta(x,y)
+}
+\tag{31}
+\]
+<p>
+とすれば
+</p>
+\[
+u_\theta=0
+\quad\text{on }\partial\Omega
+\]
+<p>
+がexactly成立します．
+</p>
+<p>
+この場合
+</p>
+\[
+\boxed{
+N_{\partial}=0
+}
+\tag{32}
+\]
+<p>
+でもDirichlet condition自体は満たされます．
+</p>
+<p>
+つまり「必要なboundary point数」は
+<b>boundary conditionのenforcement method</b>にも依存します．
+</p>
+</article></div>
+
+<h2>15．nonzero Dirichlet dataもextensionでhardにできる</h2>
+<div class="news"><article class="news-item">
+<p>
+boundary extension \(G\) とvanishing factor \(\rho\) を使い
+</p>
+\[
+\boxed{
+u_\theta
+=
+G
++
+\rho N_\theta,
+\qquad
+G|_{\partial\Omega}=g,
+\quad
+\rho|_{\partial\Omega}=0
+}
+\tag{33}
+\]
+<p>
+とすればhard enforcementできます．
+</p>
+<p>
+ただし複雑geometry，mixed boundary conditions，corner，distance-function regularityでは
+\(G\) や \(\rho\) の構成自体が新しい問題になります．
+</p>
+</article></div>
+
+<h2>16．hard constraintにも代償がある</h2>
+<div class="news"><article class="news-item">
+<p>
+hard constraintはboundary lossを消しますが，
+</p>
+\[
+u_\theta=G+\rho N_\theta
+\]
+<p>
+というparameterisationによって
+</p>
+<ul>
+<li>gradient scale，</li>
+<li>approximation class，</li>
+<li>conditioning，</li>
+<li>corner behaviour，</li>
+</ul>
+<p>
+が変わります．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{hard BC}
+\not\Rightarrow
+\text{all boundary-related numerical issues disappear}.
+}
+\tag{34}
+\]
+</article></div>
+
+<h2>17．soft boundary lossはNitsche法そのものではない</h2>
+<div class="news"><article class="news-item">
+<p>
+PINNの
+</p>
+\[
+\lambda_{\partial}
+\|u_\theta-g\|_{L^2(\partial\Omega)}^2
+\]
+<p>
+はpenalty型です．
+</p>
+<p>
+しかしsymmetric Nitsche methodには
+normal fluxとのconsistency termsも入ります．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{boundary MSE penalty}
+\neq
+\text{Nitsche method}.
+}
+\tag{35}
+\]
+<p>
+「弱くDirichlet条件を課す」という表面的類似だけで同一視してはいけません．
+</p>
+</article></div>
+
+<h2>18．\(\lambda_{\partial}\) を大きくすればよいわけでもない</h2>
+<div class="news"><article class="news-item">
+<p>
+\(\lambda_{\partial}\) が小さすぎればboundary errorを許し，
+大きすぎればoptimizerがboundary termを優先しすぎて
+interior residualの改善が遅くなる可能性があります．
+</p>
+<p>
+schematically
+</p>
+\[
+\boxed{
+\lambda_{\partial}
+\downarrow
+:
+\text{boundary under-enforcement},
+\qquad
+\lambda_{\partial}
+\uparrow
+:
+\text{loss imbalance / conditioning}.
+}
+\tag{36}
+\]
+<p>
+これは点数とは別のparameterです．
+</p>
+</article></div>
+
+<h2>19．boundary point数とboundary weightを混同しない</h2>
+<div class="news"><article class="news-item">
+<p>
+mean lossを使えば，
+\(N_{\partial}\) を増やしても
+boundary termのaverage scaleは自動では増えません．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+N_{\partial}
+:
+\text{boundary resolution},
+\qquad
+\lambda_{\partial}
+:
+\text{loss balance}
+}
+\tag{37}
+\]
+<p>
+と役割を分けられます．
+</p>
+<p>
+raw sumsを使うとこの二つが混ざります．
+</p>
+</article></div>
+
+<h2>20．cornersとboundary-condition junctionsは別に扱う</h2>
+<div class="news"><article class="news-item">
+<p>
+polygonではedge interiorだけでなくcornerも重要です．
+</p>
+<p>
+特にDirichlet / Neumannが切り替わるpointやre-entrant cornerでは，
+trace regularityとsolution regularityの両方が変わり得ます．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{uniform edge sampling}
++
+\text{special points}
+}
+\tag{38}
+\]
+<p>
+という設計が必要になる場合があります．
+</p>
+<p>
+これは次回のcorner singularityとgraded samplingへつながります．
+</p>
+</article></div>
+
+<h2>21．square boundary samplerを実装する</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def square_boundary_points(n_per_edge, device):
+    t = torch.linspace(
+        0.0, 1.0,
+        n_per_edge + 2,
+        device=device
+    )[1:-1]
+
+    z = torch.zeros_like(t)
+    o = torch.ones_like(t)
+
+    bottom = torch.stack([t, z], dim=1)
+    top    = torch.stack([t, o], dim=1)
+    left   = torch.stack([z, t], dim=1)
+    right  = torch.stack([o, t], dim=1)
+
+    return torch.cat(
+        [bottom, top, left, right],
+        dim=0
+    )
+</code></pre>
+<p>
+corner pointsを別途含める場合はduplicate countingを避けます．
+</p>
+</article></div>
+
+<h2>22．interior samplerもboundary samplerと分ける</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def square_interior_points(N, device, generator=None):
+    x = torch.rand(
+        (N, 2),
+        device=device,
+        generator=generator
+    )
+
+    return x
+</code></pre>
+<p>
+interior seedとboundary seedを別々に管理できるようにしておくと，
+sampling effectを切り分けやすくなります．
+</p>
+</article></div>
+
+<h2>23．loss implementation</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def total_loss(
+    model,
+    x_int,
+    x_bnd,
+    lambda_bnd
+):
+    r = pde_residual_2d(
+        model,
+        x_int
+    )
+
+    u_bnd = model(x_bnd)
+
+    loss_int = torch.mean(
+        r ** 2
+    )
+
+    loss_bnd = torch.mean(
+        u_bnd ** 2
+    )
+
+    loss = (
+        loss_int
+        + lambda_bnd * loss_bnd
+    )
+
+    return loss, loss_int, loss_bnd
+</code></pre>
+<p>
+totalだけでなく
+\[
+\mathcal L_{\Omega,N},
+\qquad
+\mathcal L_{\partial,N}
+\]
+を別々にlogします．
+</p>
+</article></div>
+
+<h2>24．2次元Laplacianをautomatic differentiationで作る</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def pde_residual_2d(model, x):
+    x = (
+        x.clone()
+         .detach()
+         .requires_grad_(True)
+    )
+
+    u = model(x)
+
+    grad_u = torch.autograd.grad(
+        u,
+        x,
+        grad_outputs=torch.ones_like(u),
+        create_graph=True
+    )[0]
+
+    ux = grad_u[:, 0:1]
+    uy = grad_u[:, 1:2]
+
+    uxx = torch.autograd.grad(
+        ux,
+        x,
+        grad_outputs=torch.ones_like(ux),
+        create_graph=True
+    )[0][:, 0:1]
+
+    uyy = torch.autograd.grad(
+        uy,
+        x,
+        grad_outputs=torch.ones_like(uy),
+        create_graph=True
+    )[0][:, 1:2]
+
+    xx = x[:, 0:1]
+    yy = x[:, 1:2]
+
+    f = (
+        2.0 * math.pi ** 2
+        * torch.sin(math.pi * xx)
+        * torch.sin(math.pi * yy)
+    )
+
+    return -(uxx + uyy) - f
+</code></pre>
+</article></div>
+
+<h2>25．boundary studyの比較protocol</h2>
+<div class="news"><article class="news-item">
+<p>
+境界点数だけを比較するなら
+</p>
+\[
+\boxed{
+\begin{aligned}
+&\text{same network},\\
+&\text{same initial parameters},\\
+&\text{same }X_\Omega,\\
+&\text{same optimiser},\\
+&\text{same }\lambda_{\partial},\\
+&\text{same training steps}
+\end{aligned}
+}
+\tag{39}
+\]
+<p>
+を固定し，
+\(N_{\partial}\) だけを変えます．
+</p>
+<p>
+\(\lambda_{\partial}\) と \(N_{\partial}\) を同時に変えると，
+boundary resolutionとloss balanceのどちらが効いたか分からなくなります．
+</p>
+</article></div>
+
+<h2>26．training boundary lossだけで評価してはいけない</h2>
+<div class="news"><article class="news-item">
+<p>
+training pointsとは独立なdense boundary quadrature
+\[
+Z_{\rm ref}
+\]
+を用意して
+</p>
+\[
+\boxed{
+E_{\partial,\rm ref}
+=
+\left(
+\frac1{|\partial\Omega|}
+\int_{\partial\Omega}
+|u_\theta-g|^2\,ds
+\right)^{1/2}
+}
+\tag{40}
+\]
+<p>
+を評価します．
+</p>
+<p>
+さらに
+</p>
+\[
+\boxed{
+E_{\partial,\infty}
+=
+\|u_\theta-g\|_{L^\infty(\partial\Omega)}
+}
+\tag{41}
+\]
+<p>
+も見ると，sample間のoscillationを発見しやすくなります．
+</p>
+</article></div>
+
+<h2>27．interior errorも同じreference measureで測る</h2>
+<div class="news"><article class="news-item">
+<p>
+boundary enforcementを強くしても，
+interior solutionが正しいとは限りません．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+R_{\rm ref}
+=
+\|-\Delta u_\theta-f\|_{L^2(\Omega)},
+}
+\tag{42}
+\]
+<p>
+\[
+\boxed{
+E_{L^2}
+=
+\|u_\theta-u^\ast\|_{L^2(\Omega)},
+\qquad
+E_{H^1}
+=
+|u_\theta-u^\ast|_{H^1(\Omega)}
+}
+\tag{43}
+\]
+<p>
+を同時に記録します．
+</p>
+</article></div>
+
+<h2>28．boundary point allocationはedgeごとにも最適化できる</h2>
+<div class="news"><article class="news-item">
+<p>
+squareで4 edgesすべてへ同数を置くのが常に最良とは限りません．
+</p>
+<p>
+非一様boundary dataやboundary layerがあるなら
+</p>
+\[
+\boxed{
+N_{\partial}
+=
+\sum_F N_F
+}
+\tag{44}
+\]
+<p>
+としてedgewise allocation
+\[
+N_F
+\]
+を変える方が自然です．
+</p>
+<p>
+これは2次元boundary上のanisotropic / graded samplingへつながります．
+</p>
+</article></div>
+
+<h2>29．境界点数を決める最低限の考え方</h2>
+<div class="news"><article class="news-item">
+<p>
+普遍的な「\(N_{\partial}=100\) なら十分」という答えはありません．
+代わりに
+</p>
+\[
+\boxed{
+\begin{aligned}
+1.&\ \text{boundary enforcement method},\\
+2.&\ \text{boundary geometry / dimension},\\
+3.&\ \text{trace variation scale},\\
+4.&\ \text{boundary fill distance},\\
+5.&\ \text{loss weight},\\
+6.&\ \text{independent boundary audit}
+\end{aligned}
+}
+\tag{45}
+\]
+<p>
+を順に決めます．
+</p>
+</article></div>
+
+<h2>30．AIがboundary lossで間違えやすい点</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">mistake</th><th style="border:1px solid #777; padding:7px;">何が壊れるか</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(N_\Omega=N_{\partial}\) を当然とする</td><td style="border:1px solid #777; padding:7px;">dimension scalingを無視する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">raw sumで点数比較</td><td style="border:1px solid #777; padding:7px;">point countとloss weightが混ざる</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">sampled boundary MSEがzeroならBCを満たしたと主張</td><td style="border:1px solid #777; padding:7px;">sample間のtrace oscillationを見落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">boundary MSEをNitsche法と呼ぶ</td><td style="border:1px solid #777; padding:7px;">consistency flux termsを落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(\lambda_{\partial}\) と \(N_{\partial}\) を同時に変更</td><td style="border:1px solid #777; padding:7px;">原因を切り分けられない</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">hard constraintなら問題が全て消えるとする</td><td style="border:1px solid #777; padding:7px;">parameterisation / geometry issuesを無視する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">boundary training pointsでboundary errorも測る</td><td style="border:1px solid #777; padding:7px;">finite observation biasを検出できない</td></tr>
+</table>
+</article></div>
+
+<h2>31．boundary-sampling audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このPINN boundary-condition implementationを数学的に監査してください．<br/>
+(1) interior lossとboundary lossを別々に定義しているか，<br/>
+(2) raw sumかmean / quadrature lossかを明示しているか，<br/>
+(3) \(N_\Omega\) と \(N_{\partial}\) のdimension scalingを考慮しているか，<br/>
+(4) boundary pointsのedgewise coordinatesを保存しているか，<br/>
+(5) boundary fill distanceとclusteringを記録しているか，<br/>
+(6) \(\lambda_{\partial}\) と \(N_{\partial}\) の役割を分離しているか，<br/>
+(7) finite boundary samplesだけでcontinuous Dirichlet traceを保証していないか，<br/>
+(8) trainingとは独立なdense boundary quadratureでtrace errorを評価しているか，<br/>
+(9) hard constraintの場合，boundary extensionとvanishing factorのregularityを確認しているか，<br/>
+(10) boundary MSE penaltyをNitsche法と同一視していないか，<br/>
+(11) corner / boundary-condition junctionsを特別に扱う必要がないか確認しているか，<br/>
+(12) interior residualとboundary errorを同時に報告しているか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>32．第29回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+PINNsでDirichlet conditionをsoftに課すとき，
+boundary pointsは単なる補助dataではありません．
+</p>
+\[
+\boxed{
+X_{\partial}
+\longrightarrow
+\text{boundary empirical measure}
+\longrightarrow
+\mathcal L_{\partial,N}
+\longrightarrow
+\text{learned trace}.
+}
+\tag{46}
+\]
+<p>
+同じgeometric resolutionならprototype scalingは
+</p>
+\[
+\boxed{
+N_{\partial}
+\asymp
+N_\Omega^{(d-1)/d},
+}
+\tag{47}
+\]
+<p>
+ですが，これは十分性を保証するmagic formulaではありません．
+</p>
+<p>
+さらに明示的harmonic modeにより
+</p>
+\[
+\boxed{
+\mathcal L_{\Omega,N}=0,
+\qquad
+\mathcal L_{\partial,N}=0,
+\qquad
+u_\theta\ne u^\ast
+}
+\tag{48}
+\]
+<p>
+が可能であることを見ました．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 3 第5回の原則</b><br/>
+<b>境界点数を決める前に，境界を何のmeasureで，どのresolutionで，
+どのloss weightで観測するかを決める．</b>
+</div>
+<p>
+次回はsolution regularityそのものがsampling designを変える例として，
+<b>第30回：角特異性をPINNsは捉えられるか — regularityとgraded sampling</b>
+へ進みます．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>M. Raissi, P. Perdikaris and G. E. Karniadakis, “Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations”, <i>Journal of Computational Physics</i> 378 (2019), 686–707.</li>
+<li>J. Nitsche, “Über ein Variationsprinzip zur Lösung von Dirichlet-Problemen bei Verwendung von Teilräumen, die keinen Randbedingungen unterworfen sind”, <i>Abhandlungen aus dem Mathematischen Seminar der Universität Hamburg</i> 36 (1971), 9–15.</li>
+<li><a href="./chatgpt-fem-18.html">第18回：Nitsche法とは何か — Dirichlet境界条件を弱く課す</a></li>
+<li><a href="./chatgpt-fem-27.html">第27回：PINNsを作る — strong residualを点で最小化する</a></li>
+<li><a href="./chatgpt-fem-28.html">第28回：PINNsでは点配置で答えが変わるか — uniform・random・adaptive sampling</a></li>
+<li><a href="./pinns-01.html">関連する先行ノート：1次元Poisson問題でPINNsを動かす</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 3 前回：</b><a href="./chatgpt-fem-28.html">第28回：PINNsでは点配置で答えが変わるか — uniform・random・adaptive sampling</a></p>
+<p><b>次回：</b>第30回：角特異性をPINNsは捉えられるか — regularityとgraded sampling（構想中）</p>
+<p><a href="../#chatgpt-fem-season3">Season 3一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
