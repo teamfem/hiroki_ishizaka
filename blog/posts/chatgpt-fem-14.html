@@ -175,11 +175,86 @@ higher-order RTではface polynomialとのmomentやinterior momentが現れま�
 \(RT_0\) ではface fluxだけです．
 </p>
 <p>
-ここで注意したいのは，このface integralを古典的な積分として定義するには
-vector fieldに十分なtrace regularityが必要なことです．
-今回の実装・数値試験ではsmooth vector fieldを使います．
-一般の \(H(\mathrm{div})\) fieldではnormal traceは弱い意味で定義されるため，
-「各edge上の通常の積分」と無条件に同一視しない方が安全です．
+ここには重要な注意があります．
+<b>standardなRT interpolation operatorは，そのままでは \(H(\mathrm{div};T)\) 全体には定義できません．</b>
+</p>
+<p>
+\(\boldsymbol v\in H(\mathrm{div};T)\) ならnormal traceは
+\[
+\gamma_n(\boldsymbol v)
+\in
+H^{-1/2}(\partial T)
+\tag{3a}
+\]
+として定義され，
+\[
+\langle
+\gamma_n(\boldsymbol v),
+\psi
+\rangle_{\partial T}
+\]
+は
+\[
+\psi\in H^{1/2}(\partial T)
+\]
+に対して意味を持ちます．
+しかしRTのlocal DoFでは，一つのface \(E\subset\partial T\) だけに局所化した
+\[
+\int_E
+\boldsymbol v\cdot\boldsymbol n_E\,\varphi\,ds
+\tag{3b}
+\]
+を定義したいわけです．
+</p>
+<p>
+ここで \(\varphi\) を \(E\) 上で与え，\(\partial T\setminus E\) では0に延長して
+normal traceとのdual pairingを取ろうとしても，
+そのzero extensionは一般に
+\[
+H^{1/2}(\partial T)
+\]
+には入りません．
+特に「\(E\) 上で1，残りのboundaryで0」という関数さえ
+\(H^{1/2}(\partial T)\) に属さないため，
+\[
+\int_E
+\boldsymbol v\cdot\boldsymbol n_E\,ds
+\]
+を一般の \(H(\mathrm{div};T)\) functionに対して
+face-by-faceに定義することはできません．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>RT interpolationのdomainに注意</b><br/>
+\[
+\boxed{
+H(\mathrm{div};T)
+\ \text{だけではstandard face-moment RT interpolationを定義できない}
+}
+\]
+normal traceがboundary全体で存在することと，
+各face上のnormal-flux momentを定義できることは別問題です．
+</div>
+<p>
+classical shape-regular theoryでは，追加のintegrabilityを課した
+\[
+W(T)
+=
+H(\mathrm{div};T)
+\cap
+L^q(T)^d,
+\qquad
+q&gt;2
+\tag{3c}
+\]
+などへRT interpolationをcontinuityによって拡張できます．
+一方，本サイトで扱うanisotropic RT interpolation estimateでは，
+directional derivativeとPiola scalingを追うため，
+よりregularな
+\[
+\boldsymbol v\in W^{1,p}(T)^d
+\]
+というframeworkを使います．
+今回の実装・数値試験でもsmooth vector fieldだけを用います．
 </p>
 </article></div>
 
