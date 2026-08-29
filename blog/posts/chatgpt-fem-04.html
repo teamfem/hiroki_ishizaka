@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<title>第4回：2次元P1有限要素コードを数学的に監査する — assembly・境界条件・収束 | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,finite element method,Python,Poisson equation,P1 element,assembly,Dirichlet boundary condition,convergence,patch test,Jacobian,debugging,code verification"/>
+<meta name="description" content="2次元三角形P1有限要素コードを，局所行列，Jacobian，assembly，Dirichlet境界条件，linear patch test，残差，相対誤差，収束次数の順に数学的に監査します．J^{-1}とJ^{-top}を取り違えたコードが一部のテストを通過しても収束しない例も示します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-04.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-04.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-04.html",
+      "headline": "第4回：2次元P1有限要素コードを数学的に監査する — assembly・境界条件・収束",
+      "description": "2次元三角形P1有限要素コードを，局所行列，Jacobian，assembly，Dirichlet境界条件，linear patch test，残差，相対誤差，収束次数の順に数学的に監査します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-04.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-29",
+      "dateModified": "2026-08-29",
+      "articleSection": "Computational FEM with AI",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-04.html#breadcrumbs",
+      "itemListElement": [
+        {"@type":"ListItem","position":1,"name":"Home","item":"https://teamfem.github.io/hiroki_ishizaka/"},
+        {"@type":"ListItem","position":2,"name":"Blog","item":"https://teamfem.github.io/hiroki_ishizaka/blog/"},
+        {"@type":"ListItem","position":3,"name":"第4回：2次元P1有限要素コードを数学的に監査する — assembly・境界条件・収束","item":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-04.html"}
+      ]
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-29"/>
+<meta property="article:modified_time" content="2026-08-29"/>
+<meta property="article:section" content="Computational FEM with AI"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第4回：2次元P1有限要素コードを数学的に監査する — assembly・境界条件・収束 | Hiroki Ishizaka"/>
+<meta property="og:description" content="局所行列，Jacobian，assembly，境界条件，patch test，残差，収束次数を順に調べ，AI生成FEMコードを数学的に監査します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-04.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第4回：2次元P1有限要素コードを数学的に監査する — assembly・境界条件・収束 | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="局所行列，Jacobian，assembly，境界条件，patch test，残差，収束次数を順に調べ，AI生成FEMコードを数学的に監査します．"/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 第4回</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第4回：2次元P1有限要素コードを数学的に監査する — assembly・境界条件・収束</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 第4回</b><br/><time datetime="2026-08-29">29th August 2026</time></p>
+
+<h2>はじめに――「正しそうなコード」をどう疑うか</h2>
+<div class="news"><article class="news-item">
+<p>
+第3回では，2次元三角形P1要素について，
+reference triangleからphysical triangleへの写像
+\[
+F_T(\widehat x)=p_0+J_T\widehat x
+\]
+と，
+\[
+\nabla\phi_i
+=
+J_T^{-\top}\widehat\nabla\widehat\phi_i,
+\qquad
+dx=|\det J_T|\,d\widehat x
+\]
+をコードへ写しました．
+</p>
+<p>
+今回は新しい有限要素を導入しません．代わりに，そのコードを<b>どの順番で検査すればよいか</b>を考えます．
+有限要素コードのdebuggingでは，Pythonの例外を消すだけでは不十分です．
+実装が数学的構造を保存しているかを調べる必要があります．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>今回の基本方針</b><br/>
+一つのテストに合格しただけではコードを信用しない．<br/>
+局所構造 → assembly → 境界条件 → patch test → solver residual → convergence
+の順に，独立な検査を重ねる．
+</div>
+</article></div>
+
+<h2>1．監査するモデル問題</h2>
+<div class="news"><article class="news-item">
+<p>
+第3回と同じく，
+\[
+-\Delta u=f
+\qquad\text{in }\Omega=(0,1)^2,
+\tag{1}
+\]
+\[
+u=0
+\qquad\text{on }\partial\Omega
+\tag{2}
+\]
+を考えます．厳密解は
+\[
+u(x,y)=\sin(\pi x)\sin(\pi y),
+\tag{3}
+\]
+従って
+\[
+f(x,y)=2\pi^2\sin(\pi x)\sin(\pi y).
+\tag{4}
+\]
+です．
+</p>
+<p>
+有限要素空間は連続P1空間
+\[
+V_h
+=
+\{v_h\in H_0^1(\Omega):
+v_h|_T\in\mathbb P_1(T)
+\quad\forall T\in\mathcal T_h\}
+\tag{5}
+\]
+とします．
+</p>
+</article></div>
+
+<h2>2．監査は局所要素から始める</h2>
+<div class="news"><article class="news-item">
+<p>
+三角形 \(T\) の局所剛性行列は
+\[
+K^{(T)}_{ij}
+=
+\int_T\nabla\phi_j\cdot\nabla\phi_i\,dx.
+\tag{6}
+\]
+P1要素では
+\[
+K^{(T)}
+=
+|T|G_TG_T^{\top},
+\qquad
+|T|=\frac{|\det J_T|}{2},
+\tag{7}
+\]
+ただし \(G_T\) の第 \(i\) 行は \((\nabla\phi_i)^{\top}\) です．
+</p>
+<p>
+従って，正しい局所行列には少なくとも
+\[
+(K^{(T)})^{\top}=K^{(T)},
+\tag{8}
+\]
+\[
+K^{(T)}
+\begin{pmatrix}1\\1\\1\end{pmatrix}
+=
+0
+\tag{9}
+\]
+が成立します．式 (9) は
+\[
+\phi_0+\phi_1+\phi_2=1
+\]
+というpartition of unityの微分
+\[
+\nabla\phi_0+\nabla\phi_1+\nabla\phi_2=0
+\]
+に対応しています．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def audit_local_matrix(Ke, tol=1.0e-12):
+    symmetry = np.linalg.norm(Ke - Ke.T, ord=np.inf)
+    row_sum = np.linalg.norm(Ke @ np.ones(3), ord=np.inf)
+
+    assert symmetry &lt; tol
+    assert row_sum &lt; tol
+
+    return symmetry, row_sum
+</code></pre>
+</article></div>
+
+<h2>3．Jacobianを直接監査する</h2>
+<div class="news"><article class="news-item">
+<p>
+局所行列だけでなく，その前段階にある幾何情報も調べます．
+\[
+J_T=
+[p_1-p_0,\ p_2-p_0]
+\tag{10}
+\]
+について，
+\[
+\det J_T\neq0
+\tag{11}
+\]
+でなければ要素は退化しています．
+反時計回りのconnectivityを採用するなら
+\[
+\det J_T&gt;0
+\tag{12}
+\]
+も検査できます．
+</p>
+<p>
+さらに
+\[
+\nabla\phi_i
+=
+J_T^{-\top}\widehat\nabla\widehat\phi_i
+\tag{13}
+\]
+なので，
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">J = np.column_stack((
+    P[1] - P[0],
+    P[2] - P[0]
+))
+
+detJ = np.linalg.det(J)
+
+assert detJ &gt; 0.0
+
+invJT = np.linalg.inv(J).T
+grads = (invJT @ grad_hat.T).T
+
+assert np.linalg.norm(
+    grads.sum(axis=0),
+    ord=np.inf
+) &lt; 1.0e-12
+</code></pre>
+<p>
+を使えます．
+</p>
+</article></div>
+
+<h2>4．assembly後の大域行列を監査する</h2>
+<div class="news"><article class="news-item">
+<p>
+Dirichlet境界条件をまだ課していない大域剛性行列を \(A_{\mathrm{full}}\) とします．
+各局所行列の行和が0なので，
+\[
+A_{\mathrm{full}}\mathbf 1=0.
+\tag{14}
+\]
+従って \(A_{\mathrm{full}}\) は正定値ではなく，定数ベクトルをkernelに持つ半正定値行列です．
+</p>
+<p>
+同次Dirichlet境界節点を除去し，内部自由度 \(I\) に制限した行列を
+\[
+A_{II}
+\tag{15}
+\]
+とすると，
+\[
+A_{II}=A_{II}^{\top},
+\qquad
+z^{\top}A_{II}z&gt;0
+\quad(z\neq0)
+\tag{16}
+\]
+です．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">AII = A[np.ix_(interior, interior)]
+
+symmetry = np.linalg.norm(
+    AII - AII.T,
+    ord=np.inf
+)
+
+row_sum_full = np.linalg.norm(
+    A @ np.ones(len(nodes)),
+    ord=np.inf
+)
+
+lam_min = np.linalg.eigvalsh(AII)[0]
+
+print(symmetry)
+print(row_sum_full)
+print(lam_min)
+</code></pre>
+<p>
+\(n=8\) のuniform triangulationでは，
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">quantity</th><th style="border:1px solid #777; padding:7px;">value</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(\|A_{II}-A_{II}^{\top}\|_{\infty}\)</td><td style="border:1px solid #777; padding:7px;">0.0</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(\|A_{\mathrm{full}}\mathbf1\|_{\infty}\)</td><td style="border:1px solid #777; padding:7px;">0.0</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(\lambda_{\min}(A_{II})\)</td><td style="border:1px solid #777; padding:7px;">3.0448e-1</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(\kappa_2(A_{II})\)</td><td style="border:1px solid #777; padding:7px;">2.5274e1</td></tr>
+</table>
+<p>
+となります．
+</p>
+</article></div>
+
+<h2>5．Dirichlet境界条件は値そのものを検査する</h2>
+<div class="news"><article class="news-item">
+<p>
+同次Dirichlet条件では，境界節点の有限要素値は
+\[
+u_h=0
+\qquad\text{on }\partial\Omega
+\tag{17}
+\]
+でなければなりません．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">boundary_error = np.max(
+    np.abs(uh[boundary])
+)
+
+assert boundary_error &lt; 1.0e-14
+</code></pre>
+<p>
+これは単純ですが重要です．
+解のplotだけを見ると，境界値を誤って処理していても気付きにくい場合があります．
+境界自由度を直接数値で検査すべきです．
+</p>
+</article></div>
+
+<h2>6．solver residualと有限要素誤差を混同しない</h2>
+<div class="news"><article class="news-item">
+<p>
+線形方程式を解いた後，
+\[
+r_I
+=
+A_{II}U_I-b_I
+\tag{18}
+\]
+を調べます．
+\(n=8\) では
+\[
+\|r_I\|_{\infty}
+\approx
+6.94\times10^{-16}
+\tag{19}
+\]
+でした．
+</p>
+<p>
+しかし，これは
+\[
+u_h\approx u
+\]
+を意味しません．
+残差が小さいということは，<b>組み立てた離散方程式を正確に解いた</b>ことしか示していません．
+間違った有限要素行列を高精度で解いてもsolver residualは小さくなります．
+</p>
+<div style="padding:12px; margin:14px 0; border:1px solid #999999;">
+<b>区別すべき二つの誤差</b><br/>
+solver error：\(A_{II}U_I=b_I\) をどれだけ正確に解いたか．<br/>
+discretisation / implementation error：その \(A_{II}\) と \(b_I\) が正しい有限要素問題を表しているか．
+</div>
+</article></div>
+
+<h2>7．linear patch testを行う</h2>
+<div class="news"><article class="news-item">
+<p>
+第1回，第3回で見たように，
+\[
+u(x,y)=a+bx+cy
+\tag{20}
+\]
+は三角形P1有限要素空間に厳密に含まれます．
+そこで
+\[
+-\Delta u=0
+\]
+とし，境界値を厳密解から与えれば，
+\[
+u_h=u
+\tag{21}
+\]
+でなければなりません．
+</p>
+<p>
+例えば
+\[
+u(x,y)=1+2x-3y
+\tag{22}
+\]
+を使うと，最大節点誤差は
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">\(n\)</th><th style="border:1px solid #777; padding:7px;">max nodal error</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">2</td><td style="border:1px solid #777; padding:7px;">0.0</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">2.2204e-16</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">4.4409e-16</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">1.7764e-15</td></tr>
+</table>
+<p>
+となります．これは丸め誤差の水準です．
+</p>
+</article></div>
+
+<h2>8．最後に収束次数を確認する</h2>
+<div class="news"><article class="news-item">
+<p>
+滑らかな解に対して，shape-regularな三角形P1メッシュでは
+\[
+\|u-u_h\|_{L^2(\Omega)}=O(h^2),
+\qquad
+|u-u_h|_{H^1(\Omega)}=O(h).
+\tag{23}
+\]
+従って相対誤差
+\[
+E_{L^2}^{\mathrm{rel}}
+=
+\frac{\|u-u_h\|_{L^2(\Omega)}}{\|u\|_{L^2(\Omega)}},
+\qquad
+E_{H^1}^{\mathrm{rel}}
+=
+\frac{|u-u_h|_{H^1(\Omega)}}{|u|_{H^1(\Omega)}}
+\tag{24}
+\]
+についても2次と1次が期待されます．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">\(n\)</th>
+<th style="border:1px solid #777; padding:7px;">\(L^2\) relative error</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+<th style="border:1px solid #777; padding:7px;">\(H^1\) seminorm relative error</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">1.5818e-1</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">3.7748e-1</td><td style="border:1px solid #777; padding:7px;">—</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">4.2267e-2</td><td style="border:1px solid #777; padding:7px;">1.904</td><td style="border:1px solid #777; padding:7px;">1.9438e-1</td><td style="border:1px solid #777; padding:7px;">0.958</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">1.0755e-2</td><td style="border:1px solid #777; padding:7px;">1.975</td><td style="border:1px solid #777; padding:7px;">9.7926e-2</td><td style="border:1px solid #777; padding:7px;">0.989</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">32</td><td style="border:1px solid #777; padding:7px;">2.7009e-3</td><td style="border:1px solid #777; padding:7px;">1.994</td><td style="border:1px solid #777; padding:7px;">4.9056e-2</td><td style="border:1px solid #777; padding:7px;">0.997</td></tr>
+</table>
+<p>
+ここまで来て初めて，「この実装は少なくとも期待されるP1有限要素法の漸近挙動と整合している」と判断できます．
+</p>
+</article></div>
+
+<h2>9．わざとバグを入れる：\(J^{-\top}\) を \(J^{-1}\) に変える</h2>
+<div class="news"><article class="news-item">
+<p>
+AI生成コードで起こりやすい誤りを意図的に入れてみます．
+正しいコード
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">invJT = np.linalg.inv(J).T
+grads = (invJT @ grad_hat.T).T
+</code></pre>
+<p>
+を，
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">invJ = np.linalg.inv(J)
+grads = (invJ @ grad_hat.T).T
+</code></pre>
+<p>
+へ変えます．chain ruleに反するので数学的には誤りです．
+</p>
+</article></div>
+
+<h2>10．ところが，間違ったコードもいくつかのテストを通る</h2>
+<div class="news"><article class="news-item">
+<p>
+このバグは意外に見つけにくいです．
+なぜなら，間違った \(G_T\) を使っても
+\[
+K^{(T)}=|T|G_TG_T^{\top}
+\]
+と作れば行列は対称です．さらに
+\[
+\sum_i\widehat\nabla\widehat\phi_i=0
+\]
+なので，任意の線形変換を掛けても行和0という性質は残ります．
+</p>
+<p>
+さらに今回のstructured meshでは，この誤った実装でもlinear patch testがほぼ機械精度で通ります．例えば \(n=8\) で最大節点誤差は
+\[
+2.22\times10^{-15}
+\]
+程度です．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>重要</b><br/>
+symmetry testにもpatch testにも合格したからといって，コードが正しいとは限らない．
+</div>
+</article></div>
+
+<h2>11．収束試験はそのバグを検出する</h2>
+<div class="news"><article class="news-item">
+<p>
+同じ誤ったコードで
+\[
+u(x,y)=\sin(\pi x)\sin(\pi y)
+\]
+を解くと，状況が変わります．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">\(n\)</th>
+<th style="border:1px solid #777; padding:7px;">wrong \(L^2\) relative error</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+<th style="border:1px solid #777; padding:7px;">wrong \(H^1\) relative error</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">3.5149e-1</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">4.6679e-1</td><td style="border:1px solid #777; padding:7px;">—</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">3.1152e-1</td><td style="border:1px solid #777; padding:7px;">0.174</td><td style="border:1px solid #777; padding:7px;">3.8825e-1</td><td style="border:1px solid #777; padding:7px;">0.266</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">3.0125e-1</td><td style="border:1px solid #777; padding:7px;">0.048</td><td style="border:1px solid #777; padding:7px;">3.6507e-1</td><td style="border:1px solid #777; padding:7px;">0.089</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">32</td><td style="border:1px solid #777; padding:7px;">2.9864e-1</td><td style="border:1px solid #777; padding:7px;">0.013</td><td style="border:1px solid #777; padding:7px;">3.5899e-1</td><td style="border:1px solid #777; padding:7px;">0.024</td></tr>
+</table>
+<p>
+誤差は0へ向かって期待次数で減らず，ほぼplateauしています．
+正しいコードとの差は明白です．
+</p>
+<p>
+この例は，
+<b>収束次数が単なる理論上の飾りではなく，実装を検証するテスト仕様になっている</b>
+ことを示しています．
+</p>
+</article></div>
+
+<h2>12．一つのテストではなく，独立な監査を重ねる</h2>
+<div class="news"><article class="news-item">
+<p>
+今回の例から，テストには役割分担があることが分かります．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">test</th><th style="border:1px solid #777; padding:7px;">主に検出するもの</th><th style="border:1px solid #777; padding:7px;">限界</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">local symmetry</td><td style="border:1px solid #777; padding:7px;">局所行列の非対称な実装ミス</td><td style="border:1px solid #777; padding:7px;">誤った対称行列も通る</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">row-sum test</td><td style="border:1px solid #777; padding:7px;">partition of unityの破壊</td><td style="border:1px solid #777; padding:7px;">誤った線形変換でも残る場合がある</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">boundary test</td><td style="border:1px solid #777; padding:7px;">Dirichlet処理</td><td style="border:1px solid #777; padding:7px;">内部作用素の誤りは分からない</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">linear patch test</td><td style="border:1px solid #777; padding:7px;">一次式再現性</td><td style="border:1px solid #777; padding:7px;">今回の \(J^{-1}\) bugを見逃す</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">solver residual</td><td style="border:1px solid #777; padding:7px;">線形solver</td><td style="border:1px solid #777; padding:7px;">離散問題自体の正しさを保証しない</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">convergence test</td><td style="border:1px solid #777; padding:7px;">漸近的な離散化・実装の整合性</td><td style="border:1px solid #777; padding:7px;">厳密解またはreference solutionが必要</td></tr>
+</table>
+</article></div>
+
+<h2 style="color:#111;">13．監査コードをassertionとして埋め込む</h2>
+<div class="news"><article class="news-item">
+<p>
+監査を記事だけで終わらせず，開発中のコードへ組み込むこともできます．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def audit_element(P, Ke, grads, tol=1.0e-12):
+    J = np.column_stack((
+        P[1] - P[0],
+        P[2] - P[0]
+    ))
+
+    detJ = np.linalg.det(J)
+
+    assert detJ &gt; 0.0
+    assert np.linalg.norm(
+        grads.sum(axis=0),
+        ord=np.inf
+    ) &lt; tol
+
+    assert np.linalg.norm(
+        Ke - Ke.T,
+        ord=np.inf
+    ) &lt; tol
+
+    assert np.linalg.norm(
+        Ke @ np.ones(3),
+        ord=np.inf
+    ) &lt; tol
+
+
+def audit_linear_system(A, b, uh, interior, boundary):
+    AII = A[np.ix_(interior, interior)]
+
+    assert np.linalg.norm(
+        AII - AII.T,
+        ord=np.inf
+    ) &lt; 1.0e-12
+
+    assert np.linalg.eigvalsh(AII)[0] &gt; 0.0
+
+    assert np.max(
+        np.abs(uh[boundary])
+    ) &lt; 1.0e-12
+
+    residual = (
+        AII @ uh[interior]
+        - b[interior]
+    )
+
+    assert np.linalg.norm(
+        residual,
+        ord=np.inf
+    ) &lt; 1.0e-10
+</code></pre>
+<p>
+ただし，これらのassertionをすべて通過しても，前節の例のように収束試験が必要です．
+</p>
+</article></div>
+
+<h2>14．ChatGPTには「コードを書け」ではなく「監査せよ」と頼む</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+この2次元三角形P1有限要素コードを監査してください．<br/>
+(1) reference gradientからphysical gradientへの変換が \(J^{-\top}\) になっているか，<br/>
+(2) \(|\det J|\) と三角形面積の \(1/2\) が正しいか，<br/>
+(3) 各局所剛性行列が対称で行和0か，<br/>
+(4) assembly後のfull matrixが定数ベクトルをkernelに持つか，<br/>
+(5) Dirichlet自由度を除去した行列が対称正定値か，<br/>
+(6) linear patch testを通るか，<br/>
+(7) solver residualが十分小さいか，<br/>
+(8) smooth manufactured solutionで \(L^2\) 2次・\(H^1\) 1次の収束が得られるか，<br/>
+を数式とコードを対応させながら順に確認してください．
+</div>
+<p>
+このように質問すれば，ChatGPTを単なるcode generatorではなく，
+<b>検査項目を一緒に走査するreviewer</b>として使えます．
+ただし，最終判断の基準は有限要素法の数学です．
+</p>
+</article></div>
+
+<h2>15．第4回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+2次元P1有限要素コードの監査では，
+</p>
+<ol>
+<li>Jacobianとphysical gradientを確認する，</li>
+<li>局所行列の対称性・行和を確認する，</li>
+<li>assembly後の大域行列の構造を確認する，</li>
+<li>Dirichlet境界値を直接確認する，</li>
+<li>linear patch testを行う，</li>
+<li>solver residualを確認する，</li>
+<li>最後に相対誤差と収束次数を確認する，</li>
+</ol>
+<p>
+という複数段階のテストが必要です．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>今回の最も重要な結果</b><br/>
+\(J^{-\top}\) を \(J^{-1}\) と誤って実装しても，
+対称性やlinear patch testだけでは見抜けない場合がある．
+しかし，smooth solutionに対する収束試験では誤差がplateauし，実装の誤りが明確に現れる．
+</div>
+<p>
+有限要素法の誤差解析は，コードを書いた後の理論的な付録ではありません．
+期待される収束率そのものが，実装を検証するための仕様になります．
+</p>
+</article></div>
+
+<h2>参考文献</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>P. G. Ciarlet, <i>The Finite Element Method for Elliptic Problems</i>, North-Holland, 1978.</li>
+<li>S. C. Brenner and L. R. Scott, <i>The Mathematical Theory of Finite Element Methods</i>, 3rd ed., Springer, 2008.</li>
+<li>A. Ern and J.-L. Guermond, <i>Finite Elements I: Approximation and Interpolation</i>, Springer, 2021.</li>
+</ol>
+<p>
+関連ページ：
+<a href="./chatgpt-fem-01.html">第1回：ChatGPTだけで有限要素プログラムは作れるか</a>，
+<a href="./chatgpt-fem-02.html">第2回：1次元Poisson方程式を有限要素法で解く</a>，
+<a href="./chatgpt-fem-03.html">第3回：2次元三角形P1要素 — reference elementとJacobian</a>，
+<a href="../">Blog一覧</a>
+</p>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>前回：</b><a href="./chatgpt-fem-03.html">第3回：2次元三角形P1要素 — reference elementとJacobian</a></p>
+<p><b>次回：</b>第5回：3次元四面体P1要素 — reference tetrahedronとJacobian（構想中）</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
