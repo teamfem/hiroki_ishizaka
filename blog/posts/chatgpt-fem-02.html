@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<title>第2回：1次元Poisson方程式を有限要素法で解く — 弱形式からassemblyまで | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,finite element method,Python,Poisson equation,弱形式,要素行列,assembly,P1 element,stiffness matrix,load vector"/>
+<meta name="description" content="1次元Poisson方程式を例に，強形式から弱形式，P1有限要素空間，局所剛性行列，荷重ベクトル，local-to-global assembly，Dirichlet境界条件までを数式とPythonコードで対応付けます．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-02.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-02.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-02.html",
+      "headline": "第2回：1次元Poisson方程式を有限要素法で解く — 弱形式からassemblyまで",
+      "description": "1次元Poisson方程式を例に，強形式から弱形式，P1有限要素空間，局所剛性行列，荷重ベクトル，local-to-global assembly，Dirichlet境界条件までを数式とPythonコードで対応付けます．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-02.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-29",
+      "dateModified": "2026-08-29",
+      "articleSection": "Computational FEM with AI",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-02.html#breadcrumbs",
+      "itemListElement": [
+        {"@type":"ListItem","position":1,"name":"Home","item":"https://teamfem.github.io/hiroki_ishizaka/"},
+        {"@type":"ListItem","position":2,"name":"Blog","item":"https://teamfem.github.io/hiroki_ishizaka/blog/"},
+        {"@type":"ListItem","position":3,"name":"第2回：1次元Poisson方程式を有限要素法で解く — 弱形式からassemblyまで","item":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-02.html"}
+      ]
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-29"/>
+<meta property="article:modified_time" content="2026-08-29"/>
+<meta property="article:section" content="Computational FEM with AI"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第2回：1次元Poisson方程式を有限要素法で解く — 弱形式からassemblyまで | Hiroki Ishizaka"/>
+<meta property="og:description" content="強形式から弱形式，P1有限要素空間，局所剛性行列，荷重ベクトル，assemblyまでを数式とPythonコードで対応付けます．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-02.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第2回：1次元Poisson方程式を有限要素法で解く — 弱形式からassemblyまで | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="強形式から弱形式，P1有限要素空間，局所剛性行列，荷重ベクトル，assemblyまでを数式とPythonコードで対応付けます．"/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 第2回</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第2回：1次元Poisson方程式を有限要素法で解く — 弱形式からassemblyまで</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 第2回</b><br/><time datetime="2026-08-29">29th August 2026</time></p>
+
+<h2>はじめに――Pythonを書く前に，離散問題を最後まで作る</h2>
+<div class="news"><article class="news-item">
+<p>
+第1回では，ChatGPTに有限要素コードを書かせたとき，
+「コードが実行できる」ことと「有限要素法として正しい」ことは同じではないと確認しました．
+今回は1次元Poisson方程式について，強形式から弱形式，有限要素空間，要素行列，荷重ベクトル，assembly，境界条件までを一つの流れで作ります．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>今回の目標</b><br/>
+Pythonの各行を「それらしい実装」として読むのではなく，
+どの数式を実装しているか説明できる状態にする．
+</div>
+<p>
+特にassemblyでは，局所的な \(2\times2\) 行列が，どのように大域的な疎行列へ加算されるかを明示します．
+ここを理解すると，2次元三角形要素，CR要素，RT要素へ進んでも基本構造は変わりません．
+</p>
+</article></div>
+
+<h2>1．モデル問題</h2>
+<div class="news"><article class="news-item">
+<p>
+区間 \(\Omega=(0,1)\) で
+\[
+-u''(x)=f(x),\qquad 0<x<1,
+\tag{1}
+\]
+\[
+u(0)=u(1)=0
+\tag{2}
+\]
+を考えます．検証用の厳密解として
+\[
+u(x)=\sin(\pi x)
+\tag{3}
+\]
+を選ぶと，
+\[
+f(x)=\pi^2\sin(\pi x)
+\tag{4}
+\]
+です．
+</p>
+<p>
+ここで重要なのは，厳密解を知っていることです．
+後で有限要素解の相対誤差と収束次数を測れるので，実装の監査が可能になります．
+</p>
+</article></div>
+
+<h2>2．強形式から弱形式へ</h2>
+<div class="news"><article class="news-item">
+<p>
+試験関数 \(v\in H_0^1(0,1)\) を掛けると
+\[
+-\int_0^1 u''v\,dx=\int_0^1 fv\,dx.
+\]
+左辺を部分積分すると
+\[
+\int_0^1 u'v'\,dx-\left[u'v\right]_0^1
+=
+\int_0^1 fv\,dx.
+\]
+\(v(0)=v(1)=0\) なので境界項は消え，
+\[
+\int_0^1 u'(x)v'(x)\,dx
+=
+\int_0^1 f(x)v(x)\,dx.
+\tag{5}
+\]
+</p>
+<p>
+従って
+\[
+V:=H_0^1(0,1),
+\]
+\[
+a(u,v):=\int_0^1u'v'\,dx,
+\qquad
+\ell(v):=\int_0^1fv\,dx
+\tag{6}
+\]
+とおけば，
+\[
+\text{Find }u\in V
+\text{ such that }
+a(u,v)=\ell(v)
+\quad\forall v\in V
+\tag{7}
+\]
+が弱形式です．
+</p>
+<div style="padding:12px; margin:14px 0; border:1px solid #999999;">
+<b>監査ポイント</b><br/>
+Poisson方程式だからといって，最初から行列を書いてはいけません．
+stiffness matrixの正体は，式 (6) の双線形形式 \(a(\cdot,\cdot)\) です．
+</div>
+</article></div>
+
+<h2>3．一様メッシュとP1有限要素空間</h2>
+<div class="news"><article class="news-item">
+<p>
+節点を
+\[
+x_i=ih,\qquad i=0,\ldots,N,\qquad h=\frac1N
+\tag{8}
+\]
+とし，要素を
+\[
+T_e=[x_e,x_{e+1}],\qquad e=0,\ldots,N-1
+\tag{9}
+\]
+とします．P1有限要素空間は
+\[
+V_h
+=
+\{v_h\in C([0,1]):v_h|_{T_e}\in\mathbb P_1(T_e),\ v_h(0)=v_h(1)=0\}
+\subset V.
+\tag{10}
+\]
+</p>
+<p>
+内部節点 \(x_i\)，\(i=1,\ldots,N-1\) に対応するhat functionを \(\varphi_i\) とします．
+有限要素解を
+\[
+u_h(x)=\sum_{j=1}^{N-1}U_j\varphi_j(x)
+\tag{11}
+\]
+と書けば，未知量は関数 \(u_h\) そのものではなく係数ベクトル
+\[
+U=(U_1,\ldots,U_{N-1})^{\top}
+\tag{12}
+\]
+になります．
+</p>
+</article></div>
+
+<h2>4．Galerkin方程式から連立一次方程式へ</h2>
+<div class="news"><article class="news-item">
+<p>
+離散問題は
+\[
+a(u_h,v_h)=\ell(v_h)
+\qquad\forall v_h\in V_h.
+\tag{13}
+\]
+試験関数として \(v_h=\varphi_i\) を選び，式 (11) を代入すると
+\[
+\sum_{j=1}^{N-1}
+U_j\,a(\varphi_j,\varphi_i)
+=
+\ell(\varphi_i),
+\qquad
+i=1,\ldots,N-1.
+\]
+従って
+\[
+AU=b
+\tag{14}
+\]
+であり，
+\[
+A_{ij}
+=
+\int_0^1\varphi_j'(x)\varphi_i'(x)\,dx,
+\qquad
+b_i
+=
+\int_0^1f(x)\varphi_i(x)\,dx.
+\tag{15}
+\]
+</p>
+<p>
+つまり，有限要素法の行列と右辺は「後から発明する」のではなく，弱形式へ基底関数を代入すれば自動的に決まります．
+</p>
+</article></div>
+
+<h2>5．要素上の局所基底と局所剛性行列</h2>
+<div class="news"><article class="news-item">
+<p>
+一つの要素
+\[
+T_e=[x_e,x_{e+1}]
+\]
+を取り，局所基底を
+\[
+\phi_0^{(e)}(x)=\frac{x_{e+1}-x}{h},
+\qquad
+\phi_1^{(e)}(x)=\frac{x-x_e}{h}
+\tag{16}
+\]
+とします．すると
+\[
+(\phi_0^{(e)})'=-\frac1h,
+\qquad
+(\phi_1^{(e)})'=\frac1h.
+\tag{17}
+\]
+従って局所剛性行列は
+\[
+K^{(e)}_{ab}
+=
+\int_{T_e}
+(\phi_b^{(e)})'
+(\phi_a^{(e)})'\,dx,
+\qquad a,b=0,1,
+\]
+すなわち
+\[
+K^{(e)}
+=
+\frac1h
+\begin{pmatrix}
+1&-1\\
+-1&1
+\end{pmatrix}.
+\tag{18}
+\]
+</p>
+<p>
+この \(1/h\) は非常に重要です．微分で \(1/h\) が二つ現れ，積分で \(h\) が一つ戻るので，最終的に \(1/h\) が残ります．
+</p>
+</article></div>
+
+<h2>6．局所荷重ベクトル</h2>
+<div class="news"><article class="news-item">
+<p>
+局所荷重ベクトルは
+\[
+F_a^{(e)}
+=
+\int_{T_e}
+f(x)\phi_a^{(e)}(x)\,dx,
+\qquad a=0,1.
+\tag{19}
+\]
+です．剛性行列と違って，\(f(x)=\pi^2\sin(\pi x)\) は多項式ではないので，一般には数値積分を使います．
+</p>
+<p>
+参照区間 \([-1,1]\) から
+\[
+x(\xi)
+=
+\frac{x_e+x_{e+1}}2+\frac h2\xi
+\tag{20}
+\]
+と写すと
+\[
+dx=\frac h2\,d\xi
+\]
+なので，
+\[
+F_a^{(e)}
+=
+\frac h2
+\int_{-1}^{1}
+f(x(\xi))\,\widehat\phi_a(\xi)\,d\xi.
+\tag{21}
+\]
+</p>
+<div style="padding:12px; margin:14px 0; border:1px solid #999999;">
+<b>監査ポイント</b><br/>
+数値積分では \(h/2\) を落とさないこと．
+2次元ではこの役割を \(|\det J|\) が担います．
+</div>
+</article></div>
+
+<h2>7．assemblyとは何か</h2>
+<div class="news"><article class="news-item">
+<p>
+要素 \(T_e=[x_e,x_{e+1}]\) の局所自由度 \(a=0,1\) は，大域節点
+\[
+\operatorname{dof}_e(0)=e,
+\qquad
+\operatorname{dof}_e(1)=e+1
+\tag{22}
+\]
+に対応します．
+</p>
+<p>
+assemblyは
+\[
+A_{\operatorname{dof}_e(a),\operatorname{dof}_e(b)}
+\mathrel{+}=K^{(e)}_{ab},
+\tag{23}
+\]
+\[
+b_{\operatorname{dof}_e(a)}
+\mathrel{+}=F^{(e)}_a
+\tag{24}
+\]
+という加算です．
+</p>
+<p>
+例えば要素 \(T_2=[x_2,x_3]\) なら，局所行列
+\[
+K^{(2)}
+=
+\frac1h
+\begin{pmatrix}
+1&-1\\
+-1&1
+\end{pmatrix}
+\]
+は大域行列の行・列 \(2,3\) の位置へ加えられます．
+隣接要素も同じ節点へ寄与するので，内部節点の対角成分は二つの要素から加算されます．
+</p>
+</article></div>
+
+<h2>8．assembly後の大域行列</h2>
+<div class="news"><article class="news-item">
+<p>
+境界自由度をまだ除去していない \((N+1)\times(N+1)\) の行列は
+\[
+A_{\mathrm{full}}
+=
+\frac1h
+\begin{pmatrix}
+1&-1&0&\cdots&0\\
+-1&2&-1&\ddots&\vdots\\
+0&-1&2&\ddots&0\\
+\vdots&\ddots&\ddots&\ddots&-1\\
+0&\cdots&0&-1&1
+\end{pmatrix}.
+\tag{25}
+\]
+同次Dirichlet条件 \(U_0=U_N=0\) を使って内部自由度だけ残せば，
+\[
+A
+=
+\frac1h
+\begin{pmatrix}
+2&-1&0&\cdots&0\\
+-1&2&-1&\ddots&\vdots\\
+0&-1&2&\ddots&0\\
+\vdots&\ddots&\ddots&\ddots&-1\\
+0&\cdots&0&-1&2
+\end{pmatrix}
+\in\mathbb R^{(N-1)\times(N-1)}.
+\tag{26}
+\]
+</p>
+<p>
+\(N=4\)，\(h=1/4\) なら
+\[
+A
+=
+4
+\begin{pmatrix}
+2&-1&0\\
+-1&2&-1\\
+0&-1&2
+\end{pmatrix}.
+\tag{27}
+\]
+この具体形がPythonで作られているかをprintして確認するだけでも，assemblyのdebuggingになります．
+</p>
+</article></div>
+
+<h2>9．なぜ行列は対称正定値になるのか</h2>
+<div class="news"><article class="news-item">
+<p>
+内部係数ベクトル \(Z\neq0\) に対応する
+\[
+z_h=\sum_{i=1}^{N-1}Z_i\varphi_i
+\]
+を考えると，
+\[
+Z^{\top}AZ
+=
+a(z_h,z_h)
+=
+\int_0^1|z_h'(x)|^2\,dx.
+\tag{28}
+\]
+右辺は非負です．さらに0なら \(z_h\) は区間全体で定数ですが，
+\(z_h(0)=z_h(1)=0\) なので \(z_h\equiv0\)，従って \(Z=0\) です．
+よって
+\[
+Z^{\top}AZ>0
+\qquad(Z\neq0).
+\tag{29}
+\]
+</p>
+<p>
+従って \(A\) は対称正定値です．
+AIが生成したコードについて
+\[
+A=A^{\top}
+\]
+が数値的に成立するか，最小固有値が正かを調べることは，弱形式に由来する重要な監査になります．
+</p>
+</article></div>
+
+<h2 style="color:#111;">10．assemblyをそのままPythonに書く</h2>
+<div class="news"><article class="news-item">
+<p>
+まず，有限要素ライブラリを使わずに，式 (18)，(23)，(24) をほぼそのままPythonへ写します．
+荷重積分には5点Gauss公式を使います．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">import numpy as np
+
+
+def assemble_poisson_1d(N):
+    nodes = np.linspace(0.0, 1.0, N + 1)
+
+    A = np.zeros((N + 1, N + 1))
+    b = np.zeros(N + 1)
+
+    gauss_x, gauss_w = np.polynomial.legendre.leggauss(5)
+
+    for e in range(N):
+        xL = nodes[e]
+        xR = nodes[e + 1]
+        h = xR - xL
+
+        # local stiffness matrix
+        Ke = (1.0 / h) * np.array([
+            [ 1.0, -1.0],
+            [-1.0,  1.0]
+        ])
+
+        # local load vector
+        Fe = np.zeros(2)
+
+        for xi, w in zip(gauss_x, gauss_w):
+            x = 0.5 * (xL + xR) + 0.5 * h * xi
+            jac = h / 2.0
+
+            phi = np.array([
+                (1.0 - xi) / 2.0,
+                (1.0 + xi) / 2.0
+            ])
+
+            f = np.pi**2 * np.sin(np.pi * x)
+            Fe += w * f * phi * jac
+
+        # local-to-global map
+        dofs = [e, e + 1]
+
+        # assembly
+        for a in range(2):
+            b[dofs[a]] += Fe[a]
+            for c in range(2):
+                A[dofs[a], dofs[c]] += Ke[a, c]
+
+    return nodes, A, b
+</code></pre>
+<p>
+特に重要なのは
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">A[dofs[a], dofs[c]] += Ke[a, c]
+b[dofs[a]] += Fe[a]
+</code></pre>
+<p>
+の二行です．これがassemblyの本体です．
+</p>
+</article></div>
+
+<h2>11．Dirichlet境界条件を入れて解く</h2>
+<div class="news"><article class="news-item">
+<p>
+今回は
+\[
+u(0)=u(1)=0
+\]
+なので，境界自由度は既知です．内部index
+\[
+I=\{1,\ldots,N-1\}
+\]
+だけを取り出せば
+\[
+A_{II}U_I=b_I
+\tag{30}
+\]
+を解けばよいことになります．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def solve_poisson_1d(N):
+    nodes, A, b = assemble_poisson_1d(N)
+
+    uh = np.zeros(N + 1)
+
+    interior = np.arange(1, N)
+
+    uh[interior] = np.linalg.solve(
+        A[np.ix_(interior, interior)],
+        b[interior]
+    )
+
+    return nodes, uh
+</code></pre>
+<p>
+非同次Dirichlet条件の場合には，第1回のlinear patch testで見たように，
+既知の境界値による項を右辺へ移す必要があります．
+</p>
+</article></div>
+
+<h2>12．1次元ではさらに強いことが起こる</h2>
+<div class="news"><article class="news-item">
+<p>
+この1次元・定数係数Poisson問題では，荷重積分を厳密に行えば，
+Galerkin解は厳密解の節点補間と一致します．
+すなわち
+\[
+u_h=I_hu.
+\tag{31}
+\]
+</p>
+<p>
+実際，内部hat function \(\varphi_i\) について
+\[
+\int_0^1u'\varphi_i'\,dx
+=
+\frac{u(x_i)-u(x_{i-1})}{h}
+-
+\frac{u(x_{i+1})-u(x_i)}{h}.
+\tag{32}
+\]
+一方，補間 \(I_hu\) の各要素上の傾きは節点値の差商なので，
+\[
+\int_0^1(I_hu)'\varphi_i'\,dx
+\]
+も式 (32) と全く同じ値になります．従って
+\[
+a(I_hu,\varphi_i)=a(u,\varphi_i)=\ell(\varphi_i)
+\]
+であり，離散解の一意性から式 (31) が従います．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>1次元での重要な観察</b><br/>
+この問題では，有限要素誤差はそのままP1補間誤差になる．<br/>
+したがって節点値，assembly，誤差評価を相互に監査できる．
+</div>
+<p>
+ただし，これは1次元の定数拡散係数を持つこのPoisson問題に特有の強い性質です．
+反応項，変数係数，高次元，要素積分の誤差などが入れば，同じ主張をそのまま使うことはできません．
+</p>
+</article></div>
+
+<h2>13．節点値を使ったassembly監査</h2>
+<div class="news"><article class="news-item">
+<p>
+厳密解 \(u(x)=\sin(\pi x)\) に対し
+\[
+U_i^{\mathrm{exact}}=\sin(\pi x_i)
+\tag{33}
+\]
+とします．式 (31) から，厳密積分なら有限要素係数は
+\[
+U_i=U_i^{\mathrm{exact}}
+\]
+となるはずです．
+</p>
+<p>
+従ってコードでは
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">nodes, uh = solve_poisson_1d(16)
+nodal_error = np.max(
+    np.abs(uh - np.sin(np.pi * nodes))
+)
+print(nodal_error)
+</code></pre>
+<p>
+を確認できます．5点Gauss積分を使った上の実装では，この差は通常，機械精度に近い値になります．
+これが大きい場合，まずassembly，Jacobian factor，荷重積分，境界条件を疑います．
+</p>
+</article></div>
+
+<h2>14．相対誤差と収束次数</h2>
+<div class="news"><article class="news-item">
+<p>
+相対誤差を
+\[
+E_{L^2}^{\mathrm{rel}}
+=
+\frac{\|u-u_h\|_{L^2(0,1)}}{\|u\|_{L^2(0,1)}},
+\qquad
+E_{H^1}^{\mathrm{rel}}
+=
+\frac{|u-u_h|_{H^1(0,1)}}{|u|_{H^1(0,1)}}
+\tag{34}
+\]
+とします．P1要素では
+\[
+E_{L^2}^{\mathrm{rel}}=O(h^2),
+\qquad
+E_{H^1}^{\mathrm{rel}}=O(h)
+\tag{35}
+\]
+が期待されます．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">\(N\)</th><th style="border:1px solid #777; padding:7px;">\(L^2\) relative error</th><th style="border:1px solid #777; padding:7px;">rate</th><th style="border:1px solid #777; padding:7px;">\(H^1\) seminorm relative error</th><th style="border:1px solid #777; padding:7px;">rate</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">1.4030e-2</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">1.1307e-1</td><td style="border:1px solid #777; padding:7px;">—</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">3.5164e-3</td><td style="border:1px solid #777; padding:7px;">1.996</td><td style="border:1px solid #777; padding:7px;">5.6645e-2</td><td style="border:1px solid #777; padding:7px;">0.997</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">32</td><td style="border:1px solid #777; padding:7px;">8.7967e-4</td><td style="border:1px solid #777; padding:7px;">1.999</td><td style="border:1px solid #777; padding:7px;">2.8336e-2</td><td style="border:1px solid #777; padding:7px;">0.999</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">64</td><td style="border:1px solid #777; padding:7px;">2.1995e-4</td><td style="border:1px solid #777; padding:7px;">2.000</td><td style="border:1px solid #777; padding:7px;">1.4170e-2</td><td style="border:1px solid #777; padding:7px;">1.000</td></tr>
+</table>
+<p>
+第1回で見た収束と同じですが，今回はその数値がどの数式から生まれているかをassemblyまで遡って確認しました．
+</p>
+</article></div>
+
+<h2>15．ChatGPTへ何を確認させるか</h2>
+<div class="news"><article class="news-item">
+<p>
+コード生成後に，単に「正しいですか」と尋ねるよりも，次のように数学的な検査項目を指定する方が有効です．
+</p>
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+この1次元P1有限要素コードについて，<br/>
+(1) 弱形式，<br/>
+(2) 局所剛性行列の \(1/h\) scaling，<br/>
+(3) 荷重積分のJacobian factor，<br/>
+(4) local-to-global assembly，<br/>
+(5) Dirichlet境界条件，<br/>
+(6) 大域行列の対称正定値性，<br/>
+(7) \(L^2\)相対誤差2次・\(H^1\)半ノルム相対誤差1次，<br/>
+の順にコードと数式を照合してください．
+</div>
+<p>
+このように，ChatGPTへ「答え」だけでなく「監査項目」まで与えることが，本連載の使い方です．
+</p>
+</article></div>
+
+<h2>まとめ</h2>
+<div class="news"><article class="news-item">
+<p>
+1次元Poisson方程式のP1有限要素法は，
+</p>
+<ol>
+<li>強形式から弱形式を作る，</li>
+<li>P1有限要素空間を定める，</li>
+<li>要素ごとに局所剛性行列と局所荷重ベクトルを作る，</li>
+<li>local-to-global mapで大域行列と右辺へ加算する，</li>
+<li>Dirichlet境界条件を処理して連立一次方程式を解く，</li>
+<li>相対誤差，収束次数，節点値で実装を監査する，</li>
+</ol>
+<p>
+という流れです．
+</p>
+<p>
+有限要素プログラムの中心は線形ソルバーではなく，
+<b>弱形式から局所量を作り，それを正しくassemblyする過程</b>にあります．
+次回はこの構造を2次元三角形P1要素へ移し，reference triangle，Jacobian，\(J^{-T}\)，\(|\det J|\) がコードのどこに現れるかを確認します．
+</p>
+</article></div>
+
+<h2>参考文献</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>P. G. Ciarlet, <i>The Finite Element Method for Elliptic Problems</i>, North-Holland, 1978.</li>
+<li>S. C. Brenner and L. R. Scott, <i>The Mathematical Theory of Finite Element Methods</i>, 3rd ed., Springer, 2008.</li>
+<li>A. Ern and J.-L. Guermond, <i>Finite Elements I: Approximation and Interpolation</i>, Springer, 2021.</li>
+</ol>
+<p>
+関連ページ：
+<a href="./chatgpt-fem-01.html">第1回：ChatGPTだけで有限要素プログラムは作れるか</a>，
+<a href="./anisotropic-geometry-01.html">有限要素法ではなぜメッシュの幾何条件が必要なのか</a>，
+<a href="../">Blog一覧</a>
+</p>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>前回：</b><a href="./chatgpt-fem-01.html">第1回：ChatGPTだけで有限要素プログラムは作れるか</a></p>
+<p><b>次回：</b>第3回：2次元三角形P1要素 — reference elementとJacobian（構想中）</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
