@@ -229,5 +229,37 @@ if(window.jQuery){
 
   if(!document.querySelector('script[src*=\"modern-ui.js\"]')){var ui=document.createElement('script');ui.src='../../js/modern-ui.js';document.body.appendChild(ui);}
 
-  if(window.MathJax && MathJax.typesetPromise){MathJax.typesetPromise([article]).catch(function(){});}
+  function fitDisplayMath(root){
+    var boxes=Array.prototype.slice.call(root.querySelectorAll('mjx-container[display="true"]'));
+    boxes.forEach(function(box){
+      box.classList.remove('math-scaled','math-scroll');
+      box.style.fontSize='';
+      var math=box.querySelector('mjx-math');
+      if(!math) return;
+
+      var available=box.clientWidth;
+      var width=math.getBoundingClientRect().width;
+      if(!available || width<=available+2) return;
+
+      var scale=Math.max(0.66,Math.min(1,(available/width)*0.97));
+      box.style.fontSize=scale+'em';
+
+      var fittedWidth=math.getBoundingClientRect().width;
+      if(fittedWidth<=box.clientWidth+2){
+        box.classList.add('math-scaled');
+      }else{
+        box.classList.add('math-scroll');
+      }
+    });
+  }
+
+  var resizeTimer=null;
+  window.addEventListener('resize',function(){
+    clearTimeout(resizeTimer);
+    resizeTimer=setTimeout(function(){fitDisplayMath(article);},120);
+  });
+
+  if(window.MathJax && MathJax.typesetPromise){
+    MathJax.typesetPromise([article]).then(function(){fitDisplayMath(article);}).catch(function(){});
+  }
 })();
