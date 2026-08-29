@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第30回：角特異性をPINNsは捉えられるか — regularityとgraded sampling | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,PINNs,corner singularity,graded sampling,reentrant corner,regularity,sampling geometry,Poisson equation,sector domain,collocation points,importance sampling,Deep Ritz"/>
+<meta name="description" content="Season 3 第6回（通算第30回）として，re-entrant cornerを持つPoisson問題を使い，PINNsが角特異性をどこまで捉えられるかを調べます．特異指数lambda，H^s regularity，radial graded sampling，importance weights，corner concentration，strong residualとweak formulationの違いを数学的に監査します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-30.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-30.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-30.html",
+      "headline": "第30回：角特異性をPINNsは捉えられるか — regularityとgraded sampling",
+      "description": "Re-entrant cornerを持つPoisson問題で，特異指数，Sobolev regularity，graded collocation，importance weighting，strong residual formulationを数値解析します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-30.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 3",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 3"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第30回：角特異性をPINNsは捉えられるか — regularityとgraded sampling | Hiroki Ishizaka"/>
+<meta property="og:description" content="Smooth neural networkで低regularity solutionを近似すると何が起こるか．re-entrant cornerとgraded samplingをFEMの視点から監査します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-30.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第30回：角特異性をPINNsは捉えられるか — regularityとgraded sampling | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="Corner singularities, low Sobolev regularity and graded collocation points in PINNs."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 3 第6回（通算第30回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第30回：角特異性をPINNsは捉えられるか — regularityとgraded sampling</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 3 第6回（通算第30回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――smooth networkを使えばsolutionもsmoothになるわけではない</h2>
+<div class="news"><article class="news-item">
+<p>
+これまでのPINN実験ではexact solutionをsmoothに選んでいました．
+しかしpolygonal domainでは，dataがsmoothでもcornerがsolution regularityを制限します．
+</p>
+<p>
+FEMではこのregularity lossが
+</p>
+\[
+\boxed{
+\text{convergence rate}
+\quad+\quad
+\text{mesh grading}
+}
+\tag{1}
+\]
+<p>
+を決めます．
+PINNsでも同じ問いが残ります．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>第30回の問い</b><br/>
+\[
+\boxed{
+\text{角特異性を持つsolutionに対して，
+collocation pointsを一様に置いてよいのか？}
+}
+\tag{2}
+\]
+</div>
+</article></div>
+
+<h2>1．model domainはre-entrant sector</h2>
+<div class="news"><article class="news-item">
+<p>
+cornerの効果だけを切り出すため，polar coordinatesで
+</p>
+\[
+\boxed{
+\Omega_\omega
+=
+\{
+(r,\theta):
+0&lt;r&lt;1,\ 
+0&lt;\theta&lt;\omega
+\}
+}
+\tag{3}
+\]
+<p>
+を考えます．
+</p>
+<p>
+re-entrant angleとして
+</p>
+\[
+\boxed{
+\omega
+=
+\frac{3\pi}{2}
+}
+\tag{4}
+\]
+<p>
+を選びます．
+これはL-shaped domainのre-entrant cornerと同じlocal angleです．
+</p>
+</article></div>
+
+<h2>2．Poisson–Dirichlet corner exponent</h2>
+<div class="news"><article class="news-item">
+<p>
+wedgeでharmonic separated mode
+</p>
+\[
+u(r,\theta)
+=
+r^\lambda\Phi(\theta)
+\]
+<p>
+を考えると
+</p>
+\[
+\Phi''+\lambda^2\Phi=0,
+\qquad
+\Phi(0)=\Phi(\omega)=0.
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+\lambda_k
+=
+\frac{k\pi}{\omega},
+\qquad
+k=1,2,\ldots
+}
+\tag{5}
+\]
+<p>
+です．
+</p>
+</article></div>
+
+<h2>3．re-entrant angle \(3\pi/2\) では \(\lambda_1=2/3\)</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (5) から
+</p>
+\[
+\boxed{
+\lambda
+=
+\lambda_1
+=
+\frac{\pi}{3\pi/2}
+=
+\frac23.
+}
+\tag{6}
+\]
+<p>
+したがって最も単純なsingular harmonic modeは
+</p>
+\[
+\boxed{
+u^\ast(r,\theta)
+=
+r^{2/3}
+\sin\left(\frac{2\theta}{3}\right).
+}
+\tag{7}
+\]
+<p>
+です．
+</p>
+</article></div>
+
+<h2>4．このsolutionはharmonicだが \(H^2\) ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+corner away from \(r=0\) では
+</p>
+\[
+\boxed{
+\Delta u^\ast=0.
+}
+\tag{8}
+\]
+<p>
+一方
+</p>
+\[
+D^m u^\ast
+\sim
+r^{2/3-m}.
+\tag{9}
+\]
+<p>
+2次元のSobolev integrabilityから，
+genuine singular modeに対するthresholdは
+</p>
+\[
+\boxed{
+s
+&lt;
+1+\lambda
+=
+\frac53.
+}
+\tag{10}
+\]
+<p>
+従って任意の \(\varepsilon&gt;0\) に対して
+</p>
+\[
+\boxed{
+u^\ast
+\in
+H^{5/3-\varepsilon}(\Omega_\omega),
+\qquad
+u^\ast
+\notin
+H^2(\Omega_\omega).
+}
+\tag{11}
+\]
+</article></div>
+
+<h2>5．PINN strong residualとのregularity mismatch</h2>
+<div class="news"><article class="news-item">
+<p>
+Poisson PINNは通常
+</p>
+\[
+r_\theta
+=
+-\Delta u_\theta-f
+\]
+<p>
+をpointwiseに評価します．
+network \(u_\theta\) はsmoothに作れても，
+target \(u^\ast\) は \(H^2\) に入りません．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{smooth trial function}
+\quad\text{で}\quad
+\text{low-regularity weak solution}
+\quad\text{を近似する}
+}
+\tag{12}
+\]
+<p>
+という構造になります．
+</p>
+</article></div>
+
+<h2>6．strong residualがzeroでもsingularityは簡単ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+今回のexact solutionは
+\[
+\Delta u^\ast=0
+\]
+なので，corner以外ではstrong residualはzeroです．
+</p>
+<p>
+しかしgradientは
+</p>
+\[
+\boxed{
+|\nabla u^\ast|
+\sim
+r^{-1/3},
+}
+\tag{13}
+\]
+<p>
+Hessian componentsは
+</p>
+\[
+\boxed{
+|D^2u^\ast|
+\sim
+r^{-4/3}.
+}
+\tag{14}
+\]
+<p>
+つまり
+</p>
+\[
+\boxed{
+\text{PDE residualの値}
+\quad\text{だけでは}\quad
+\text{solution regularityの難しさは見えない．}
+}
+\tag{15}
+\]
+</article></div>
+
+<h2>7．corner pointそのものをstrong residual pointにしてはいけない</h2>
+<div class="news"><article class="news-item">
+<p>
+\(r=0\) ではclassical second derivativesがsingularです．
+従ってcornerをinterior collocation pointとして
+automatic differentiationへ直接渡すのは適切ではありません．
+</p>
+<p>
+corner value
+\[
+u^\ast(0)=0
+\]
+をboundary informationとして使うことと，
+</p>
+\[
+\boxed{
+-\Delta u_\theta(0)
+}
+\tag{16}
+\]
+<p>
+をclassical residualとして評価することは別です．
+</p>
+</article></div>
+
+<h2>8．Deep Ritzとの対照がここで明確になる</h2>
+<div class="news"><article class="news-item">
+<p>
+Deep RitzのPoisson energyは
+</p>
+\[
+E(v)
+=
+\frac12\int_\Omega|\nabla v|^2\,dx
+-
+\int_\Omega fv\,dx.
+\tag{17}
+\]
+<p>
+今回のsingular solutionは
+</p>
+\[
+u^\ast\in H^1(\Omega_\omega)
+\]
+なのでenergyは自然に定義できます．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{weak / energy formulation}
+\text{ は}
+H^1\text{-solution regularityと整合しやすい}
+}
+\tag{18}
+\]
+<p>
+のに対し，strong residualでは二階微分を計算する実装が必要です．
+</p>
+</article></div>
+
+<h2>9．uniform-area samplingではcorner近傍の点が非常に少ない</h2>
+<div class="news"><article class="news-item">
+<p>
+sector内をarea-uniformにrandom samplingすると，
+radial variable \(r\) のdistributionは
+</p>
+\[
+\boxed{
+\mathbb P(r&lt;\rho)
+=
+\rho^2.
+}
+\tag{19}
+\]
+<p>
+従って全 \(N\) pointsのうち
+\(r&lt;\rho\) に入るexpected countは
+</p>
+\[
+\boxed{
+N_{\rho}^{\rm area}
+=
+N\rho^2.
+}
+\tag{20}
+\]
+</article></div>
+
+<h2>10．\(r&lt;0.1\) には全体の1%しか入らない</h2>
+<div class="news"><article class="news-item">
+<p>
+例えば \(N=1000\) なら
+</p>
+\[
+N_{0.1}^{\rm area}
+=
+1000\times0.1^2
+=
+10.
+\]
+<p>
+つまりre-entrant cornerから距離0.1以内には
+expected 10 pointsしかありません．
+</p>
+<p>
+corner singularityが最も強い場所ほど，
+area-uniform samplingでは点数が少なくなります．
+</p>
+</article></div>
+
+<h2>11．radial graded samplingを導入する</h2>
+<div class="news"><article class="news-item">
+<p>
+\(U,V\sim U(0,1)\) を独立に取り，
+</p>
+\[
+\boxed{
+r
+=
+U^\gamma,
+\qquad
+\theta
+=
+\omega V
+}
+\tag{21}
+\]
+<p>
+とします．
+</p>
+<p>
+\(\gamma=1/2\) ならarea-uniformです．
+</p>
+<p>
+\[
+\boxed{
+\gamma&gt;\frac12
+}
+\tag{22}
+\]
+<p>
+とするとpointsはcornerへ強くclusterします．
+</p>
+</article></div>
+
+<h2>12．graded familyのcorner point fractionはexactに計算できる</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (21) から
+</p>
+\[
+\boxed{
+\mathbb P(r&lt;\rho)
+=
+\rho^{1/\gamma}.
+}
+\tag{23}
+\]
+<p>
+従って \(\rho=0.1\) なら
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">\(\gamma\)</th>
+<th style="border:1px solid #777; padding:7px;">sampling</th>
+<th style="border:1px solid #777; padding:7px;">\(\mathbb P(r&lt;0.1)\)</th>
+<th style="border:1px solid #777; padding:7px;">expected count for \(N=1000\)</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(1/2\)</td><td style="border:1px solid #777; padding:7px;">area-uniform</td><td style="border:1px solid #777; padding:7px;">\(0.01\)</td><td style="border:1px solid #777; padding:7px;">10</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(3/4\)</td><td style="border:1px solid #777; padding:7px;">moderately graded</td><td style="border:1px solid #777; padding:7px;">\(0.0464\)</td><td style="border:1px solid #777; padding:7px;">46</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(1\)</td><td style="border:1px solid #777; padding:7px;">radially uniform</td><td style="border:1px solid #777; padding:7px;">\(0.1\)</td><td style="border:1px solid #777; padding:7px;">100</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(2\)</td><td style="border:1px solid #777; padding:7px;">strongly graded</td><td style="border:1px solid #777; padding:7px;">\(0.316\)</td><td style="border:1px solid #777; padding:7px;">316</td></tr>
+</table>
+</article></div>
+
+<h2>13．regularity exponentからgradingを考える一つのheuristic</h2>
+<div class="news"><article class="news-item">
+<p>
+singular mode \(u_s=r^\lambda\Phi(\theta)\) では
+</p>
+\[
+|\nabla u_s|^2
+\sim
+r^{2\lambda-2}.
+\]
+<p>
+area element \(r\,dr\,d\theta\) を含めると，
+corner近傍のenergy densityのradial scalingは
+</p>
+\[
+\boxed{
+r^{2\lambda-1}\,dr.
+}
+\tag{24}
+\]
+<p>
+従ってradius \(\rho\) までのenergy fractionは
+</p>
+\[
+\boxed{
+O(\rho^{2\lambda}).
+}
+\tag{25}
+\]
+</article></div>
+
+<h2>14．\(\lambda=2/3\) ならenergy-aware gradingは \(\gamma=3/4\) が一つの目安になる</h2>
+<div class="news"><article class="news-item">
+<p>
+graded samplerは
+</p>
+\[
+\mathbb P(r&lt;\rho)=\rho^{1/\gamma}.
+\]
+<p>
+これを式 (25) のenergy fraction
+\[
+\rho^{2\lambda}
+\]
+に合わせるheuristicを取ると
+</p>
+\[
+\boxed{
+\frac1\gamma
+=
+2\lambda,
+\qquad
+\gamma
+=
+\frac1{2\lambda}.
+}
+\tag{26}
+\]
+<p>
+今回 \(\lambda=2/3\) なので
+</p>
+\[
+\boxed{
+\gamma
+=
+\frac34.
+}
+\tag{27}
+\]
+<p>
+これはPINN errorのoptimal grading theoremではありません．
+<b>solution energyの局在度からpoint densityを設計する一つのdiagnostic rule</b>です．
+</p>
+</article></div>
+
+<h2>15．strong residual用gradingをHessian magnitudeから決めるのは危険</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (14) から
+</p>
+\[
+|D^2u^\ast|^2
+\sim
+r^{-8/3}.
+\]
+<p>
+area elementを掛けると
+</p>
+\[
+r^{-5/3}\,dr
+\]
+<p>
+となり，\(r=0\) でintegrableではありません．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+|D^2u^\ast|^2
+\text{ をそのままsampling densityにする}
+}
+\tag{28}
+\]
+<p>
+という発想はnormalisableですらありません．
+</p>
+<p>
+しかもexact solutionではLaplacianのsingular componentsがcancelして
+\[
+\Delta u^\ast=0
+\]
+です．
+</p>
+</article></div>
+
+<h2>16．graded points + equal weightsはcontinuous lossそのものを変える</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (21) のgraded samplerにequal weightsを付けると，
+Cartesian area measureではなく別のsampling densityを見ます．
+</p>
+<p>
+そのdensityは
+</p>
+\[
+\boxed{
+q_\gamma(x)
+=
+\frac1{\gamma\omega}
+r^{1/\gamma-2}.
+}
+\tag{29}
+\]
+<p>
+\(\gamma&gt;1/2\) ではcornerへweightが集中します．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{graded points + equal weights}
+=
+\text{corner-weighted residual objective}.
+}
+\tag{30}
+\]
+</article></div>
+
+<h2>17．point resolutionだけ変えたいならimportance weightsを使う</h2>
+<div class="news"><article class="news-item">
+<p>
+normalised area average
+</p>
+\[
+\frac1{|\Omega_\omega|}
+\int_{\Omega_\omega}
+|r_\theta|^2\,dx
+\]
+<p>
+をtargetのまま保ち，
+graded distribution \(q_\gamma\) からsampleするなら
+importance correctionを使えます．
+</p>
+<p>
+\(|\Omega_\omega|=\omega/2\) なので，
+normalised area densityは \(2/\omega\) です．
+</p>
+<p>
+従ってimportance weightは
+</p>
+\[
+\boxed{
+W_\gamma(r)
+=
+2\gamma\,
+r^{2-1/\gamma}.
+}
+\tag{31}
+\]
+</article></div>
+
+<h2>18．二つのexperimentを分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+graded sampling studyでは少なくとも
+</p>
+\[
+\boxed{
+\begin{aligned}
+\text{A. resolution study}
+&:\ 
+\text{graded points + importance weights},\\
+\text{B. objective study}
+&:\ 
+\text{graded points + equal weights}
+\end{aligned}
+}
+\tag{32}
+\]
+<p>
+を分けるべきです．
+</p>
+<p>
+Aは同じcontinuous residual normをよりcorner-resolvedなsamplesで近似するexperiment，
+Bは意図的にcornerを重視した別objectiveを学習するexperimentです．
+</p>
+</article></div>
+
+<h2>19．graded sector samplerを実装する</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def graded_sector_points(
+    N,
+    omega,
+    gamma,
+    device,
+    generator=None
+):
+    uv = torch.rand(
+        (N, 2),
+        device=device,
+        generator=generator
+    )
+
+    r = uv[:, 0:1] ** gamma
+    theta = omega * uv[:, 1:2]
+
+    x = r * torch.cos(theta)
+    y = r * torch.sin(theta)
+
+    pts = torch.cat([x, y], dim=1)
+
+    return pts, r
+</code></pre>
+<p>
+\(\gamma=0.5\) ならarea-uniform，
+\(\gamma&gt;0.5\) ならcorner-biasedです．
+</p>
+</article></div>
+
+<h2>20．importance weightsもコード化する</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def area_importance_weight(r, gamma):
+    exponent = 2.0 - 1.0 / gamma
+
+    return (
+        2.0 * gamma
+        * r ** exponent
+    )
+</code></pre>
+<p>
+\(\gamma=0.5\) なら
+</p>
+\[
+W_{1/2}(r)=1
+\]
+<p>
+となり，通常のarea-uniform samplingへ戻ります．
+</p>
+</article></div>
+
+<h2>21．exact singular solutionも実装する</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def singular_solution(xy, omega):
+    x = xy[:, 0:1]
+    y = xy[:, 1:2]
+
+    r = torch.sqrt(
+        x ** 2 + y ** 2
+    )
+
+    theta = torch.atan2(y, x)
+    theta = torch.where(
+        theta &lt; 0.0,
+        theta + 2.0 * math.pi,
+        theta
+    )
+
+    lam = math.pi / omega
+
+    return (
+        r ** lam
+        * torch.sin(lam * theta)
+    )
+</code></pre>
+<p>
+実装ではsectorの角度rangeと
+<code>atan2</code> のbranch conventionを一致させます．
+</p>
+</article></div>
+
+<h2>22．boundary samplingは全experimentで固定する</h2>
+<div class="news"><article class="news-item">
+<p>
+第29回のboundary effectと混ぜないため，
+今回のcomparisonでは
+</p>
+\[
+\boxed{
+X_{\partial},
+\qquad
+\lambda_{\partial}
+}
+\tag{33}
+\]
+<p>
+を全runで固定します．
+</p>
+<p>
+変えるのはinterior point distributionの
+\[
+\gamma
+\]
+だけです．
+</p>
+</article></div>
+
+<h2>23．training lossより \(H^1\) errorを見る</h2>
+<div class="news"><article class="news-item">
+<p>
+exact solutionが \(H^2\) でないので，
+solution accuracyの中心metricはenergy scale
+</p>
+\[
+\boxed{
+E_{H^1}
+=
+|u_\theta-u^\ast|_{H^1(\Omega_\omega)}
+}
+\tag{34}
+\]
+<p>
+とします．
+</p>
+<p>
+さらに
+</p>
+\[
+\boxed{
+E_{L^2}
+=
+\|u_\theta-u^\ast\|_{L^2(\Omega_\omega)}
+}
+\tag{35}
+\]
+<p>
+も記録します．
+</p>
+</article></div>
+
+<h2>24．corner-local errorを別に測る</h2>
+<div class="news"><article class="news-item">
+<p>
+global errorだけではcorner approximationを見失うので，
+</p>
+\[
+\Omega_\rho
+=
+\Omega_\omega\cap\{r&lt;\rho\}
+\]
+<p>
+に対して
+</p>
+\[
+\boxed{
+E_{H^1}(\rho)
+=
+|u_\theta-u^\ast|_{H^1(\Omega_\rho)}
+}
+\tag{36}
+\]
+<p>
+を測ります．
+</p>
+<p>
+例えば
+\[
+\rho=1/2,\ 1/4,\ 1/8,\ 1/16
+\]
+とすれば，cornerへ近づくにつれてerrorがどう変わるかを見られます．
+</p>
+</article></div>
+
+<h2>25．annular error profileも有効である</h2>
+<div class="news"><article class="news-item">
+<p>
+dyadic annuli
+</p>
+\[
+\boxed{
+A_k
+=
+\{
+2^{-(k+1)}
+&lt;
+r
+&lt;
+2^{-k}
+\}
+\cap\Omega_\omega
+}
+\tag{37}
+\]
+<p>
+を使って
+</p>
+\[
+\boxed{
+e_k
+=
+|u_\theta-u^\ast|_{H^1(A_k)}
+}
+\tag{38}
+\]
+<p>
+を並べると，
+networkがどのscaleからsingularityを解像できなくなるか見えます．
+</p>
+</article></div>
+
+<h2>26．random seedだけでなくcorner countを記録する</h2>
+<div class="news"><article class="news-item">
+<p>
+graded random samplingでは同じ \(\gamma\) でも realised cloudは毎回違います．
+</p>
+<p>
+従って各runで
+</p>
+\[
+\boxed{
+N(r&lt;\rho)
+}
+\tag{39}
+\]
+<p>
+を複数の \(\rho\) について記録します．
+</p>
+<p>
+単に「\(\gamma=1\) を使った」と書くより，
+実際にcornerへ何点入ったかを保存した方が再現性があります．
+</p>
+</article></div>
+
+<h2>27．graded samplingはFEMのgraded meshと似ているが同じではない</h2>
+<div class="news"><article class="news-item">
+<p>
+FEMではcornerへmeshを細分化すると
+</p>
+\[
+\boxed{
+\text{local trial-space resolution}
+}
+\]
+<p>
+そのものが上がります．
+</p>
+<p>
+PINNsでpointsを増やしてもnetwork parameter countは同じです．
+変わるのは主に
+</p>
+\[
+\boxed{
+\text{training information / sampling measure}.
+}
+\tag{40}
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{graded mesh}
+\neq
+\text{graded collocation}
+}
+\tag{41}
+\]
+<p>
+ですが，regularityに応じてresolutionを集中させるという設計思想は共通します．
+</p>
+</article></div>
+
+<h2>28．smooth activationはsingular exponentを自動で知っているわけではない</h2>
+<div class="news"><article class="news-item">
+<p>
+tanh networkはsmoothです．
+しかし
+</p>
+\[
+r^{2/3}
+\]
+<p>
+というfractional-power asymptoticsをnetwork architectureが自動でencodeしているわけではありません．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{more collocation points}
+\not\Rightarrow
+\text{singular asymptoticsを効率よく表現できる}
+}
+\tag{42}
+\]
+<p>
+可能性があります．
+</p>
+<p>
+必要ならsingular basis enrichmentやcoordinate transformも別のdesign optionになります．
+</p>
+</article></div>
+
+<h2>29．singularity enrichmentという別の選択肢</h2>
+<div class="news"><article class="news-item">
+<p>
+例えば
+</p>
+\[
+\boxed{
+u_\theta
+=
+c_\theta
+r^\lambda
+\sin(\lambda\theta)
++
+v_\theta
+}
+\tag{43}
+\]
+<p>
+のようにknown singular modeをtrial ansatzへ入れることも考えられます．
+</p>
+<p>
+これはFEMでsingular-function enrichmentを行う考え方に近いです．
+</p>
+<p>
+ただしcorner angleやboundary conditionから
+\[
+\lambda
+\]
+を正しく導出できる場合に限ります．
+</p>
+</article></div>
+
+<h2>30．regularityを知らずにadaptive residualだけを見る危険</h2>
+<div class="news"><article class="news-item">
+<p>
+exact singular modeはcorner away from \(r=0\) でharmonicです．
+従ってstrong residual peakだけを見ても，
+solution gradient singularityの場所を十分に反映しないことがあります．
+</p>
+<p>
+つまり
+</p>
+\[
+\boxed{
+\text{residual adaptivity}
+\quad\text{と}\quad
+\text{regularity-aware grading}
+}
+\tag{44}
+\]
+<p>
+は同じではありません．
+</p>
+<p>
+第32回ではこの違いをさらに詳しく扱います．
+</p>
+</article></div>
+
+<h2>31．AIがcorner-singularity studyで間違えやすい点</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">mistake</th><th style="border:1px solid #777; padding:7px;">何が壊れるか</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">smooth networkだからexact solutionも \(H^2\) とする</td><td style="border:1px solid #777; padding:7px;">corner regularityを無視する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">corner pointでclassical strong residualを評価</td><td style="border:1px solid #777; padding:7px;">singular derivativeを誤って扱う</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">graded pointsにequal weightsを付けて同じlossと呼ぶ</td><td style="border:1px solid #777; padding:7px;">target measureを変えてしまう</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(\lambda\) だけからoptimal \(\gamma\) を断定</td><td style="border:1px solid #777; padding:7px;">network・loss・target norm依存性を無視する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">global \(L^2\) errorだけを見る</td><td style="border:1px solid #777; padding:7px;">corner-local failureを見落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">graded collocationをgraded FEMと同一視</td><td style="border:1px solid #777; padding:7px;">trial-space refinementとsampling refinementを混同する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">residual peakだけからsingularity位置を推定</td><td style="border:1px solid #777; padding:7px;">harmonic singular modeを見落とす</td></tr>
+</table>
+</article></div>
+
+<h2>32．corner-regularity audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このPINN corner-singularity experimentを数学的に監査してください．<br/>
+(1) corner opening angle \(\omega\) とsingular exponent \(\lambda\) をPDE・boundary conditionから導出しているか，<br/>
+(2) exact solutionのSobolev regularityをnetwork smoothnessと混同していないか，<br/>
+(3) corner pointそのものでclassical strong residualを評価していないか，<br/>
+(4) uniform-area samplingでcorner近傍に何点入るかを記録しているか，<br/>
+(5) graded sampling parameter \(\gamma\) と realised corner countを記録しているか，<br/>
+(6) graded points + equal weightsとimportance-weighted samplingを区別しているか，<br/>
+(7) \(\lambda\) から導いたgrading ruleをheuristicと定理に分けて説明しているか，<br/>
+(8) global \(L^2\) errorだけでなくglobal / local \(H^1\) errorを評価しているか，<br/>
+(9) boundary samplesとboundary loss weightを全sampling comparisonで固定しているか，<br/>
+(10) graded collocationをgraded mesh refinementと同一視していないか，<br/>
+(11) residual adaptivityとregularity-aware gradingを区別しているか，<br/>
+(12) known singular mode enrichmentを使う場合はcorner spectrumの導出を監査しているか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>33．第30回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+re-entrant corner
+\[
+\omega=\frac{3\pi}{2}
+\]
+では
+</p>
+\[
+\boxed{
+\lambda=\frac23,
+\qquad
+u^\ast
+\in
+H^{5/3-\varepsilon}
+\setminus H^2.
+}
+\tag{45}
+\]
+<p>
+PINNsで重要なのは，
+networkをsmoothにすることだけではありません．
+</p>
+<p>
+solution regularityに応じて
+</p>
+\[
+\boxed{
+\text{where to sample}
++
+\text{what measure to approximate}
++
+\text{which norm to audit}
+}
+\tag{46}
+\]
+<p>
+を決める必要があります．
+</p>
+<p>
+graded sampling
+\[
+r=U^\gamma
+\]
+はcorner resolutionを増やせますが，
+equal weightsならtraining objective自体をcorner-weightedに変えます．
+同じcontinuous residual normを保ちたいならimportance correctionが必要です．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 3 第6回の原則</b><br/>
+<b>低regularity solutionに対しては，
+点を「多く」置くのではなく，
+regularityが失われるscaleを理解して点を配置する．</b>
+</div>
+<p>
+次回はcorner-local gradingからさらに進み，
+<b>第31回：boundary layerでは点をどこに置くか — anisotropic sampling</b>
+へ進みます．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>P. Grisvard, <i>Elliptic Problems in Nonsmooth Domains</i>, Pitman, 1985.</li>
+<li>M. Dauge, <i>Elliptic Boundary Value Problems on Corner Domains</i>, Springer, 1988.</li>
+<li>M. Raissi, P. Perdikaris and G. E. Karniadakis, “Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations”, <i>Journal of Computational Physics</i> 378 (2019), 686–707.</li>
+<li>W. E and B. Yu, “The Deep Ritz Method: A Deep Learning-Based Numerical Algorithm for Solving Variational Problems”, <i>Communications in Mathematics and Statistics</i> 6 (2018), 1–12.</li>
+<li><a href="./chatgpt-fem-20.html">第20回：Morley要素を実装する — 4階問題と非適合有限要素法</a></li>
+<li><a href="./chatgpt-fem-26.html">第26回：Deep Ritzでは点をどこに置くか — quadratureとsampling geometry</a></li>
+<li><a href="./chatgpt-fem-28.html">第28回：PINNsでは点配置で答えが変わるか — uniform・random・adaptive sampling</a></li>
+<li><a href="./chatgpt-fem-29.html">第29回：境界点は何点必要か — interior lossとboundary loss</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 3 前回：</b><a href="./chatgpt-fem-29.html">第29回：境界点は何点必要か — interior lossとboundary loss</a></p>
+<p><b>次回：</b>第31回：boundary layerでは点をどこに置くか — anisotropic sampling（構想中）</p>
+<p><a href="../#chatgpt-fem-season3">Season 3一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
