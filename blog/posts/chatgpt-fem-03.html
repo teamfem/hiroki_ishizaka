@@ -544,8 +544,9 @@ def local_stiffness(P):
 </code></pre>
 <p>
 ここでは三角形を反時計回りに並べています．
-ただし，面積積分に \(|\det J|\) を使えば，頂点順序を反転しても局所剛性行列そのものは正しく計算できます．
-一方で，orientationが重要な有限要素では頂点順序を無視できません．
+面積積分には \(|\det J|\) を使うため，頂点順序を反転してもscalar P1要素の積分は正しく評価できます．
+ただし，局所自由度の番号を入れ替えれば，局所行列の表示も同じ行・列の置換を受けます．connectivityとの対応を一貫させることが必要です．
+また，RT要素やNédélec要素のようにorientationが自由度の符号やPiola変換に関わる場合には，頂点・辺・面の向きをより慎重に管理しなければなりません．
 </p>
 </article></div>
 
@@ -575,6 +576,12 @@ Pythonでは
 となります．
 local-to-global mapが <code>tri = [i0, i1, i2]</code> そのものになっている点が重要です．
 </p>
+<div style="padding:12px; margin:14px 0; border:1px solid #999999;">
+<b>大域行列についての注意</b><br/>
+Dirichlet境界条件をまだ課していないPoisson stiffness matrixは，定数関数に対応する零固有値を持つため正定値ではなく半正定値です．
+実際，各局所行列の行和が0なので，大域行列についても (A_{m full}{f 1}=0) です．
+同次Dirichlet境界自由度を除去した内部行列 (A_{II}) が対称正定値になります．
+</div>
 </article></div>
 
 <h2>12．Poisson問題を解く完全な最小コード</h2>
