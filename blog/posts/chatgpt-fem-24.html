@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第24回：AI時代に有限要素法をどう設計・検証するか — 数学構造からmethodを選ぶ | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,AI,method design,mathematical structure,finite element exterior calculus,de Rham,Piola,nonconforming,mixed method,Nitsche,DG,Morley,Nedelec,Raviart Thomas,pressure robustness,hypercircle,verified computation,anisotropic mesh"/>
+<meta name="description" content="Season 2 最終回（通算第24回）として，AI時代の有限要素法をmethod名からではなく，PDE作用素・trace・DoF・complex・境界条件・geometry・regularity・conservation・stability・certificationという数学構造から設計し，コードを定理として監査する方法を整理します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-24.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-24.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-24.html",
+      "headline": "第24回：AI時代に有限要素法をどう設計・検証するか — 数学構造からmethodを選ぶ",
+      "description": "PDE operator，trace，DoF，complex，geometry，stability，conservation，certificationからfinite-element methodを設計し，AI生成コードを数学的不変量で監査します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-24.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 2",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 2"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第24回：AI時代に有限要素法をどう設計・検証するか — 数学構造からmethodを選ぶ | Hiroki Ishizaka"/>
+<meta property="og:description" content="AIにmethod名を選ばせるのではなく，数学構造から有限要素を導き，定理をunit testへ変換して監査する．Season 2最終回．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-24.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第24回：AI時代に有限要素法をどう設計・検証するか — 数学構造からmethodを選ぶ | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="Choose FEMs from mathematical invariants, then make AI-generated code prove them."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 2 第12回（通算第24回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第24回：AI時代に有限要素法をどう設計・検証するか — 数学構造からmethodを選ぶ</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 2 第12回（通算第24回・Season 2最終回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――AIに有限要素法の名前を選ばせない</h2>
+<div class="news"><article class="news-item">
+<p>
+「このPDEにはどの有限要素法を使えばよいか」とAIに聞くと，
+P1，Taylor–Hood，DG，Nédélec，RTなど，それらしいmethod名はすぐ返ってきます．
+しかしmethod名が正しくても，
+trace，orientation，kernel，boundary condition，geometry，regularityのどれかを外せば，
+コードは静かに別の問題を解き始めます．
+</p>
+<p>
+Season 2で実装してきた方法を振り返ると，
+有限要素法を選ぶ本当の順序は
+</p>
+\[
+\boxed{
+\text{PDE structure}
+\longrightarrow
+\text{function space}
+\longrightarrow
+\text{DoF / trace}
+\longrightarrow
+\text{discrete operator}
+\longrightarrow
+\text{verification}
+}
+\tag{1}
+\]
+<p>
+です．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>この回の原則</b><br/>
+AIに「methodを教えてもらう」のではなく，
+<b>数学構造からmethodを導き，AIにはその実装候補を作らせ，最後に数学で監査する</b>．
+</div>
+</article></div>
+
+<h2>1．method selectionの入力はPDE名ではなく構造である</h2>
+<div class="news"><article class="news-item">
+<p>
+最初に抽出すべき情報はmethod名ではありません．
+少なくとも
+</p>
+\[
+\boxed{
+\begin{aligned}
+&\text{differential operator},\\
+&\text{energy space},\\
+&\text{essential / natural boundary conditions},\\
+&\text{conservation law},\\
+&\text{kernel / constraints},\\
+&\text{geometry and regularity},\\
+&\text{quantity to be trusted}
+\end{aligned}
+}
+\tag{2}
+\]
+<p>
+です．
+</p>
+<p>
+例えば同じPoisson equationでも，
+solutionだけ欲しいのか，normal fluxを局所保存したいのか，
+guaranteed upper boundまで欲しいのかでmethod designは変わります．
+</p>
+</article></div>
+
+<h2>2．最初の質問――何がcontinuousであるべきか</h2>
+<div class="news"><article class="news-item">
+<p>
+finite elementのglobal conformityはtrace continuityの選択です．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">space</th><th style="border:1px solid #777; padding:7px;">global structure</th><th style="border:1px solid #777; padding:7px;">代表 element</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(H^1\)</td><td style="border:1px solid #777; padding:7px;">function trace</td><td style="border:1px solid #777; padding:7px;">Lagrange</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(H(\operatorname{curl})\)</td><td style="border:1px solid #777; padding:7px;">tangential trace</td><td style="border:1px solid #777; padding:7px;">Nédélec</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(H(\operatorname{div})\)</td><td style="border:1px solid #777; padding:7px;">normal trace</td><td style="border:1px solid #777; padding:7px;">Raviart–Thomas / BDM</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">broken \(H^1\)</td><td style="border:1px solid #777; padding:7px;">weak/interface coupling</td><td style="border:1px solid #777; padding:7px;">DG / CR</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">broken \(H^2\)</td><td style="border:1px solid #777; padding:7px;">vertex + derivative momentsなど</td><td style="border:1px solid #777; padding:7px;">Morley</td></tr>
+</table>
+<p>
+この表を飛ばしてbasis formulaから始めると，
+vector elementを「vector-valued P1」として実装する典型的な誤りが起きます．
+</p>
+</article></div>
+
+<h2>3．DoFは「保存したい情報」から決める</h2>
+<div class="news"><article class="news-item">
+<p>
+DoFはbasisを決めるための番号ではなく，
+discrete fieldがelement間で共有する情報です．
+</p>
+\[
+\boxed{
+\begin{array}{rcl}
+\text{CR}&:&\displaystyle \int_F v\,ds,\\[2mm]
+\text{Nédélec}&:&\displaystyle \int_E\boldsymbol v\cdot\boldsymbol t\,ds,\\[2mm]
+\text{RT}&:&\displaystyle \int_F\boldsymbol q\cdot\boldsymbol n\,ds,\\[2mm]
+\text{Morley}&:&
+v(p_i),\
+\displaystyle\int_E\partial_n v\,ds.
+\end{array}
+}
+\tag{3}
+\]
+<p>
+したがって
+</p>
+\[
+\boxed{
+\text{DoF}
+\longrightarrow
+\text{trace invariance}
+\longrightarrow
+\text{mapping}
+}
+\tag{4}
+\]
+<p>
+という順に考えます．
+</p>
+</article></div>
+
+<h2>4．Piola transformは暗記せずDoF invarianceから導く</h2>
+<div class="news"><article class="news-item">
+<p>
+affine map
+\[
+F_T(\widehat x)=J_T\widehat x+b_T
+\]
+に対し，
+Nédélecではedge circulationを保存するため
+</p>
+\[
+\boxed{
+\boldsymbol v
+=
+J_T^{-\top}\widehat{\boldsymbol v}
+}
+\tag{5}
+\]
+<p>
+を使います．
+RTではnormal fluxを保存するため
+</p>
+\[
+\boxed{
+\boldsymbol q
+=
+\frac1{\det J_T}
+J_T\widehat{\boldsymbol q}.
+}
+\tag{6}
+\]
+<p>
+つまりPiola formulaは「element名に付属する呪文」ではなく，
+<b>どのintegral DoFをinvariantにしたいか</b>から決まります．
+</p>
+</article></div>
+
+<h2>5．operator sequenceを見る――de Rham complexを設計図にする</h2>
+<div class="news"><article class="news-item">
+<p>
+3次元では
+</p>
+\[
+\boxed{
+H^1
+\xrightarrow{\nabla}
+H(\operatorname{curl})
+\xrightarrow{\operatorname{curl}}
+H(\operatorname{div})
+\xrightarrow{\operatorname{div}}
+L^2
+}
+\tag{7}
+\]
+<p>
+に対応して
+</p>
+\[
+\boxed{
+P_1
+\xrightarrow{\nabla}
+N_0
+\xrightarrow{\operatorname{curl}}
+RT_0
+\xrightarrow{\operatorname{div}}
+P_0
+}
+\tag{8}
+\]
+<p>
+を選べます．
+</p>
+<p>
+ここでは「各spaceが高精度か」より
+</p>
+\[
+\boxed{
+\operatorname{curl}\nabla=0,
+\qquad
+\operatorname{div}\operatorname{curl}=0
+}
+\tag{9}
+\]
+<p>
+がdiscrete levelでも壊れないことが重要です．
+</p>
+</article></div>
+
+<h2>6．topologyはincidence matrixとして先に実装する</h2>
+<div class="news"><article class="news-item">
+<p>
+vertex–edge–face–cell incidence matricesを
+\[
+G,\quad C,\quad D
+\]
+とすると
+</p>
+\[
+\boxed{
+CG=0,
+\qquad
+DC=0.
+}
+\tag{10}
+\]
+<p>
+このidentityはgeometryやquadratureに依存しません．
+</p>
+<p>
+従ってAIが作ったmesh codeを監査するときは，
+PDEを解く前にinteger arithmeticで式 (10) をtestできます．
+</p>
+</article></div>
+
+<h2>7．穴があるならexactnessではなくcohomologyを見る</h2>
+<div class="news"><article class="news-item">
+<p>
+domain topologyがnontrivialでも式 (10) は成立します．
+変わるのは
+</p>
+\[
+\boxed{
+\ker C/\operatorname{im}G,
+\qquad
+\ker D/\operatorname{im}C
+}
+\tag{11}
+\]
+<p>
+です．
+</p>
+<p>
+tunnelがあればharmonic Nédélec modes，
+cavityがあればharmonic \(H(\operatorname{div})\) modesが残り得ます．
+</p>
+<p>
+したがって
+</p>
+\[
+\boxed{
+\text{complex}
+\neq
+\text{global exactness}
+}
+\tag{12}
+\]
+<p>
+をAI auditの基本ルールにします．
+</p>
+</article></div>
+
+<h2>8．内積を入れるとHodge–Helmholtz分解になる</h2>
+<div class="news"><article class="news-item">
+<p>
+incidence matrixにmass matrixを組み合わせると，
+topologyとmetricが接続されます．
+例えば
+</p>
+\[
+\delta_h=M_1^{-1}C^{\top}M_2
+\tag{13}
+\]
+<p>
+をdiscrete codifferentialとすれば
+</p>
+\[
+\boxed{
+N_h^0
+=
+\operatorname{im}G
+\oplus_{M_1}
+\mathcal H_h^1
+\oplus_{M_1}
+\operatorname{im}\delta_h.
+}
+\tag{14}
+\]
+<p>
+これがdiscrete Hodge–Helmholtz decompositionです．
+</p>
+<p>
+Maxwell kernelやStokes pressure robustnessを理解するとき，
+この分解は単なる抽象論ではなくsolver設計の一部になります．
+</p>
+</article></div>
+
+<h2>9．conforming methodを選ぶ理由を明文化する</h2>
+<div class="news"><article class="news-item">
+<p>
+\(H^1\)-conforming Lagrange methodの最大の利点は
+</p>
+\[
+V_h\subset V
+\tag{15}
+\]
+<p>
+という単純さです．
+Galerkin orthogonality，
+energy minimisation，
+standard duality argumentを直接使えます．
+</p>
+<p>
+一方，local conservationやspecial tracesを優先するなら，
+別のspaceが必要になります．
+</p>
+<p>
+つまり
+</p>
+\[
+\boxed{
+\text{conforming}
+\text{ はdefaultではなくdesign choice}
+}
+\tag{16}
+\]
+<p>
+です．
+</p>
+</article></div>
+
+<h2>10．nonconforming methodではapproximationとconsistencyを分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+CRやMorleyでは
+\[
+V_h\not\subset V.
+\]
+従って「interpolation errorが小さいからFEM errorも小さい」とは言えません．
+</p>
+<p>
+Strang型の基本構造は
+</p>
+\[
+\boxed{
+\text{FEM error}
+\lesssim
+\text{approximation error}
++
+\text{consistency error}.
+}
+\tag{17}
+\]
+<p>
+AIがnonconforming methodで最もよく落とすのは第二項です．
+</p>
+</article></div>
+
+<h2>11．CRを選ぶならRTとの離散部分積分まで見る</h2>
+<div class="news"><article class="news-item">
+<p>
+CRのface mean continuityとRTのnormal flux continuityは
+discrete integration by partsで結びつきます．
+</p>
+<p>
+この関係により，
+nonconforming consistency termを
+\(H(\operatorname{div})\) fieldで制御できます．
+</p>
+\[
+\boxed{
+\text{CR}
++
+\text{RT}
+\longrightarrow
+\text{weak continuity}
++
+\text{flux structure}
+}
+\tag{18}
+\]
+<p>
+methodを単独で見るより，compatible elementとの組を見る方が設計しやすい場合があります．
+</p>
+</article></div>
+
+<h2>12．mixed methodを選ぶなら「fluxをunknownにしたい理由」を問う</h2>
+<div class="news"><article class="news-item">
+<p>
+Poissonを
+\[
+\boldsymbol\sigma=\nabla u,
+\qquad
+\nabla\cdot\boldsymbol\sigma=-f
+\]
+と書いてRT–P0 mixed methodを使うと，
+normal fluxとcell balanceがprimary unknownになります．
+</p>
+<p>
+目的が
+</p>
+\[
+\boxed{
+\text{local conservation}
+}
+\tag{19}
+\]
+<p>
+なら非常に自然です．
+</p>
+<p>
+ただしmixed matrixがnonsingularだっただけでは十分ではなく，
+mesh familyに対するuniform inf–sup stabilityは別に確認します．
+</p>
+</article></div>
+
+<h2>13．Stokesでは「stable pair」と「pressure robust」を分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+incompressible Stokesで必要なのはまずinf–sup stabilityです．
+しかしvelocity errorがpressureやgradient forcingに汚染されないためには
+pressure robustnessも重要です．
+</p>
+<p>
+forcingを
+</p>
+\[
+\boldsymbol f
+=
+\mathbb P\boldsymbol f
++
+\nabla\phi
+\tag{20}
+\]
+<p>
+と分けたとき，
+velocityが本来反応すべきなのはsolenoidal partです．
+</p>
+<p>
+したがって
+</p>
+\[
+\boxed{
+\text{inf--sup stability}
+\neq
+\text{pressure robustness}.
+}
+\tag{21}
+\]
+<p>
+AIに「stableなStokes element」を求めるだけでは，
+この区別は保証されません．
+</p>
+</article></div>
+
+<h2>14．boundary conditionもmethod designの一部である</h2>
+<div class="news"><article class="news-item">
+<p>
+Dirichlet condition一つでも
+</p>
+\[
+\boxed{
+\text{strong imposition},
+\quad
+\text{Nitsche},
+\quad
+\text{DG numerical flux}
+}
+\tag{22}
+\]
+<p>
+という選択があります．
+</p>
+<p>
+Nitscheではboundary trace inequalityとpenalty scaling，
+DGではinterior jump / average / penaltyまで設計対象になります．
+</p>
+</article></div>
+
+<h2>15．anisotropic Nitscheでは「\(h^{-1}\)」だけでは足りない</h2>
+<div class="news"><article class="news-item">
+<p>
+face \(F\subset\partial T\) に対してnormal thicknessを
+</p>
+\[
+\boxed{
+\ell_{T,F}
+=
+\frac{d|T|_d}{|F|_{d-1}}
+}
+\tag{23}
+\]
+<p>
+とすれば，anisotropic boundary scalingをgeometryに合わせて記述できます．
+</p>
+<p>
+isotropicな
+\[
+\gamma/h
+\]
+を無条件で使うより，
+<b>どのnormal directionを制御しているか</b>を明示する方が安全です．
+</p>
+</article></div>
+
+<h2>16．DGではjumpを入れる理由をoperatorから説明する</h2>
+<div class="news"><article class="news-item">
+<p>
+broken spaceではelementwise integration by partsをすると
+interface termsが残ります．
+そこで
+</p>
+\[
+\boxed{
+\text{jump}
++
+\text{average / numerical flux}
++
+\text{penalty}
+}
+\tag{24}
+\]
+<p>
+を使ってglobal couplingを設計します．
+</p>
+<p>
+penaltyは「大きければ大きいほど安全」ではありません．
+coercivityを確保しながらconditioningを壊さないscaleが必要です．
+</p>
+</article></div>
+
+<h2>17．hybridisationではglobal unknownの意味が変わる</h2>
+<div class="news"><article class="news-item">
+<p>
+hybridised DG / mixed methodではelement interior unknownをlocalに消去し，
+skeleton trace \(\lambda_h\) をglobal unknownにできます．
+</p>
+<p>
+schematically
+</p>
+\[
+\boxed{
+S_T
+=
+D_T-C_TA_T^{-1}C_T^{\top}
+}
+\tag{25}
+\]
+<p>
+というlocal Schur complementをassembleします．
+</p>
+<p>
+しかし
+</p>
+\[
+\boxed{
+\text{hybridisation}
+\not\Rightarrow
+\text{global DoFが必ず減る}
+}
+\tag{26}
+\]
+<p>
+です．
+solverとspace designを分けて評価します．
+</p>
+</article></div>
+
+<h2>18．4階問題ではregularityをmethodより先に調べる</h2>
+<div class="news"><article class="news-item">
+<p>
+Morleyや\(C^0\) interior penaltyを選ぶ前に，
+biharmonic solutionがどこまでsmoothかを確認します．
+</p>
+<p>
+Morley energy errorでは例えば
+</p>
+\[
+u\in H^{2+\alpha}(\Omega),
+\qquad
+0&lt;\alpha\le1
+\]
+<p>
+なら典型的に
+</p>
+\[
+\boxed{
+|u-I_h^Mu|_{2,h}
+\lesssim
+h^\alpha
+|u|_{H^{2+\alpha}}.
+}
+\tag{27}
+\]
+<p>
+つまりpolynomial degreeだけではrateは決まりません．
+</p>
+</article></div>
+
+<h2>19．corner singularityはmesh designの入力である</h2>
+<div class="news"><article class="news-item">
+<p>
+corner近傍のsingular mode
+\[
+u_s
+=
+r^\lambda\Phi(\theta)
+\]
+に対し
+\[
+D^m u_s
+\sim
+r^{\operatorname{Re}\lambda-m}
+\]
+なので，genuine singular modeのSobolev thresholdは
+</p>
+\[
+\boxed{
+s
+&lt;
+1+\operatorname{Re}\lambda.
+}
+\tag{28}
+\]
+<p>
+regularityが不足するなら，
+uniform refinementの前にgraded meshや\(hp\)-designを検討します．
+</p>
+</article></div>
+
+<h2>20．geometry errorはdiscretisation errorとは別である</h2>
+<div class="news"><article class="news-item">
+<p>
+curved domainをpolygonで近似するとき，
+</p>
+\[
+\boxed{
+\text{total error}
+=
+\text{discretisation}
++
+\text{geometry}
++
+\text{boundary realisation}
++
+\text{quadrature}
+}
+\tag{29}
+\]
+<p>
+という分解を意識します．
+</p>
+<p>
+mesh-to-mesh convergenceが綺麗でも，
+limit problem自体が違えば正しいsolutionへは行きません．
+</p>
+</article></div>
+
+<h2>21．Babuška paradoxはmethod validationのbenchmarkになる</h2>
+<div class="news"><article class="news-item">
+<p>
+4階plate problemではgeometry approximationとnatural boundary operatorが強く結合します．
+</p>
+<p>
+したがって確認すべきなのは
+</p>
+\[
+\boxed{
+u_h\text{ が収束するか}
+\quad\text{ではなく}\quad
+u_h\text{ が正しいvariational limitへ収束するか}.
+}
+\tag{30}
+\]
+<p>
+Babuška paradoxは，
+geometry–boundary consistencyを検査する代表的benchmarkとして読めます．
+</p>
+</article></div>
+
+<h2>22．curved elementではmapping derivativeの階数を確認する</h2>
+<div class="news"><article class="news-item">
+<p>
+second-order problemではgradient transformが中心ですが，
+fourth-order problemではnon-affine map \(F_T\) に対して
+</p>
+\[
+\boxed{
+D^2(v\circ F_T)
+=
+DF_T^{\top}
+(D^2v\circ F_T)
+DF_T
++
+\sum_{\ell}
+(\partial_\ell v\circ F_T)
+D^2F_{T,\ell}.
+}
+\tag{31}
+\]
+<p>
+つまり
+\[
+D^2F_T
+\]
+が新しく現れます．
+</p>
+<p>
+AIが二階問題のmapping formulaをそのまま四階問題へコピーしていないかを監査します．
+</p>
+</article></div>
+
+<h2>23．anisotropyでは「最大径 \(h_T\)」だけを見ない</h2>
+<div class="news"><article class="news-item">
+<p>
+anisotropic simplexではJacobianのsingular valuesが方向ごとに異なります．
+</p>
+<p>
+したがって
+\[
+\|J_T\|,
+\qquad
+\|J_T^{-1}\|
+\]
+だけへ全てを潰すと，
+directional derivative structureを失う場合があります．
+</p>
+<p>
+監査すべきなのは
+</p>
+\[
+\boxed{
+\text{element directions}
++
+\text{operator direction}
++
+\text{Piola scaling}
++
+\text{trace geometry}.
+}
+\tag{32}
+\]
+</p>
+</article></div>
+
+<h2>24．shape regularityと他のgeometry conditionsを混同しない</h2>
+<div class="news"><article class="news-item">
+<p>
+mesh quality conditionは一種類ではありません．
+</p>
+<p>
+shape regularity，
+maximum-angle-type conditions，
+semi-regular conditions，
+normal-thickness conditionsなどは
+<b>同じ仮定の言い換えではありません</b>．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{theoremのmesh hypothesis}
+\quad\text{を}\quad
+\text{codeのmesh generatorと照合する}
+}
+\tag{33}
+\]
+<p>
+必要があります．
+</p>
+</article></div>
+
+<h2>25．収束率だけではmethodの正しさを証明できない</h2>
+<div class="news"><article class="news-item">
+<p>
+manufactured solutionで
+\[
+O(h),\quad O(h^2)
+\]
+が出ても，
+</p>
+<ul>
+<li>boundary conditionが違う，</li>
+<li>orientation signが全meshで偶然cancelしている，</li>
+<li>wrong methodがその特別解だけ再現している，</li>
+<li>geometry limitが違う，</li>
+</ul>
+<p>
+可能性があります．
+</p>
+<p>
+したがって
+</p>
+\[
+\boxed{
+\text{observed rate}
+\neq
+\text{mathematical validation}.
+}
+\tag{34}
+\]
+</p>
+</article></div>
+
+<h2>26．定理をunit testへ変換する</h2>
+<div class="news"><article class="news-item">
+<p>
+AI時代のFEM codeでは，
+proofで使うidentityをそのままtestへ変換するのが有効です．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">mathematics</th><th style="border:1px solid #777; padding:7px;">unit test</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">unisolvence</td><td style="border:1px solid #777; padding:7px;">DoF matrix = identity</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">polynomial reproduction</td><td style="border:1px solid #777; padding:7px;">patch test</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">Piola invariance</td><td style="border:1px solid #777; padding:7px;">edge / face integral preservation</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">complex property</td><td style="border:1px solid #777; padding:7px;">\(CG=0,\ DC=0\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">local conservation</td><td style="border:1px solid #777; padding:7px;">cell balance</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">symmetry / coercivity</td><td style="border:1px solid #777; padding:7px;">matrix symmetry・energy positivity</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">commuting projection</td><td style="border:1px solid #777; padding:7px;">operator defectをmachine precisionで確認</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">hypercircle / equilibration</td><td style="border:1px solid #777; padding:7px;">divergence target・normal continuity・upper bound</td></tr>
+</table>
+</article></div>
+
+<h2>27．AI生成コードはまずalgebraic invariantsで落とす</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def structural_audit(mesh, fem):
+    assert fem.unisolvence_defect() &lt; 1.0e-12
+    assert fem.patch_test_error() &lt; 1.0e-12
+
+    if fem.has_edge_orientation:
+        assert fem.edge_orientation_is_global()
+
+    if fem.has_face_orientation:
+        assert fem.face_orientation_is_global()
+
+    if fem.has_de_rham_complex:
+        assert fem.norm_CG() == 0
+        assert fem.norm_DC() == 0
+
+    if fem.has_equilibrated_flux:
+        assert fem.normal_jump_norm() &lt; 1.0e-12
+        assert fem.divergence_target_defect() &lt; 1.0e-12
+</code></pre>
+<p>
+PDE convergence testはこの後です．
+structureが壊れたコードをmesh refinementで救おうとしてはいけません．
+</p>
+</article></div>
+
+<h2>28．「コンパイルが通る」をverification level 0と考える</h2>
+<div class="news"><article class="news-item">
+<p>
+AI codeの検証をlayerに分けると分かりやすくなります．
+</p>
+\[
+\boxed{
+\begin{aligned}
+L0&:\ \text{syntax / execution},\\
+L1&:\ \text{local algebra},\\
+L2&:\ \text{global topology / orientation},\\
+L3&:\ \text{variational consistency / stability},\\
+L4&:\ \text{convergence},\\
+L5&:\ \text{guaranteed error / verified enclosure}.
+\end{aligned}
+}
+\tag{35}
+\]
+<p>
+「動いた」は \(L0\) に過ぎません．
+</p>
+</article></div>
+
+<h2>29．method choiceをdecision tableにする</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">主目的</th>
+<th style="border:1px solid #777; padding:7px;">まず見る構造</th>
+<th style="border:1px solid #777; padding:7px;">候補</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">scalar solution・標準energy</td><td style="border:1px solid #777; padding:7px;">\(H^1\) conformity</td><td style="border:1px solid #777; padding:7px;">Lagrange</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">weak Dirichlet boundary</td><td style="border:1px solid #777; padding:7px;">trace + coercive penalty</td><td style="border:1px solid #777; padding:7px;">Nitsche</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">elementwise discontinuityを許す</td><td style="border:1px solid #777; padding:7px;">numerical flux / jump</td><td style="border:1px solid #777; padding:7px;">DG</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">normal flux・local conservation</td><td style="border:1px solid #777; padding:7px;">\(H(\operatorname{div})\)</td><td style="border:1px solid #777; padding:7px;">RT / BDM mixed</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">electromagnetic circulation</td><td style="border:1px solid #777; padding:7px;">\(H(\operatorname{curl})\)</td><td style="border:1px solid #777; padding:7px;">Nédélec</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">low-order nonconforming diffusion</td><td style="border:1px solid #777; padding:7px;">face moments + consistency</td><td style="border:1px solid #777; padding:7px;">CR</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">plate bending</td><td style="border:1px solid #777; padding:7px;">broken \(H^2\) + regularity</td><td style="border:1px solid #777; padding:7px;">Morley / \(C^0\)IP</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">incompressible flow</td><td style="border:1px solid #777; padding:7px;">inf–sup + Helmholtz</td><td style="border:1px solid #777; padding:7px;">stable pair + pressure-robust reconstruction</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">guaranteed energy error</td><td style="border:1px solid #777; padding:7px;">equilibrium + \(H(\operatorname{div})\)</td><td style="border:1px solid #777; padding:7px;">equilibrated flux / hypercircle</td></tr>
+</table>
+</article></div>
+
+<h2>30．AIへのpromptも数学構造で書く</h2>
+<div class="news"><article class="news-item">
+<p>
+悪いpromptは
+</p>
+<blockquote>
+「Poisson方程式をFEMで解くPythonを書いて」
+</blockquote>
+<p>
+だけです．
+</p>
+<p>
+より安全なpromptは，例えば
+</p>
+<div style="padding:12px; margin:14px 0; border:2px solid #666; background:#fafafa;">
+2D simplicial mesh上のPoisson problemを実装する．<br/>
+trial spaceはconforming \(P_1\)，Dirichlet dataはstrongly imposeする．<br/>
+local stiffnessはaffine mapから導出し，triangle orientationは \(\det J_T&gt;0\) を確認する．<br/>
+constant / affine patch test，matrix symmetry，energy convergenceをtestする．<br/>
+数式とコードで使うsign conventionを最初に一覧化する．
+</div>
+<p>
+のように<b>verification contract</b>まで含めます．
+</p>
+</article></div>
+
+<h2>31．AIに「証明」をさせるより「証明義務」を列挙させる</h2>
+<div class="news"><article class="news-item">
+<p>
+AIは長いproofを流暢に生成できますが，
+一つのsignやtrace domainを誤ると全体が崩れます．
+</p>
+<p>
+そこでまず
+</p>
+\[
+\boxed{
+\text{proof obligations}
+=
+\{
+\text{unisolvence},
+\text{mapping},
+\text{consistency},
+\text{stability},
+\text{approximation}
+\}
+}
+\tag{36}
+\]
+<p>
+を列挙させ，
+各項を独立に監査する方が安全です．
+</p>
+</article></div>
+
+<h2>32．「定理→コード→数値」の三角形を閉じる</h2>
+<div class="news"><article class="news-item">
+<p>
+一つのFEM resultには三つの表現があります．
+</p>
+\[
+\boxed{
+\text{theorem}
+\longleftrightarrow
+\text{implementation invariant}
+\longleftrightarrow
+\text{numerical experiment}.
+}
+\tag{37}
+\]
+<p>
+例えばNédélecなら
+</p>
+<ul>
+<li>theorem：covariant Piolaがedge circulationを保存する，</li>
+<li>code：transformed basisのedge integralを比較する，</li>
+<li>experiment：commuting defectとconvergence rateを見る，</li>
+</ul>
+<p>
+という三角形を閉じます．
+</p>
+</article></div>
+
+<h2>33．verificationとvalidationを分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+ここでは二つの言葉を分けて使います．
+</p>
+\[
+\boxed{
+\begin{aligned}
+\text{verification}
+&:\ \text{discrete method / codeが意図した数理問題を実装しているか},\\
+\text{validation}
+&:\ \text{その数理問題が現実のmodelとして適切か}.
+\end{aligned}
+}
+\tag{38}
+\]
+<p>
+AIが高精度なsolverを生成しても，
+boundary conditionやphysical model自体が違えばvalidationは失敗します．
+</p>
+</article></div>
+
+<h2>34．error estimateとerror certificateを分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+asymptotic statement
+\[
+\|u-u_h\|
+=
+O(h^p)
+\]
+と，
+specific computationに対する
+\[
+\|u-\widetilde u_h\|
+\le
+\eta_h
+\]
+は役割が違います．
+</p>
+\[
+\boxed{
+\text{a priori theory}
+\quad+\quad
+\text{a posteriori certification}
+}
+\tag{39}
+\]
+<p>
+の両方があると，
+「なぜ収束するか」と「今の計算がどこまで正しいか」を分けて答えられます．
+</p>
+</article></div>
+
+<h2>35．fully verified computationでは浮動小数点まで閉じる</h2>
+<div class="news"><article class="news-item">
+<p>
+guaranteed estimator formulaをdouble precisionで評価しただけでは，
+strict interval proofにはなりません．
+</p>
+<p>
+必要なら最後に
+</p>
+\[
+\boxed{
+\text{outward rounding}
++
+\text{interval arithmetic}
+}
+\tag{40}
+\]
+<p>
+でscalar inequalitiesを閉じます．
+</p>
+<p>
+重要なのは，rigorのlevelを明示することです．
+</p>
+</article></div>
+
+<h2>36．AIが最も危険なのは「もっともらしい中間層」</h2>
+<div class="news"><article class="news-item">
+<p>
+syntax errorは見つけやすく，
+大きな発散も見つけやすい．
+難しいのは
+</p>
+\[
+\boxed{
+\text{動く}
++
+\text{rateもそれらしい}
++
+\text{数学構造だけ少し違う}
+}
+\tag{41}
+\]
+<p>
+ケースです．
+</p>
+<p>
+例えば
+</p>
+<ul>
+<li>RTとNédélecのPiolaを取り違える，</li>
+<li>CRでconsistency termを落とす，</li>
+<li>Stokesでdiscrete divergence-freeをpressure-robustと同一視する，</li>
+<li>Morleyでsmooth manufactured solutionからgeneric regularityを推測する，</li>
+<li>hypercircleでmean equilibrationをexact equilibrationと呼ぶ，</li>
+</ul>
+<p>
+といった誤りです．
+</p>
+</article></div>
+
+<h2>37．Season 2で得たmethod-independent audit sequence</h2>
+<div class="news"><article class="news-item">
+<p>
+どのfinite elementでも，次の順番で監査できます．
+</p>
+\[
+\boxed{
+\begin{aligned}
+1.&\ \text{continuous problem / sign convention},\\
+2.&\ \text{energy space / trace},\\
+3.&\ \text{local polynomial space / DoFs},\\
+4.&\ \text{mapping / orientation},\\
+5.&\ \text{global conformity or nonconformity},\\
+6.&\ \text{consistency identity},\\
+7.&\ \text{stability / kernel / inf--sup},\\
+8.&\ \text{approximation / regularity / geometry},\\
+9.&\ \text{numerical convergence},\\
+10.&\ \text{a posteriori certification}.
+\end{aligned}
+}
+\tag{42}
+\]
+</p>
+<p>
+この順序なら，AIが生成したmethodでも
+「どこまで確認済みか」を明示できます．
+</p>
+</article></div>
+
+<h2>38．AI用finite-element audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このfinite-element methodと実装を，method名や既知の収束率を前提にせず数学構造から監査してください．<br/>
+(1) continuous PDE，weak form，sign conventionを再導出する，<br/>
+(2) trial/test spaceと必要なtrace continuityを特定する，<br/>
+(3) local polynomial spaceとDoFsのunisolvenceを確認する，<br/>
+(4) affine / curved mappingとDoF invarianceを確認する，<br/>
+(5) edge / face orientationをglobalに整合させる，<br/>
+(6) conformingならsubspace inclusion，nonconformingならconsistency termを確認する，<br/>
+(7) mixed / saddle-point problemならkernelとinf–sup conditionを確認する，<br/>
+(8) de Rham structureがある場合 \(CG=0,\ DC=0\) とcommuting projectionを確認する，<br/>
+(9) boundary conditionがstrong / weak / naturalのどれかを区別する，<br/>
+(10) anisotropic meshでtheoremのgeometry hypothesisとmesh generatorを照合する，<br/>
+(11) solution regularityが主張する収束率に十分か確認する，<br/>
+(12) curved domainではgeometry errorとboundary-realisation errorを分離する，<br/>
+(13) local conservation / pressure robustness / harmonic modesなどproblem-specific structureを確認する，<br/>
+(14) patch test・operator identity・energy testを収束試験より先に実行する，<br/>
+(15) guaranteed errorを主張する場合はequilibrationやresidual upper boundを確認する，<br/>
+(16) fully rigorous computationを主張する場合はroundingまで含めて閉じる，<br/>
+(17) 最後に「証明済み・数値確認のみ・未確認」の三分類でaudit結果を返す<br/>
+こと．
+</div>
+</article></div>
+
+<h2>39．methodを選ぶ最終式</h2>
+<div class="news"><article class="news-item">
+<p>
+finite element methodを選ぶ操作を一行で書くなら，
+</p>
+\[
+\boxed{
+\mathcal M_h
+=
+\mathcal M_h(
+\text{operator},
+\text{trace},
+\text{topology},
+\text{geometry},
+\text{regularity},
+\text{conservation},
+\text{target}
+).
+}
+\tag{43}
+\]
+<p>
+methodはPDE名だけの関数ではありません．
+</p>
+<p>
+そしてAIの役割は
+</p>
+\[
+\boxed{
+\text{candidate generation}
++
+\text{symbolic / coding assistance}
++
+\text{automated tests}
+}
+\tag{44}
+\]
+<p>
+であり，
+mathematical acceptance criterionは人間側が明示します．
+</p>
+</article></div>
+
+<h2>40．Season 2の結論――コードに数学構造を埋め込む</h2>
+<div class="news"><article class="news-item">
+<p>
+Season 2では，nodal P1から離れて
+CR，RT，mixed Poisson，Stokes，Nitsche，DG，Morley，Nédélec，
+de Rham complex，equilibrated fluxまで実装しました．
+</p>
+<p>
+一見ばらばらなmethodsに共通していたのは
+</p>
+\[
+\boxed{
+\begin{aligned}
+&\text{DoF},\\
+&\text{trace},\\
+&\text{orientation},\\
+&\text{operator compatibility},\\
+&\text{stability},\\
+&\text{geometry},\\
+&\text{certification}
+\end{aligned}
+}
+\tag{45}
+\]
+<p>
+です．
+</p>
+<p>
+AIがコード生成を高速化するほど，
+この数学構造を先に固定する価値は大きくなります．
+</p>
+\[
+\boxed{
+\text{AI-generated FEM}
+\quad\text{を}\quad
+\text{mathematically auditable FEM}
+\quad\text{へ}.
+}
+\tag{46}
+\]
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 2 最終原則</b><br/>
+<b>有限要素法は「basis functionを並べる技術」ではない．
+連続問題の構造を，有限次元のDoF・operator・orientation・energyへ移す技術である．</b>
+</div>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>P. G. Ciarlet, <i>The Finite Element Method for Elliptic Problems</i>, North-Holland, 1978.</li>
+<li>F. Brezzi and M. Fortin, <i>Mixed and Hybrid Finite Element Methods</i>, Springer, 1991.</li>
+<li>S. C. Brenner and L. R. Scott, <i>The Mathematical Theory of Finite Element Methods</i>, 3rd ed., Springer, 2008.</li>
+<li>D. N. Arnold, R. S. Falk and R. Winther, “Finite element exterior calculus, homological techniques, and applications”, <i>Acta Numerica</i> 15 (2006), 1–155.</li>
+<li>R. Hiptmair, “Finite elements in computational electromagnetism”, <i>Acta Numerica</i> 11 (2002), 237–339.</li>
+<li>A. Ern and J.-L. Guermond, <i>Theory and Practice of Finite Elements</i>, Springer, 2004.</li>
+<li>A. Ern and M. Vohralík, “Polynomial-degree-robust a posteriori estimates in a unified setting for conforming, nonconforming, discontinuous Galerkin, and mixed discretizations”, <i>SIAM Journal on Numerical Analysis</i> 53(2) (2015), 1058–1081.</li>
+<li><a href="./chatgpt-fem-13.html">第13回：Crouzeix–Raviart要素を本当に実装する</a></li>
+<li><a href="./chatgpt-fem-14.html">第14回：Raviart–Thomas要素を実装する</a></li>
+<li><a href="./chatgpt-fem-17.html">第17回：Stokes方程式を有限要素法で解く</a></li>
+<li><a href="./chatgpt-fem-18.html">第18回：Nitsche法とは何か</a></li>
+<li><a href="./chatgpt-fem-19.html">第19回：DG法では何が変わるか</a></li>
+<li><a href="./chatgpt-fem-20.html">第20回：Morley要素を実装する</a></li>
+<li><a href="./chatgpt-fem-21.html">第21回：Nédélec要素を実装する</a></li>
+<li><a href="./chatgpt-fem-22.html">第22回：de Rham complexをコードで見る</a></li>
+<li><a href="./chatgpt-fem-23.html">第23回：有限要素解の誤差を保証する</a></li>
+<li><a href="./paradoxes-pitfalls-01.html">領域が収束しても解は正しく収束しない――バブシュカ・パラドックス</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 2 前回：</b><a href="./chatgpt-fem-23.html">第23回：有限要素解の誤差を保証する — equilibrated fluxとhypercircle</a></p>
+<p><b>Season 2：</b>第24回で完結です．</p>
+<p><a href="../#chatgpt-fem-season2">Season 2一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
