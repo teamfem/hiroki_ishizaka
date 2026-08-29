@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第32回：点配置を誤差から変える — residual-adaptive sampling | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,PINNs,residual adaptive sampling,adaptive collocation,Dorfler marking,error estimator,residual norm,sampling geometry,coverage,importance sampling,equilibrated flux,PyTorch"/>
+<meta name="description" content="Season 3 第8回（通算第32回）として，PINNsの点配置をresidualから適応的に更新します．global residualとlocal errorの違い，cellwise residual indicators，Dörfler型marking，coverage safeguard，importance weighting，independent audit，guaranteed estimatorとの違いを実装・監査します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-32.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-32.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-32.html",
+      "headline": "第32回：点配置を誤差から変える — residual-adaptive sampling",
+      "description": "PINNsのcollocation pointsをresidualから適応的に更新し，Dörfler型marking，coverage safeguard，importance weighting，independent residual auditを数値解析します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-32.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 3",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 3"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第32回：点配置を誤差から変える — residual-adaptive sampling | Hiroki Ishizaka"/>
+<meta property="og:description" content="residualが大きい場所へ点を足せばよいのか．local errorとの違い，coverage，marking，certificationまで含めてadaptive samplingを監査します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-32.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第32回：点配置を誤差から変える — residual-adaptive sampling | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="Residual-adaptive PINN sampling with local marking, coverage safeguards and independent error audits."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 3 第8回（通算第32回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第32回：点配置を誤差から変える — residual-adaptive sampling</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 3 第8回（通算第32回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――「residualが大きい場所へ点を置く」をそのまま信じない</h2>
+<div class="news"><article class="news-item">
+<p>
+第28回ではuniform・random・adaptive samplingを比較し，
+第30・31回ではregularityやlayer geometryを先に知っている場合のgraded / anisotropic samplingを考えました．
+</p>
+<p>
+今回はexact solutionの構造を事前に知らないとき，
+computed PINNから得られるresidualを使ってpoint cloudを更新します．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>第32回の問い</b><br/>
+\[
+\boxed{
+\text{residual}
+\longrightarrow
+\text{local indicator}
+\longrightarrow
+\text{mark}
+\longrightarrow
+\text{new points}
+}
+\tag{1}
+\]
+<p>
+というloopを，どこまで「誤差適応」と呼んでよいのか？
+</p>
+</div>
+</article></div>
+
+<h2>1．まず「真の誤差」と「residual」を分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+Poisson problem
+</p>
+\[
+-\Delta u=f
+\quad\text{in }\Omega,
+\qquad
+u=0
+\quad\text{on }\partial\Omega
+\tag{2}
+\]
+<p>
+を考えます．
+PINN approximationを \(u_\theta\) とし，
+</p>
+\[
+\boxed{
+e_\theta
+=
+u_\theta-u
+}
+\tag{3}
+\]
+<p>
+をtrue errorとします．
+</p>
+<p>
+strong residualは
+</p>
+\[
+\boxed{
+r_\theta
+=
+-\Delta u_\theta-f.
+}
+\tag{4}
+\]
+<p>
+exact solutionを知らない実問題では \(e_\theta\) は計算できませんが，
+\(r_\theta\) はautomatic differentiationから計算できます．
+</p>
+</article></div>
+
+<h2>2．global residual normとenergy errorには明確な関係がある</h2>
+<div class="news"><article class="news-item">
+<p>
+conforming \(u_\theta\in H_0^1(\Omega)\) に対してweak residual functionalを
+</p>
+\[
+\boxed{
+\langle R_\theta,v\rangle
+=
+\int_\Omega
+\nabla u_\theta\cdot\nabla v\,dx
+-
+\int_\Omega
+fv\,dx
+}
+\tag{5}
+\]
+<p>
+とします．
+</p>
+<p>
+exact solutionのweak equationを引けば
+</p>
+\[
+\langle R_\theta,v\rangle
+=
+\int_\Omega
+\nabla e_\theta\cdot\nabla v\,dx.
+\]
+<p>
+従ってenergy inner productが定めるdual normでは
+</p>
+\[
+\boxed{
+\|R_\theta\|_{H^{-1},E}
+=
+|e_\theta|_{H^1(\Omega)}.
+}
+\tag{6}
+\]
+</article></div>
+
+<h2>3．strong \(L^2\) residualならglobal upper boundを作れる</h2>
+<div class="news"><article class="news-item">
+<p>
+\(u_\theta\) がstrong residualを持つだけsmoothなら
+</p>
+\[
+-\Delta e_\theta
+=
+r_\theta.
+\]
+<p>
+Poincaré inequalityから
+</p>
+\[
+\boxed{
+|e_\theta|_{H^1}
+\le
+C_P
+\|r_\theta\|_{L^2}.
+}
+\tag{7}
+\]
+<p>
+つまりcontinuous residual normが小さいことには数学的意味があります．
+</p>
+</article></div>
+
+<h2>4．しかしpointwise residualはlocal errorではない</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (7) はglobal normの関係です．
+</p>
+<p>
+一方
+</p>
+\[
+\boxed{
+|r_\theta(x)|
+\text{ large}
+\quad\not\Leftrightarrow\quad
+|\nabla e_\theta(x)|
+\text{ large}.
+}
+\tag{8}
+\]
+<p>
+Poisson operatorのinverseはnonlocalなので，
+ある場所のresidualはdomain全体のerrorへ影響します．
+</p>
+</article></div>
+
+<h2>5．Green functionでnonlocalityを見る</h2>
+<div class="news"><article class="news-item">
+<p>
+形式的にGreen function \(G\) を使えば
+</p>
+\[
+\boxed{
+e_\theta(x)
+=
+\int_\Omega
+G(x,y)
+r_\theta(y)\,dy.
+}
+\tag{9}
+\]
+<p>
+従って「\(y\) でresidualが大きい」ことと
+「\(y\) でsolution errorが大きい」ことは同じではありません．
+</p>
+<p>
+residual-adaptive samplingは
+<b>true local errorそのものではなく，computable defectを使うadaptive heuristic</b>
+です．
+</p>
+</article></div>
+
+<h2>6．manufactured solutionではoracle error mapを作れる</h2>
+<div class="news"><article class="news-item">
+<p>
+exact solution \(u^\ast\) が分かるnumerical experimentでは，
+</p>
+\[
+\boxed{
+g_{\rm err}(x)
+=
+|\nabla(u_\theta-u^\ast)(x)|^2
+}
+\tag{10}
+\]
+<p>
+を計算できます．
+</p>
+<p>
+これは実用algorithmには使えませんが，
+</p>
+\[
+\boxed{
+\text{residual-adaptive points}
+\quad\text{vs}\quad
+\text{oracle error-adaptive points}
+}
+\tag{11}
+\]
+<p>
+を比較するaudit benchmarkになります．
+</p>
+</article></div>
+
+<h2>7．pointwise top-\(K\)からcellwise indicatorへ進む</h2>
+<div class="news"><article class="news-item">
+<p>
+第28回ではcandidate pointsの
+\[
+|r_\theta(y_j)|
+\]
+が大きい順にpointを追加しました．
+</p>
+<p>
+しかしsharp peakが一つあるとpointsが一点へcollapseしやすいため，
+今回はdomainをcoarse cells
+</p>
+\[
+\boxed{
+\mathcal P
+=
+\{K\}
+}
+\tag{12}
+\]
+<p>
+へ分け，<b>pointではなくregionをmark</b>します．
+</p>
+</article></div>
+
+<h2>8．cellwise sampled residual indicator</h2>
+<div class="news"><article class="news-item">
+<p>
+cell \(K\) にcandidate points
+</p>
+\[
+Y_K
+=
+\{y_{K,1},\ldots,y_{K,m_K}\}
+\]
+<p>
+を置き，
+</p>
+\[
+\boxed{
+\widehat\eta_K^2
+=
+\frac{|K|}{m_K}
+\sum_{j=1}^{m_K}
+|r_\theta(y_{K,j})|^2
+}
+\tag{13}
+\]
+<p>
+とします．
+</p>
+<p>
+これは
+</p>
+\[
+\int_K|r_\theta|^2dx
+\]
+<p>
+のsampled approximationであって，
+まだguaranteed error estimatorではありません．
+</p>
+</article></div>
+
+<h2>9．global sampled indicator</h2>
+<div class="news"><article class="news-item">
+<p>
+cell contributionsを足して
+</p>
+\[
+\boxed{
+\widehat\eta^2
+=
+\sum_{K\in\mathcal P}
+\widehat\eta_K^2.
+}
+\tag{14}
+\]
+<p>
+candidate quadratureが十分なら
+</p>
+\[
+\widehat\eta
+\approx
+\|r_\theta\|_{L^2(\Omega)}
+\]
+<p>
+を狙えます．
+</p>
+<p>
+training lossとは独立なcandidate setで作るのが重要です．
+</p>
+</article></div>
+
+<h2>10．Dörfler型markingをsamplingへ借りる</h2>
+<div class="news"><article class="news-item">
+<p>
+\(0&lt;\vartheta\le1\) を選び，
+marked cells \(\mathcal M\subset\mathcal P\) が
+</p>
+\[
+\boxed{
+\sum_{K\in\mathcal M}
+\widehat\eta_K^2
+\ge
+\vartheta
+\sum_{K\in\mathcal P}
+\widehat\eta_K^2
+}
+\tag{15}
+\]
+<p>
+を満たすようにします．
+</p>
+<p>
+実装では \(\widehat\eta_K^2\) を大きい順にsortし，
+thresholdを超えるまでcellsを追加します．
+</p>
+</article></div>
+
+<h2>11．これはFEMのDörfler markingと同じ定理ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+adaptive FEMではreliable / efficient estimatorとmesh refinement theoryを組み合わせて
+convergenceを証明する枠組みがあります．
+</p>
+<p>
+ここで使う
+\[
+\widehat\eta_K
+\]
+はsampled strong residualなので，
+</p>
+\[
+\boxed{
+\text{Dörfler-like selection rule}
+\neq
+\text{AFEM convergence theorem}.
+}
+\tag{16}
+\]
+<p>
+借りているのは「総indicator massの一定割合をmarkする」というselection mechanismです．
+</p>
+</article></div>
+
+<h2>12．top-\(K\) point selectionよりregion markingが安全な理由</h2>
+<div class="news"><article class="news-item">
+<p>
+一つのresidual peakの周囲にcandidate pointsが密なら，
+pointwise top-\(K\) はほぼ同じ場所を何度も選びます．
+</p>
+<p>
+cellwise markingなら
+</p>
+\[
+\boxed{
+\text{peak magnitude}
+\quad+\quad
+\text{region measure}
+}
+\tag{17}
+\]
+<p>
+をindicatorに含められます．
+</p>
+<p>
+それでもcollapseを完全には防げないので，次にcoverage constraintを加えます．
+</p>
+</article></div>
+
+<h2>13．coverage safeguardを別に置く</h2>
+<div class="news"><article class="news-item">
+<p>
+current training setを \(X_k\) とし，
+cell \(K\) 内のpoint countを
+</p>
+\[
+\boxed{
+n_K(X_k)
+=
+\#(X_k\cap K)
+}
+\tag{18}
+\]
+<p>
+とします．
+</p>
+<p>
+最低coverageとして
+</p>
+\[
+\boxed{
+n_K(X_k)
+\ge
+n_{\min}
+\qquad
+\forall K\in\mathcal P
+}
+\tag{19}
+\]
+<p>
+を要求します．
+</p>
+</article></div>
+
+<h2>14．base pointsを消さない設計が最も単純</h2>
+<div class="news"><article class="news-item">
+<p>
+total training setを
+</p>
+\[
+\boxed{
+X_k
+=
+X_{\rm base}
+\cup
+X_{{\rm adapt},k}
+}
+\tag{20}
+\]
+<p>
+とし，
+\(X_{\rm base}\) はuniform / geometry-aware pointsとして固定します．
+</p>
+<p>
+adaptive pointsだけを入れ替えれば
+</p>
+\[
+\boxed{
+\text{global exploration}
++
+\text{local exploitation}
+}
+\tag{21}
+\]
+<p>
+を分離できます．
+</p>
+</article></div>
+
+<h2>15．adaptive loopを五段階にする</h2>
+<div class="news"><article class="news-item">
+<p>
+今回の基本loopは
+</p>
+\[
+\boxed{
+\text{TRAIN}
+\to
+\text{AUDIT}
+\to
+\text{MARK}
+\to
+\text{RESAMPLE}
+\to
+\text{RETRAIN}
+}
+\tag{22}
+\]
+<p>
+です．
+</p>
+<p>
+ここでAUDITはtraining lossではなく，
+独立candidate / reference setで行います．
+</p>
+</article></div>
+
+<h2>16．TRAIN――point setを一度freezeして最適化する</h2>
+<div class="news"><article class="news-item">
+<p>
+adaptive pointsを毎gradient step変えると，
+optimizerが追うobjective自体が毎回変化します．
+</p>
+<p>
+そこで一つのadaptation stageでは
+</p>
+\[
+\boxed{
+X_k
+\text{ fixed}
+}
+\tag{23}
+\]
+<p>
+として一定stepだけtrainingし，
+その後にpointsを更新します．
+</p>
+<p>
+sampling dynamicsとparameter optimisation dynamicsを分離するためです．
+</p>
+</article></div>
+
+<h2>17．AUDIT――candidate setはtraining setと分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+各cellにcandidate points \(Y_K\) を置き，
+式 (13) の
+\[
+\widehat\eta_K
+\]
+を計算します．
+</p>
+<p>
+さらに別のreference set \(Z_{\rm ref}\) で
+</p>
+\[
+\boxed{
+R_{\rm ref}
+=
+\left(
+\int_\Omega
+|r_\theta|^2dx
+\right)^{1/2}
+}
+\tag{24}
+\]
+<p>
+を高精度quadratureで近似します．
+</p>
+</article></div>
+
+<h2>18．MARK――residual massの一定割合を選ぶ</h2>
+<div class="news"><article class="news-item">
+<p>
+\(\vartheta=0.5\) なら，
+</p>
+\[
+\sum_{K\in\mathcal M}
+\widehat\eta_K^2
+\ge
+0.5
+\widehat\eta^2
+\]
+<p>
+となるcellsをmarkします．
+</p>
+<p>
+ただし \(\vartheta=0.5\) はillustrative choiceであり，
+problem-independentな最適値ではありません．
+</p>
+</article></div>
+
+<h2>19．RESAMPLE――marked regionへ新しいpointsを入れる</h2>
+<div class="news"><article class="news-item">
+<p>
+marked cell \(K\) への追加point数を
+</p>
+\[
+\boxed{
+m_K^{\rm new}
+\propto
+\widehat\eta_K^p,
+\qquad
+p&gt;0
+}
+\tag{25}
+\]
+<p>
+とする一つの方法があります．
+</p>
+<p>
+\(p\) が大きいほどlarge indicatorへ集中します．
+</p>
+<p>
+過度の集中を避けるため
+\[
+m_K^{\rm new}
+\le
+m_{\max}
+\]
+のcapを置く設計も有効です．
+</p>
+</article></div>
+
+<h2>20．RETRAIN――同じnetworkをwarm startするか，resetするか</h2>
+<div class="news"><article class="news-item">
+<p>
+adaptive sampling後は二つの比較ができます．
+</p>
+\[
+\boxed{
+\begin{aligned}
+\text{warm start}
+&:\ \theta_{k+1}^{(0)}=\theta_k,\\
+\text{restart}
+&:\ \theta_{k+1}^{(0)}=\theta_{\rm init}.
+\end{aligned}
+}
+\tag{26}
+\]
+<p>
+warm startは実用的ですが，
+point placementの効果とoptimisation historyが混ざります．
+</p>
+<p>
+method comparisonでは両者を区別して記録します．
+</p>
+</article></div>
+
+<h2>21．fixed budget adaptationもできる</h2>
+<div class="news"><article class="news-item">
+<p>
+total number of adaptive pointsを
+\[
+N_{\rm adapt}
+\]
+に固定し，
+indicatorに応じてpointsをredistributeすれば
+</p>
+\[
+\boxed{
+|X_k|
+=
+N_{\rm base}
++
+N_{\rm adapt}
+}
+\tag{27}
+\]
+<p>
+を全stageで保てます．
+</p>
+<p>
+これなら「精度が上がったのは単にpoint数が増えたから」という混同を避けられます．
+</p>
+</article></div>
+
+<h2>22．cumulative adaptationでは計算量も増える</h2>
+<div class="news"><article class="news-item">
+<p>
+一方
+</p>
+\[
+\boxed{
+X_{k+1}
+\supset X_k
+}
+\tag{28}
+\]
+<p>
+としてpointsを追加し続ける方法では，
+training costも増えます．
+</p>
+<p>
+したがってaccuracy vs iterationだけでなく
+</p>
+\[
+\boxed{
+\text{accuracy}
+\quad\text{vs}\quad
+\text{number of residual evaluations}
+}
+\tag{29}
+\]
+<p>
+も報告します．
+</p>
+</article></div>
+
+<h2>23．density-based updateとしても書ける</h2>
+<div class="news"><article class="news-item">
+<p>
+cell markingの代わりにcontinuous sampling densityを更新する方法もあります．
+</p>
+<p>
+例えばuniform base density \(q_0=1/|\Omega|\) として
+</p>
+\[
+\boxed{
+q_{k+1}(x)
+=
+(1-\beta)q_0
++
+\beta
+\frac{
+(\delta+|r_{\theta_k}(x)|)^p
+}{
+\displaystyle
+\int_\Omega
+(\delta+|r_{\theta_k}(y)|)^pdy
+}
+}
+\tag{30}
+\]
+<p>
+とします．
+</p>
+<p>
+\[
+0\le\beta&lt;1,
+\qquad
+\delta&gt;0
+\]
+<p>
+によりcoverage floorを残します．
+</p>
+</article></div>
+
+<h2>24．equal weightsならobjectiveもadaptiveに変わる</h2>
+<div class="news"><article class="news-item">
+<p>
+\(q_{k+1}\) からsampleしてequal weightsを使うと，
+期待lossは
+</p>
+\[
+\boxed{
+\mathbb E_{q_{k+1}}
+|r_\theta(X)|^2
+=
+\int_\Omega
+|r_\theta(x)|^2
+q_{k+1}(x)\,dx.
+}
+\tag{31}
+\]
+<p>
+従ってpoint distributionだけでなく
+<b>training norm自体がstageごとに変わります</b>．
+</p>
+</article></div>
+
+<h2>25．same continuous residualを保つならimportance correction</h2>
+<div class="news"><article class="news-item">
+<p>
+targetを
+</p>
+\[
+\frac1{|\Omega|}
+\int_\Omega|r_\theta|^2dx
+\]
+<p>
+に固定したいなら，
+sample density \(q_{k+1}\) に対して
+</p>
+\[
+\boxed{
+w_{k+1}(x)
+=
+\frac{
+1/|\Omega|
+}{
+q_{k+1}(x)
+}
+}
+\tag{32}
+\]
+<p>
+を使います．
+</p>
+<p>
+\(\beta&lt;1\) なら
+\[
+q_{k+1}(x)
+\ge
+\frac{1-\beta}{|\Omega|}
+\]
+なのでimportance weightsの爆発を抑えるfloorにもなります．
+</p>
+</article></div>
+
+<h2>26．residual-adaptiveとregularity-awareは競合しない</h2>
+<div class="news"><article class="news-item">
+<p>
+第30回ではcorner exponent，
+第31回ではboundary-layer directionを使ってpoint geometryを先に設計しました．
+</p>
+<p>
+そのbase densityを \(q_{\rm geom}\) とすれば
+</p>
+\[
+\boxed{
+q_{k+1}
+=
+(1-\beta)q_{\rm geom}
++
+\beta q_{\rm res,k}
+}
+\tag{33}
+\]
+<p>
+とできます．
+</p>
+<p>
+つまり
+</p>
+\[
+\boxed{
+\text{known geometry / regularity}
++
+\text{computed residual}
+}
+\tag{34}
+\]
+<p>
+を組み合わせる方が自然です．
+</p>
+</article></div>
+
+<h2>27．scalar residualだけではanisotropic directionは分からない</h2>
+<div class="news"><article class="news-item">
+<p>
+\[
+|r_\theta(x)|
+\]
+はscalarです．
+</p>
+<p>
+large residual regionは教えても，
+</p>
+\[
+\boxed{
+\text{どの方向へpointsを詰めるべきか}
+}
+\tag{35}
+\]
+<p>
+までは一般には教えません．
+</p>
+<p>
+layer direction，diffusion tensor，known operator metric，gradient / Hessian structureなど，
+方向情報を別に使う必要があります．
+</p>
+</article></div>
+
+<h2>28．candidate pool自体をadaptiveにしすぎない</h2>
+<div class="news"><article class="news-item">
+<p>
+indicatorを測るcandidate setまでcurrent residualへ集中させると，
+unseen regionが永久にunseenのままになる可能性があります．
+</p>
+<p>
+従ってAUDIT用candidate setは少なくとも一部を
+</p>
+\[
+\boxed{
+\text{fixed global coverage}
+}
+\tag{36}
+\]
+<p>
+として残します．
+</p>
+<p>
+training pointsとaudit pointsの役割を分けることが重要です．
+</p>
+</article></div>
+
+<h2>29．sampling biasを検出する三つのloss</h2>
+<div class="news"><article class="news-item">
+<p>
+各adaptation stageで
+</p>
+\[
+\boxed{
+\begin{aligned}
+L_{\rm train}
+&=
+\text{current training-set loss},\\
+L_{\rm cand}
+&=
+\text{candidate-set residual loss},\\
+L_{\rm ref}
+&=
+\text{independent high-accuracy reference loss}
+\end{aligned}
+}
+\tag{37}
+\]
+<p>
+を分けます．
+</p>
+<p>
+もし
+</p>
+\[
+L_{\rm train}
+\ll
+L_{\rm ref}
+\]
+<p>
+ならpoint cloudがtraining objectiveをoverfitしている可能性があります．
+</p>
+</article></div>
+
+<h2>30．manufactured solutionではoracle errorも並べる</h2>
+<div class="news"><article class="news-item">
+<p>
+exact solutionが分かるtestでは
+</p>
+\[
+\boxed{
+E_{\rm true}
+=
+|u_\theta-u^\ast|_{H^1}
+}
+\tag{38}
+\]
+<p>
+も記録します．
+</p>
+<p>
+さらにcellwise true error
+</p>
+\[
+\boxed{
+e_K^2
+=
+\int_K
+|\nabla(u_\theta-u^\ast)|^2dx
+}
+\tag{39}
+\]
+<p>
+を作り，
+</p>
+\[
+\boxed{
+\{\widehat\eta_K\}
+\quad\text{と}\quad
+\{e_K\}
+}
+\tag{40}
+\]
+<p>
+のrankingがどの程度一致するかを見ると，
+residual markingがtrue local errorの良いproxyか監査できます．
+</p>
+</article></div>
+
+<h2>31．indicator rankingを見る</h2>
+<div class="news"><article class="news-item">
+<p>
+単にglobal correlationだけでなく，
+top marked cellsのoverlap
+</p>
+\[
+\boxed{
+\mathcal O_m
+=
+\frac{
+|\operatorname{Top}_m(\widehat\eta)
+\cap
+\operatorname{Top}_m(e)|
+}{
+m
+}
+}
+\tag{41}
+\]
+<p>
+を使うと，
+adaptive decisionとして同じregionsを選んでいるか分かります．
+</p>
+<p>
+これはmanufactured test専用のdiagnosticです．
+</p>
+</article></div>
+
+<h2>32．guaranteed estimatorとresidual proxyを区別する</h2>
+<div class="news"><article class="news-item">
+<p>
+第23回ではequilibrated fluxを使って
+</p>
+\[
+\boxed{
+|u-u_\theta|_{H^1}
+\le
+\eta_{\rm eq}
+}
+\tag{42}
+\]
+<p>
+のようなguaranteed boundを作る考え方を扱いました．
+</p>
+<p>
+例えばequilibrated
+\[
+\boldsymbol\sigma
+\in H(\operatorname{div};\Omega)
+\]
+があり
+\[
+\nabla\cdot\boldsymbol\sigma=-f
+\]
+なら，Poissonでは
+</p>
+\[
+\boxed{
+\eta_{{\rm eq},K}
+=
+\|\boldsymbol\sigma-\nabla u_\theta\|_{L^2(K)}
+}
+\tag{43}
+\]
+<p>
+をlocal contributionとして使えます．
+</p>
+</article></div>
+
+<h2>33．certificate-adaptive samplingという次の段階</h2>
+<div class="news"><article class="news-item">
+<p>
+residual-adaptive samplingはcheapですが，
+local errorとの対応はheuristicです．
+</p>
+<p>
+一方certified fluxを構成できるなら
+</p>
+\[
+\boxed{
+\text{sampled residual}
+\longrightarrow
+\text{equilibrated / certified defect}
+\longrightarrow
+\text{point placement}
+}
+\tag{44}
+\]
+<p>
+という強いadaptive loopも考えられます．
+</p>
+<p>
+ただしflux reconstruction自体に追加計算が必要です．
+</p>
+</article></div>
+
+<h2>34．この話は次回のmixed neural formulationへつながる</h2>
+<div class="news"><article class="news-item">
+<p>
+もしnetworkが
+\[
+u_\theta
+\]
+だけでなくflux
+\[
+\boldsymbol q_\theta
+\]
+も出力すれば，
+</p>
+\[
+\boxed{
+\boldsymbol q_\theta
+\approx
+\nabla u
+}
+\tag{45}
+\]
+<p>
+と
+</p>
+\[
+\boxed{
+\nabla\cdot\boldsymbol q_\theta
+\approx
+-f
+}
+\tag{46}
+\]
+<p>
+を別々に監査できます．
+</p>
+<p>
+これは次回の
+<b>mixed formulationとflux conservation</b>
+へ自然につながります．
+</p>
+</article></div>
+
+<h2>35．Dörfler型markingをコード化する</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def dorfler_mark(indicator_sq, theta):
+    values, idx = torch.sort(
+        indicator_sq,
+        descending=True
+    )
+
+    target = theta * torch.sum(values)
+    cumulative = torch.cumsum(values, dim=0)
+
+    m = int(
+        torch.searchsorted(
+            cumulative,
+            target
+        ).item()
+    ) + 1
+
+    return idx[:m]
+</code></pre>
+<p>
+ここで <code>indicator_sq</code> は
+\[
+\widehat\eta_K^2
+\]
+の配列です．
+</p>
+</article></div>
+
+<h2>36．cellwise residual indicatorをコード化する</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def cell_residual_indicator(
+    model,
+    candidate_points,
+    cell_ids,
+    cell_measures,
+    n_cells
+):
+    r = pde_residual(
+        model,
+        candidate_points
+    ).detach().flatten()
+
+    eta2 = torch.zeros(
+        n_cells,
+        dtype=r.dtype,
+        device=r.device
+    )
+
+    counts = torch.zeros(
+        n_cells,
+        dtype=r.dtype,
+        device=r.device
+    )
+
+    eta2.scatter_add_(
+        0,
+        cell_ids,
+        r ** 2
+    )
+
+    counts.scatter_add_(
+        0,
+        cell_ids,
+        torch.ones_like(r)
+    )
+
+    eta2 = (
+        cell_measures
+        * eta2
+        / torch.clamp(counts, min=1.0)
+    )
+
+    return eta2
+</code></pre>
+<p>
+candidate pointsが存在しないcellを作らないことが前提です．
+</p>
+</article></div>
+
+<h2>37．adaptive controllerの骨格</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">for stage in range(n_stages):
+
+    train_on_fixed_points(
+        model,
+        train_points,
+        n_steps
+    )
+
+    eta2 = cell_residual_indicator(
+        model,
+        audit_points,
+        audit_cell_ids,
+        cell_measures,
+        n_cells
+    )
+
+    marked = dorfler_mark(
+        eta2,
+        theta=0.5
+    )
+
+    new_adapt_points = sample_marked_cells(
+        marked,
+        adaptive_budget
+    )
+
+    train_points = merge_with_base_points(
+        base_points,
+        new_adapt_points
+    )
+
+    report_independent_audit(
+        model,
+        reference_points
+    )
+</code></pre>
+<p>
+実際にはrandom seeds，importance weights，boundary points，optimizer stateも保存します．
+</p>
+</article></div>
+
+<h2>38．stopping criterionはtraining lossだけにしない</h2>
+<div class="news"><article class="news-item">
+<p>
+adaptive loopを止める候補は
+</p>
+\[
+\boxed{
+R_{\rm ref}
+\le
+\text{tolerance}
+}
+\tag{47}
+\]
+<p>
+だけでなく，
+</p>
+<ul>
+<li>independent residualが改善しない，</li>
+<li>追加pointsに対するerror reductionが飽和した，</li>
+<li>geometry indicatorが悪化している，</li>
+<li>certified upper boundが目標を下回った，</li>
+</ul>
+<p>
+などです．
+</p>
+<p>
+training lossだけを停止判定に使うとsampling overfitを見逃します．
+</p>
+</article></div>
+
+<h2>39．AIがresidual-adaptive samplingで間違えやすい点</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">mistake</th><th style="border:1px solid #777; padding:7px;">何が壊れるか</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">pointwise residualをlocal true errorと呼ぶ</td><td style="border:1px solid #777; padding:7px;">elliptic inverseのnonlocalityを無視する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">top-\(K\) pointsだけを追加する</td><td style="border:1px solid #777; padding:7px;">一つのpeakへcollapseしやすい</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">candidate setもadaptive peakへ集中</td><td style="border:1px solid #777; padding:7px;">unseen regionを永続的に見落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">equal weightsのままdensityを変える</td><td style="border:1px solid #777; padding:7px;">training norm自体が変わる</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">Dörfler-like markingをAFEM theoremと呼ぶ</td><td style="border:1px solid #777; padding:7px;">reliability / efficiency theoryを飛ばす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">adaptiveだけpoint budgetを増やす</td><td style="border:1px solid #777; padding:7px;">sampling designとcostを混同する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">scalar residualからanisotropic directionまで決める</td><td style="border:1px solid #777; padding:7px;">方向情報を作り出してしまう</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">sampled residual proxyをguaranteed estimatorと呼ぶ</td><td style="border:1px solid #777; padding:7px;">certificationとheuristicを混同する</td></tr>
+</table>
+</article></div>
+
+<h2>40．residual-adaptive audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このPINN residual-adaptive sampling implementationを数学的に監査してください．<br/>
+(1) true error，weak residual，strong residualを区別しているか，<br/>
+(2) global residual boundとpointwise local errorを混同していないか，<br/>
+(3) local indicatorがcandidate quadrature approximationであることを明示しているか，<br/>
+(4) Dörfler-like markingをAFEMのconvergence theoremと同一視していないか，<br/>
+(5) base pointsまたはminimum cell coverageを残しているか，<br/>
+(6) training points，candidate points，reference pointsを分離しているか，<br/>
+(7) adaptive densityを変えるときequal weightsとimportance weightsを区別しているか，<br/>
+(8) fixed-budgetとcumulative-budget experimentsを区別しているか，<br/>
+(9) warm startとrestartでoptimisation historyの影響を区別しているか，<br/>
+(10) manufactured testではresidual rankingとtrue-error rankingを比較しているか，<br/>
+(11) anisotropic directionをscalar residualだけから推定していないか，<br/>
+(12) sampled residual proxyとguaranteed equilibrated estimatorを区別しているか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>41．第32回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+residual-adaptive samplingは
+</p>
+\[
+\boxed{
+\text{computed defect}
+\longrightarrow
+\text{new observation geometry}
+}
+\tag{48}
+\]
+<p>
+というfeedback mechanismです．
+</p>
+<p>
+ただし
+</p>
+\[
+\boxed{
+\text{local residual}
+\neq
+\text{local true error}
+}
+\tag{49}
+\]
+<p>
+なので，
+単純なpeak chasingではなく
+</p>
+\[
+\boxed{
+\text{residual marking}
++
+\text{coverage safeguard}
++
+\text{independent audit}
+}
+\tag{50}
+\]
+<p>
+として設計する必要があります．
+</p>
+<p>
+さらにregularityやlayer directionが分かる場合には
+</p>
+\[
+\boxed{
+\text{geometry-aware base sampling}
++
+\text{residual correction}
+}
+\tag{51}
+\]
+<p>
+とする方が自然です．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 3 第8回の原則</b><br/>
+<b>誤差を直接見られないならresidualを使う．
+ただしresidualを誤差と呼ばず，coverageと独立監査を必ず残す．</b>
+</div>
+<p>
+次回はresidualをscalar quantityとして見るだけでなくfluxを未知量として持ち，
+<b>第33回：保存則をニューラルPDEへ入れる — mixed formulationとflux</b>
+へ進みます．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>M. Raissi, P. Perdikaris and G. E. Karniadakis, “Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations”, <i>Journal of Computational Physics</i> 378 (2019), 686–707.</li>
+<li>W. Dörfler, “A convergent adaptive algorithm for Poisson's equation”, <i>SIAM Journal on Numerical Analysis</i> 33 (1996), 1106–1124.</li>
+<li>S. C. Brenner and L. R. Scott, <i>The Mathematical Theory of Finite Element Methods</i>, 3rd ed., Springer, 2008.</li>
+<li><a href="./chatgpt-fem-23.html">第23回：有限要素解の誤差を保証する — equilibrated fluxとhypercircle</a></li>
+<li><a href="./chatgpt-fem-28.html">第28回：PINNsでは点配置で答えが変わるか — uniform・random・adaptive sampling</a></li>
+<li><a href="./chatgpt-fem-30.html">第30回：角特異性をPINNsは捉えられるか — regularityとgraded sampling</a></li>
+<li><a href="./chatgpt-fem-31.html">第31回：boundary layerでは点をどこに置くか — anisotropic sampling</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 3 前回：</b><a href="./chatgpt-fem-31.html">第31回：boundary layerでは点をどこに置くか — anisotropic sampling</a></p>
+<p><b>次回：</b>第33回：保存則をニューラルPDEへ入れる — mixed formulationとflux（構想中）</p>
+<p><a href="../#chatgpt-fem-season3">Season 3一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
