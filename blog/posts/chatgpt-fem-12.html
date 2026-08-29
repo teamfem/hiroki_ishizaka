@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<title>第12回：有限要素法では，なぜ数学的誤差解析が必要なのか | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,finite element method,error analysis,Cea lemma,Strang lemma,Aubin Nitsche,a priori,a posteriori,error estimator,verification,anisotropic mesh,certified FEM"/>
+<meta name="description" content="有限要素法で数学的誤差解析がなぜ必要なのかを，Céaの補題，補間誤差，Aubin–Nitsche，Strang型評価，異方性評価，a priori / a posteriori / verified bound，AI生成コードのverificationという観点から整理します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-12.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-12.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-12.html",
+      "headline": "第12回：有限要素法では，なぜ数学的誤差解析が必要なのか",
+      "description": "Céaの補題，補間誤差，Aubin–Nitsche，Strang型評価，異方性評価，a priori / a posteriori / verified boundを通じて，有限要素法の数学的誤差解析が実装検証に必要な理由を説明します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-12.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-29",
+      "dateModified": "2026-08-29",
+      "articleSection": "Computational FEM with AI",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-12.html#breadcrumbs",
+      "itemListElement": [
+        {"@type":"ListItem","position":1,"name":"Home","item":"https://teamfem.github.io/hiroki_ishizaka/"},
+        {"@type":"ListItem","position":2,"name":"Blog","item":"https://teamfem.github.io/hiroki_ishizaka/blog/"},
+        {"@type":"ListItem","position":3,"name":"第12回：有限要素法では，なぜ数学的誤差解析が必要なのか","item":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-12.html"}
+      ]
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-29"/>
+<meta property="article:modified_time" content="2026-08-29"/>
+<meta property="article:section" content="Computational FEM with AI"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第12回：有限要素法では，なぜ数学的誤差解析が必要なのか | Hiroki Ishizaka"/>
+<meta property="og:description" content="誤差解析は論文のための付録ではなく，近似空間・mesh・実装・solver・AI生成コードを検証するためのtest specificationです．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-12.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第12回：有限要素法では，なぜ数学的誤差解析が必要なのか | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="Céa，Strang，Aubin–Nitsche，異方性評価，a posteriori boundを通じて，誤差解析をFEMの検証仕様として捉え直します．"/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 第12回</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第12回：有限要素法では，なぜ数学的誤差解析が必要なのか</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 第12回</b><br/><time datetime="2026-08-29">29th August 2026</time></p>
+
+<h2>はじめに――「計算できた」と「正しい近似が得られた」は違う</h2>
+<div class="news"><article class="news-item">
+<p>
+第1回からここまで，弱形式，P1要素，Jacobian，assembly，3次元，
+異方性mesh，debugging，CR・RTまで進んできました．
+</p>
+<p>
+この連載で何度も現れたのは，
+</p>
+\[
+\boxed{
+\text{code runs}
+\not\Longrightarrow
+\text{correct finite-element approximation}
+}
+\tag{1}
+\]
+<p>
+という事実です．
+</p>
+<p>
+第4回では，gradient transformを
+\[
+J_T^{-\top}
+\]
+ではなく
+\[
+J_T^{-1}
+\]
+と誤って実装したコードが，symmetry testとlinear patch testを通過しました．
+それでもsmooth solutionに対する誤差は期待次数で減りませんでした．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>誤差解析の役割</b><br/>
+数学的誤差解析は「計算後に付ける理論的説明」ではない．<br/>
+<b>何が正しい計算結果なのかを，計算前に規定するtest specification</b>である．
+</div>
+</article></div>
+
+<h2>1．最初に「どの誤差を測るか」を決める</h2>
+<div class="news"><article class="news-item">
+<p>
+有限要素解を \(u_h\)，厳密解を \(u\) と書いても，
+「誤差」
+という言葉だけでは不十分です．
+</p>
+<p>
+Poisson問題でも，
+\[
+\|u-u_h\|_{L^2(\Omega)},
+\qquad
+|u-u_h|_{H^1(\Omega)},
+\qquad
+\|u-u_h\|_{L^\infty(\Omega)}
+\tag{2}
+\]
+は異なる量です．
+またfluxが重要なら
+\[
+\|\nabla u-q_h\|_{L^2(\Omega)}
+\]
+や
+\[
+\|\nabla\cdot(q-q_h)\|_{L^2(\Omega)}
+\]
+を見ることもあります．
+</p>
+<p>
+したがって誤差解析の第一歩は，
+<b>何を近似したいのか，どのnormで測るのか</b>
+を決めることです．
+</p>
+</article></div>
+
+<h2>2．Céaの補題は「有限要素法の誤差を近似論へ変換する」</h2>
+<div class="news"><article class="news-item">
+<p>
+Hilbert空間 \(V\) 上のvariational problem
+\[
+a(u,v)=\ell(v)
+\qquad
+\forall v\in V
+\tag{3}
+\]
+を考えます．
+bilinear formが
+\[
+|a(w,v)|
+\le
+M\|w\|_V\|v\|_V,
+\tag{4}
+\]
+\[
+a(v,v)
+\ge
+\alpha\|v\|_V^2,
+\qquad
+\alpha&gt;0
+\tag{5}
+\]
+を満たし，conforming finite-element space
+\[
+V_h\subset V
+\]
+を使うとします．
+</p>
+<p>
+Galerkin solution \(u_h\in V_h\) は
+\[
+a(u_h,v_h)=\ell(v_h)
+\qquad
+\forall v_h\in V_h
+\tag{6}
+\]
+を満たし，Céaの補題から
+\[
+\boxed{
+\|u-u_h\|_V
+\le
+\frac{M}{\alpha}
+\inf_{v_h\in V_h}
+\|u-v_h\|_V.
+}
+\tag{7}
+\]
+</p>
+<p>
+これは重要です．
+有限要素誤差の問題を，
+</p>
+\[
+\text{PDE solution error}
+\quad\longrightarrow\quad
+\text{best approximation error}
+\]
+<p>
+へ変換しています．
+</p>
+</article></div>
+
+<h2>3．対称問題ではenergy normでbest approximationそのものになる</h2>
+<div class="news"><article class="news-item">
+<p>
+さらに \(a\) が対称かつ正定値で，
+\[
+\|v\|_a:=a(v,v)^{1/2}
+\tag{8}
+\]
+をenergy normとすると，Galerkin orthogonality
+\[
+a(u-u_h,v_h)=0
+\qquad
+\forall v_h\in V_h
+\tag{9}
+\]
+から
+\[
+\boxed{
+\|u-u_h\|_a
+=
+\min_{v_h\in V_h}
+\|u-v_h\|_a.
+}
+\tag{10}
+\]
+</p>
+<p>
+つまりPoisson型の対称coercive problemでは，
+有限要素法はenergy normに関して離散空間のbest approximationを与えます．
+</p>
+</article></div>
+
+<h2>4．そこで補間誤差解析が必要になる</h2>
+<div class="news"><article class="news-item">
+<p>
+Céaの補題だけでは
+\[
+\inf_{v_h\in V_h}\|u-v_h\|_V
+\]
+の大きさは分かりません．
+そこで具体的な補間関数
+\[
+I_hu\in V_h
+\]
+を作り，
+\[
+\inf_{v_h\in V_h}\|u-v_h\|_V
+\le
+\|u-I_hu\|_V
+\tag{11}
+\]
+と評価します．
+</p>
+<p>
+shape-regularなsimplicial P1 meshで
+\(u\in H^2(\Omega)\) なら，標準的に
+\[
+|u-I_hu|_{H^1(\Omega)}
+\le
+Ch|u|_{H^2(\Omega)},
+\tag{12}
+\]
+\[
+\|u-I_hu\|_{L^2(\Omega)}
+\le
+Ch^2|u|_{H^2(\Omega)}.
+\tag{13}
+\]
+</p>
+<p>
+Poisson problemのenergy normではこれが
+\[
+|u-u_h|_{H^1(\Omega)}
+=
+O(h)
+\tag{14}
+\]
+という予測につながります．
+</p>
+</article></div>
+
+<h2>5．\(L^2\)で2次になるには追加の数学が要る</h2>
+<div class="news"><article class="news-item">
+<p>
+P1 finite elementで
+\[
+\|u-u_h\|_{L^2(\Omega)}
+=
+O(h^2)
+\tag{15}
+\]
+が得られるのは，単にP1だからではありません．
+</p>
+<p>
+典型的にはAubin–Nitsche duality argumentを使い，
+adjoint problemに
+\[
+H^2
+\]
+regularityがあることを仮定します．
+例えばconvex polygonでPoisson problemを考える場合などです．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+L^2\text{ 2次収束}
+}
+\]
+<p>
+という一行の背後には，
+approximation propertyだけでなく
+<b>dual problemのregularity</b>が入っています．
+</p>
+<div style="padding:12px; margin:14px 0; border:1px solid #999999;">
+<b>数学監査上の注意</b><br/>
+「P1だから \(L^2\) 2次」と無条件に書いてはいけない．
+domain regularity，solution regularity，mesh assumptionsなどを確認する必要がある．
+</div>
+</article></div>
+
+<h2>6．収束次数はcode verificationの仕様になる</h2>
+<div class="news"><article class="news-item">
+<p>
+第4回の2次元Poisson計算では，正しいコードに対して次の相対誤差が得られました．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">\(n\)</th>
+<th style="border:1px solid #777; padding:7px;">\(L^2\) relative error</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+<th style="border:1px solid #777; padding:7px;">\(H^1\) relative error</th>
+<th style="border:1px solid #777; padding:7px;">rate</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">4</td><td style="border:1px solid #777; padding:7px;">1.5818e-1</td><td style="border:1px solid #777; padding:7px;">—</td><td style="border:1px solid #777; padding:7px;">3.7748e-1</td><td style="border:1px solid #777; padding:7px;">—</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">8</td><td style="border:1px solid #777; padding:7px;">4.2267e-2</td><td style="border:1px solid #777; padding:7px;">1.904</td><td style="border:1px solid #777; padding:7px;">1.9438e-1</td><td style="border:1px solid #777; padding:7px;">0.958</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">16</td><td style="border:1px solid #777; padding:7px;">1.0755e-2</td><td style="border:1px solid #777; padding:7px;">1.975</td><td style="border:1px solid #777; padding:7px;">9.7926e-2</td><td style="border:1px solid #777; padding:7px;">0.989</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">32</td><td style="border:1px solid #777; padding:7px;">2.7009e-3</td><td style="border:1px solid #777; padding:7px;">1.994</td><td style="border:1px solid #777; padding:7px;">4.9056e-2</td><td style="border:1px solid #777; padding:7px;">0.997</td></tr>
+</table>
+<p>
+rateは
+\[
+\operatorname{rate}
+=
+\frac{\log(E_h/E_{h/2})}{\log2}
+\tag{16}
+\]
+で計算しています．
+</p>
+<p>
+これは理論の確認であると同時に，
+コードが想定しているfinite-element methodを実装しているかを調べるverification testです．
+</p>
+</article></div>
+
+<h2>7．正しいrateだけでも十分ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+一方で，
+</p>
+\[
+\text{observed rate is correct}
+\]
+<p>
+だけからコードの正しさを証明することもできません．
+</p>
+<p>
+pre-asymptotic regimeではrateが揺れますし，
+quadrature error，round-off error，superconvergence，
+reference solutionの誤りなどがrateを見かけ上よくすることもあります．
+</p>
+<p>
+従って第10回でまとめたように，
+</p>
+\[
+\text{local invariants}
++
+\text{patch test}
++
+\text{solver residual}
++
+\text{convergence test}
+\tag{17}
+\]
+<p>
+を独立に組み合わせる必要があります．
+</p>
+</article></div>
+
+<h2>8．nonconforming FEMではapproximation errorだけでは足りない</h2>
+<div class="news"><article class="news-item">
+<p>
+第11回のCrouzeix–Raviart要素は
+\[
+V_h\not\subset H_0^1(\Omega)
+\]
+なので，conforming Galerkin法に対するCéaの補題をそのまま適用することはできません．
+</p>
+<p>
+discrete energy normを \(\|\cdot\|_h\)，
+broken bilinear formを \(a_h\) とすると，
+適切なboundedness・discrete coercivityの下でStrang型評価
+\[
+\boxed{
+\|u-u_h\|_h
+\le
+C
+\left[
+\inf_{v_h\in V_h}
+\|u-v_h\|_h
++
+\sup_{0\neq w_h\in V_h}
+\frac{
+|a_h(u,w_h)-\ell(w_h)|
+}{
+\|w_h\|_h
+}
+\right]
+}
+\tag{18}
+\]
+が現れます．
+</p>
+<p>
+第一項はapproximation error，
+第二項は<b>consistency error</b>です．
+</p>
+<p>
+つまりnonconforming methodでは，
+「離散空間がよく近似できる」
+だけでなく，
+<b>continuous problemとdiscrete test functionのずれ</b>
+も評価しなければなりません．
+</p>
+</article></div>
+
+<h2>9．mixed FEMではstabilityそのものが誤差解析の一部になる</h2>
+<div class="news"><article class="news-item">
+<p>
+Raviart–Thomas mixed FEMでは，
+fluxとscalar variableを同時に近似します．
+このときerror analysisには
+Babuška–Brezzi型inf-sup stabilityが必要です．
+</p>
+<p>
+また第11回で見た
+\[
+\nabla\cdot I_h^{\mathrm{RT}}q
+=
+\Pi_0(\nabla\cdot q)
+\tag{19}
+\]
+というcommuting propertyは，
+divergence errorとpressure / scalar errorを整理する重要な構造になります．
+</p>
+<p>
+つまりmethodを変えれば，
+誤差解析で必要な数学も変わります．
+</p>
+\[
+\boxed{
+\text{conforming}
+\to
+\text{Céa},
+\qquad
+\text{nonconforming}
+\to
+\text{Strang},
+\qquad
+\text{mixed}
+\to
+\text{inf-sup + commuting structure}.
+}
+\tag{20}
+\]
+</article></div>
+
+<h2>10．異方性meshでは一個の \(h\) だけでは情報が消える</h2>
+<div class="news"><article class="news-item">
+<p>
+第6–9回で見たように，
+異方性meshでは
+\[
+h_T
+\]
+だけでelement geometryを表すことはできません．
+</p>
+<p>
+2次元P1 interpolationでは，適切なsemi-regularityの下で
+\[
+\boxed{
+|u-I_Tu|_{H^1(T)}
+\le
+C
+\sum_{i=1}^{2}
+h_i
+\left|
+\frac{\partial u}{\partial r_i}
+\right|_{H^1(T)}
+}
+\tag{21}
+\]
+のような方向別評価が使えます．
+</p>
+<p>
+これは
+\[
+h_i
+\]
+と
+\[
+\frac{\partial u}{\partial r_i}
+\]
+を対応させています．
+</p>
+<p>
+従って誤差解析は
+「meshを細かくすればよい」
+ではなく，
+<b>どの方向をどれだけ細かくすべきか</b>
+というmesh designの情報を与えます．
+</p>
+</article></div>
+
+<h2>11．誤差解析はmesh conditionを発見する</h2>
+<div class="news"><article class="news-item">
+<p>
+第8回ではshape regularityとsemi-regularityを区別しました．
+</p>
+<p>
+例えば細長い直角三角形では
+\[
+Q_T=\frac{h_T^2}{|T|}
+\to\infty
+\]
+でも
+\[
+\frac{H_T}{h_T}=2
+\]
+です．
+</p>
+<p>
+つまりclassical shape regularityを失っても，
+maximum-angle-based / semi-regular analysisは可能です．
+</p>
+<p>
+一方でsliver tetrahedronのように，
+辺長比だけでは見えないvolume degenerationもあります．
+</p>
+<p>
+このようにerror analysisは，
+<b>どの幾何条件が本当に必要か</b>
+を逆に教えてくれます．
+</p>
+</article></div>
+
+<h2>12．discretisation errorとsolver errorを分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+数学的に定義されたfinite-element solutionを \(u_h\) とし，
+数値linear solverが返した近似を \(\widetilde u_h\) とします．
+すると
+\[
+u-\widetilde u_h
+=
+(u-u_h)
++
+(u_h-\widetilde u_h).
+\tag{22}
+\]
+</p>
+<p>
+第一項がdiscretisation error，
+第二項がalgebraic / solver errorです．
+</p>
+<p>
+solver residualが小さいことは主として第二項の管理に関係します．
+第一項が小さいことを保証するものではありません．
+</p>
+</article></div>
+
+<h2>13．quadrature errorまで入れるとerror budgetが見える</h2>
+<div class="news"><article class="news-item">
+<p>
+\(u_h\) をexact integrationで定義されるGalerkin solution，
+\(u_h^Q\) をnumerical quadratureを使ったdiscrete solution，
+\(\widetilde u_h\) をlinear solverで得た計算解とします．
+同じfinite-element space上で定義されているなら，代数的恒等式として
+\[
+\boxed{
+u-\widetilde u_h
+=
+(u-u_h)
++
+(u_h-u_h^Q)
++
+(u_h^Q-\widetilde u_h).
+}
+\tag{23}
+\]
+</p>
+<p>
+それぞれ
+</p>
+<ul>
+<li>finite-element discretisation error，</li>
+<li>quadrature / variational-crime error，</li>
+<li>algebraic solver error</li>
+</ul>
+<p>
+に対応します．
+</p>
+<p>
+error analysisによって，
+「誤差が大きい」
+を一個の数字で終わらせず，
+<b>どこから誤差が入ったか</b>
+に分解できます．
+</p>
+</article></div>
+
+<h2>14．曲領域ではgeometry errorを安易に足してはいけない</h2>
+<div class="news"><article class="news-item">
+<p>
+curved domain \(\Omega\) をpolygonal domain \(\Omega_h\) で近似すると，
+continuous solutionとdiscrete solutionが
+<b>異なるdomain上の関数</b>
+になることがあります．
+</p>
+<p>
+その場合，
+\[
+u-u_h
+\]
+とそのまま引き算する前に，
+liftやdomain mapを使って同じdomainへ移す必要があります．
+</p>
+<p>
+従って
+\[
+\text{geometry error}
+\]
+を式 (23) に形式的に一項追加するだけでは十分ではありません．
+この点はExact-curved FEMやisoparametric FEMを比較するときに特に重要です．
+</p>
+</article></div>
+
+<h2>15．a priori estimateとa posteriori estimateは目的が違う</h2>
+<div class="news"><article class="news-item">
+<p>
+a priori estimateは，計算前に
+</p>
+\[
+\|u-u_h\|
+\le
+C h^p |u|_{H^{p+1}}
+\tag{24}
+\]
+<p>
+のような形で，
+methodのorderやmesh dependenceを説明します．
+</p>
+<p>
+一方a posteriori estimateは，
+実際に得られた \(u_h\) から計算できるestimator \(\eta_h\) を使います．
+典型的にはreliability
+\[
+\boxed{
+\|u-u_h\|
+\le
+C_{\mathrm{rel}}\eta_h
+}
+\tag{25}
+\]
+と，data oscillationを含むefficiency
+\[
+\boxed{
+\eta_h
+\le
+C_{\mathrm{eff}}
+\left(
+\|u-u_h\|+\operatorname{osc}_h
+\right)
+}
+\tag{26}
+\]
+を調べます．
+</p>
+<p>
+a priori analysisはmethod designと収束理論，
+a posteriori analysisはcomputed solutionのadaptivityやerror controlに向いています．
+</p>
+</article></div>
+
+<h2>16．a posteriori estimatorとrigorous certificateも同じではない</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (25) に未知または非常に粗い
+\[
+C_{\mathrm{rel}}
+\]
+が残る場合，
+estimatorは有用でも，そのままrigorous numerical certificateとは限りません．
+</p>
+<p>
+例えばPoisson problem
+\[
+-\Delta u=f,
+\qquad
+u|_{\partial\Omega}=0
+\]
+について，
+conforming approximation \(v_h\in H_0^1(\Omega)\) と，
+equilibrated flux
+\[
+\sigma_h\in H(\mathrm{div};\Omega),
+\qquad
+\nabla\cdot\sigma_h+f=0
+\tag{27}
+\]
+が得られれば，hypercircle identityから
+\[
+\boxed{
+\|\nabla(u-v_h)\|_{L^2(\Omega)}
+\le
+\|\nabla v_h-\sigma_h\|_{L^2(\Omega)}.
+}
+\tag{28}
+\]
+</p>
+<p>
+このように定数が明示されたguaranteed boundまで進むと，
+「誤差を推定する」
+から
+「誤差を保証する」
+へ一段変わります．
+</p>
+</article></div>
+
+<h2>17．目的量が重要ならenergy errorだけでは足りない</h2>
+<div class="news"><article class="news-item">
+<p>
+工学・科学計算では，
+solution全体より
+\[
+J(u)
+\]
+というoutput quantityが重要な場合があります．
+例えば平均flux，drag，特定領域の平均値などです．
+</p>
+<p>
+このとき必要なのは
+\[
+\|u-u_h\|
+\]
+だけでなく
+\[
+|J(u)-J(u_h)|
+\tag{29}
+\]
+の評価です．
+</p>
+<p>
+Dual-Weighted Residual (DWR)では，
+primal residualをdual solutionによって重み付けし，
+どのelementのresidualがoutput errorに効いているかを評価します．
+</p>
+<p>
+つまりerror analysisは
+<b>何を正確に計算したいか</b>
+によって形を変えます．
+</p>
+</article></div>
+
+<h2>18．AI生成コードでは理論を「自動テスト」に変える</h2>
+<div class="news"><article class="news-item">
+<p>
+ChatGPTが書いたFEMコードに対して，
+理論は次のような自動testへ変換できます．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">mathematical result</th><th style="border:1px solid #777; padding:7px;">code test</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">partition of unity</td><td style="border:1px solid #777; padding:7px;">local row sum = 0</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">coercivity / positivity</td><td style="border:1px solid #777; padding:7px;">Dirichlet-reduced matrix SPD</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">P1 polynomial reproduction</td><td style="border:1px solid #777; padding:7px;">linear patch test</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">Céa + interpolation</td><td style="border:1px solid #777; padding:7px;">\(H^1\) observed order</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">Aubin–Nitsche</td><td style="border:1px solid #777; padding:7px;">\(L^2\) observed order under stated regularity</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">CR consistency</td><td style="border:1px solid #777; padding:7px;">broken-energy convergence</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">RT commuting property</td><td style="border:1px solid #777; padding:7px;">divergence projection test</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">anisotropic estimate</td><td style="border:1px solid #777; padding:7px;">directional mesh stress test</td></tr>
+</table>
+<p>
+つまり論文に書かれたtheoremを，
+software verificationのacceptance criteriaへ変換できます．
+</p>
+</article></div>
+
+<h2 style="color:#111;">19．収束次数を自動監査する最小コード</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">import numpy as np
+
+
+def observed_rates(errors):
+    errors = np.asarray(
+        errors,
+        dtype=float
+    )
+
+    if np.any(errors &lt;= 0.0):
+        raise ValueError(
+            "Errors must be positive"
+        )
+
+    return np.log(
+        errors[:-1] / errors[1:]
+    ) / np.log(2.0)
+
+
+L2_errors = np.array([
+    1.5818e-1,
+    4.2267e-2,
+    1.0755e-2,
+    2.7009e-3
+])
+
+H1_errors = np.array([
+    3.7748e-1,
+    1.9438e-1,
+    9.7926e-2,
+    4.9056e-2
+])
+
+print(observed_rates(L2_errors))
+print(observed_rates(H1_errors))
+</code></pre>
+<p>
+出力は概ね
+</p>
+\[
+1.904,\ 1.975,\ 1.993
+\]
+<p>
+と
+</p>
+\[
+0.958,\ 0.989,\ 0.997
+\]
+<p>
+です．
+ただし，この数字を自動的に
+<code>PASS</code>
+へ変換する前に，
+理論が要求するregularityとmesh assumptionsを確認する必要があります．
+</p>
+</article></div>
+
+<h2>20．誤差解析には「仮定監査」が含まれる</h2>
+<div class="news"><article class="news-item">
+<p>
+theoremに
+\[
+\|u-u_h\|
+\le
+Ch^p
+\]
+と書いてあっても，
+その前には必ずassumptionsがあります．
+</p>
+<p>
+例えば，
+</p>
+<ul>
+<li>solution regularity，</li>
+<li>domain regularity，</li>
+<li>mesh geometry，</li>
+<li>coercivity / inf-sup stability，</li>
+<li>quadrature exactnessまたはvariational-crime control，</li>
+<li>boundary approximation，</li>
+<li>element familyに適したmapping</li>
+</ul>
+<p>
+です．
+</p>
+<p>
+AIがtheoremの結論だけを拾って
+「このコードは2次収束するはずです」
+と言っても，仮定が満たされていなければ意味がありません．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>数学監査 = theorem + assumptions の監査</b><br/>
+結論だけではなく，
+<b>その評価が適用できる条件をコードとmeshが満たしているか</b>
+を確認する．
+</div>
+</article></div>
+
+<h2>21．第4回のbugを誤差解析の言葉で読み直す</h2>
+<div class="news"><article class="news-item">
+<p>
+誤った \(J^{-1}\) gradient codeでは，
+symmetryやrow-sumといった局所algebraic invariantsは残りました．
+しかし実際に実装されたbilinear formは，
+意図したPoisson Galerkin formとは一致していません．
+</p>
+<p>
+そのため，正しいPoisson finite elementに対する
+\[
+H^1:O(h),
+\qquad
+L^2:O(h^2)
+\]
+という誤差理論をtest specificationとして適用すると，失敗が見えます．
+</p>
+<p>
+つまりtheoryは，
+<b>bugの場所を直接教えなくても，「このコードは目的のmethodではない」と検出する</b>
+ことができます．
+</p>
+</article></div>
+
+<h2>22．誤差解析がないとmesh refinementの意味も分からない</h2>
+<div class="news"><article class="news-item">
+<p>
+meshを細かくして誤差が減ったとしても，
+</p>
+\[
+E_h&gt;E_{h/2}&gt;E_{h/4}
+\]
+<p>
+だけでは不十分です．
+</p>
+<p>
+知りたいのは
+\[
+E_h
+\approx
+C h^p
+\tag{30}
+\]
+の
+\[
+p
+\]
+と，
+constant \(C\) が何に依存するかです．
+</p>
+<p>
+異方性meshなら \(C\) がaspect ratioに依存して発散するのか，
+semi-regular parameterで一様に抑えられるのかも重要です．
+</p>
+<p>
+誤差解析によって初めて，
+refinementが<b>何を改善しているのか</b>を説明できます．
+</p>
+</article></div>
+
+<h2>23．第12回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+有限要素法の数学的誤差解析は，
+単に
+\[
+O(h),\qquad O(h^2)
+\]
+という収束次数を証明するためだけのものではありません．
+</p>
+<p>
+それは，
+</p>
+\[
+\boxed{
+\text{method design}
++
+\text{mesh design}
++
+\text{code verification}
++
+\text{adaptive computation}
++
+\text{certification}
+}
+\tag{31}
+\]
+<p>
+をつなぐ共通言語です．
+</p>
+<p>
+Céaの補題はdiscrete errorをbest approximationへ変換し，
+補間理論はrateを与え，
+Strang型評価はnonconformityを分離し，
+inf-sup theoryはmixed methodのstabilityを保証し，
+anisotropic analysisは方向別mesh designを可能にし，
+a posteriori / equilibrated-flux analysisはcomputed solutionのerror controlへ進みます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>この連載の結論</b><br/>
+ChatGPTは有限要素コードを書くことができる．<br/>
+しかし，
+<b>そのコードを信用してよい理由を与えるのは数値解析である．</b>
+</div>
+<p>
+AIに有限要素法を教えてもらうだけではなく，
+AIと有限要素法を作りながら，
+<b>AIが作った近似・実装・説明そのものを数学で監査する</b>．
+それがこの連載で扱ってきたComputational FEM with AIの基本姿勢です．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>P. G. Ciarlet, <i>The Finite Element Method for Elliptic Problems</i>, North-Holland, 1978.</li>
+<li>S. C. Brenner and L. R. Scott, <i>The Mathematical Theory of Finite Element Methods</i>, 3rd ed., Springer, 2008.</li>
+<li>A. Ern and J.-L. Guermond, <i>Finite Elements I: Approximation and Interpolation</i>, Springer, 2021.</li>
+<li>D. Boffi, F. Brezzi and M. Fortin, <i>Mixed Finite Element Methods and Applications</i>, Springer, 2013.</li>
+<li><a href="./chatgpt-fem-04.html">第4回：2次元P1有限要素コードを数学的に監査する</a></li>
+<li><a href="./chatgpt-fem-08.html">第8回：良い異方性要素と悪い異方性要素</a></li>
+<li><a href="./chatgpt-fem-10.html">第10回：ChatGPTが書いたFEMコードをどうデバッグするか</a></li>
+<li><a href="./chatgpt-fem-11.html">第11回：CR・RTなど，P1の次に何を見るか</a></li>
+<li><a href="../#certified">Certified FEM・verified output・AI4Math</a></li>
+<li><a href="./paradoxes-pitfalls-02.html">最大角条件とBabuška–Aziz反例</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>前回：</b><a href="./chatgpt-fem-11.html">第11回：CR・RTなど，P1の次に何を見るか — 自由度・Piola変換・可換性</a></p>
+<p><b>シリーズ：</b><a href="../#chatgpt-fem">ChatGPTで作る有限要素プログラム入門</a></p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
