@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<title>第6回：異方性三角形ではJacobianをどう作るか — standard positionとtwo-step affine mapping | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,finite element method,anisotropic mesh,異方性メッシュ,triangle,Jacobian,standard position,two-step affine mapping,semi-regularity,maximum angle condition,Python"/>
+<meta name="description" content="異方性三角形では，単なるreference-to-physical Jacobianだけでなく，頂点の標準ラベル付け，方向別辺長 h1,h2，diagonal scaling，regular matrix，rotation/reflectionへ分解するtwo-step affine mappingが重要です．Pythonでその構成を実装し，良い異方性と悪い扁平化を比較します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-06.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-06.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-06.html",
+      "headline": "第6回：異方性三角形ではJacobianをどう作るか — standard positionとtwo-step affine mapping",
+      "description": "異方性三角形について，標準位置，方向別辺長，diagonal scaling，regular matrix，rotation/reflectionを用いたtwo-step affine mappingとJacobian分解を数式とPythonで説明します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-06.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-29",
+      "dateModified": "2026-08-29",
+      "articleSection": "Computational FEM with AI",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-06.html#breadcrumbs",
+      "itemListElement": [
+        {"@type":"ListItem","position":1,"name":"Home","item":"https://teamfem.github.io/hiroki_ishizaka/"},
+        {"@type":"ListItem","position":2,"name":"Blog","item":"https://teamfem.github.io/hiroki_ishizaka/blog/"},
+        {"@type":"ListItem","position":3,"name":"第6回：異方性三角形ではJacobianをどう作るか — standard positionとtwo-step affine mapping","item":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-06.html"}
+      ]
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-29"/>
+<meta property="article:modified_time" content="2026-08-29"/>
+<meta property="article:section" content="Computational FEM with AI"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第6回：異方性三角形ではJacobianをどう作るか — standard positionとtwo-step affine mapping | Hiroki Ishizaka"/>
+<meta property="og:description" content="標準ラベル付け，方向別辺長，diagonal scaling，regular matrix，rotation/reflectionに分解して異方性三角形のJacobianを読む方法を説明します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-06.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第6回：異方性三角形ではJacobianをどう作るか — standard positionとtwo-step affine mapping | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="異方性三角形のJacobianを方向別scaleとshape deformationへ分解し，良い異方性と悪い扁平化をPythonで比較します．"/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 第6回</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第6回：異方性三角形ではJacobianをどう作るか — standard positionとtwo-step affine mapping</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 第6回</b><br/><time datetime="2026-08-29">29th August 2026</time></p>
+
+<h2>はじめに――Jacobianは一つでも，その「読み方」は一つではない</h2>
+<div class="news"><article class="news-item">
+<p>
+第3回では，三角形
+\[
+T=\operatorname{conv}\{p_0,p_1,p_2\}
+\]
+に対し，標準的なJacobian
+\[
+J_T=[p_1-p_0,\ p_2-p_0]
+\]
+を作りました．
+この行列はreference triangleをphysical triangleへ写すためには十分です．
+P1有限要素のassemblyも，このJacobianから正しく構成できます．
+</p>
+<p>
+しかし，異方性解析ではそれだけでは不十分です．
+知りたいのは「写像が存在するか」ではなく，
+<b>どの方向にどれだけ伸び，どの部分が角度の悪化を表しているか</b>です．
+そのため，三角形の頂点を標準的にラベル付けし，
+Jacobianを方向別scale，shape deformation，rotation/reflectionへ分けて考えます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>今回の核心</b><br/>
+異方性解析では
+\[
+J_T
+=
+A_T\,\widetilde A\,\widehat A
+\]
+と分解する．ここで
+\[
+\widehat A=\operatorname{diag}(h_1,h_2)
+\]
+が方向別scale，
+\[
+\widetilde A=
+\begin{pmatrix}
+1&s\\
+0&t
+\end{pmatrix}
+\]
+が残りのshape deformation，
+\(A_T\in O(2)\) がrotation/reflectionを表す．
+</div>
+<p>
+この構成は，筆者らの異方性補間理論で用いているtwo-step affine mappingに基づきます．
+</p>
+</article></div>
+
+<h2>1．最初に頂点を標準的にラベル付けする</h2>
+<div class="news"><article class="news-item">
+<p>
+任意の非退化三角形 \(T\) の頂点を，いったん \(p_1,p_2,p_3\) と付け直します．
+まず最長辺を
+\[
+p_2p_3
+\]
+とし，
+\[
+h_T:=|p_2-p_3|.
+\tag{1}
+\]
+残った頂点を \(p_1\) とします．
+さらに
+\[
+h_1:=|p_1-p_2|,
+\qquad
+h_2:=|p_1-p_3|,
+\qquad
+h_2\le h_1
+\tag{2}
+\]
+となるように \(p_2,p_3\) を入れ替えます．
+</p>
+<p>
+このとき
+\[
+\frac12 h_T&lt;h_1\le h_T
+\]
+なので，
+\[
+h_1\approx h_T.
+\tag{3}
+\]
+</p>
+<div style="padding:12px; margin:14px 0; border:1px solid #999999;">
+<b>重要</b><br/>
+\(h_1,h_2\) は単に「長い辺と短い辺」を昇順・降順に並べたものではない．
+最長辺の<b>反対側の頂点 \(p_1\)</b> を基準にして選ばれる方向別辺長である．
+</div>
+</article></div>
+
+<h2>2．方向ベクトル \(r_1,r_2\)</h2>
+<div class="news"><article class="news-item">
+<p>
+標準ラベル付けから
+\[
+r_1
+:=
+\frac{p_2-p_1}{h_1},
+\qquad
+r_2
+:=
+\frac{p_3-p_1}{h_2}
+\tag{4}
+\]
+を定めます．
+\(r_1,r_2\) は単位ベクトルです．
+</p>
+<p>
+二つの方向のなす角を \(\theta\) とすると
+\[
+s:=r_1\cdot r_2=\cos\theta.
+\tag{5}
+\]
+さらに
+\[
+t:=\sin\theta&gt;0
+\tag{6}
+\]
+とします．
+頂点順序が反転している場合には，後でrotation/reflectionを表す直交行列側に符号を持たせます．
+したがってstandard positionでは \(t&gt;0\) としてよいです．
+</p>
+<p>
+式 (5)，(6) から
+\[
+s^2+t^2=1.
+\tag{7}
+\]
+</p>
+</article></div>
+
+<h2>3．第一段階：reference triangleからstandard positionへ</h2>
+<div class="news"><article class="news-item">
+<p>
+reference triangleを
+\[
+\widehat T
+=
+\operatorname{conv}
+\left\{
+(0,0)^{\top},
+(1,0)^{\top},
+(0,1)^{\top}
+\right\}
+\tag{8}
+\]
+とします．
+</p>
+<p>
+まず方向別scaleだけを
+\[
+\boxed{
+\widehat A
+=
+\operatorname{diag}(h_1,h_2)
+}
+\tag{9}
+\]
+に分離します．
+次に
+\[
+\boxed{
+\widetilde A
+=
+\begin{pmatrix}
+1&s\\
+0&t
+\end{pmatrix},
+\qquad
+s^2+t^2=1,\quad t&gt;0
+}
+\tag{10}
+\]
+とします．
+</p>
+<p>
+二つを掛けると
+\[
+A_{\widetilde T}
+=
+\widetilde A\,\widehat A
+=
+\begin{pmatrix}
+h_1&s h_2\\
+0&t h_2
+\end{pmatrix}.
+\tag{11}
+\]
+従って中間三角形 \(\widetilde T\) の頂点は
+\[
+\widetilde p_1=(0,0)^{\top},
+\qquad
+\widetilde p_2=(h_1,0)^{\top},
+\qquad
+\widetilde p_3=(s h_2,t h_2)^{\top}.
+\tag{12}
+\]
+</p>
+<p>
+ここで
+\[
+|\widetilde p_1-\widetilde p_2|=h_1,
+\qquad
+|\widetilde p_1-\widetilde p_3|=h_2.
+\]
+つまり，実三角形の二本の標準辺長をそのまま保持しています．
+</p>
+</article></div>
+
+<h2>4．第二段階：standard positionから実三角形へ</h2>
+<div class="news"><article class="news-item">
+<p>
+中間三角形 \(\widetilde T\) は，実三角形 \(T\) と同じ長さ・角度を持ちますが，
+まだ原点付近の標準位置に置かれています．
+そこで
+\[
+\Phi_T(\widetilde x)
+=
+A_T\widetilde x+b_T,
+\tag{13}
+\]
+\[
+A_T\in O(2)
+\tag{14}
+\]
+とし，rotationまたはmirror imagingとtranslationだけで \(\widetilde T\) を \(T\) へ移します．
+</p>
+<p>
+従って全写像は
+\[
+\Phi
+=
+\Phi_T\circ\Phi_{\widetilde T},
+\tag{15}
+\]
+\[
+\Phi(\widehat x)
+=
+A_T
+\widetilde A
+\widehat A\widehat x
++b_T.
+\tag{16}
+\]
+そのJacobianは
+\[
+\boxed{
+J_T
+=
+A_T\widetilde A\widehat A
+}
+\tag{17}
+\]
+です．
+</p>
+</article></div>
+
+<h2>5．直接作ったJacobianと同じになる</h2>
+<div class="news"><article class="news-item">
+<p>
+標準ラベル付けされた実三角形について，通常のJacobianは
+\[
+J_T^{\mathrm{direct}}
+=
+[p_2-p_1,\ p_3-p_1].
+\tag{18}
+\]
+一方，
+\[
+p_2-p_1=h_1r_1,
+\qquad
+p_3-p_1=h_2r_2.
+\]
+\(r_2\) を
+\[
+r_2=sr_1+tq_2
+\tag{19}
+\]
+と分解し，
+\[
+A_T=[r_1,q_2]\in O(2)
+\tag{20}
+\]
+とすれば
+\[
+A_T\widetilde A\widehat A
+=
+[h_1r_1,\ h_2(sr_1+tq_2)]
+=
+[p_2-p_1,\ p_3-p_1].
+\]
+従って
+\[
+\boxed{
+J_T^{\mathrm{direct}}
+=
+A_T\widetilde A\widehat A.
+}
+\tag{21}
+\]
+</p>
+<p>
+つまりtwo-step affine mappingは，別の有限要素写像を作っているわけではありません．
+<b>同じJacobianを，異方性解析に意味のある三つの因子へ分解している</b>のです．
+</p>
+</article></div>
+
+<h2>6．三つの因子は何を表しているか</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">factor</th><th style="border:1px solid #777; padding:7px;">meaning</th><th style="border:1px solid #777; padding:7px;">anisotropic analysis</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(\widehat A=\operatorname{diag}(h_1,h_2)\)</td><td style="border:1px solid #777; padding:7px;">方向別の伸縮</td><td style="border:1px solid #777; padding:7px;">\(h_i\partial/\partial r_i\) を残す</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(\widetilde A\)</td><td style="border:1px solid #777; padding:7px;">角度・flatnessを含むshape deformation</td><td style="border:1px solid #777; padding:7px;">maximum-angle / semi-regularityに関係</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(A_T\in O(2)\)</td><td style="border:1px solid #777; padding:7px;">rotation / reflection</td><td style="border:1px solid #777; padding:7px;">Euclidean normを変えない</td></tr>
+</table>
+<p>
+ここが異方性解析の核心です．
+単一の \(J_T\) をそのまま見ると，方向別scaleと角度の悪化が混ざっています．
+分解すると，どの部分が何を引き起こしているかが見えるようになります．
+</p>
+</article></div>
+
+<h2>7．semi-regularityは \(t\) に直接現れる</h2>
+<div class="news"><article class="news-item">
+<p>
+中間三角形の面積は
+\[
+|T|
+=
+\frac12 h_1h_2t.
+\tag{22}
+\]
+筆者らの幾何パラメータ
+\[
+H_T
+:=
+\frac{h_1h_2}{|T|}\,h_T
+\tag{23}
+\]
+を使うと，
+\[
+\boxed{
+\frac{H_T}{h_T}
+=
+\frac{h_1h_2}{|T|}
+=
+\frac{2}{t}.
+}
+\tag{24}
+\]
+</p>
+<p>
+最長辺 \(p_2p_3\) の対角である \(\theta\) は三角形の最大角なので，
+\[
+t=\sin\theta_{\max}.
+\]
+従って
+\[
+\frac{H_T}{h_T}
+=
+\frac{2}{\sin\theta_{\max}}.
+\tag{25}
+\]
+</p>
+<p>
+つまり，方向別長さ \(h_1,h_2\) が極端に異なっても，
+\(t\) が0へ近づかなければsemi-regularityは壊れません．
+</p>
+</article></div>
+
+<h2>8．「細長い」と「悪い扁平化」は同じではない</h2>
+<div class="news"><article class="news-item">
+<p>
+ここで二つの三角形族を比較します．
+</p>
+
+<h3>8.1 良い異方性：細長い直角三角形</h3>
+<p>
+\[
+T_\varepsilon^{\mathrm{good}}
+=
+\operatorname{conv}
+\{(0,0)^{\top},(1,0)^{\top},(0,\varepsilon)^{\top}\},
+\qquad
+0&lt;\varepsilon\ll1.
+\tag{26}
+\]
+標準ラベルでは
+\[
+h_1=1,\qquad h_2=\varepsilon,
+\qquad
+s=0,\qquad t=1.
+\]
+従って
+\[
+\frac{H_T}{h_T}=2.
+\tag{27}
+\]
+一方，
+\[
+J_T=
+\begin{pmatrix}
+1&0\\
+0&\varepsilon
+\end{pmatrix}
+\]
+なので
+\[
+\kappa_2(J_T)=\varepsilon^{-1}.
+\tag{28}
+\]
+</p>
+<p>
+\(\varepsilon\to0\) ではcondition numberは発散しますが，
+semi-regularity parameterは一定です．
+これは「強い異方性」ですが，maximum angleは悪化していません．
+</p>
+
+<h3>8.2 悪い扁平化：最大角が \(\pi\) へ近づく三角形</h3>
+<p>
+\[
+T_\delta^{\mathrm{bad}}
+=
+\operatorname{conv}
+\{(0,\delta)^{\top},(-1,0)^{\top},(1,0)^{\top}\},
+\qquad
+0&lt;\delta\ll1.
+\tag{29}
+\]
+このとき
+\[
+h_1=h_2=\sqrt{1+\delta^2},
+\]
+\[
+s=\frac{\delta^2-1}{\delta^2+1},
+\qquad
+t=\frac{2\delta}{1+\delta^2}.
+\tag{30}
+\]
+従って
+\[
+\frac{H_T}{h_T}
+=
+\frac{1+\delta^2}{\delta}
+\longrightarrow\infty.
+\tag{31}
+\]
+また
+\[
+\kappa_2(J_T)=\delta^{-1}.
+\tag{32}
+\]
+</p>
+<p>
+こちらは方向別scaleそのものより，
+\[
+t\to0
+\]
+というshape deformationの退化が本質です．
+</p>
+</article></div>
+
+<h2>9．raw condition numberだけでは区別できない</h2>
+<div class="news"><article class="news-item">
+<p>
+前節の二つの例を並べると重要なことが分かります．
+</p>
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr>
+<th style="border:1px solid #777; padding:7px;">element</th>
+<th style="border:1px solid #777; padding:7px;">parameter</th>
+<th style="border:1px solid #777; padding:7px;">\(\kappa_2(J_T)\)</th>
+<th style="border:1px solid #777; padding:7px;">\(H_T/h_T\)</th>
+</tr>
+<tr><td style="border:1px solid #777; padding:7px;">good anisotropy</td><td style="border:1px solid #777; padding:7px;">\(\varepsilon=10^{-3}\)</td><td style="border:1px solid #777; padding:7px;">\(10^3\)</td><td style="border:1px solid #777; padding:7px;">2</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">bad flattening</td><td style="border:1px solid #777; padding:7px;">\(\delta=10^{-3}\)</td><td style="border:1px solid #777; padding:7px;">\(10^3\)</td><td style="border:1px solid #777; padding:7px;">\(1.000001\times10^3\)</td></tr>
+</table>
+<p>
+どちらも
+\[
+\kappa_2(J_T)\approx10^3
+\]
+です．
+しかし一方はsemi-regularで，もう一方はmaximum-angle conditionを失い始めています．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>重要な結論</b><br/>
+\(\kappa_2(J_T)\) が大きいという事実だけでは，
+「良い異方性」と「悪い扁平化」を区別できない．<br/>
+two-step affine mappingは，その二つを
+\[
+\widehat A
+\quad\text{と}\quad
+\widetilde A
+\]
+へ分離して見るための道具である．
+</div>
+</article></div>
+
+<h2 style="color:#111;">10．standard positionをPythonで構成する</h2>
+<div class="news"><article class="news-item">
+<p>
+実際の三角形から，標準ラベル付けとJacobian分解を自動的に作ります．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">import numpy as np
+
+
+def anisotropic_triangle_decomposition(P):
+    P = np.asarray(P, dtype=float)
+
+    # all three edges
+    edges = [(0, 1), (1, 2), (2, 0)]
+    lengths = np.array([
+        np.linalg.norm(P[i] - P[j])
+        for i, j in edges
+    ])
+
+    # p2-p3 is the longest edge
+    m = np.argmax(lengths)
+    i2, i3 = edges[m]
+
+    # p1 is the remaining vertex
+    i1 = list(
+        {0, 1, 2} - {i2, i3}
+    )[0]
+
+    p1 = P[i1]
+    q2 = P[i2]
+    q3 = P[i3]
+
+    d12 = np.linalg.norm(q2 - p1)
+    d13 = np.linalg.norm(q3 - p1)
+
+    # enforce h2 &lt;= h1
+    if d12 &gt;= d13:
+        p2, p3 = q2, q3
+        h1, h2 = d12, d13
+    else:
+        p2, p3 = q3, q2
+        h1, h2 = d13, d12
+
+    hT = np.linalg.norm(p2 - p3)
+
+    r1 = (p2 - p1) / h1
+    r2 = (p3 - p1) / h2
+
+    s = np.dot(r1, r2)
+
+    qperp = r2 - s * r1
+    t = np.linalg.norm(qperp)
+
+    if t &lt;= 1.0e-14:
+        raise ValueError(
+            "Degenerate or nearly degenerate triangle"
+        )
+
+    qperp /= t
+
+    # rotation / reflection
+    AT = np.column_stack((r1, qperp))
+
+    # anisotropic scaling
+    Ahat = np.diag([h1, h2])
+
+    # remaining shape deformation
+    Atilde = np.array([
+        [1.0, s],
+        [0.0, t]
+    ])
+
+    J_factorised = AT @ Atilde @ Ahat
+
+    J_direct = np.column_stack((
+        p2 - p1,
+        p3 - p1
+    ))
+
+    area = (
+        0.5
+        * abs(np.linalg.det(J_direct))
+    )
+
+    H_over_h = h1 * h2 / area
+
+    return {
+        "p1": p1,
+        "p2": p2,
+        "p3": p3,
+        "h1": h1,
+        "h2": h2,
+        "hT": hT,
+        "r1": r1,
+        "r2": r2,
+        "s": s,
+        "t": t,
+        "AT": AT,
+        "Ahat": Ahat,
+        "Atilde": Atilde,
+        "J_direct": J_direct,
+        "J_factorised": J_factorised,
+        "H_over_h": H_over_h,
+        "cond_J": np.linalg.cond(J_direct)
+    }
+</code></pre>
+</article></div>
+
+<h2>11．分解そのものを監査する</h2>
+<div class="news"><article class="news-item">
+<p>
+コードを実行したら，
+\[
+J_T^{\mathrm{direct}}
+=
+A_T\widetilde A\widehat A
+\tag{33}
+\]
+が数値的に成立するかを必ず確認します．
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">data = anisotropic_triangle_decomposition(P)
+
+factorisation_error = np.linalg.norm(
+    data["J_direct"]
+    - data["J_factorised"],
+    ord=np.inf
+)
+
+orthogonality_error = np.linalg.norm(
+    data["AT"].T @ data["AT"]
+    - np.eye(2),
+    ord=np.inf
+)
+
+print(factorisation_error)
+print(orthogonality_error)
+print(data["H_over_h"])
+</code></pre>
+<p>
+浮動小数点誤差を除けば
+\[
+A_T^{\top}A_T=I,
+\qquad
+J_T^{\mathrm{direct}}
+=
+A_T\widetilde A\widehat A
+\]
+となるはずです．
+</p>
+</article></div>
+
+<h2>12．方向別微分が見える</h2>
+<div class="news"><article class="news-item">
+<p>
+この分解を行う理由は，単にJacobianをfactorisationしたいからではありません．
+方向ベクトル
+\[
+r_i
+\]
+と方向別長さ
+\[
+h_i
+\]
+を誤差評価に残すためです．
+</p>
+<p>
+例えば，semi-regularityの下でP1 Lagrange interpolationには
+\[
+|u-I_Tu|_{H^1(T)}
+\le
+C
+\sum_{i=1}^{2}
+h_i
+\left|
+\frac{\partial u}{\partial r_i}
+\right|_{H^1(T)}
+\tag{34}
+\]
+という方向別の評価が得られます．
+</p>
+<p>
+等方的な
+\[
+h_T|u|_{H^2(T)}
+\]
+だけでは，
+解がどの方向に急激に変化しているかという情報が消えます．
+異方性meshでは，この方向情報を保持することが重要です．
+</p>
+</article></div>
+
+<h2>13．assembly用Jacobianを書き換える必要はない</h2>
+<div class="news"><article class="news-item">
+<p>
+ここは実装上，非常に大切な点です．
+P1有限要素の局所剛性行列を計算するだけなら，第3回で使った
+</p>
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">J = np.column_stack((
+    P[1] - P[0],
+    P[2] - P[0]
+))
+</code></pre>
+<p>
+で正しいです．
+</p>
+<p>
+第6回で行っているのは，
+<b>有限要素法そのものを別の方法へ変更することではありません</b>．
+同じphysical Jacobianを，
+異方性を解析・監査できる形に分解しています．
+</p>
+<p>
+したがって実装は
+\[
+\text{standard FEM assembly}
+\]
+と
+\[
+\text{anisotropic geometry audit}
+\]
+を分離して持つのが安全です．
+</p>
+</article></div>
+
+<h2>14．ChatGPTにJacobianを書かせるときの監査項目</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+この三角形について，異方性解析用のstandard positionを構成してください．<br/>
+(1) 最長辺を \(p_2p_3\) とする，<br/>
+(2) \(h_1=|p_1-p_2|\)，\(h_2=|p_1-p_3|\)，\(h_2\le h_1\) とする，<br/>
+(3) \(r_1,r_2\) を構成する，<br/>
+(4) \(s=r_1\cdot r_2\)，\(t&gt;0\)，\(s^2+t^2=1\) を確認する，<br/>
+(5) \(\widehat A=\operatorname{diag}(h_1,h_2)\)，\(\widetilde A=\begin{pmatrix}1&amp;s\\0&amp;t\end{pmatrix}\) を作る，<br/>
+(6) \(A_T\in O(2)\) を作る，<br/>
+(7) \(J_T=A_T\widetilde A\widehat A\) がdirect Jacobianと一致することを数値的に確認する，<br/>
+(8) \(H_T/h_T=2/t\) を計算する，<br/>
+という順に数式とPythonを対応させてください．
+</div>
+</article></div>
+
+<h2>15．第6回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+異方性三角形でも，standard P1 finite elementのJacobianは
+\[
+[p_2-p_1,\ p_3-p_1]
+\]
+で正しく作れます．
+しかし，異方性を理解するにはその行列を
+\[
+\boxed{
+J_T
+=
+A_T
+\widetilde A
+\widehat A
+}
+\]
+へ分けることが重要です．
+</p>
+<p>
+\[
+\widehat A
+\]
+は方向別scale，
+\[
+\widetilde A
+\]
+はangle/flatness，
+\[
+A_T
+\]
+はrotation/reflectionを表します．
+この分離によって，
+</p>
+\[
+\text{large aspect ratio}
+\neq
+\text{bad element}
+\]
+<p>
+であることが数学的に見えるようになります．
+</p>
+<p>
+次回はこの構成を実際のP1有限要素計算へ入れ，
+<b>異方性P1要素は本当に正しく動くか</b>を
+linear patch test，相対誤差，condition numberを使って調べます．
+</p>
+</article></div>
+
+<h2>参考文献</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>H. Ishizaka, K. Kobayashi and T. Tsuchiya, “General theory of interpolation error estimates on anisotropic meshes”, <i>Japan Journal of Industrial and Applied Mathematics</i> 38 (2021), 163–191. <a href="https://doi.org/10.1007/s13160-020-00433-z">DOI</a>.</li>
+<li>H. Ishizaka, K. Kobayashi and T. Tsuchiya, “Anisotropic interpolation error estimates using a new geometric parameter”, <i>Japan Journal of Industrial and Applied Mathematics</i> 40 (2023), 475–512. <a href="https://doi.org/10.1007/s13160-022-00535-w">DOI</a>.</li>
+<li>H. Ishizaka, “Anisotropic Raviart–Thomas interpolation error estimates using a new geometric parameter”, <i>Calcolo</i> 59 (2022), 50. <a href="https://doi.org/10.1007/s10092-022-00494-1">DOI</a>.</li>
+<li>H. Ishizaka, “On discrete Sobolev inequalities for nonconforming finite elements under a semiregular mesh condition”, <i>IMA Journal of Numerical Analysis</i> (2026). <a href="https://doi.org/10.1093/imanum/drag006">DOI</a>.</li>
+</ol>
+<p>
+関連ページ：
+<a href="./chatgpt-fem-03.html">第3回：2次元三角形P1要素 — reference elementとJacobian</a>，
+<a href="./chatgpt-fem-05.html">第5回：3次元四面体P1要素 — reference tetrahedronとJacobian</a>，
+<a href="./anisotropic-geometry-02.html">正則性と準正則性を角度を使わずに表す</a>，
+<a href="./anisotropic-geometry-06.html">長方形の三角形分割を \(Q_T\) と \(H_T/h_T\) で調べる</a>，
+<a href="../">Blog一覧</a>
+</p>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>前回：</b><a href="./chatgpt-fem-05.html">第5回：3次元四面体P1要素 — reference tetrahedronとJacobian</a></p>
+<p><b>次回：</b>第7回：異方性P1要素は本当に正しく動くか — patch test・誤差・condition number（構想中）</p>
+<p><a href="../">Blog一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
