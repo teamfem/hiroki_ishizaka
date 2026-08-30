@@ -1,0 +1,1852 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第36回：geometry-aware operator learning — 点配置・異方性・有限観測 | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,operator learning,geometry-aware operator learning,sensor placement,anisotropic sampling,finite observations,DeepONet,neural operator,solution operator,information geometry"/>
+<meta name="description" content="Season 3最終回（通算第36回）として，Deep Ritz・PINNs・operator learningを点配置の幾何で統一します．anisotropic elliptic operatorのspectral smoothing，metric-scaled sensor geometry，有限観測，output representation，training distribution，error decompositionを整理し，geometry-aware operator learningの設計原則をまとめます．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-36.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-36.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-36.html",
+      "headline": "第36回：geometry-aware operator learning — 点配置・異方性・有限観測",
+      "description": "Deep Ritz・PINNs・operator learningをpoint geometryの観点から統一し，anisotropic PDE，sensor placement，finite observations，operator error decompositionを数値解析します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-36.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 3",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 3"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第36回：geometry-aware operator learning — 点配置・異方性・有限観測 | Hiroki Ishizaka"/>
+<meta property="og:description" content="メッシュを捨てても幾何は消えない．quadrature・collocation・sensor geometryをsolution operatorの誤差へつなぎます．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-36.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第36回：geometry-aware operator learning — 点配置・異方性・有限観測 | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="Geometry-aware PDE operator learning: anisotropic sensors, finite observations and operator error decomposition."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 3 第12回（通算第36回・Season 3最終回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第36回：geometry-aware operator learning — 点配置・異方性・有限観測</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 3 第12回（通算第36回・Season 3最終回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――メッシュを捨てても幾何は消えない</h2>
+<div class="news"><article class="news-item">
+<p>
+Season 3では，有限要素法からDeep Ritz，PINNs，solution operator learningへ進みました．
+一見するとmeshから離れていったように見えます．
+</p>
+<p>
+しかし実際には，
+</p>
+\[
+\boxed{
+\text{quadrature points},
+\quad
+\text{collocation points},
+\quad
+\text{boundary points},
+\quad
+\text{sensor points}
+}
+\tag{1}
+\]
+<p>
+をどこへ置くかというgeometryが，形を変えて何度も現れました．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 3最終回の問い</b><br/>
+\[
+\boxed{
+\text{PDE geometry}
++
+\text{point geometry}
++
+\text{finite observations}
+\longrightarrow
+\text{operator approximation error}
+}
+\tag{2}
+\]
+<p>
+を一つの設計原理として整理できるか？
+</p>
+</div>
+</article></div>
+
+<h2>1．Season 3の「点」は全部同じではない</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">points</th><th style="border:1px solid #777; padding:7px;">観測するもの</th><th style="border:1px solid #777; padding:7px;">主なfailure</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">Deep Ritz quadrature</td><td style="border:1px solid #777; padding:7px;">energy integral</td><td style="border:1px solid #777; padding:7px;">quadrature bias / concentration</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">PINN collocation</td><td style="border:1px solid #777; padding:7px;">strong residual</td><td style="border:1px solid #777; padding:7px;">between-point residual</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">boundary points</td><td style="border:1px solid #777; padding:7px;">trace</td><td style="border:1px solid #777; padding:7px;">sample間のboundary oscillation</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">operator sensors</td><td style="border:1px solid #777; padding:7px;">input function</td><td style="border:1px solid #777; padding:7px;">\(\ker\mathcal O_m\) のblind directions</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">output queries</td><td style="border:1px solid #777; padding:7px;">solution representation</td><td style="border:1px solid #777; padding:7px;">unqueried output geometry</td></tr>
+</table>
+<p>
+共通するのは
+</p>
+\[
+\boxed{
+\text{finite points}
+=
+\text{finite information}
+}
+\tag{3}
+\]
+<p>
+という事実です．
+</p>
+</article></div>
+
+<h2>2．solution operatorをもう一度出発点にする</h2>
+<div class="news"><article class="news-item">
+<p>
+input space \(X\)，output space \(Y\) に対して
+</p>
+\[
+\boxed{
+S:X\to Y
+}
+\tag{4}
+\]
+<p>
+をPDE solution operatorとします．
+</p>
+<p>
+operator learnerは有限観測
+</p>
+\[
+\boxed{
+\mathcal O_X:
+X
+\to
+\mathbb R^m
+}
+\tag{5}
+\]
+<p>
+を通して
+</p>
+\[
+\boxed{
+G_\theta(
+\mathcal O_Xf
+)
+\approx
+Sf
+}
+\tag{6}
+\]
+<p>
+を目指します．
+</p>
+<p>
+添字 \(X\) はsensor set
+\[
+X_m=\{x_1,\ldots,x_m\}
+\]
+にobservation mapが依存することを表します．
+</p>
+</article></div>
+
+<h2>3．geometry-awareとは「座標をnetworkへ入れる」だけではない</h2>
+<div class="news"><article class="news-item">
+<p>
+sensor coordinatesをfeatureとして与えることは一つの実装です．
+しかしgeometry-aware operator learningを
+</p>
+\[
+\boxed{
+\text{coordinates are inputs}
+}
+\tag{7}
+\]
+<p>
+だけで定義するのは弱すぎます．
+</p>
+<p>
+本記事では
+</p>
+\[
+\boxed{
+\text{PDEが重要視するdirection / scale}
+\text{ に応じて有限観測を設計する}
+}
+\tag{8}
+\]
+<p>
+ことをgeometry-awareと呼びます．
+</p>
+</article></div>
+
+<h2>4．anisotropic elliptic operatorをmodel problemにする</h2>
+<div class="news"><article class="news-item">
+<p>
+\(\Omega=(0,1)^2\) で
+</p>
+\[
+\boxed{
+-\varepsilon u_{xx}
+-
+u_{yy}
+=
+f,
+\qquad
+u=0
+\text{ on }\partial\Omega,
+\qquad
+0&lt;\varepsilon\le1
+}
+\tag{9}
+\]
+<p>
+を考えます．
+</p>
+<p>
+diffusion tensorは
+</p>
+\[
+\boxed{
+A_\varepsilon
+=
+\begin{pmatrix}
+\varepsilon & 0\\
+0 & 1
+\end{pmatrix}.
+}
+\tag{10}
+\]
+</article></div>
+
+<h2>5．spectral basisでPDEが方向をどう平滑化するかを見る</h2>
+<div class="news"><article class="news-item">
+<p>
+Dirichlet eigenfunctions
+</p>
+\[
+\boxed{
+\phi_{k\ell}(x,y)
+=
+2\sin(k\pi x)\sin(\ell\pi y)
+}
+\tag{11}
+\]
+<p>
+に対して
+</p>
+\[
+-\varepsilon\partial_{xx}\phi_{k\ell}
+-
+\partial_{yy}\phi_{k\ell}
+=
+\lambda_{k\ell}
+\phi_{k\ell},
+\]
+<p>
+ただし
+</p>
+\[
+\boxed{
+\lambda_{k\ell}
+=
+\pi^2
+\left(
+\varepsilon k^2+\ell^2
+\right).
+}
+\tag{12}
+\]
+</article></div>
+
+<h2>6．solution operatorのtransfer factor</h2>
+<div class="news"><article class="news-item">
+<p>
+forcingが
+</p>
+\[
+f
+=
+\sum_{k,\ell}
+\widehat f_{k\ell}
+\phi_{k\ell}
+\]
+<p>
+なら
+</p>
+\[
+\boxed{
+Sf
+=
+\sum_{k,\ell}
+\frac{
+\widehat f_{k\ell}
+}{
+\pi^2(\varepsilon k^2+\ell^2)
+}
+\phi_{k\ell}.
+}
+\tag{13}
+\]
+<p>
+従ってPDEはmodeごとに
+</p>
+\[
+\boxed{
+\frac1{\pi^2(\varepsilon k^2+\ell^2)}
+}
+\tag{14}
+\]
+<p>
+だけattenuateします．
+</p>
+</article></div>
+
+<h2>7．small \(\varepsilon\) では \(x\)-directionの高周波が比較的残る</h2>
+<div class="news"><article class="news-item">
+<p>
+同じattenuation level
+</p>
+\[
+\varepsilon k^2+\ell^2
+=
+C
+\]
+<p>
+を考えると
+</p>
+\[
+\boxed{
+k
+\sim
+\varepsilon^{-1/2}\ell.
+}
+\tag{15}
+\]
+<p>
+つまり \(\varepsilon\ll1\) では，
+solution operatorは \(x\)-directionのより高いfrequencyまで残します．
+</p>
+<p>
+これはsensor resolutionにも方向依存を要求します．
+</p>
+</article></div>
+
+<h2>8．PDE-aware sensor spacingのprototype</h2>
+<div class="news"><article class="news-item">
+<p>
+mode scale
+\[
+k\sim\varepsilon^{-1/2}\ell
+\]
+を同程度にresolveするなら
+</p>
+\[
+\boxed{
+h_x
+\sim
+\sqrt{\varepsilon}\,
+h_y.
+}
+\tag{16}
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+h_x
+\ll
+h_y
+}
+\tag{17}
+\]
+<p>
+というanisotropic sensor placementが自然です．
+</p>
+<p>
+これはuniversal optimality theoremではなく，
+spectral transfer structureから出るPDE-aware design ruleです．
+</p>
+</article></div>
+
+<h2>9．固定sensor budgetなら \(N_x:N_y\) を変える</h2>
+<div class="news"><article class="news-item">
+<p>
+tensor sensorsで
+</p>
+\[
+m=N_xN_y
+\tag{18}
+\]
+<p>
+とし，
+</p>
+\[
+h_x\approx N_x^{-1},
+\qquad
+h_y\approx N_y^{-1}
+\]
+<p>
+とします．
+式 (16) を満たすには
+</p>
+\[
+\boxed{
+\frac{N_x}{N_y}
+\sim
+\varepsilon^{-1/2}.
+}
+\tag{19}
+\]
+<p>
+固定 \(m\) なら
+</p>
+\[
+\boxed{
+N_x
+\sim
+m^{1/2}\varepsilon^{-1/4},
+\qquad
+N_y
+\sim
+m^{1/2}\varepsilon^{1/4}.
+}
+\tag{20}
+\]
+</article></div>
+
+<h2>10．数値例：\(\varepsilon=10^{-2}\)</h2>
+<div class="news"><article class="news-item">
+<p>
+\[
+\varepsilon=10^{-2}
+\]
+<p>
+なら
+</p>
+\[
+\frac{N_x}{N_y}
+\sim10.
+\]
+<p>
+総sensor budgetを約4000とすれば，
+</p>
+\[
+\boxed{
+N_x=200,
+\qquad
+N_y=20,
+\qquad
+m=4000
+}
+\tag{21}
+\]
+<p>
+のような配置がprototypeになります．
+</p>
+<p>
+\(64\times64=4096\) のisotropic gridとほぼ同じsensor数でも，
+directional resolutionは大きく異なります．
+</p>
+</article></div>
+
+<h2>11．anisotropic metricとして書く</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (16) をdistanceとして表すため
+</p>
+\[
+\boxed{
+M_\varepsilon
+=
+\begin{pmatrix}
+\varepsilon^{-1} & 0\\
+0 & 1
+\end{pmatrix}
+}
+\tag{22}
+\]
+<p>
+を考えます．
+</p>
+<p>
+metric distanceを
+</p>
+\[
+\boxed{
+d_{M_\varepsilon}(x,z)
+=
+\sqrt{
+(x-z)^{\top}
+M_\varepsilon
+(x-z)
+}
+}
+\tag{23}
+\]
+<p>
+とすると，
+\(x\)-directionの物理距離は
+\[
+\varepsilon^{-1/2}
+\]
+倍に拡大されます．
+</p>
+</article></div>
+
+<h2>12．metric fill distance</h2>
+<div class="news"><article class="news-item">
+<p>
+sensor set \(X_m\) のcoverageを
+</p>
+\[
+\boxed{
+h_{X,M}
+=
+\sup_{x\in\Omega}
+\min_{x_j\in X_m}
+d_M(x,x_j)
+}
+\tag{24}
+\]
+<p>
+で測ります．
+</p>
+<p>
+Euclidean fill distanceが小さくても，
+PDE metricで
+\[
+h_{X,M}
+\]
+が大きければ重要directionを粗くしか観測していません．
+</p>
+</article></div>
+
+<h2>13．metric separationも同時に見る</h2>
+<div class="news"><article class="news-item">
+<p>
+clusteringを見るため
+</p>
+\[
+\boxed{
+q_{X,M}
+=
+\frac12
+\min_{i\ne j}
+d_M(x_i,x_j)
+}
+\tag{25}
+\]
+<p>
+を使い，
+</p>
+\[
+\boxed{
+\rho_{X,M}
+=
+\frac{h_{X,M}}{q_{X,M}}
+}
+\tag{26}
+\]
+<p>
+をprototype mesh-ratioならぬsensor-ratioとして記録できます．
+</p>
+<p>
+大きな \(\rho_{X,M}\) はcoverageとclusteringの不均衡を示します．
+</p>
+</article></div>
+
+<h2>14．principal directionsが回転すればsensor orientationも回転する</h2>
+<div class="news"><article class="news-item">
+<p>
+一般のsymmetric positive definite diffusion tensorを
+</p>
+\[
+\boxed{
+A
+=
+R
+\Lambda
+R^{\top}
+}
+\tag{27}
+\]
+<p>
+とします．
+</p>
+<p>
+anisotropyはcoordinate axesではなく
+\(R\) のprincipal directionsに沿います．
+</p>
+<p>
+したがって
+</p>
+\[
+\boxed{
+\text{anisotropic point placement}
+\neq
+\text{x方向だけ細かくすること}
+}
+\tag{28}
+\]
+<p>
+です．
+</p>
+</article></div>
+
+<h2>15．\(A^{-1}\) metricは有用なprototypeだが普遍解ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+local geometry indicatorとして
+</p>
+\[
+\boxed{
+M_A(x)
+=
+A(x)^{-1}
+}
+\tag{29}
+\]
+<p>
+を使うことは自然です．
+</p>
+<p>
+ただしsensor optimalityは
+</p>
+\[
+\boxed{
+A
++
+\text{input class}
++
+\text{output norm}
++
+\text{boundary conditions}
+}
+\tag{30}
+\]
+<p>
+に依存します．
+</p>
+<p>
+従って \(A^{-1}\) を「常に最適なsensor metric」とは呼びません．
+</p>
+</article></div>
+
+<h2>16．input geometryとPDE geometryを分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+input functions自身がanisotropicである場合，
+そのregularityから必要なsensor densityが決まることがあります．
+</p>
+<p>
+一方PDE solution operatorもdirection-dependent smoothingを持ちます．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{input geometry}
+\quad+\quad
+\text{operator geometry}
+}
+\tag{31}
+\]
+<p>
+を分けて考えます．
+</p>
+<p>
+両者が同じprincipal directionsを持つとは限りません．
+</p>
+</article></div>
+
+<h2>17．finite observation bottleneckを再び書く</h2>
+<div class="news"><article class="news-item">
+<p>
+sensor observationsからinput reconstructionを作る
+</p>
+\[
+\boxed{
+I_X:
+\mathbb R^m
+\to
+X
+}
+\tag{32}
+\]
+<p>
+を導入します．
+</p>
+<p>
+geometry-aware sensor designは
+</p>
+\[
+\boxed{
+\|f-I_X\mathcal O_Xf\|_X
+}
+\tag{33}
+\]
+<p>
+を改善するだけでなく，
+PDE outputへの影響
+</p>
+\[
+\boxed{
+\|S(f-I_X\mathcal O_Xf)\|_Y
+}
+\tag{34}
+\]
+<p>
+を小さくすることが目的です．
+</p>
+</article></div>
+
+<h2>18．operator errorの第一分解</h2>
+<div class="news"><article class="news-item">
+<p>
+output representation space \(Y_n\subset Y\) とprojection
+</p>
+\[
+P_n:Y\to Y_n
+\]
+<p>
+を用意し，
+learner outputを
+</p>
+\[
+G_\theta(\mathcal O_Xf)\in Y_n
+\]
+<p>
+とします．
+</p>
+<p>
+すると
+</p>
+\[
+\boxed{
+\begin{aligned}
+Sf-G_\theta(\mathcal O_Xf)
+={}&
+S(f-I_X\mathcal O_Xf)
+\\
+&+
+(I-P_n)S(I_X\mathcal O_Xf)
+\\
+&+
+\Bigl[
+P_nS(I_X\mathcal O_Xf)
+-
+G_\theta(\mathcal O_Xf)
+\Bigr].
+\end{aligned}
+}
+\tag{35}
+\]
+</article></div>
+
+<h2>19．三つのerror source</h2>
+<div class="news"><article class="news-item">
+<p>
+式 (35) は
+</p>
+\[
+\boxed{
+\text{observation / geometry error}
+}
+\tag{36}
+\]
+<p>
+\[
+\boxed{
+\text{output representation error}
+}
+\tag{37}
+\]
+<p>
+\[
+\boxed{
+\text{learned finite-dimensional operator error}
+}
+\tag{38}
+\]
+<p>
+という三つを分離します．
+</p>
+<p>
+「neural approximation error」だけを報告すると，
+どの段階が支配しているか分かりません．
+</p>
+</article></div>
+
+<h2>20．stabilityを入れればgeometry errorを評価できる</h2>
+<div class="news"><article class="news-item">
+<p>
+solution operatorが
+</p>
+\[
+\|Sf-Sg\|_Y
+\le
+C_S
+\|f-g\|_X
+\]
+<p>
+を満たすなら
+</p>
+\[
+\boxed{
+\|S(f-I_X\mathcal O_Xf)\|_Y
+\le
+C_S
+\|f-I_X\mathcal O_Xf\|_X.
+}
+\tag{39}
+\]
+<p>
+sensor geometryの悪さはPDE stability constantを通ってsolution errorへ伝わります．
+</p>
+</article></div>
+
+<h2>21．learning errorもさらに分解する</h2>
+<div class="news"><article class="news-item">
+<p>
+input distributionを \(\mu\) としてpopulation riskを
+</p>
+\[
+\boxed{
+\mathcal R(\theta)
+=
+\mathbb E_{f\sim\mu}
+\left[
+\|
+P_nS(I_X\mathcal O_Xf)
+-
+G_\theta(\mathcal O_Xf)
+\|_Y^2
+\right]
+}
+\tag{40}
+\]
+<p>
+とします．
+</p>
+<p>
+training functions \(f^{(1)},\ldots,f^{(N)}\) に対するempirical riskは
+</p>
+\[
+\boxed{
+\mathcal R_N(\theta)
+=
+\frac1N
+\sum_{j=1}^N
+\|
+P_nS(I_X\mathcal O_Xf^{(j)})
+-
+G_\theta(\mathcal O_Xf^{(j)})
+\|_Y^2.
+}
+\tag{41}
+\]
+</article></div>
+
+<h2>22．representation・optimisation・generalisationを区別する</h2>
+<div class="news"><article class="news-item">
+<p>
+model class
+\[
+\mathfrak G
+\]
+を固定すれば，
+</p>
+\[
+\boxed{
+\inf_{G\in\mathfrak G}
+\mathcal R(G)
+}
+\tag{42}
+\]
+<p>
+はrepresentation limitです．
+</p>
+<p>
+trained modelについて
+</p>
+\[
+\boxed{
+\mathcal R_N(G_{\rm train})
+-
+\inf_{G\in\mathfrak G}
+\mathcal R_N(G)
+}
+\tag{43}
+\]
+<p>
+はempirical optimisation gapのprototypeです．
+</p>
+<p>
+さらに
+</p>
+\[
+\boxed{
+|\mathcal R(G)-\mathcal R_N(G)|
+}
+\tag{44}
+\]
+<p>
+はgeneralisation / sampling gapです．
+</p>
+</article></div>
+
+<h2>23．Season 3のerror map</h2>
+<div class="news"><article class="news-item">
+<p>
+ここまでをconceptuallyまとめると
+</p>
+\[
+\boxed{
+\begin{aligned}
+\text{operator error}
+\;\Leftarrow\;&
+\text{observation geometry}
+\\
+&+
+\text{output representation}
+\\
+&+
+\text{model representation}
+\\
+&+
+\text{training-function sampling}
+\\
+&+
+\text{optimisation}.
+\end{aligned}
+}
+\tag{45}
+\]
+<p>
+これは一つのuniversal additive identityではなく，
+式 (35) とrisk decompositionをまとめた
+<b>audit map</b>です．
+</p>
+</article></div>
+
+<h2>24．geometry errorはpoint countだけでは決まらない</h2>
+<div class="news"><article class="news-item">
+<p>
+同じ \(m\) sensorsでも
+</p>
+\[
+\boxed{
+X_m^{\rm iso},
+\qquad
+X_m^{\rm aniso},
+\qquad
+X_m^{\rm concentrated}
+}
+\tag{46}
+\]
+<p>
+では
+\[
+\mathcal O_X
+\]
+のkernel，conditioning，fill distanceが違います．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+m
+\text{ fixed}
+\quad\not\Rightarrow\quad
+\text{information fixed}.
+}
+\tag{47}
+\]
+</article></div>
+
+<h2>25．anisotropic spectral sensor matrixを作る</h2>
+<div class="news"><article class="news-item">
+<p>
+input modelを
+</p>
+\[
+X_{K,L}
+=
+\operatorname{span}
+\{
+\phi_{k\ell}:
+1\le k\le K,\ 
+1\le\ell\le L
+\}
+\tag{48}
+\]
+<p>
+とします．
+</p>
+<p>
+sensor matrixは
+</p>
+\[
+\boxed{
+V_{j,(k,\ell)}
+=
+\phi_{k\ell}(x_j,y_j).
+}
+\tag{49}
+\]
+<p>
+rankとsmallest singular valueを見れば，
+指定したinput model class上でsensor geometryを監査できます．
+</p>
+</article></div>
+
+<h2>26．PDE-aware weightingを入れる</h2>
+<div class="news"><article class="news-item">
+<p>
+anisotropic solution operatorのspectral factorを
+</p>
+\[
+\boxed{
+d_{k\ell}
+=
+\frac1{
+\pi^2(
+\varepsilon k^2+\ell^2
+)
+}
+}
+\tag{50}
+\]
+<p>
+とします．
+</p>
+<p>
+\(\ker V\) のorthonormal basis matrixを \(N\) とし，
+\(D=\operatorname{diag}(d_{k\ell})\) とすれば
+</p>
+\[
+\boxed{
+\rho_{\rm inv}^{S}(X_m)
+=
+\|DN\|_2
+}
+\tag{51}
+\]
+<p>
+をPDE-aware invisible radiusとして使えます．
+</p>
+</article></div>
+
+<h2>27．input reconstructionとPDE predictionでsensor rankingが変わり得る</h2>
+<div class="news"><article class="news-item">
+<p>
+observation matrixだけなら
+</p>
+\[
+\sigma_{\min}(V)
+\]
+<p>
+を大きくする配置が良く見えます．
+</p>
+<p>
+しかしsolution predictionで重要なのは
+</p>
+\[
+\boxed{
+DN
+}
+\tag{52}
+\]
+<p>
+です．
+</p>
+<p>
+PDEが強く減衰するblind modesは，
+inputとして見えなくてもoutput errorにはあまり残らない場合があります．
+</p>
+</article></div>
+
+<h2>28．sensor designをminimax problemとして書く</h2>
+<div class="news"><article class="news-item">
+<p>
+input class \(\mathcal K\subset X\) に対して
+</p>
+\[
+\boxed{
+X_m^\ast
+\in
+\operatorname*{arg\,min}_{X_m}
+\inf_G
+\sup_{f\in\mathcal K}
+\|
+Sf-G(\mathcal O_{X_m}f)
+\|_Y.
+}
+\tag{53}
+\]
+<p>
+geometry-aware operator learningのsensor designは，
+architecture optimisationより前にある
+<b>information optimisation</b>として書けます．
+</p>
+</article></div>
+
+<h2>29．variable sensor setsではcoordinatesを必ず渡す</h2>
+<div class="news"><article class="news-item">
+<p>
+全training samplesでsensor setが固定なら，
+ordered input vectorのindexがgeometryを暗黙に持てます．
+</p>
+<p>
+しかしsampleごとに
+</p>
+\[
+X_m^{(n)}
+\]
+<p>
+が変わる場合，
+</p>
+\[
+\boxed{
+\bigl(
+x_j^{(n)},
+f^{(n)}(x_j^{(n)})
+\bigr)
+}
+\tag{54}
+\]
+<p>
+のようにcoordinatesをmodelへ渡さなければ，
+同じvector positionが何を意味するか分からなくなります．
+</p>
+</article></div>
+
+<h2>30．set encoderとして書く</h2>
+<div class="news"><article class="news-item">
+<p>
+variable point cloudなら一例として
+</p>
+\[
+\boxed{
+z_f
+=
+\sum_{j=1}^m
+w_j
+\,
+\Phi_\theta
+\bigl(
+x_j,
+f(x_j)
+\bigr)
+}
+\tag{55}
+\]
+<p>
+というpermutation-invariant encoderを使えます．
+</p>
+<p>
+ここで
+\[
+w_j
+\]
+はquadrature / area / importance weightsとしてgeometryを反映できます．
+</p>
+<p>
+equal weightsが常に正しいとは限りません．
+</p>
+</article></div>
+
+<h2>31．anisotropic geometry featureも渡せる</h2>
+<div class="news"><article class="news-item">
+<p>
+local metric \(M(x_j)\) が既知なら
+</p>
+\[
+\boxed{
+\Phi_\theta
+\bigl(
+x_j,
+f(x_j),
+M(x_j)
+\bigr)
+}
+\tag{56}
+\]
+<p>
+のようにphysics-derived geometryをfeatureへ含めることもできます．
+</p>
+<p>
+ただしfeatureを渡しただけでsensor placementの悪さが消えるわけではありません．
+</p>
+</article></div>
+
+<h2>32．bad sensorsをnetworkは復元できない</h2>
+<div class="news"><article class="news-item">
+<p>
+第35回と同じく
+</p>
+\[
+\mathcal O_Xf_1
+=
+\mathcal O_Xf_2
+\]
+<p>
+なら，coordinatesをいくらrichにencodeしても
+同じsensor set上ではinput valuesが一致しています．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{better architecture}
+\not\Rightarrow
+\text{missing information recovery}.
+}
+\tag{57}
+\]
+</article></div>
+
+<h2>33．output geometryにもanisotropyがある</h2>
+<div class="news"><article class="news-item">
+<p>
+solutionをquery pointsで返す場合，
+input sensorsだけでなくoutput query set
+</p>
+\[
+Y_n=\{y_1,\ldots,y_n\}
+\]
+<p>
+もgeometryを持ちます．
+</p>
+<p>
+boundary layerやcorner singularityがoutput側にあるなら
+</p>
+\[
+\boxed{
+\text{input sensor refinement}
+\quad\text{だけでは不十分}
+}
+\tag{58}
+\]
+<p>
+です．
+</p>
+<p>
+output representationもgraded / anisotropicにする必要があります．
+</p>
+</article></div>
+
+<h2>34．training functionsのgeometryもある</h2>
+<div class="news"><article class="news-item">
+<p>
+training dataのgeometryはspatial pointsだけではありません．
+</p>
+<p>
+input function family
+</p>
+\[
+\boxed{
+f^{(1)},\ldots,f^{(N)}
+}
+\tag{59}
+\]
+<p>
+がfunction spaceのどこをcoverしているかも重要です．
+</p>
+<p>
+frequency，localisation，anisotropy，regularityが狭いfamilyに偏れば，
+spatial sensorsが良くてもoperator generalisationは狭くなります．
+</p>
+</article></div>
+
+<h2>35．三種類のcoverageを分ける</h2>
+<div class="news"><article class="news-item">
+<p>
+operator learningでは少なくとも
+</p>
+\[
+\boxed{
+\begin{aligned}
+&\text{spatial sensor coverage},\\
+&\text{output representation coverage},\\
+&\text{input-function-space coverage}
+\end{aligned}
+}
+\tag{60}
+\]
+<p>
+を区別します．
+</p>
+<p>
+「training dataが多い」だけではどのcoverageが改善したか分かりません．
+</p>
+</article></div>
+
+<h2>36．geometry-aware experimentの比較protocol</h2>
+<div class="news"><article class="news-item">
+<p>
+sensor geometryだけを比較するなら
+</p>
+\[
+\boxed{
+\begin{aligned}
+&\text{same input function distribution},\\
+&\text{same sensor budget }m,\\
+&\text{same output representation},\\
+&\text{same architecture},\\
+&\text{same optimiser / steps},\\
+&\text{same test functions}
+\end{aligned}
+}
+\tag{61}
+\]
+<p>
+を固定します．
+</p>
+<p>
+比較するのは
+</p>
+\[
+X_m^{\rm iso}
+\quad\text{vs}\quad
+X_m^{\rm aniso}
+\quad\text{vs}\quad
+X_m^{\rm adaptive}
+\]
+<p>
+です．
+</p>
+</article></div>
+
+<h2>37．anisotropic tensor sensorsをコード化する</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">import numpy as np
+
+def anisotropic_sensor_grid(
+    nx,
+    ny
+):
+    x = np.linspace(
+        0.0, 1.0, nx
+    )
+
+    y = np.linspace(
+        0.0, 1.0, ny
+    )
+
+    X, Y = np.meshgrid(
+        x,
+        y,
+        indexing="ij"
+    )
+
+    pts = np.stack(
+        [
+            X.reshape(-1),
+            Y.reshape(-1)
+        ],
+        axis=1
+    )
+
+    return pts
+</code></pre>
+</article></div>
+
+<h2>38．spectral observation matrixをコード化する</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def sine2d_sensor_matrix(
+    points,
+    K,
+    L
+):
+    x = points[:, 0:1]
+    y = points[:, 1:2]
+
+    cols = []
+
+    for k in range(1, K + 1):
+        for ell in range(1, L + 1):
+            col = (
+                2.0
+                * np.sin(k * np.pi * x)
+                * np.sin(ell * np.pi * y)
+            )
+
+            cols.append(col)
+
+    return np.concatenate(
+        cols,
+        axis=1
+    )
+</code></pre>
+</article></div>
+
+<h2>39．PDE-aware invisible radiusをコード化する</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def nullspace(A, rtol=1.0e-12):
+    U, s, Vt = np.linalg.svd(
+        A,
+        full_matrices=True
+    )
+
+    if s.size == 0:
+        return Vt.T
+
+    tol = rtol * s[0]
+    rank = np.sum(s &gt; tol)
+
+    return Vt[rank:].T
+
+
+def anisotropic_poisson_radius(
+    points,
+    K,
+    L,
+    eps
+):
+    V = sine2d_sensor_matrix(
+        points,
+        K,
+        L
+    )
+
+    N = nullspace(V)
+
+    if N.shape[1] == 0:
+        return 0.0
+
+    d = []
+
+    for k in range(1, K + 1):
+        for ell in range(1, L + 1):
+            lam = (
+                np.pi ** 2
+                * (
+                    eps * k ** 2
+                    + ell ** 2
+                )
+            )
+
+            d.append(
+                1.0 / lam
+            )
+
+    D = np.diag(d)
+
+    return np.linalg.norm(
+        D @ N,
+        ord=2
+    )
+</code></pre>
+</article></div>
+
+<h2>40．geometry auditを数値と図で残す</h2>
+<div class="news"><article class="news-item">
+<p>
+各sensor setについて
+</p>
+\[
+\boxed{
+m,
+\quad
+h_{X,M},
+\quad
+q_{X,M},
+\quad
+\rho_{X,M},
+\quad
+\sigma_{\min}(V),
+\quad
+\rho_{\rm inv}^{S}
+}
+\tag{62}
+\]
+<p>
+を記録します．
+</p>
+<p>
+さらにpoint cloudそのものをplotします．
+</p>
+<p>
+scalar metricsだけでは
+line concentration，hole，directional alignmentを見落とすことがあるからです．
+</p>
+</article></div>
+
+<h2>41．Deep Ritzからoperator learningまで同じ構図がある</h2>
+<div class="news"><article class="news-item">
+<p>
+Season 3を一行ずつ並べると
+</p>
+\[
+\boxed{
+\begin{aligned}
+\text{Deep Ritz}
+&:\ \text{where is energy integrated?}\\
+\text{PINNs}
+&:\ \text{where is residual observed?}\\
+\text{boundary loss}
+&:\ \text{where is trace observed?}\\
+\text{operator learning}
+&:\ \text{where is input observed?}
+\end{aligned}
+}
+\tag{63}
+\]
+<p>
+となります．
+</p>
+<p>
+違うmethodに見えても，
+有限観測のgeometryという共通問題があります．
+</p>
+</article></div>
+
+<h2>42．FEMとの違いと共通点</h2>
+<div class="news"><article class="news-item">
+<p>
+FEMではmesh geometryが
+</p>
+\[
+\boxed{
+\text{trial space}
++
+\text{quadrature}
++
+\text{discrete operator}
+}
+\tag{64}
+\]
+<p>
+を同時に決めることがあります．
+</p>
+<p>
+neural PDE methodsではnetwork trial classとpoint geometryを分離しやすい一方，
+</p>
+\[
+\boxed{
+\text{point geometry}
+\longrightarrow
+\text{what the loss / input can see}
+}
+\tag{65}
+\]
+<p>
+という役割は残ります．
+</p>
+</article></div>
+
+<h2>43．「mesh-free」をgeometry-freeと読まない</h2>
+<div class="news"><article class="news-item">
+<p>
+mesh connectivityを持たないことと，
+geometry assumptionsを持たないことは別です．
+</p>
+<p>
+PINNsやoperator learningでも
+</p>
+\[
+\boxed{
+\text{coverage},
+\quad
+\text{separation},
+\quad
+\text{anisotropy},
+\quad
+\text{boundary proximity},
+\quad
+\text{sensor rank}
+}
+\tag{66}
+\]
+<p>
+がaccuracyとstabilityへ入ります．
+</p>
+</article></div>
+
+<h2>44．AIがgeometry-aware operator learningで間違えやすい点</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">mistake</th><th style="border:1px solid #777; padding:7px;">何が壊れるか</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">coordinatesを入力すればgeometry-awareとする</td><td style="border:1px solid #777; padding:7px;">sensor designとPDE scaleを無視する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">isotropic sensor gridを常にbaseline以上とする</td><td style="border:1px solid #777; padding:7px;">direction-dependent smoothingを無視する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(A^{-1}\) metricを普遍的な最適metricと呼ぶ</td><td style="border:1px solid #777; padding:7px;">input class・boundary・output norm依存性を落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">sensor countだけを揃えて公平比較とする</td><td style="border:1px solid #777; padding:7px;">coverage・rank・conditioningを無視する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">input reconstruction errorだけを最小化</td><td style="border:1px solid #777; padding:7px;">PDEがblind modesをどうsmoothするかを無視する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">bad sensorsをrich architectureで補えるとする</td><td style="border:1px solid #777; padding:7px;">information lossをarchitecture problemへ置き換える</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">output query geometryを固定しない</td><td style="border:1px solid #777; padding:7px;">input sensor効果とoutput discretisation効果が混ざる</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">empirical training errorをoperator error全体と呼ぶ</td><td style="border:1px solid #777; padding:7px;">observation・representation・generalisationを混同する</td></tr>
+</table>
+</article></div>
+
+<h2>45．geometry-aware operator-learning audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このgeometry-aware PDE operator-learning implementationを数学的に監査してください．<br/>
+(1) input space \(X\)，output space \(Y\)，solution operator \(S\) を明示しているか，<br/>
+(2) PDEのanisotropic directions / scalesをspectral・coefficient・regularityのどこから得たか説明しているか，<br/>
+(3) sensor metricを普遍的な最適量として過大主張していないか，<br/>
+(4) sensor countだけでなく \(h_{X,M}\)，\(q_{X,M}\)，conditioningを記録しているか，<br/>
+(5) input observation geometryとoutput representation geometryを分離しているか，<br/>
+(6) finite observation kernel / near-kernelを監査しているか，<br/>
+(7) PDE-aware invisible radiusまたは同等のoutput-weighted information measureを確認しているか，<br/>
+(8) variable sensor setsではcoordinatesとweightsをmodelへ渡しているか，<br/>
+(9) sensor geometry comparisonでarchitecture・training distribution・budgetを固定しているか，<br/>
+(10) observation error，output representation error，learned-operator errorを分離しているか，<br/>
+(11) population risk，empirical risk，optimisation gapを混同していないか，<br/>
+(12) mesh-freeをgeometry-freeと表現していないか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>46．Season 3で得た設計順序</h2>
+<div class="news"><article class="news-item">
+<p>
+Season 2では
+</p>
+\[
+\text{PDE structure}
+\to
+\text{function space}
+\to
+\text{DoF}
+\to
+\text{discrete operator}
+\]
+<p>
+という順序を使いました．
+</p>
+<p>
+Season 3ではそれを
+</p>
+\[
+\boxed{
+\begin{aligned}
+\text{PDE structure}
+&\to
+\text{solution regularity / scales}
+\\
+&\to
+\text{what is observed}
+\\
+&\to
+\text{where it is observed}
+\\
+&\to
+\text{finite representation}
+\\
+&\to
+\text{training}
+\\
+&\to
+\text{independent verification}
+\end{aligned}
+}
+\tag{67}
+\]
+<p>
+へ拡張しました．
+</p>
+</article></div>
+
+<h2>47．Season 3の最終原則</h2>
+<div class="news"><article class="news-item">
+<p>
+Deep RitzでもPINNsでもoperator learningでも，
+点は単なるimplementation detailではありません．
+</p>
+<p>
+有限個のpointsは
+</p>
+\[
+\boxed{
+\text{what the algorithm is allowed to see}
+}
+\tag{68}
+\]
+<p>
+を決めます．
+</p>
+<p>
+そしてPDEはdirectionごとに異なるscale，regularity，smoothingを持ち得ます．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 3 最終原則</b><br/>
+<b>メッシュを使わなくても，点はどこかに置かなければならない．<br/>
+その点配置はPDEの外側にある前処理ではなく，近似空間・観測情報・誤差・安定性を結ぶ数値解析の一部である．</b>
+</div>
+</article></div>
+
+<h2>48．第36回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+geometry-aware operator learningは
+</p>
+\[
+\boxed{
+\text{PDE-aware scales}
++
+\text{finite observations}
++
+\text{stable sensor geometry}
++
+\text{operator approximation}
+}
+\tag{69}
+\]
+<p>
+として設計できます．
+</p>
+<p>
+anisotropic PDEでは
+</p>
+\[
+\boxed{
+h_\perp
+\ll
+h_\parallel
+}
+\tag{70}
+\]
+<p>
+というdirectional sensor resolutionが必要になる場合があります．
+</p>
+<p>
+finite observationsでは
+</p>
+\[
+\boxed{
+\ker\mathcal O_X
+}
+\tag{71}
+\]
+<p>
+がalgorithm-independent blind directionsを作り，
+outputでは
+</p>
+\[
+\boxed{
+\|Sh\|_Y
+}
+\tag{72}
+\]
+<p>
+がその危険度を決めます．
+</p>
+<p>
+最終的には
+</p>
+\[
+\boxed{
+\text{geometry}
+\longrightarrow
+\text{information}
+\longrightarrow
+\text{operator}
+\longrightarrow
+\text{error}
+}
+\tag{73}
+\]
+<p>
+という一つの流れになります．
+</p>
+<p>
+これで
+<b>Season 3 — AI・データ駆動PDEを数値解析する</b>
+は完結です．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>L. Lu, P. Jin, G. Pang, Z. Zhang and G. E. Karniadakis, “Learning nonlinear operators via DeepONet based on the universal approximation theorem of operators”, <i>Nature Machine Intelligence</i> 3 (2021), 218–229.</li>
+<li>Z. Li et al., “Fourier Neural Operator for Parametric Partial Differential Equations”, <i>International Conference on Learning Representations</i>, 2021.</li>
+<li>N. Kovachki et al., “Neural Operator: Learning Maps Between Function Spaces With Applications to PDEs”, <i>Journal of Machine Learning Research</i> 24 (2023).</li>
+<li>J. F. Traub, G. W. Wasilkowski and H. Woźniakowski, <i>Information-Based Complexity</i>, Academic Press, 1988.</li>
+<li><a href="./chatgpt-fem-26.html">第26回：Deep Ritzでは点をどこに置くか — quadratureとsampling geometry</a></li>
+<li><a href="./chatgpt-fem-28.html">第28回：PINNsでは点配置で答えが変わるか — uniform・random・adaptive sampling</a></li>
+<li><a href="./chatgpt-fem-30.html">第30回：角特異性をPINNsは捉えられるか — regularityとgraded sampling</a></li>
+<li><a href="./chatgpt-fem-31.html">第31回：boundary layerでは点をどこに置くか — anisotropic sampling</a></li>
+<li><a href="./chatgpt-fem-34.html">第34回：解を学ぶのではなくsolution operatorを学ぶ</a></li>
+<li><a href="./chatgpt-fem-35.html">第35回：sensor pointsをどこに置くか — 有限観測の限界</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 3 前回：</b><a href="./chatgpt-fem-35.html">第35回：sensor pointsをどこに置くか — 有限観測の限界</a></p>
+<p><b>Season 3：</b>全12回（第25–36回）完結．</p>
+<p><a href="../#chatgpt-fem-season3">Season 3一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
