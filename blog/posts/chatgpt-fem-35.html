@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>第35回：sensor pointsをどこに置くか — 有限観測の限界 | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,ChatGPT,有限要素法,FEM,operator learning,sensor points,finite observations,information based complexity,sampling geometry,solution operator,DeepONet,observation map,smallest singular value,point concentration"/>
+<meta name="description" content="Season 3 第11回（通算第35回）として，operator learningにおけるsensor pointsの有限観測限界を解析します．observation mapのkernelからalgorithm-independent lower boundを導き，Poisson問題のblind frequency，sensor-free gap，一点集中，observation matrixの最小特異値，noise amplification，PDE-aware sensor designを実装・監査します．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-35.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-35.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-35.html",
+      "headline": "第35回：sensor pointsをどこに置くか — 有限観測の限界",
+      "description": "Operator learningのsensor pointsについて，observation kernel，information lower bound，blind frequency，sensor concentration，conditioning，PDE-aware sensor designを数値解析します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-35.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-08-30",
+      "dateModified": "2026-08-30",
+      "articleSection": "Computational FEM with AI — Season 3",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:section" content="Computational FEM with AI — Season 3"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="第35回：sensor pointsをどこに置くか — 有限観測の限界 | Hiroki Ishizaka"/>
+<meta property="og:description" content="sensor数を増やせばsolution operatorは見えるのか．algorithm以前に存在するfinite-observation lower boundを解析します．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-35.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="第35回：sensor pointsをどこに置くか — 有限観測の限界 | Hiroki Ishizaka"/>
+<meta name="twitter:description" content="Finite observations, blind modes, sensor geometry and information-theoretic limits in PDE operator learning."/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">ChatGPTで作る有限要素プログラム入門 Season 3 第11回（通算第35回）</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+
+<h1 class="section-title">第35回：sensor pointsをどこに置くか — 有限観測の限界</h1>
+<p><b>ChatGPTで作る有限要素プログラム入門 Season 3 第11回（通算第35回）</b><br/><time datetime="2026-08-30">30th August 2026</time></p>
+
+<h2>はじめに――学習器より前に，観測できない情報がある</h2>
+<div class="news"><article class="news-item">
+<p>
+第34回ではPDE solution operatorを
+</p>
+\[
+S:X\to Y
+\tag{1}
+\]
+<p>
+とし，computerへinput function \(f\) を渡すために
+</p>
+\[
+\mathcal O_mf
+=
+\bigl(
+\ell_1(f),\ldots,\ell_m(f)
+\bigr)
+\tag{2}
+\]
+<p>
+というfinite observation mapを導入しました．
+</p>
+<p>
+今回はarchitecture，training，optimizerより前にある問いを扱います．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>第35回の問い</b><br/>
+\[
+\boxed{
+\mathcal O_mf_1
+=
+\mathcal O_mf_2
+\quad\text{なのに}\quad
+Sf_1\ne Sf_2
+}
+\tag{3}
+\]
+<p>
+なら，どれほど高性能なoperator learnerでも両方を正しく予測できないのではないか？
+</p>
+</div>
+</article></div>
+
+<h2>1．deterministic learnerは同じ観測に同じ答えしか返せない</h2>
+<div class="news"><article class="news-item">
+<p>
+finite observationsを受け取るdecoderを
+</p>
+\[
+\boxed{
+G:
+\mathbb R^m
+\to
+Y
+}
+\tag{4}
+\]
+<p>
+とします．
+</p>
+<p>
+もし
+\[
+\mathcal O_mf_1
+=
+\mathcal O_mf_2
+\]
+なら
+</p>
+\[
+\boxed{
+G(\mathcal O_mf_1)
+=
+G(\mathcal O_mf_2).
+}
+\tag{5}
+\]
+<p>
+これはneural networkに限らず，すべてのdeterministic algorithmに共通します．
+</p>
+</article></div>
+
+<h2>2．二つのindistinguishable inputsからlower boundが出る</h2>
+<div class="news"><article class="news-item">
+<p>
+共通のpredictionを
+\[
+y_G
+=
+G(\mathcal O_mf_1)
+=
+G(\mathcal O_mf_2)
+\]
+とします．
+</p>
+<p>
+triangle inequalityから
+</p>
+\[
+\|Sf_1-Sf_2\|_Y
+\le
+\|Sf_1-y_G\|_Y
++
+\|Sf_2-y_G\|_Y.
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+\max_{i=1,2}
+\|Sf_i-G(\mathcal O_mf_i)\|_Y
+\ge
+\frac12
+\|Sf_1-Sf_2\|_Y.
+}
+\tag{6}
+\]
+<p>
+これはtraining failureではなく
+<b>information failure</b>です．
+</p>
+</article></div>
+
+<h2>3．observation kernelが本質である</h2>
+<div class="news"><article class="news-item">
+<p>
+linear observation mapなら
+</p>
+\[
+\boxed{
+\ker\mathcal O_m
+=
+\{
+h\in X:
+\mathcal O_mh=0
+\}
+}
+\tag{7}
+\]
+<p>
+を考えます．
+</p>
+<p>
+\(h\in\ker\mathcal O_m\) なら
+\[
+f
+\]
+と
+\[
+f+h
+\]
+は同じ観測を持ちます．
+</p>
+<p>
+したがってfinite sensingが見落とす方向は
+</p>
+\[
+\boxed{
+\ker\mathcal O_m
+}
+\tag{8}
+\]
+<p>
+そのものです．
+</p>
+</article></div>
+
+<h2>4．symmetric input classではalgorithm-independent boundが強くなる</h2>
+<div class="news"><article class="news-item">
+<p>
+input class \(\mathcal K\subset X\) がsymmetric，
+すなわち
+</p>
+\[
+h\in\mathcal K
+\Longrightarrow
+-h\in\mathcal K
+\]
+<p>
+とします．
+</p>
+<p>
+\(h\in\mathcal K\cap\ker\mathcal O_m\) に対し，
+\(+h\) と \(-h\) はどちらもzero observationです．
+</p>
+<p>
+linear solution operatorなら
+</p>
+\[
+S(-h)=-Sh.
+\]
+<p>
+従って任意のdecoder \(G\) に対し
+</p>
+\[
+\boxed{
+\sup_{f\in\mathcal K}
+\|Sf-G(\mathcal O_mf)\|_Y
+\ge
+\|Sh\|_Y.
+}
+\tag{9}
+\]
+</article></div>
+
+<h2>5．unit ballでは「見えないPDE方向」の大きさが下限になる</h2>
+<div class="news"><article class="news-item">
+<p>
+\[
+\mathcal K
+=
+\{
+f\in X:
+\|f\|_X\le1
+\}
+\]
+<p>
+なら式 (9) から
+</p>
+\[
+\boxed{
+\inf_G
+\sup_{\|f\|_X\le1}
+\|Sf-G(\mathcal O_mf)\|_Y
+\ge
+\sup_{
+\substack{
+h\in\ker\mathcal O_m\\
+\|h\|_X\le1
+}
+}
+\|Sh\|_Y.
+}
+\tag{10}
+\]
+<p>
+右辺は
+<b>sensorが完全に見落とすinput directionsをPDEへ通した大きさ</b>です．
+</p>
+</article></div>
+
+<h2>6．input reconstruction errorだけを見るよりPDE-awareである</h2>
+<div class="news"><article class="news-item">
+<p>
+sensor designで
+</p>
+\[
+\|h\|_X
+\]
+<p>
+だけを見ると，「inputをどれだけ再構成できるか」を測っています．
+</p>
+<p>
+式 (10) は
+</p>
+\[
+\boxed{
+\|Sh\|_Y
+}
+\tag{11}
+\]
+<p>
+を見ます．
+</p>
+<p>
+elliptic PDEはhigh-frequency forcingを強くsmoothするため，
+「inputとして見えない方向」と
+「solution predictionにとって危険な方向」は必ずしも同じではありません．
+</p>
+</article></div>
+
+<h2>7．1次元Poissonでblind frequencyを明示する</h2>
+<div class="news"><article class="news-item">
+<p>
+\[
+-u''=f
+\quad\text{in }(0,1),
+\qquad
+u(0)=u(1)=0
+\tag{12}
+\]
+<p>
+を考えます．
+</p>
+<p>
+equispaced sensorsを
+</p>
+\[
+\boxed{
+x_j
+=
+\frac{j}{m+1},
+\qquad
+j=1,\ldots,m
+}
+\tag{13}
+\]
+<p>
+とします．
+</p>
+</article></div>
+
+<h2>8．\((m+1)\)-th sine modeは全sensorでzeroになる</h2>
+<div class="news"><article class="news-item">
+<p>
+normalised forcing
+</p>
+\[
+\boxed{
+h_m(x)
+=
+\sqrt2
+\sin\bigl((m+1)\pi x\bigr)
+}
+\tag{14}
+\]
+<p>
+を取ると
+</p>
+\[
+\|h_m\|_{L^2(0,1)}=1
+\]
+<p>
+であり，各sensorで
+</p>
+\[
+\boxed{
+h_m(x_j)
+=
+\sqrt2\sin(j\pi)
+=
+0.
+}
+\tag{15}
+\]
+<p>
+つまりzero forcingと \(h_m\) はpoint sensorsから区別できません．
+</p>
+</article></div>
+
+<h2>9．solutionはzeroではない</h2>
+<div class="news"><article class="news-item">
+<p>
+Poisson solution operatorを通すと
+</p>
+\[
+\boxed{
+Sh_m
+=
+\frac{
+\sqrt2
+}{
+((m+1)\pi)^2
+}
+\sin\bigl((m+1)\pi x\bigr).
+}
+\tag{16}
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+\|Sh_m\|_{L^2}
+=
+\frac1{((m+1)\pi)^2},
+}
+\tag{17}
+\]
+<p>
+\[
+\boxed{
+|Sh_m|_{H^1}
+=
+\frac1{(m+1)\pi}.
+}
+\tag{18}
+\]
+</article></div>
+
+<h2>10．finite sensorsだけからはこの誤差を避けられない</h2>
+<div class="news"><article class="news-item">
+<p>
+input classが
+\[
+\pm h_m
+\]
+を含むなら，式 (9) から
+</p>
+\[
+\boxed{
+\sup_f
+|Sf-G(\mathcal O_mf)|_{H^1}
+\ge
+\frac1{(m+1)\pi}.
+}
+\tag{19}
+\]
+<p>
+同様に \(L^2\) output errorでは
+</p>
+\[
+\boxed{
+\sup_f
+\|Sf-G(\mathcal O_mf)\|_{L^2}
+\ge
+\frac1{((m+1)\pi)^2}.
+}
+\tag{20}
+\]
+<p>
+同じsensor setでも，output normによってinformation lower boundのscaleが変わります．
+</p>
+</article></div>
+
+<h2>11．これは「sensor数が足りない」だけではない</h2>
+<div class="news"><article class="news-item">
+<p>
+\(m\) sensorsを増やせばblind modeは高frequencyへ移ります．
+</p>
+<p>
+しかし重要なのは
+</p>
+\[
+\boxed{
+\text{sensor geometry}
++
+\text{input class}
++
+\text{PDE smoothing}
++
+\text{output norm}
+}
+\tag{21}
+\]
+<p>
+が一緒にlower boundを決めることです．
+</p>
+<p>
+単に「\(m=100\) sensorsなら十分」とは言えません．
+</p>
+</article></div>
+
+<h2>12．sensor-free gapにはinvisible bumpを置ける</h2>
+<div class="news"><article class="news-item">
+<p>
+point sensors
+\[
+X_m=\{x_1,\ldots,x_m\}
+\]
+に対し，sensorを含まないopen interval
+</p>
+\[
+I=(a,b)
+\]
+<p>
+があるとします．
+</p>
+<p>
+nonzero
+</p>
+\[
+\boxed{
+\psi
+\in
+C_c^\infty(I)
+}
+\tag{22}
+\]
+<p>
+なら
+</p>
+\[
+\boxed{
+\psi(x_j)=0
+\qquad
+\forall j.
+}
+\tag{23}
+\]
+<p>
+従って \(\psi\in\ker\mathcal O_m\) です．
+</p>
+</article></div>
+
+<h2>13．Poisson operatorを通すとinvisible bumpはglobal solutionを作る</h2>
+<div class="news"><article class="news-item">
+<p>
+1次元Dirichlet PoissonのGreen functionは
+</p>
+\[
+\boxed{
+G(x,y)
+=
+\min(x,y)
+\bigl(
+1-\max(x,y)
+\bigr).
+}
+\tag{24}
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+(S\psi)(x)
+=
+\int_0^1
+G(x,y)\psi(y)\,dy.
+}
+\tag{25}
+\]
+<p>
+\(\psi\ge0\)，\(\psi\not\equiv0\) なら
+\[
+S\psi
+\]
+は非零です．
+</p>
+<p>
+つまりsensor-free gapは
+<b>inputだけでなくsolution operatorのpredictionにもblind directionを作ります</b>．
+</p>
+</article></div>
+
+<h2>14．fill distanceはblind regionの大きさを測る</h2>
+<div class="news"><article class="news-item">
+<p>
+point set \(X_m\subset[0,1]\) に対して
+</p>
+\[
+\boxed{
+h_X
+=
+\sup_{x\in[0,1]}
+\min_{x_j\in X_m}
+|x-x_j|
+}
+\tag{26}
+\]
+<p>
+を使います．
+</p>
+<p>
+\(h_X\) が大きいほど，
+大きなsensor-free regionを作れる可能性があります．
+</p>
+<p>
+operator learningでも
+</p>
+\[
+\boxed{
+\text{sensor count}
+\neq
+\text{domain coverage}.
+}
+\tag{27}
+\]
+</article></div>
+
+<h2>15．一点集中ではsensor数を増やしても情報次元が増えない</h2>
+<div class="news"><article class="news-item">
+<p>
+すべてのsensorsを
+\[
+x_j=x_0
+\]
+に置くと
+</p>
+\[
+\boxed{
+\mathcal O_mf
+=
+\bigl(
+f(x_0),\ldots,f(x_0)
+\bigr).
+}
+\tag{28}
+\]
+<p>
+観測vectorは \(m\)-dimensionalでも，
+独立な情報は一つのscalarだけです．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\text{many sensors}
+\not\Rightarrow
+\text{many independent observations}.
+}
+\tag{29}
+\]
+</article></div>
+
+<h2>16．一点近傍への集中はconditioningを壊す</h2>
+<div class="news"><article class="news-item">
+<p>
+有限次元input model
+</p>
+\[
+X_p
+=
+\operatorname{span}
+\{
+\phi_1,\ldots,\phi_p
+\}
+\]
+<p>
+を考え，
+</p>
+\[
+f_c
+=
+\sum_{k=1}^p
+c_k\phi_k
+\tag{30}
+\]
+<p>
+とします．
+</p>
+<p>
+point sensor matrixを
+</p>
+\[
+\boxed{
+V_{jk}
+=
+\phi_k(x_j)
+}
+\tag{31}
+\]
+<p>
+とすると
+</p>
+\[
+\mathcal O_mf_c
+=
+V\boldsymbol c.
+\]
+</article></div>
+
+<h2>17．identifiabilityはrankで決まる</h2>
+<div class="news"><article class="news-item">
+<p>
+finite-dimensional class \(X_p\) 上では
+</p>
+\[
+\boxed{
+\operatorname{rank}V=p
+}
+\tag{32}
+\]
+<p>
+ならnoise-free observationsからcoefficient vectorを一意に復元できます．
+</p>
+<p>
+逆に
+</p>
+\[
+\operatorname{rank}V&lt;p
+\]
+<p>
+ならnonzero
+\[
+\boldsymbol c\in\ker V
+\]
+<p>
+が存在し，有限観測だけではexact identificationできません．
+</p>
+</article></div>
+
+<h2>18．全sensorが同一点ならrankは高々1</h2>
+<div class="news"><article class="news-item">
+<p>
+\(x_j=x_0\) ならmatrixの全rowsは
+</p>
+\[
+\bigl(
+\phi_1(x_0),\ldots,\phi_p(x_0)
+\bigr)
+\]
+<p>
+で同じです．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+\operatorname{rank}V
+\le1.
+}
+\tag{33}
+\]
+<p>
+\(p&gt;1\) なら，sensorを何個重ねてもinput classを識別できません．
+</p>
+</article></div>
+
+<h2>19．near concentrationではsmallest singular valueを見る</h2>
+<div class="news"><article class="news-item">
+<p>
+\[
+x_j
+=
+x_0+\varepsilon\xi_j,
+\qquad
+\varepsilon\to0
+\]
+<p>
+とします．
+\(\phi_k\) がcontinuousなら各rowは同じrowへ近づきます．
+</p>
+<p>
+従って \(p&gt;1\) では
+</p>
+\[
+\boxed{
+\sigma_{\min}(V)
+\longrightarrow
+0.
+}
+\tag{34}
+\]
+<p>
+exact rankが落ちる前から，
+finite observationsは数値的に不安定になります．
+</p>
+</article></div>
+
+<h2>20．noise amplificationは \(\sigma_{\min}(V)\) で決まる</h2>
+<div class="news"><article class="news-item">
+<p>
+observation noiseを
+</p>
+\[
+\boldsymbol z
+=
+V\boldsymbol c
++
+\boldsymbol\eta
+\tag{35}
+\]
+<p>
+とします．
+full-column-rankならleast-squares reconstructionは
+</p>
+\[
+\widehat{\boldsymbol c}
+=
+V^\dagger\boldsymbol z.
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+\|
+\widehat{\boldsymbol c}
+-
+\boldsymbol c
+\|_2
+\le
+\frac{
+\|\boldsymbol\eta\|_2
+}{
+\sigma_{\min}(V)
+}.
+}
+\tag{36}
+\]
+<p>
+sensor placementはinformation量だけでなく
+<b>noise stability</b>も決めます．
+</p>
+</article></div>
+
+<h2>21．PDE output errorにもnoiseが伝わる</h2>
+<div class="news"><article class="news-item">
+<p>
+coefficient space上のdiscrete solution operatorを \(T\) とすれば
+</p>
+\[
+\widehat{\boldsymbol a}
+=
+T\widehat{\boldsymbol c},
+\qquad
+\boldsymbol a
+=
+T\boldsymbol c.
+\]
+<p>
+従って
+</p>
+\[
+\boxed{
+\|
+\widehat{\boldsymbol a}
+-
+\boldsymbol a
+\|_2
+\le
+\frac{
+\|T\|_2
+}{
+\sigma_{\min}(V)
+}
+\|\boldsymbol\eta\|_2.
+}
+\tag{37}
+\]
+<p>
+observation conditioningとPDE amplification / smoothingが積として現れます．
+</p>
+</article></div>
+
+<h2>22．sine basisではequispaced sensorsの構造が明確である</h2>
+<div class="news"><article class="news-item">
+<p>
+orthonormal basis
+</p>
+\[
+\boxed{
+\phi_k(x)
+=
+\sqrt2\sin(k\pi x),
+\qquad
+k=1,\ldots,p
+}
+\tag{38}
+\]
+<p>
+を使います．
+</p>
+<p>
+equispaced sensors
+\[
+x_j=j/(m+1)
+\]
+で \(p\le m\) ならdiscrete sine orthogonalityから
+</p>
+\[
+\boxed{
+V^{\top}V
+=
+(m+1)I_p.
+}
+\tag{39}
+\]
+<p>
+ここでは \(\sqrt2\) normalisationを含めているため，columnsは同じscaleで直交します．
+</p>
+</article></div>
+
+<h2>23．しかし一つmodeを増やすとblind directionが現れる</h2>
+<div class="news"><article class="news-item">
+<p>
+\(p=m+1\) にするとlast basis function
+</p>
+\[
+\phi_{m+1}(x)
+=
+\sqrt2\sin((m+1)\pi x)
+\]
+<p>
+は全sensorsでzeroです．
+</p>
+<p>
+従って
+</p>
+\[
+\boxed{
+V
+\text{ loses injectivity exactly at the blind mode.}
+}
+\tag{40}
+\]
+<p>
+同じsensor setが「十分かどうか」はinput classのcomplexityに依存します．
+</p>
+</article></div>
+
+<h2>24．sensor matrixをコードで監査する</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">import numpy as np
+
+def sine_sensor_matrix(x, p):
+    x = np.asarray(x)
+    k = np.arange(1, p + 1)
+
+    return (
+        np.sqrt(2.0)
+        * np.sin(
+            np.pi
+            * x[:, None]
+            * k[None, :]
+        )
+    )
+
+
+m = 16
+x = np.arange(1, m + 1) / (m + 1)
+
+V_good = sine_sensor_matrix(x, p=m)
+V_blind = sine_sensor_matrix(x, p=m + 1)
+
+s_good = np.linalg.svd(
+    V_good,
+    compute_uv=False
+)
+
+s_blind = np.linalg.svd(
+    V_blind,
+    compute_uv=False
+)
+
+print(s_good[-1])
+print(s_blind[-1])
+</code></pre>
+<p>
+\(p=m\) ではwell-conditionedですが，
+\(p=m+1\) ではnontrivial nullspaceが生じます．
+</p>
+</article></div>
+
+<h2>25．PDE-aware invisible radiusを有限次元で計算する</h2>
+<div class="news"><article class="news-item">
+<p>
+sine basis上のPoisson operatorはdiagonalで
+</p>
+\[
+\boxed{
+D
+=
+\operatorname{diag}
+\left(
+\frac1{\pi^2},
+\frac1{(2\pi)^2},
+\ldots,
+\frac1{(p\pi)^2}
+\right).
+}
+\tag{41}
+\]
+<p>
+\(N\) を
+\[
+\ker V
+\]
+のorthonormal basis matrixとすると，
+unit \(L^2\) forcing class上のinvisible output radiusは
+</p>
+\[
+\boxed{
+\rho_{\rm inv}(X_m)
+=
+\|DN\|_2.
+}
+\tag{42}
+\]
+<p>
+これは「sensorが見落とすdirectionsのうち，
+Poisson solutionとして最も大きく残るもの」を測ります．
+</p>
+</article></div>
+
+<h2>26．invisible radiusをコードで計算する</h2>
+<div class="news"><article class="news-item">
+<pre style="overflow-x:auto; padding:12px; border:1px solid #aaa; background:#f7f7f7; color:#111;"><code style="color:#111;">def nullspace(A, rtol=1.0e-12):
+    U, s, Vt = np.linalg.svd(
+        A,
+        full_matrices=True
+    )
+
+    if s.size == 0:
+        return Vt.T
+
+    tol = rtol * s[0]
+    rank = np.sum(s &gt; tol)
+
+    return Vt[rank:].T
+
+
+def poisson_invisible_radius(x, p):
+    V = sine_sensor_matrix(
+        x,
+        p
+    )
+
+    N = nullspace(V)
+
+    if N.shape[1] == 0:
+        return 0.0
+
+    k = np.arange(1, p + 1)
+
+    D = np.diag(
+        1.0 / (np.pi * k) ** 2
+    )
+
+    return np.linalg.norm(
+        D @ N,
+        ord=2
+    )
+</code></pre>
+<p>
+同じ \(m\) でもsensor geometryを変えれば
+\[
+\rho_{\rm inv}
+\]
+は変わります．
+</p>
+</article></div>
+
+<h2>27．input reconstruction optimalとPDE prediction optimalは同じではない</h2>
+<div class="news"><article class="news-item">
+<p>
+sensor designを
+</p>
+\[
+\sup_{
+h\in\ker\mathcal O_m,
+\ \|h\|_X\le1
+}
+\|h\|_X
+\]
+<p>
+だけで考えると，input reconstructionだけを見ています．
+</p>
+<p>
+PDE predictionでは
+</p>
+\[
+\boxed{
+\sup_{
+h\in\ker\mathcal O_m,
+\ \|h\|_X\le1
+}
+\|Sh\|_Y
+}
+\tag{43}
+\]
+<p>
+を小さくする方が直接的です．
+</p>
+<p>
+elliptic smoothingによりhigh-frequency blind modesが強くattenuateされるなら，
+PDE-aware sensor placementはinput interpolationとは異なる最適配置を持ち得ます．
+</p>
+</article></div>
+
+<h2>28．sensor placement自体をminimax problemとして書く</h2>
+<div class="news"><article class="news-item">
+<p>
+sensor set
+\[
+X_m=\{x_1,\ldots,x_m\}
+\]
+をdesign variableとすれば，
+</p>
+\[
+\boxed{
+X_m^\ast
+\in
+\operatorname*{arg\,min}_{X_m}
+\;
+\inf_G
+\sup_{f\in\mathcal K}
+\|
+Sf-G(\mathcal O_{X_m}f)
+\|_Y.
+}
+\tag{44}
+\]
+<p>
+これはarchitecture selectionより前にある
+<b>information design problem</b>です．
+</p>
+</article></div>
+
+<h2>29．finite-dimensional modelならconditioningもobjectiveに入れる</h2>
+<div class="news"><article class="news-item">
+<p>
+model class \(X_p\) が明示されるなら，
+</p>
+\[
+\boxed{
+\max_{X_m}
+\sigma_{\min}(V(X_m))
+}
+\tag{45}
+\]
+<p>
+や
+</p>
+\[
+\boxed{
+\min_{X_m}
+\kappa(V(X_m))
+}
+\tag{46}
+\]
+<p>
+はnoise-stable sensor placementのprototypeです．
+</p>
+<p>
+ただしこれもbasis / input norm依存であり，
+PDE output normを直接最適化する式 (44) とは別です．
+</p>
+</article></div>
+
+<h2>30．2次元ではline concentrationがdimensionを失わせる</h2>
+<div class="news"><article class="news-item">
+<p>
+2次元input \(f(x,y)\) を観測するのに，
+全sensorsをline
+</p>
+\[
+y=\frac12
+\]
+<p>
+上へ置いたとします．
+</p>
+<p>
+すると
+</p>
+\[
+\boxed{
+h(x,y)
+=
+\left(
+y-\frac12
+\right)
+\psi(x,y)
+}
+\tag{47}
+\]
+<p>
+は全sensorsでzeroです．
+</p>
+<p>
+\(\psi\) を適切に選べば \(Sh\ne0\) なので，
+ambient dimensionは2でもsensor informationはlineへcollapseしています．
+</p>
+</article></div>
+
+<h2>31．anisotropic inputにはanisotropic sensorsが必要になり得る</h2>
+<div class="news"><article class="news-item">
+<p>
+input classが
+\[
+x
+\]
+方向にはslow，
+\[
+y
+\]
+方向にはrapidに変化するなら，
+</p>
+\[
+\boxed{
+h_y^{\rm sensor}
+\ll
+h_x^{\rm sensor}
+}
+\tag{48}
+\]
+<p>
+というdirectional sensor resolutionが自然です．
+</p>
+<p>
+ただし必要なanisotropyは
+<b>input regularityだけでなくsolution operator \(S\) がどの方向を増幅・減衰するか</b>
+にも依存します．
+</p>
+</article></div>
+
+<h2>32．sensor pointsとcollocation pointsを混同しない</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">points</th><th style="border:1px solid #777; padding:7px;">何を観測するか</th><th style="border:1px solid #777; padding:7px;">失うもの</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">quadrature points</td><td style="border:1px solid #777; padding:7px;">integral / energy</td><td style="border:1px solid #777; padding:7px;">integrand between points</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">PINN collocation points</td><td style="border:1px solid #777; padding:7px;">PDE residual</td><td style="border:1px solid #777; padding:7px;">between-point residual</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">operator sensors</td><td style="border:1px solid #777; padding:7px;">input function</td><td style="border:1px solid #777; padding:7px;">input directions in \(\ker\mathcal O_m\)</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">output query points</td><td style="border:1px solid #777; padding:7px;">predicted solution</td><td style="border:1px solid #777; padding:7px;">unqueried output geometry</td></tr>
+</table>
+<p>
+全部「点」ですが，information roleは違います．
+</p>
+</article></div>
+
+<h2>33．adaptive sensor placementはresidual-adaptive samplingと別問題である</h2>
+<div class="news"><article class="news-item">
+<p>
+第32回ではcurrent solution residualから
+collocation pointsを更新しました．
+</p>
+<p>
+operator sensorを更新するなら，
+</p>
+\[
+\boxed{
+\text{which input observation reduces uncertainty most?}
+}
+\tag{49}
+\]
+<p>
+というactive sensing problemになります．
+</p>
+<p>
+sensorを全input functionsで固定するのか，
+各inputごとにadaptiveに測るのかでもproblem definitionが変わります．
+</p>
+</article></div>
+
+<h2>34．noiseがあるとexact indistinguishabilityからapproximate indistinguishabilityへ変わる</h2>
+<div class="news"><article class="news-item">
+<p>
+observation error levelを \(\delta\) とすると，
+</p>
+\[
+\boxed{
+\|
+\mathcal O_mf_1
+-
+\mathcal O_mf_2
+\|_2
+\le
+2\delta
+}
+\tag{50}
+\]
+<p>
+ならnoise ballがoverlapし，
+二つのinputsを安定に区別することは困難になります．
+</p>
+<p>
+従って実際にはkernelだけでなく
+<b>near-kernel directions</b>も重要です．
+</p>
+</article></div>
+
+<h2>35．small singular valuesはnear-kernelを可視化する</h2>
+<div class="news"><article class="news-item">
+<p>
+finite-dimensional observation matrix \(V\) では，
+right singular vector \(\boldsymbol v_{\min}\) に対して
+</p>
+\[
+\boxed{
+\|V\boldsymbol v_{\min}\|_2
+=
+\sigma_{\min}(V).
+}
+\tag{51}
+\]
+<p>
+\(\sigma_{\min}\ll1\) なら，
+unit-size input perturbationがsensor dataでは非常に小さく見えます．
+</p>
+<p>
+exact nullspaceだけでなくsingular spectrum全体を保存します．
+</p>
+</article></div>
+
+<h2>36．operator learnerのtest setだけではinformation limitを発見できない場合がある</h2>
+<div class="news"><article class="news-item">
+<p>
+random test functionsがたまたま
+\[
+\ker\mathcal O_m
+\]
+やnear-kernelへほとんど入らなければ，
+平均test errorは小さく見えます．
+</p>
+<p>
+従ってstress testとして
+</p>
+\[
+\boxed{
+\text{null / near-null observation directions}
+}
+\tag{52}
+\]
+<p>
+を意図的に作る必要があります．
+</p>
+<p>
+これはadversarial attackではなく，
+observation mapそのもののnumerical auditです．
+</p>
+</article></div>
+
+<h2>37．sensor auditで記録すべき量</h2>
+<div class="news"><article class="news-item">
+<p>
+少なくとも
+</p>
+\[
+\boxed{
+m,
+\quad
+X_m,
+\quad
+h_X,
+\quad
+q_X,
+\quad
+\sigma_{\min}(V),
+\quad
+\rho_{\rm inv}(X_m)
+}
+\tag{53}
+\]
+<p>
+を記録します．
+</p>
+<p>
+ここで \(q_X\) はpoint separation，
+\(\rho_{\rm inv}\) はmodel classを指定したPDE-aware invisible radiusです．
+</p>
+<p>
+sensor countだけをtableに書いてもgeometryは再現できません．
+</p>
+</article></div>
+
+<h2>38．AIがfinite observationsで間違えやすい点</h2>
+<div class="news"><article class="news-item">
+<table style="width:100%; border-collapse:collapse; margin:14px 0;">
+<tr><th style="border:1px solid #777; padding:7px;">mistake</th><th style="border:1px solid #777; padding:7px;">何が壊れるか</th></tr>
+<tr><td style="border:1px solid #777; padding:7px;">sensor数だけでinformation量を判断</td><td style="border:1px solid #777; padding:7px;">重複・集中・rank lossを無視する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">same observationsならlearnerが工夫して区別できると考える</td><td style="border:1px solid #777; padding:7px;">algorithm-independent lower boundを無視する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">\(L^2\) inputにpoint sensorsを無条件に定義</td><td style="border:1px solid #777; padding:7px;">observation functionalがwell-definedでない</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">rank fullならstableとする</td><td style="border:1px solid #777; padding:7px;">near-singularityとnoise amplificationを見落とす</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">input interpolationに良いpointsがPDE predictionにも最適とする</td><td style="border:1px solid #777; padding:7px;">solution operatorのsmoothingを無視する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">random test errorだけでfinite-observation limitを評価</td><td style="border:1px solid #777; padding:7px;">null / near-null directionsを踏まない可能性がある</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">sensor pointsとPINN collocation pointsを同じ役割とする</td><td style="border:1px solid #777; padding:7px;">input informationとPDE residual informationを混同する</td></tr>
+</table>
+</article></div>
+
+<h2>39．finite-observation audit prompt</h2>
+<div class="news"><article class="news-item">
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Audit prompt</b><br/>
+このoperator-learning sensor designを数学的に監査してください．<br/>
+(1) input class \(\mathcal K\)，input norm，output normを明示しているか，<br/>
+(2) observation functionalsがinput class上でwell-definedか，<br/>
+(3) \(\ker\mathcal O_m\) にnontrivial directionsがあるか確認しているか，<br/>
+(4) indistinguishable inputsからalgorithm-independent lower boundを計算しているか，<br/>
+(5) point-sensor gapとconcentrationを \(h_X\)，\(q_X\) で記録しているか，<br/>
+(6) finite-dimensional modelではobservation matrixのrankと \(\sigma_{\min}\) を確認しているか，<br/>
+(7) repeated / near-repeated sensorsによるeffective-rank lossを監査しているか，<br/>
+(8) noise levelに対するreconstruction amplificationを評価しているか，<br/>
+(9) input-reconstruction errorとPDE-output errorを区別しているか，<br/>
+(10) null / near-null directionsを意図的なstress testに含めているか，<br/>
+(11) sensor points，collocation points，output query pointsを区別しているか，<br/>
+(12) sensor placement criterionがPDE operator \(S\) とoutput normを反映しているか<br/>
+を順に確認してください．
+</div>
+</article></div>
+
+<h2>40．第35回の結論</h2>
+<div class="news"><article class="news-item">
+<p>
+finite observationsを使うoperator learnerには，
+learning algorithm以前に
+</p>
+\[
+\boxed{
+\ker\mathcal O_m
+}
+\tag{54}
+\]
+<p>
+というinformation lossがあります．
+</p>
+<p>
+見えない方向 \(h\) がsolutionへ強く残るなら，
+</p>
+\[
+\boxed{
+\|Sh\|_Y
+}
+\tag{55}
+\]
+<p>
+がalgorithm-independent error floorになります．
+</p>
+<p>
+従ってsensor designは
+</p>
+\[
+\boxed{
+\text{point count}
++
+\text{coverage}
++
+\text{conditioning}
++
+\text{PDE-aware invisible directions}
+}
+\tag{56}
+\]
+<p>
+として考える必要があります．
+</p>
+<p>
+特に一点集中では
+</p>
+\[
+\boxed{
+m\to\infty
+\quad\text{でも}\quad
+\text{independent information dimension}=1
+}
+\tag{57}
+\]
+<p>
+という極端なfailureが起こります．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Season 3 第11回の原則</b><br/>
+<b>operator learningでsensorを置くとは，
+点を増やすことではない．
+solution operatorにとって重要なinput directionsを，
+安定に区別できる観測を設計することである．</b>
+</div>
+<p>
+次回はSeason 3最終回として，
+<b>第36回：geometry-aware operator learning — 点配置・異方性・有限観測</b>
+へ進みます．
+</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>J. F. Traub, G. W. Wasilkowski and H. Woźniakowski, <i>Information-Based Complexity</i>, Academic Press, 1988.</li>
+<li>L. Lu, P. Jin, G. Pang, Z. Zhang and G. E. Karniadakis, “Learning nonlinear operators via DeepONet based on the universal approximation theorem of operators”, <i>Nature Machine Intelligence</i> 3 (2021), 218–229.</li>
+<li>N. Kovachki et al., “Neural Operator: Learning Maps Between Function Spaces With Applications to PDEs”, <i>Journal of Machine Learning Research</i> 24 (2023).</li>
+<li><a href="./chatgpt-fem-26.html">第26回：Deep Ritzでは点をどこに置くか — quadratureとsampling geometry</a></li>
+<li><a href="./chatgpt-fem-28.html">第28回：PINNsでは点配置で答えが変わるか — uniform・random・adaptive sampling</a></li>
+<li><a href="./chatgpt-fem-31.html">第31回：boundary layerでは点をどこに置くか — anisotropic sampling</a></li>
+<li><a href="./chatgpt-fem-34.html">第34回：解を学ぶのではなくsolution operatorを学ぶ</a></li>
+</ol>
+</article></div>
+
+<div style="padding:10px; margin-top:20px; border:1px solid #999999;">
+<p><b>Season 3 前回：</b><a href="./chatgpt-fem-34.html">第34回：解を学ぶのではなくsolution operatorを学ぶ</a></p>
+<p><b>次回：</b>第36回：geometry-aware operator learning — 点配置・異方性・有限観測（構想中）</p>
+<p><a href="../#chatgpt-fem-season3">Season 3一覧へ戻る</a></p>
+</div>
+
+</div></article></div></main>
+</div></div>
+
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img alt="ページの先頭へ" class="over" height="80" src="../../images/common/page-top_off.png" width="80"/></a></p>
+<script charset="utf-8" src="../../js/utility.js"></script>
+</body>
+</html>
