@@ -89,7 +89,7 @@ window.MathJax = {
 <b>更新履歴</b>
 <ul style="margin:8px 0 0 1.4em; padding:0;">
 <li><time datetime="2026-08-30">2026年8月30日</time>：初版公開．</li>
-<li><time datetime="2026-08-31">2026年8月31日</time>：数学監査を実施．clamped biharmonic problem の正則性仮定，Morley local normal orientation，Strang型誤差評価，geometryを含むerror budgetの記述を修正．さらにRannacher (1979) を踏まえ，squareで \(H^4\) regularityがあってもMorley \(P_2\) のbroken \(H^2\)-rateは一次で飽和すること，およびquadratic elementと \(L^2\)–\(H^4\) dualityの注意を追記．</li>
+<li><time datetime="2026-08-31">2026年8月31日</time>：数学監査を実施．clamped biharmonic problem の正則性仮定，Morley local normal orientation，Strang型誤差評価，geometryを含むerror budgetの記述を修正．さらにRannacher (1979) を踏まえ，squareで \(H^4\) regularityがあってもMorley \(P_2\) のbroken \(H^2\)-rateは一次で飽和すること，quadratic elementと \(L^2\)–\(H^4\) dualityの注意，およびcurved simply supported plateでboundary conditionをpolygonのboundary verticesのみに課すRannacher型の境界緩和空間を追記．</li>
 </ul>
 </div>
 
@@ -946,6 +946,170 @@ polygonal approximationではgeometryだけでなく，
 \]
 <p>
 として監査する方が正確です．
+</p>
+
+<h3>7.2　Rannacherの回避法――境界条件をpolygonの頂点だけに課す</h3>
+<p>
+ここでRannacher (1979) の
+<i>Finite Element Approximation of Simply Supported Plates and the Babuška Paradox</i>
+が重要になります．
+smooth curved domain \(\Omega\) を内接するpolygonal domain \(\Omega_h\) で近似するとき，
+単純に
+\[
+V_h\subset H^2(\Omega_h)\cap H_0^1(\Omega_h)
+\]
+として
+\[
+v_h=0
+\qquad\text{on all of }\partial\Omega_h
+\]
+を課すと，curved partを持つdomainでは正しいplate energyへ収束しないことがあります．
+</p>
+<p>
+Rannacherの考え方は，
+<b>境界条件をpolygonal boundary全体に強く課さず，
+真の曲境界と一致するpolygonのcorner / boundary verticesにだけ課す</b>
+ことです．
+現代的には，連続レベルのrelaxed admissible spaceをschematically
+\[
+\boxed{
+\widetilde V_h
+=
+\left\{
+v\in H^2(\Omega_h):
+v=0
+\text{ on }
+\partial\Omega_h\cap\partial\Omega
+\right\}
+}
+\]
+と書けます．
+内接polygonでは
+\[
+\partial\Omega_h\cap\partial\Omega
+\]
+は通常polygonのboundary verticesからなるため，
+有限要素では
+\[
+\boxed{
+v_h(z)=0
+\qquad
+\forall z\in\mathcal N_h\cap\partial\Omega_h
+}
+\]
+だけを課す形になります．
+</p>
+<p>
+重要なのは，これは
+<b>境界条件を弱めて別の問題を解くためではなく，
+restriction / nodal interpolationとcompatibleなdiscrete admissible spaceを作り，
+元のcurved-domain problemへ正しく収束させるためのnonconformity</b>
+だという点です．
+真の解
+\[
+u\in H^2(\Omega)\cap H_0^1(\Omega)
+\]
+をpolygonへrestrictionした
+\[
+u|_{\Omega_h}
+\]
+はpolygonal edge全体では一般にzeroではありません．
+しかしboundary vertex \(z\in\partial\Omega_h\cap\partial\Omega\) では
+\[
+u(z)=0.
+\]
+従ってboundary-node-only conditionなら，
+真の解のrestrictionやそのinterpolantと整合します．
+</p>
+
+<h3>7.3　高次 \(H^2\)-conforming elementでもfull boundary conditionなら失敗し得る</h3>
+<p>
+この点は「高次要素を使えばBabuška paradoxが消える」という誤解を防ぐために重要です．
+例えばArgyris elementでは
+\[
+S_h^{5,1}
+=
+\left\{
+v_h\in C^1(\Omega_h):
+v_h|_T\in P_5(T)
+\right\}
+\]
+という高次 \(H^2\)-conforming spaceを使えます．
+しかし
+\[
+V_{h,\mathrm{full}}^{\mathrm{Arg}}
+=
+S_h^{5,1}
+\cap
+H_0^1(\Omega_h)
+\]
+としてpolygonal boundary全体に \(v_h=0\) を課すと，
+curved boundaryを持つ場合には正しいvariational limitへの収束が保証されません．
+</p>
+<p>
+一方，boundary conditionをverticesだけに減らした
+\[
+\boxed{
+V_{h,\mathrm{nodal}}^{\mathrm{Arg}}
+=
+\left\{
+v_h\in S_h^{5,1}:
+v_h(z)=0
+\quad
+\forall z\in\mathcal N_h\cap\partial\Omega_h
+\right\}
+}
+\]
+なら，適切なinterpolation compatibilityの下で正しいcurved-domain plate problemへ収束できます．
+したがって
+\[
+\boxed{
+\text{high-order approximation}
+\quad\text{と}\quad
+\text{geometry--boundary consistency}
+}
+\]
+は別々に設計しなければなりません．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<b>Rannacherから読み取る原則</b><br/>
+高いpolynomial degreeや \(H^4\)-regularityがあっても，
+boundary conditionを誤ったgeometry上でfullに実現すれば，
+正しいlimit problemへ収束するとは限らない．<br/>
+曲領域のsimply supported plateでは，
+<b>finite-element spaceそのものだけでなく，boundary conditionをどのDoFに課すか</b>
+まで有限要素法の設計に含める．
+</div>
+
+<h3>7.4　Morleyとの違い――低次nonconforming性と境界nonconforming性を分ける</h3>
+<p>
+Morley elementの
+\[
+V_h^M\not\subset H^2(\Omega_h)
+\]
+というnonconformityと，
+Rannacher型の
+\[
+v_h=0
+\quad\text{only at boundary vertices}
+\]
+というboundary-condition nonconformityは，同じものではありません．
+前者はelement間の \(H^2\)-conformityを緩和する設計であり，
+後者はcurved-domain limitとcompatibleにするためboundary conditionのrealisationを緩和する設計です．
+</p>
+<p>
+したがって4階問題では
+\[
+\boxed{
+\begin{aligned}
+&\text{polynomial approximation order},\\
+&\text{interelement conformity},\\
+&\text{boundary-condition conformity},\\
+&\text{domain geometry}
+\end{aligned}
+}
+\]
+を別々に監査する必要があります．
 </p>
 </article></div>
 
@@ -1971,6 +2135,7 @@ Babuška paradoxが示すように，
 <li>H. Blum and R. Rannacher, “On the boundary value problem of the biharmonic operator on domains with angular corners”, <i>Mathematical Methods in the Applied Sciences</i> 2(4) (1980), 556–581. <a href="https://doi.org/10.1002/mma.1670020416">DOI</a>.</li>
 <li>R. Rannacher, “Finite Element Approximation of Simply Supported Plates and the Babuška Paradox”, <i>Zeitschrift für Angewandte Mathematik und Mechanik</i> 59 (1979), T73–T76. <a href="https://zbmath.org/?q=an:0421.73072">Zbl 0421.73072</a>.</li>
 <li>R. Rannacher, “On nonconforming and mixed finite element methods for plate bending problems: The linear case”, <i>RAIRO. Analyse numérique</i> 13 (1979), 369–387. <a href="https://www.numdam.org/item/M2AN_1979__13_4_369_0/">NUMDAM</a>. <a href="https://doi.org/10.1051/m2an/1979130403691">DOI</a>.</li>
+<li>S. Bartels and P. Tscherner, “Necessary and sufficient conditions for avoiding Babuška’s paradox on simplicial meshes”, 2024. Modern variational-convergence formulation of the boundary-relaxation principle used by Rannacher. <a href="https://aam.uni-freiburg.de/agba/prof/preprints/BarTsc24-pre.pdf">PDF</a>.</li>
 <li>H. Ishizaka, “Morley finite element analysis for fourth-order elliptic equations under a semi-regular mesh condition”, <i>Applications of Mathematics</i> 69(6) (2024), 769–805. <a href="https://doi.org/10.21136/AM.2024.0103-24">DOI</a>.</li>
 <li><a href="./paradoxes-pitfalls-01.html">領域が収束しても解は正しく収束しない――バブシュカ・パラドックス</a></li>
 <li><a href="./exact-curved-fem-01.html">Exact-curved FEMの入口</a></li>
