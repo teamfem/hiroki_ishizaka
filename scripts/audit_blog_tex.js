@@ -39,6 +39,24 @@ function removeIgnoredBlocks(source) {
     .replace(/<code\b[^>]*>[\s\S]*?<\/code>/gi, '');
 }
 
+function isDelimiterAt(text, index, seq) {
+  if (!text.startsWith(seq, index)) return false;
+  // A delimiter beginning at the second slash of TeX line breaks such as \\[6pt]
+  // is not a real MathJax delimiter.
+  return index === 0 || text[index - 1] !== '\\';
+}
+
+function findDelimiter(text, seq, from) {
+  let i = from;
+  while (i < text.length) {
+    const j = text.indexOf(seq, i);
+    if (j < 0) return -1;
+    if (isDelimiterAt(text, j, seq)) return j;
+    i = j + 1;
+  }
+  return -1;
+}
+
 function extractMath(source, file, errors) {
   const cleaned = removeIgnoredBlocks(source);
   const out = [];
@@ -47,33 +65,45 @@ function extractMath(source, file, errors) {
     let kind = null;
     let open = null;
     let close = null;
-    if (cleaned.startsWith('\\[', i)) {
+    if (isDelimiterAt(cleaned, i, '\\[')) {
       kind = 'display'; open = '\\['; close = '\\]';
-    } else if (cleaned.startsWith('\\(', i)) {
+    } else if (isDelimiterAt(cleaned, i, '\\(')) {
       kind = 'inline'; open = '\\('; close = '\\)';
     }
     if (!kind) { i++; continue; }
+
     const start = i;
-    const end = cleaned.indexOf(close, i + 2);
+    const end = findDelimiter(cleaned, close, i + 2);
     if (end < 0) {
       errors.push(`${file}:${lineNumber(cleaned, start)}: unmatched opening delimiter ${open}`);
       break;
     }
+
+    const nested = findDelimiter(cleaned, open, i + 2);
+    if (nested >= 0 && nested < end) {
+      errors.push(`${file}:${lineNumber(cleaned, nested)}: nested ${open} before closing ${close}; likely a missing ${close} before this line`);
+    }
+
     const raw = cleaned.slice(i + 2, end);
     out.push({kind, raw, start, line: lineNumber(cleaned, start)});
     i = end + 2;
   }
 
-  // Closing delimiters that were not consumed as part of a pair.
-  const opensDisplay = (cleaned.match(/\\\[/g) || []).length;
-  const closesDisplay = (cleaned.match(/\\\]/g) || []).length;
-  const opensInline = (cleaned.match(/\\\(/g) || []).length;
-  const closesInline = (cleaned.match(/\\\)/g) || []).length;
-  if (opensDisplay !== closesDisplay) {
-    errors.push(`${file}: display delimiter count mismatch: \\[=${opensDisplay}, \\]=${closesDisplay}`);
-  }
-  if (opensInline !== closesInline) {
-    errors.push(`${file}: inline delimiter count mismatch: \\(=${opensInline}, \\)=${closesInline}`);
+  // Detect unmatched closing delimiters by comparing all real delimiter positions
+  // with the paired expressions collected above.
+  for (const [seq, label] of [['\\]', 'display'], ['\\)', 'inline']]) {
+    let pos = 0;
+    while ((pos = findDelimiter(cleaned, seq, pos)) >= 0) {
+      const belongsToPair = out.some(f => {
+        const closeSeq = f.kind === 'display' ? '\\]' : '\\)';
+        const end = findDelimiter(cleaned, closeSeq, f.start + 2);
+        return end === pos;
+      });
+      if (!belongsToPair) {
+        errors.push(`${file}:${lineNumber(cleaned, pos)}: unmatched closing ${label} delimiter ${seq}`);
+      }
+      pos += 2;
+    }
   }
   return out;
 }
