@@ -1,0 +1,22 @@
+name: Audit blog TeX
+
+on:
+  push:
+    paths:
+      - 'blog/posts/**.html'
+      - 'scripts/audit_blog_tex.js'
+      - '.github/workflows/audit-blog-tex.yml'
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install MathJax parser
+        run: npm install --no-save mathjax-full@3
+      - name: Audit all blog TeX
+        run: node scripts/audit_blog_tex.js
