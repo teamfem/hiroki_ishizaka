@@ -97,13 +97,14 @@
       var doc=new DOMParser().parseFromString(html,'text/html');
       var src=doc.querySelector('.section-in');
       if(!src) throw new Error('archive content not found');
-      var nodes=Array.prototype.slice.call(src.children);
-      var start=nodes.findIndex(function(n){return n.tagName==='H3'&&n.textContent.trim()==='Research philosophy';});
-      var end=nodes.findIndex(function(n,i){return i>start&&n.tagName==='H3'&&n.textContent.trim()==='Website guide';});
-      if(start<0) throw new Error('philosophy section not found');
-      if(end<0) end=nodes.length;
+      var headings=Array.prototype.slice.call(src.querySelectorAll('h3'));
+      var start=headings.find(function(n){return n.textContent.trim()==='Research philosophy';});
+      var end=headings.find(function(n){return n.textContent.trim()==='Website guide';});
+      if(!start) throw new Error('philosophy section not found');
+      if(!end||start.parentElement!==end.parentElement) throw new Error('philosophy section boundary not found');
       target.innerHTML='';
-      nodes.slice(start,end).forEach(function(n){target.appendChild(n.cloneNode(true));});
+      for(var n=start;n&&n!==end;n=n.nextElementSibling){target.appendChild(n.cloneNode(true));}
+      if(!target.children.length) throw new Error('philosophy section is empty');
       target.querySelectorAll('script').forEach(function(n){n.remove();});
       typeset();
     }).catch(function(){target.innerHTML='<span class="vision-error">The extended philosophy could not be loaded.</span>';});
