@@ -42,7 +42,7 @@ window.MathJax = {
       "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-20.html",
       "inLanguage": "ja",
       "datePublished": "2026-08-30",
-      "dateModified": "2026-08-30",
+      "dateModified": "2026-08-31",
       "articleSection": "Computational FEM with AI — Season 2",
       "genre": "Research note",
       "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
@@ -52,7 +52,7 @@ window.MathJax = {
 </script>
 <meta property="og:type" content="article"/>
 <meta property="article:published_time" content="2026-08-30"/>
-<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-08-31"/>
 <meta property="article:section" content="Computational FEM with AI — Season 2"/>
 <meta property="og:site_name" content="Hiroki Ishizaka"/>
 <meta property="og:locale" content="ja_JP"/>
@@ -529,18 +529,21 @@ clamped biharmonicについてangle conditionを基準に整理すると，
 \[
 \boxed{
 \begin{aligned}
+f\in H^{-1}(\Omega),\quad
 \omega_{\max}&lt;180^\circ
 &&\Longrightarrow
-\text{\(H^3\)-regularity},\\
+u\in H^3(\Omega),\\
+f\in L^2(\Omega),\quad
 \omega_{\max}&lt;126.283696\ldots^\circ
 &&\Longrightarrow
-\text{\(H^4\)-regularity}.
+u\in H^4(\Omega).
 \end{aligned}
 }
 \]
 <p>
-ただし第二行のangle thresholdは，
-<b>任意の \(f\in L^2\) に対して \(H^4\) をuniformに保証する十分条件</b>
+第一行と第二行ではright-hand sideのregularityが異なります．
+特に第二行のangle thresholdは，
+<b>任意の \(f\in L^2(\Omega)\) に対して \(H^4\) をuniformに保証する十分条件</b>
 として読むべきです．
 \[
 126.283696\ldots^\circ
@@ -914,7 +917,45 @@ local_edges = [
 ]
 
 
+def outward_unit_normal(P, a, b, tol=1.0e-14):
+    """
+    Outward unit normal of edge (a,b), independent of
+    clockwise/counter-clockwise ordering of the triangle.
+    """
+    pa = P[a]
+    pb = P[b]
+    edge = pb - pa
+    edge_length = np.linalg.norm(edge)
+
+    if edge_length <= tol:
+        raise ValueError("Degenerate edge in triangle.")
+
+    # Start with one of the two unit normals to the edge.
+    n = np.array([edge[1], -edge[0]]) / edge_length
+
+    # For vertices 0,1,2, the vertex opposite edge (a,b) is 3-a-b.
+    c = 3 - a - b
+    midpoint = 0.5 * (pa + pb)
+    inward_test = np.dot(n, P[c] - midpoint)
+
+    if abs(inward_test) <= tol:
+        raise ValueError(
+            "Degenerate triangle: the three vertices are collinear."
+        )
+
+    # If n points towards the opposite vertex, it is inward.
+    if inward_test > 0.0:
+        n = -n
+
+    return n
+
+
 def morley_coefficients(P):
+    P = np.asarray(P, dtype=float)
+
+    if P.shape != (3, 2):
+        raise ValueError("P must have shape (3,2).")
+
     D = np.zeros((6, 6))
 
     # vertex values
@@ -929,7 +970,7 @@ def morley_coefficients(P):
         pb = P[b]
 
         midpoint = 0.5 * (pa + pb)
-        n_out = right_normal(pa, pb)
+        n_out = outward_unit_normal(P, a, b)
 
         D[3 + le, :] = (
             n_out
@@ -938,6 +979,11 @@ def morley_coefficients(P):
 
     return np.linalg.inv(D)
 </code></pre>
+<p>
+この実装ではtriangleの頂点がclockwise / counter-clockwiseのどちらに並んでいても，
+反対頂点との内積でnormalの向きを判定してoutward unit normalを選びます．
+またzero-length edgeやcollinear verticesも例外として検出します．
+</p>
 </article></div>
 
 <h2>11．最初のunit testはDoF Kronecker property</h2>
@@ -1285,17 +1331,20 @@ C
 \tag{29}
 \]
 <p>
-つまり
+つまりStrang型評価の構造をschematically書けば
+</p>
 \[
 \boxed{
 \text{Morley error}
-=
+\;\lesssim\;
 \text{approximation / interpolation error}
 +
 \text{consistency error}.
 }
 \tag{30}
 \]
+<p>
+式 (30) は三つの量の厳密な加法的等式を意味するものではありません．
 </p>
 </article></div>
 
@@ -1562,28 +1611,31 @@ Babuška paradoxは，単なる古典的な反例として読むだけではあ�
 <p>
 特にcurved domainをpolygonal meshで近似するときは，
 finite-element discretisation errorだけでなく，
+共通のnormと適切なlifting / comparison operatorを定めた上で，schematically
 </p>
 \[
 \boxed{
 \begin{aligned}
-\text{total error}
-={}&
-\text{discretisation error}
+\text{total-error measure}
+\;\lesssim\;{}&
+\text{discretisation contribution}
 \\
 &+
-\text{geometry error}
+\text{geometry contribution}
 \\
 &+
-\text{boundary-realisation error}
+\text{boundary-realisation contribution}
 \\
 &+
-\text{quadrature error}
+\text{quadrature contribution}
 \end{aligned}
 }
 \tag{38}
 \]
 <p>
-という分解を意識する必要があります．
+というerror budgetを意識する必要があります．
+式 (38) は普遍的な厳密等式ではなく，
+個々のmethodと比較枠組みに応じて各項を定義して評価するためのschematicな整理です．
 </p>
 <p>
 通常のmesh-refinement studyで
@@ -1710,7 +1762,7 @@ geometry errorを追う考え方を扱っています．
 (2) DoFが3 vertex values + 3 edge mean normal derivativesか，<br/>
 (3) six DoFsがunisolventでKronecker propertyを満たすか，<br/>
 (4) reference scalar pullbackだけでnormal-derivative DoFを処理していないか，<br/>
-(5) global edge normal orientationとsignを管理しているか，<br/>
+(5) local outward normalがtriangleの頂点順序に依存せず，global edge normal orientationとsignも管理しているか，<br/>
 (6) clamped boundaryでboundary vertex valuesとboundary normal-derivative meansをzeroにしているか，<br/>
 (7) stiffness matrixがbroken Hessian inner productから作られているか，<br/>
 (8) \(D^2I_T^Mu=\Pi_T^0D^2u\) を確認できるか，<br/>
