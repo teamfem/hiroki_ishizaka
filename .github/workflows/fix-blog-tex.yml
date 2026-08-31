@@ -23,10 +23,11 @@ jobs:
 
           p = Path('blog/posts/anisotropic-geometry-07.html')
           s = p.read_text(encoding='utf-8')
-          old = r'\left\{\mathcal T_{N,\delta}\night\}_{N,\delta}'
-          new = r'\left\{\mathcal T_{N,\delta}\right\}_{N,\delta}'
-          assert old in s
-          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          before = s
+          s = s.replace(r'\night\}_{N,\delta}', r'\right\}_{N,\delta}', 1)
+          s = s.replace('\night\\}_{N,\\delta}', '\n  \\right\\}_{N,\\delta}', 1)
+          assert s != before
+          p.write_text(s, encoding='utf-8')
           fixes.append(str(p))
 
           p = Path('blog/posts/article10may26_3.html')
