@@ -89,7 +89,7 @@ window.MathJax = {
 <b>更新履歴</b>
 <ul style="margin:8px 0 0 1.4em; padding:0;">
 <li><time datetime="2026-08-30">2026年8月30日</time>：初版公開．</li>
-<li><time datetime="2026-08-31">2026年8月31日</time>：数学監査を実施．clamped biharmonic problem の正則性仮定，Morley local normal orientation，Strang型誤差評価，geometryを含むerror budgetの記述を修正．</li>
+<li><time datetime="2026-08-31">2026年8月31日</time>：数学監査を実施．clamped biharmonic problem の正則性仮定，Morley local normal orientation，Strang型誤差評価，geometryを含むerror budgetの記述を修正．さらにRannacher (1979) を踏まえ，squareで \(H^4\) regularityがあってもMorley \(P_2\) のbroken \(H^2\)-rateは一次で飽和すること，およびquadratic elementと \(L^2\)–\(H^4\) dualityの注意を追記．</li>
 </ul>
 </div>
 
@@ -601,11 +601,111 @@ squareでは前者としても \(H^4\) が保証されますが，
 manufactured polynomialはさらにsmoothです．
 </p>
 
+<h3>2.8　\(H^4\) があってもMorleyのenergy rateが二次になるわけではない</h3>
+<p>
+ここはregularityとfinite-element approximation orderを混同しやすい点です．
+squareでは \(f\in L^2(\Omega)\) に対して
+\[
+u\in H^4(\Omega)
+\]
+まで保証されます．
+しかしMorley elementはpiecewise quadratic，
+すなわち
+\[
+V_h^M|_T\subset P_2(T)
+\]
+です．
+したがって
+\[
+D^2v_h|_T\in P_0(T)^{2\times2}
+\]
+であり，broken \(H^2\)-energy normで見たapproximation powerは一次で飽和します．
+典型的には
+\[
+\boxed{
+|u-I_h^Mu|_{2,h}
+\le
+Ch\,|u|_{H^3(\Omega)}.
+}
+\]
+従って，たとえ \(u\in H^4(\Omega)\) であっても
+\[
+\boxed{
+u\in H^4(\Omega)
+\;\not\Longrightarrow\;
+|u-u_h|_{2,h}=O(h^2)
+\quad\text{for Morley }P_2.
+}
+\]
+smooth solutionに対する基本的なenergy rateは依然として
+\[
+|u-u_h|_{2,h}=O(h)
+\]
+です．
+</p>
+
+<p>
+一般に「solutionがどこまでsmoothか」と「そのsmoothnessをelementが何次まで利用できるか」は別です．
+概念的には，degree \(k\) の十分良いplate approximationで
+\[
+|u-u_h|_{H^2}
+\lesssim
+h^{\min\{k-1,\,s-2\}}
+|u|_{H^s}
+\]
+というscaleを考えると，
+Morleyでは \(k=2\) なので
+\[
+\min\{k-1,s-2\}
+=
+\min\{1,s-2\}
+\le1.
+\]
+つまり \(H^4\) までsmoothでもenergy normでは一次より上へ行きません．
+\(H^4\) regularityをenergy convergenceの二次rateとして使いたければ，
+higher-order nonconforming method，\(C^0\) interior penalty methodの高次要素，
+あるいは \(C^1\)-conforming higher-order elementなど，
+より高いapproximation powerを持つmethodが必要です．
+</p>
+
+<div style="padding:12px; margin:14px 0; border:2px solid #666666; background:#fafafa;">
+<b>Rannacher (1979) をここでどう読むか</b>
+<p>
+Rannacherの同年の詳しい論文
+“On nonconforming and mixed finite element methods for plate bending problems: The linear case”
+は，clamped fourth-order modelに対するquadratic Morley elementを詳しく解析しています．
+そこではconvex polygonに対する \(H^3\)-type regularityを用いたMorley解析が展開される一方，
+weaker normの解析について，
+quadratic finite elementsでは
+\(L^2\)–\(H^4\) dualityを単純な形では完全には利用できないことが明示されています．
+</p>
+<p>
+したがって
+\[
+\boxed{
+\text{more regularity}
+\neq
+\text{automatically higher energy rate}
+}
+\]
+であり，
+\(H^4\) はdual estimates，\(L^2\)-error，pointwise estimates，
+higher-order methodsなどで別の形で効いてくる，と理解するのが安全です．
+</p>
+<p>
+なお，Zbl 0421.73072 の短報
+“Finite Element Approximation of Simply Supported Plates and the Babuška Paradox”
+はsimply supported plateのgeometry / boundary-limit問題を扱う文献です．
+今回のclamped Morleyのregularity・dualityの直接の参照には，
+同年のRAIRO論文を使い，Babuška paradoxの議論には短報を使う，という役割分担にします．
+</p>
+</div>
+
 <div style="padding:12px; margin:14px 0; border:5px double #333333;">
 <b>regularity auditの要点</b><br/>
 Morley \(P_2\) のenergy-rate \(O(h)\) には \(H^3\) で足りることが多い．<br/>
-しかし \(H^4\) があるかどうかは，
-dual estimates，higher-order nonconforming methods，post-processing，
+squareで \(H^4\) regularityがあっても，Morley \(P_2\) のbroken \(H^2\)-rateは一次で飽和する．<br/>
+一方で \(H^4\) はdual estimates，weaker norms，higher-order methods，post-processing，
 consistencyの高次評価を考えるときに効いてくる．
 </div>
 </article></div>
@@ -624,6 +724,12 @@ O(h^2)
 </p>
 <p>
 \(L^2\)-estimateにはdual fourth-order problemのregularityが入ります．
+ただし前節で述べたように，quadratic Morleyでは
+「dual solutionが \(H^4\) だから標準的なdualityだけでそのregularityを全部使える」
+とは限りません．
+Rannacher (1979) は，quadratic finite elementsでは
+\(L^2\)–\(H^4\) dualityを単純には完全利用できない点を明示し，
+Morleyのweaker-norm estimateにはより慎重な解析を用いています．
 したがってcorner singularityを持つdomainで
 </p>
 \[
@@ -1863,8 +1969,8 @@ Babuška paradoxが示すように，
 <li>M. Dauge, <i>Elliptic Boundary Value Problems on Corner Domains</i>, Lecture Notes in Mathematics 1341, Springer, 1988.</li>
 <li>M. Costabel and M. Dauge, “Construction of Corner Singularities for Agmon–Douglis–Nirenberg Elliptic Systems”, <i>Mathematische Nachrichten</i> 162 (1993), 209–237. <a href="https://doi.org/10.1002/mana.19931620117">DOI</a>.</li>
 <li>H. Blum and R. Rannacher, “On the boundary value problem of the biharmonic operator on domains with angular corners”, <i>Mathematical Methods in the Applied Sciences</i> 2(4) (1980), 556–581. <a href="https://doi.org/10.1002/mma.1670020416">DOI</a>.</li>
-<li>R. Rannacher, “Finite Element Approximation of Simply Supported Plates and the Babuška Paradox”, <i>Zeitschrift für Angewandte Mathematik und Mechanik</i> 59 (1979), T73–T76.</li>
-<li>R. Rannacher, “On nonconforming and mixed finite element methods for plate bending problems: The linear case”, <i>RAIRO. Analyse numérique</i> 13 (1979), 369–387.</li>
+<li>R. Rannacher, “Finite Element Approximation of Simply Supported Plates and the Babuška Paradox”, <i>Zeitschrift für Angewandte Mathematik und Mechanik</i> 59 (1979), T73–T76. <a href="https://zbmath.org/?q=an:0421.73072">Zbl 0421.73072</a>.</li>
+<li>R. Rannacher, “On nonconforming and mixed finite element methods for plate bending problems: The linear case”, <i>RAIRO. Analyse numérique</i> 13 (1979), 369–387. <a href="https://www.numdam.org/item/M2AN_1979__13_4_369_0/">NUMDAM</a>. <a href="https://doi.org/10.1051/m2an/1979130403691">DOI</a>.</li>
 <li>H. Ishizaka, “Morley finite element analysis for fourth-order elliptic equations under a semi-regular mesh condition”, <i>Applications of Mathematics</i> 69(6) (2024), 769–805. <a href="https://doi.org/10.21136/AM.2024.0103-24">DOI</a>.</li>
 <li><a href="./paradoxes-pitfalls-01.html">領域が収束しても解は正しく収束しない――バブシュカ・パラドックス</a></li>
 <li><a href="./exact-curved-fem-01.html">Exact-curved FEMの入口</a></li>
