@@ -5,6 +5,7 @@ on:
     paths:
       - 'blog/posts/**.html'
       - 'scripts/audit_blog_tex.js'
+      - 'scripts/diagnose_blog_delims.js'
       - '.github/workflows/audit-blog-tex.yml'
   workflow_dispatch:
 
@@ -18,5 +19,7 @@ jobs:
           node-version: '20'
       - name: Install MathJax parser
         run: npm install --no-save mathjax-full@3
+      - name: Diagnose unmatched delimiters
+        run: node scripts/diagnose_blog_delims.js
       - name: Audit all blog TeX
         run: node scripts/audit_blog_tex.js
