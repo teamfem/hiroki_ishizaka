@@ -155,12 +155,31 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
     window.addEventListener('resize',function(){if(window.innerWidth>MOBILE_BREAKPOINT)close(false);},{passive:true});
   }
 
+  function ensureMathJax(){
+    var text=(document.body&&document.body.textContent)||'';
+    if(!(/\\\(|\\\[/.test(text))) return;
+    if(window.MathJax&&typeof window.MathJax.typesetPromise==='function') return;
+    if(document.getElementById('MathJax-script')) return;
+    if(!window.MathJax){
+      window.MathJax={
+        tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]},
+        options:{skipHtmlTags:['script','noscript','style','textarea','pre','code']}
+      };
+    }
+    var script=document.createElement('script');
+    script.id='MathJax-script';
+    script.async=true;
+    script.src='https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+    document.head.appendChild(script);
+  }
+
   function init(){
     addSharedStyles();
     ensureSkipLink();
     ensurePrimaryNavigation();
     initMobileNav();
     initBackToTop();
+    ensureMathJax();
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
