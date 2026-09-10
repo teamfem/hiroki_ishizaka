@@ -18,8 +18,8 @@ window.MathJax = {
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-<meta name="keywords" content="Hiroki Ishizaka,石坂宏樹,AI4Math,Navier-Stokes,数学研究,未解決問題,査読,研究倫理,priority,科研費,学会発表,open science"/>
-<meta name="description" content="2026年9月のNavier–Stokesをめぐる騒動をきっかけに，AI時代の数学研究，引用，査読，科研費，学会発表，未解決問題の公開，研究者のpriority，そして人間が担うべき役割について考える個人的な研究ノートです．"/>
+<meta name="keywords" content="Hiroki Ishizaka,石坂宏樹,AI4Math,Navier-Stokes,数学研究,未解決問題,査読,研究倫理,priority,科研費,学会発表,open science,provenance,credit"/>
+<meta name="description" content="2026年9月のNavier–Stokesをめぐる騒動をきっかけに，AI時代の数学研究，引用，査読，科研費，学会発表，未解決問題の公開，研究者のpriority，AIのcreditとprovenance，そして人間が担うべき役割について考える個人的な研究ノートです．"/>
 <link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
 <link href="../../favicon.ico" rel="icon"/>
 <link href="../../css/modern.css" rel="stylesheet"/>
@@ -35,7 +35,7 @@ window.MathJax = {
       "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai-human-mathematics-01.html#article",
       "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai-human-mathematics-01.html",
       "headline": "AIの前に，人間の数学を考える――Navier–Stokes騒動から，未解決問題・引用・査読・研究者の役割へ",
-      "description": "2026年9月のNavier–Stokesをめぐる騒動をきっかけに，AI時代の数学研究，引用，査読，科研費，学会発表，未解決問題の公開，研究者のpriority，そして人間が担うべき役割について考える個人的な研究ノートです．",
+      "description": "2026年9月のNavier–Stokesをめぐる騒動をきっかけに，AI時代の数学研究，引用，査読，科研費，学会発表，未解決問題の公開，研究者のpriority，AIのcreditとprovenance，そして人間が担うべき役割について考える個人的な研究ノートです．",
       "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
       "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
       "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
@@ -57,12 +57,12 @@ window.MathJax = {
 <meta property="og:site_name" content="Hiroki Ishizaka"/>
 <meta property="og:locale" content="ja_JP"/>
 <meta property="og:title" content="AIの前に，人間の数学を考える――Navier–Stokes騒動から，未解決問題・引用・査読・研究者の役割へ | Hiroki Ishizaka"/>
-<meta property="og:description" content="AIが数学を変える前に，人間は数学をどうするのか．Navier–Stokes騒動を入口に，未完成の研究を公開する意味と，未解決問題を作る人間の役割を考えます．"/>
+<meta property="og:description" content="AIが数学を変える前に，人間は数学をどうするのか．Navier–Stokes騒動を入口に，未完成の研究を公開する意味，AIのcreditとprovenance，未解決問題を作る人間の役割を考えます．"/>
 <meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai-human-mathematics-01.html"/>
 <meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
 <meta name="twitter:card" content="summary_large_image"/>
 <meta name="twitter:title" content="AIの前に，人間の数学を考える――Navier–Stokes騒動から，未解決問題・引用・査読・研究者の役割へ"/>
-<meta name="twitter:description" content="AIが証明を速くするなら，人間は何をするのか．私は未解決問題を作る側に回ればよいと思っています．"/>
+<meta name="twitter:description" content="AIが証明を速くするなら，人間は何をするのか．私は未解決問題を作る側に回ればよいと思っています．そしてAIにも，数学の記憶を残してほしい．"/>
 <meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
 </head>
 <body class="page">
@@ -289,6 +289,45 @@ AIには，人間と同じ意味での嫉妬はありません．「あいつの
 </p>
 </article></div>
 
+<h2>8．AIにも，数学の記憶を持っていてほしい</h2>
+<div class="news"><article class="news-item">
+<p>
+ここまで書いて，もう一つ思うことがあります．人間に引用する文化があるのなら，AIにもcreditを残す仕組みがあってよいのではないでしょうか．
+</p>
+<p>
+AIが公開された研究ノートやブログを読んで未解決問題を見つけた．別の論文から使える補題を見つけた．さらに別の研究から証明の方針を組み立てた．そして最後に新しい証明へたどり着いた．そういうことが起こるなら，最終的な参考文献だけではなく，「どうやってそこへ来たのか」まで残せた方がいいと私は思います．
+</p>
+<p>
+例えば，
+</p>
+\[
+\boxed{
+\text{question origin}
+\longrightarrow
+\text{key ideas}
+\longrightarrow
+\text{technical ingredients}
+\longrightarrow
+\text{new derivation}
+}
+\]
+<p>
+という研究の系譜です．どこで問題を見つけ，何を既存研究から受け取り，どこからが新しい推論なのか．完全に追跡することは難しいでしょう．人間だって，自分の着想がどこから来たのかを全部説明できるわけではありません．それでも，分かる範囲を残すだけで大きく違うと思います．
+</p>
+<p>
+私は，AIに公開された数学を読ませない世界より，AIが世界中の数学を自由に読み，しかもその道筋をきちんと残す世界の方がいい．人間が見つけられなかった関連を見つける．埋もれていた論文を拾う．誰かが昔書いた未解決問題をもう一度表に出す．そして，そこから成果が出たときには，元の仕事までたどれるようにする．
+</p>
+<p>
+研究者に「引用しなさい」と言うだけではなく，AI自身もprovenanceを残す．将来，AIが関わった数学論文に，通常のReferencesとは別に，<i>Origin of the question</i> や <i>Research lineage</i> のような欄があってもよいのではないかと思います．
+</p>
+<p>
+AIが数学を忘れないようにする．誰かの問いが，別の誰かの答えの中で消えてしまわないようにする．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<p style="margin:0;"><b>AIにも，数学の記憶を持っていてほしい．</b></p>
+</div>
+</article></div>
+
 <h2>おわりに――いま，少し立ち止まってもよいのではないか</h2>
 <div class="news"><article class="news-item">
 <p>
@@ -301,7 +340,7 @@ AIには，人間と同じ意味での嫉妬はありません．「あいつの
 しかし私は，だから研究を閉じようとは思いません．研究はオープンワールドである方がいい．違う考えを持つ人が自由に議論し，誰かの問いを別の人が進め，AIもそこへ参加する．私はそういう数学の方が面白いと思います．
 </p>
 <p>
-大事なのは，その自由さと一緒に，研究の道筋を残すことです．誰の問いから始まり，誰の結果を使い，どこを乗り越えたのか．そこを消さない．それなら，引用は単なる形式ではなく，数学がどう育ったかを残す記録になります．
+大事なのは，その自由さと一緒に，研究の道筋を残すことです．誰の問いから始まり，誰の結果を使い，どこを乗り越えたのか．そこを消さない．それなら，引用は単なる形式ではなく，数学がどう育ったかを残す記録になります．AI自身もその道筋を残せるようになれば，オープンな研究とcreditは今より両立しやすくなるかもしれません．
 </p>
 <p>
 AIが答えを速く出せるなら，人間はもっと良い問いを作ればいい．そして，その問いをできるだけ開いて議論すればいい．人間は問いを作る．AIはその問いを一緒に考える．そこからまた新しい問いが生まれる．
