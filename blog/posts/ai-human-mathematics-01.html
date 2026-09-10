@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']],
+    processEscapes: true
+  },
+  options: {
+    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+  }
+};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<title>AIの前に，人間の数学を考える――Navier–Stokes騒動から，未解決問題・引用・査読・研究者の役割へ | Hiroki Ishizaka</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="keywords" content="Hiroki Ishizaka,石坂宏樹,AI4Math,Navier-Stokes,数学研究,未解決問題,査読,研究倫理,priority,科研費,学会発表,open science"/>
+<meta name="description" content="2026年9月のNavier–Stokesをめぐる騒動をきっかけに，AI時代の数学研究，引用，査読，科研費，学会発表，未解決問題の公開，研究者のpriority，そして人間が担うべき役割について考える個人的な研究ノートです．"/>
+<link href="../../favicon.ico" rel="shortcut icon" type="image/x-icon"/>
+<link href="../../favicon.ico" rel="icon"/>
+<link href="../../css/modern.css" rel="stylesheet"/>
+<link href="../../css/blog-post-modern.css" rel="stylesheet"/>
+<noscript><link href="../../css/base.css" rel="stylesheet"/><link href="../../css/rwd.css" rel="stylesheet"/></noscript>
+<link href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai-human-mathematics-01.html" rel="canonical"/>
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai-human-mathematics-01.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai-human-mathematics-01.html",
+      "headline": "AIの前に，人間の数学を考える――Navier–Stokes騒動から，未解決問題・引用・査読・研究者の役割へ",
+      "description": "2026年9月のNavier–Stokesをめぐる騒動をきっかけに，AI時代の数学研究，引用，査読，科研費，学会発表，未解決問題の公開，研究者のpriority，そして人間が担うべき役割について考える個人的な研究ノートです．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai-human-mathematics-01.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-09-10",
+      "dateModified": "2026-09-10",
+      "articleSection": "AI4Math and research culture",
+      "genre": "Research reflection",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}
+</script>
+<meta property="og:type" content="article"/>
+<meta property="article:published_time" content="2026-09-10"/>
+<meta property="article:modified_time" content="2026-09-10"/>
+<meta property="article:section" content="AI4Math and research culture"/>
+<meta property="og:site_name" content="Hiroki Ishizaka"/>
+<meta property="og:locale" content="ja_JP"/>
+<meta property="og:title" content="AIの前に，人間の数学を考える――Navier–Stokes騒動から，未解決問題・引用・査読・研究者の役割へ | Hiroki Ishizaka"/>
+<meta property="og:description" content="AIが数学を変える前に，人間は数学をどうするのか．Navier–Stokes騒動を入口に，未完成の研究を公開する意味と，未解決問題を作る人間の役割を考えます．"/>
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai-human-mathematics-01.html"/>
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="AIの前に，人間の数学を考える――Navier–Stokes騒動から，未解決問題・引用・査読・研究者の役割へ"/>
+<meta name="twitter:description" content="AIが証明を速くするなら，人間は何をするのか．私は未解決問題を作る側に回ればよいと思っています．"/>
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png"/>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in" itemscope itemtype="http://schema.org/BreadcrumbList">
+<li class="bcl-first" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../../" itemprop="item"><span itemprop="name">ISHIZAKA Hiroki Website</span> TOP</a><meta content="1" itemprop="position"/></li>
+<li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a href="../" itemprop="item"><span itemprop="name">Blog</span></a><meta content="2" itemprop="position"/></li>
+<li class="bcl-last">AI4Math and research culture</li>
+</ol></nav>
+
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+<h1 class="section-title">AIの前に，人間の数学を考える――Navier–Stokes騒動から，未解決問題・引用・査読・研究者の役割へ</h1>
+<p><b>AI4Math and research culture</b><br/><time datetime="2026-09-10">10th September 2026</time></p>
+
+<div class="news"><article class="news-item">
+<p><b>最初に断っておきたいこと</b></p>
+<p>
+この記事は，2026年9月10日時点で公開されている情報をもとにした私個人の研究ノートです．Navier–Stokesをめぐる今回のcreditやデータ利用に関する当事者の主張には食い違いがあり，私はここで事実認定をするつもりはありません．誰かを断罪するために書くのでもありません．むしろ，この出来事を見ていて，自分自身を含めて「人間はこれから何をするのか」を考えたくなりました．
+</p>
+</article></div>
+
+<h2>はじめに――今回，一番気になったのはAIではなかった</h2>
+<div class="news"><article class="news-item">
+<p>
+2026年9月8日，OpenAIはNavier–Stokes存在と滑らかさ問題に対する解を提示したと発表しました．公開された説明では，内部のAIシステムが，滑らかな外力を受けた3次元非圧縮Navier–Stokes方程式について，静止状態から有限時間で特異性が生じる構成を得て，解析的証明とLeanによる形式化を公開したとされています．OpenAI自身の説明では，約10,000のagentを用いた探索に約88時間，その後のLean形式化と検証にさらに17時間を要したとされています．
+</p>
+<p>
+これは，数学にとって大きな出来事です．証明の最終的な評価は数学界でこれから進むとしても，AIが未解決問題に対してここまで大規模に研究探索を行い，しかも形式化まで持っていったこと自体は，私は素直に驚きました．
+</p>
+<p>
+私は定常Navier–Stokes方程式に対する有限要素法を研究してきました．時間依存の有限時間特異性とは全く別の問題ですが，Navier–Stokesは自分にとってニュースの中だけにある方程式ではありません．非線形項の評価，解の一意性，離散Sobolev不等式，圧力ロバスト性を自分で追ってきた方程式です．だから今回の発表には，数学者として強く惹かれました．
+</p>
+<p>
+ところが，ニュースを追っているうちに，私が一番考えるようになったのは証明の中身だけではありませんでした．OpenAIは，自分たちの大規模探索を9月1日に始めた理由について，Levent Alpöge氏とTristan Buckmaster氏の研究進展に関する噂を聞いたことがきっかけだったと自ら説明しています．一方で，Buckmaster氏らは研究のcreditや未公開研究との関係について懸念を示しています．OpenAIは特定のuser dataへアクセスして解いたことを否定しつつ，de-identified dataがモデル改善に影響した可能性までは完全には排除できないと説明しています．
+</p>
+<p>
+ここで私は，少し嫌な感覚を持ちました．
+</p>
+<p>
+「他の会社に先を越されたくない」．
+</p>
+<p>
+今回の経緯を見ていると，私には，数学の問題そのものだけでなく，企業間の競争やpriorityへの焦りが強く入り込んだように見えました．もちろん，これは私の受け止め方であり，当事者の内心を断定する話ではありません．それでも，AIが人間のエゴを作ったのではなく，人間がもともと持っていたものをAIがものすごい速度で増幅したのではないか，という疑問が残りました．
+</p>
+</article></div>
+
+<h2>1．AI以前から，人間の数学には人間の感情があった</h2>
+<div class="news"><article class="news-item">
+<p>
+数学は論理の世界です．定理が正しいかどうかは，最終的には人間関係で決まるものではありません．そうであってほしいし，私はその点に数学の強さがあると思っています．
+</p>
+<p>
+しかし，数学をしているのは人間です．
+</p>
+<p>
+論文を書くのも人間です．査読するのも人間です．誰を引用するかを決めるのも人間です．研究費を配るのも，公募で人を選ぶのも人間です．そこには当然，感情があります．嫉妬もある．妬みもある．プライドもある．自分の研究を守りたいという気持ちもある．
+</p>
+<p>
+「あの人の論文は引用したくない」．「あの研究は認めたくない」．そんな感情が研究内容とは別のところで働いた例は，AIが登場するずっと前からあっただろうと思います．もちろん，引用されないことや論文が批判されることを，何でも嫉妬のせいにしてはいけません．研究には本当に間違いも弱点もあります．私の研究も例外ではありません．
+</p>
+<p>
+それでも，自分で研究を続けていれば，「この数学そのものを見てもらえているのだろうか」と考える瞬間はあります．そして正直に言えば，私自身だって人間です．自分だけが嫉妬や焦りや悔しさから完全に自由だと言うつもりはありません．
+</p>
+<p>
+だから今回の騒動を，私は「AI企業が悪い」「AIが危険だ」という一行で終わらせたくありません．むしろ，AIが強くなった今こそ，これまで研究社会の中にあった人間の弱さを見直す必要があるのではないかと思います．
+</p>
+</article></div>
+
+<h2>2．研究者は，完成する前の研究を見せて生きている</h2>
+<div class="news"><article class="news-item">
+<p>
+考えてみれば，研究者はかなり不思議な仕事をしています．一番新しくて，一番まだ弱くて，一番誰にも取られたくないものを，他人に見せなければ研究者として前へ進めません．
+</p>
+<ul>
+<li>公募では，これまで何をしたかだけでなく，これから何を研究するかを書く．</li>
+<li>科研費では，まだ完成していない研究計画やアイデアを書く．</li>
+<li>学会では，論文になる前の結果や途中経過を話す．</li>
+<li>論文を投稿すれば，出版前の原稿を編集者と査読者へ渡す．</li>
+<li>Webやブログでは，自分から未解決問題や研究途中の考えを公開することもできる．</li>
+</ul>
+<p>
+つまり研究社会は，研究者が未完成の研究を他人に見せることを前提にしています．そして，見せられた側はそれを悪用しないという信頼の上に成り立っています．
+</p>
+<p>
+科研費の公募要領は，この点をかなり明確に書いています．応募者は，審査が非公開であることを前提に「未発表の研究結果や研究アイデア等」を研究計画調書に書くため，審査委員には守秘義務が課され，審査で知った情報を自分の利益のために利用してはならないとされています．これは重要です．制度自身が，未公開のアイデアに価値があることを知っているからです．
+</p>
+<p>
+学会発表も同じです．先に話せば，他人に知られます．しかし，同時に「この時点でこの問題を考えていた」という記録にもなる．議論も生まれる．文献を教えてもらうこともある．だから公開には危険だけでなく価値があります．
+</p>
+</article></div>
+
+<h2>3．査読は必要だ．しかし非対称性は残る</h2>
+<div class="news"><article class="news-item">
+<p>
+査読も同じ構造を持っています．私は査読制度そのものを否定したいわけではありません．論文は他人に読んでもらった方がよい．自分では見えなかった穴を指摘されることもあるし，説明が足りないところを教えてもらうこともあります．
+</p>
+<p>
+ただ，著者側から見ると一つの非対称性があります．多くの査読では，著者には誰が自分の未公開原稿を読んだのか分かりません．編集部には記録があっても，著者からは見えない．
+</p>
+<p>
+もちろん，査読者には守秘義務があります．COPEのpeer reviewer向け倫理指針でも，査読中に得た情報を自分や他人の利益のために使わないことが明記されています．また，出版倫理のガイドラインでは，査読原稿の機密性を保証できないAIシステムへ無断で原稿をアップロードすることにも注意が向けられています．
+</p>
+<p>
+それでも，数学では文章をそのまま盗む必要はありません．「この補題が鍵だ」「この仮定は外せそうだ」「この方向なら未解決部分を先に解ける」．そういう情報だけでも研究上は大きな価値があります．
+</p>
+<p>
+そして後から似た研究が出てきたとき，著者には分かりません．偶然同じ発想に到達したのかもしれない．学会で聞いたのかもしれない．preprintを読んだのかもしれない．あるいは査読者だったのかもしれない．この「分からない」が残ります．
+</p>
+<p>
+AIは，この古い問題を新しい形で大きくします．従来なら未公開原稿を読むのは限られた人数でした．AIを介せば，情報の経路がどこまで伸びるのかを研究者側が確認できない場合が出てきます．だからAI時代には，査読の匿名性だけでなく，未公開情報をどこまでAIへ渡してよいかというルールを，もっと明確にする必要があると思います．
+</p>
+</article></div>
+
+<h2>4．私はこのホームページで未解決問題を公開している</h2>
+<div class="news"><article class="news-item">
+<p>
+ここからは完全に自分の問題です．
+</p>
+<p>
+私はこのホームページで，論文になった結果だけを書いているわけではありません．まだ証明できていないことも書いています．これから調べたい問題も書く．研究の途中で出てきた疑問も書く．Research VisionsもBlogも，完成品だけを置く場所にはしていません．
+</p>
+<p>
+なぜそんなことをするのか．
+</p>
+<p>
+私は，数学が完成した論文だけでできているとは思っていないからです．研究は，最初から「定理1，証明，定理2，証明」と並んでいるわけではありません．
+</p>
+<p>
+「これはおかしい」．「この仮定は本当に必要か」．「この方法を別の問題へ持っていけないか」．「ここにまだ誰も問題だと思っていない問題があるのではないか」．研究は，たいていそこから始まります．
+</p>
+<p>
+私はその途中も残しておきたい．半年後に自分で読み返して，間違っていたと思うかもしれない．誰かに違うと言われるかもしれない．それでもよいと思っています．
+</p>
+<p>
+しかしAIの時代には，公開した研究過程が大量に探索され得ます．人間なら，私のような個人研究者の長いWeb記事までたどり着き，読み，意味を理解し，研究課題を拾う必要があった．AIなら，「まだ論文になっていない研究課題を探せ」と大量の公開情報から抽出することも技術的には可能になります．
+</p>
+<p>
+そうなると，公開した者が損をする社会にならないか．ここは本気で考えなければならないと思います．
+</p>
+</article></div>
+
+<h2>5．それでも私は公開するのをやめたくない</h2>
+<div class="news"><article class="news-item">
+<p>
+では，論文になるまで全部隠せばよいのか．私はそうは思いません．
+</p>
+<p>
+全員が完成するまで何も言わなくなったら，数学はかなりつまらなくなると思います．学会で議論する意味も小さくなる．「それならこの文献がある」「その方法ならここで失敗する」と教えてもらう機会も減る．若い研究者が，どこに未解決問題があるのか知ることも難しくなる．
+</p>
+<p>
+数学は競争でもあります．priorityは重要です．しかし，数学は競争だけではありません．誰かの問いを別の人が発展させ，さらに別の人が反例を作り，その反例から新しい理論が生まれる．私はそういう流れに価値があると思っています．
+</p>
+<p>
+だから必要なのは，公開をやめることではなく，公開した問いや途中結果のpriorityをきちんと残せる仕組みだと思います．論文だけでなく，preprint，研究ノート，学会資料，timestampのあるWeb公開などを組み合わせて，「誰がいつこの問いを立てたのか」を追えるようにする．AIが研究速度を上げるほど，この記録はむしろ重要になるはずです．
+</p>
+</article></div>
+
+<h2>6．人間は，未解決問題を作る側へ回ればいい</h2>
+<div class="news"><article class="news-item">
+<p>
+そして，ここまで考えて，私は少し前向きな結論にたどり着きました．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<p style="margin:0;"><b>AIが証明するなら，人間は未解決問題を作る側へ回ればいい．</b></p>
+</div>
+<p>
+もちろん，「難しそうな問題を適当に作る」という意味ではありません．本当に難しいのは，まだ問題だと認識されていないところに問題を見つけることです．
+</p>
+<p>
+既存の定理を読んで，「この仮定は本当に必要なのか」と疑う．数値計算を見て，「理論では説明できない」と気付く．離れた二つの理論を見て，「実は同じ構造なのではないか」と思う．誰も研究対象として切り出していない現象に，数学的な名前を与える．
+</p>
+<p>
+私は，研究で一番面白いのはここだと思っています．
+</p>
+<p>
+証明は重要です．証明がなければ数学にはなりません．しかし，証明するべき問いがなければ，そもそも研究は始まりません．AIが証明の探索をものすごく速くするなら，むしろ
+</p>
+\[
+\boxed{\text{何を証明するのか}}
+\]
+<p>
+の価値は，これまで以上に大きくなるのではないでしょうか．
+</p>
+<p>
+完成した問題を与えられて解く能力では，AIが人間を大きく超える時代が来るかもしれません．しかし研究では，問題そのものが最初から与えられているとは限りません．研究対象を見つける．違和感を持つ．既存理論の限界を見つける．まだ名前のない問題に名前を与える．他の人が考えられる形まで定式化する．
+</p>
+<p>
+AIによって，人間は仕事を失うのではなく，もっと数学者らしい仕事を要求されるのかもしれません．
+</p>
+</article></div>
+
+<h2>7．AIが強くなるなら，人間も少し賢くならなければならない</h2>
+<div class="news"><article class="news-item">
+<p>
+AIには，人間と同じ意味での嫉妬はありません．「あいつの論文だから引用したくない」という感情も，本来はありません．だから私は，AIにかなり期待しています．所属や肩書に引っ張られずに文献を探す．有名な論文だけでなく埋もれた論文を拾う．自分の仮説に都合の悪い反例も探す．そういう使い方ができれば，人間の偏りを補う道具になれるはずです．
+</p>
+<p>
+しかし，AIを使う人間が「一番になりたい」「相手より先に出したい」「自分たちの成果にしたい」ということだけを考えるなら，AIは人間の弱さを増幅するだけです．探索速度が100倍になれば，エゴも100倍の速度で走るかもしれない．
+</p>
+<p>
+それでは，AIが数学を豊かにするとは言えません．
+</p>
+<p>
+誰が勝ったかではなく，何が分かったのか．誰が有名かではなく，誰がその問いを考え，どの研究から道が開かれたのか．影響を受けたなら引用する．先に考えた人がいたなら認める．自分が間違っていたら直す．誰かの結果が良ければ，良いと言う．
+</p>
+<p>
+書いてしまえば当たり前です．しかし，人間にとって，この当たり前が一番難しいのかもしれません．
+</p>
+</article></div>
+
+<h2>おわりに――いま，少し立ち止まってもよいのではないか</h2>
+<div class="news"><article class="news-item">
+<p>
+今回のNavier–Stokes騒動は，AIが数学者を不要にするかどうかだけを考える事件ではないと思っています．むしろ，AIがこれほど強くなった時代に，人間の研究者はどう振る舞うのかを考えるきっかけになりました．
+</p>
+<p>
+公募で研究計画を書くこと．科研費で未発表のアイデアを見せること．学会で途中結果を話すこと．匿名査読者に原稿を渡すこと．Webで未解決問題を公開すること．これらは全部，「まだ完成していない数学を他人に見せる」という同じ問題を持っています．
+</p>
+<p>
+私はAIに数学を奪われることよりも，人間が競争や嫉妬を恐れて，問いを語らなくなることの方が怖い．
+</p>
+<p>
+AIが答えを速く出せるなら，人間はもっと良い問いを作ればいい．そして，その問いを生んだ人が消えてしまわない研究文化を作ればいい．
+</p>
+<p>
+人間は問いを作る．AIはその問いを一緒に考える．そこからまた新しい問いが生まれる．
+</p>
+<p>
+私は，そんな数学なら，これからも面白いと思います．
+</p>
+<div style="padding:12px; margin:14px 0; border:5px double #333333;">
+<p style="margin:0;"><b>AIが数学を変えることよりも，AIを恐れて数学者が問いを語らなくなることの方が，私は怖い．</b></p>
+</div>
+</article></div>
+
+<h2>参考資料</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li><a href="https://openai.com/index/navier-stokes-solution/" target="_blank" rel="noopener">OpenAI, “On the Navier–Stokes Millennium Prize Problem”, 8 September 2026.</a></li>
+<li><a href="https://www.nature.com/articles/d41586-026-02842-5" target="_blank" rel="noopener">D. Castelvecchi, “OpenAI claims huge maths breakthrough on a famed ‘Millennium Problem’”, <i>Nature</i>, 8 September 2026.</a></li>
+<li><a href="https://www.axios.com/2026/09/08/openai-math-solution-navier-stokes-credit" target="_blank" rel="noopener">M. Mills, “OpenAI's historic math solution overshadowed by credit controversy”, <i>Axios</i>, 8 September 2026.</a></li>
+<li><a href="https://publicationethics.org/sites/default/files/ethical-guidelines-peer-reviewers-cope.pdf" target="_blank" rel="noopener">COPE Council, <i>Ethical guidelines for peer reviewers</i>.</a></li>
+<li><a href="https://www.icmje.org/recommendations/browse/artificial-intelligence/ai-use-by-reviewers.html" target="_blank" rel="noopener">ICMJE, “Use of AI by Reviewers”.</a></li>
+<li><a href="https://www.jsps.go.jp/file/storage/kaken_tokus2024/r7_4_kobo.pdf" target="_blank" rel="noopener">日本学術振興会，科学研究費助成事業の公募要領（審査の非公開・守秘義務に関する説明）．</a></li>
+<li><a href="https://doi.org/10.1007/s00211-025-01460-z" target="_blank" rel="noopener">H. Ishizaka, “Anisotropic modified Crouzeix–Raviart finite element method for the stationary Navier–Stokes equation”, <i>Numerische Mathematik</i>, 2025.</a></li>
+</ol>
+</article></div>
+
+<p><a href="../">← Blog indexへ戻る</a></p>
+</div></article></div></main>
+</div></div>
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"/></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+<script src="../../js/modern-ui.js"></script>
+</body>
+</html>
