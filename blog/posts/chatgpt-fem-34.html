@@ -42,7 +42,7 @@ window.MathJax = {
       "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-34.html",
       "inLanguage": "ja",
       "datePublished": "2026-08-30",
-      "dateModified": "2026-08-30",
+      "dateModified": "2026-09-11",
       "articleSection": "Computational FEM with AI — Season 3",
       "genre": "Research note",
       "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
@@ -52,7 +52,7 @@ window.MathJax = {
 </script>
 <meta property="og:type" content="article"/>
 <meta property="article:published_time" content="2026-08-30"/>
-<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-09-11"/>
 <meta property="article:section" content="Computational FEM with AI — Season 3"/>
 <meta property="og:site_name" content="Hiroki Ishizaka"/>
 <meta property="og:locale" content="ja_JP"/>
@@ -1302,7 +1302,7 @@ G_\theta(\mathcal O_mf)
 へPDE residualを課すこともできます．
 </p>
 <p>
-例えば
+例えばstrong formを使えば
 </p>
 \[
 \boxed{
@@ -1318,8 +1318,39 @@ G_\theta(\mathcal O_mf)
 \tag{54}
 \]
 <p>
-ただしここでもinput functionsとspatial collocation pointsの
+となります．この場合はinput functionsとspatial collocation pointsの
 <b>二種類のsampling</b>が入ります．
+</p>
+<p>
+ただし，<b>operator learningそのものがstrong formを意味するわけではありません</b>．Poisson problemなら，FEMと同じweak formulationを使って
+</p>
+\[
+\boxed{
+a\bigl(G_\theta(\mathcal O_mf),v\bigr)
+\approx
+\langle f,v\rangle
+\qquad
+\forall v\in V
+}
+\]
+<p>
+と課すこともできます．有限個のtest functions \(v_1,\ldots,v_M\) を使うなら，例えば
+</p>
+\[
+\boxed{
+\mathcal L_{\rm weak}(\theta)
+=
+\mathbb E_{f\sim\mu}
+\sum_{j=1}^{M}
+\left|
+a\bigl(G_\theta(\mathcal O_mf),v_j\bigr)
+-
+\langle f,v_j\rangle
+\right|^2
+}
+\]
+<p>
+というGalerkin型のlossが自然です．strong residualでは二階微分とcollocation geometryが前面に出ますが，weak formではtest space，quadrature，stabilityが中心になります．FEMからoperator learningを見るなら，この違いを分けておく必要があります．
 </p>
 </article></div>
 
@@ -1467,6 +1498,7 @@ Sf_1\ne Sf_2
 <tr><td style="border:1px solid #777; padding:7px;">grid-free architectureだからgeometry-freeとする</td><td style="border:1px solid #777; padding:7px;">training discretisationを消してしまう</td></tr>
 <tr><td style="border:1px solid #777; padding:7px;">FEMをsingle-solve methodとしてしか比較しない</td><td style="border:1px solid #777; padding:7px;">discrete solution operator baselineを見落とす</td></tr>
 <tr><td style="border:1px solid #777; padding:7px;">nonlinear PDEでuniquenessを確認せずsolution operatorを書く</td><td style="border:1px solid #777; padding:7px;">mapがsingle-valuedでない可能性を無視する</td></tr>
+<tr><td style="border:1px solid #777; padding:7px;">physics-informed operator learningをstrong residualだけに限定する</td><td style="border:1px solid #777; padding:7px;">weak / Galerkin formulationとtest-space stabilityを見落とす</td></tr>
 </table>
 </article></div>
 
@@ -1485,7 +1517,7 @@ Sf_1\ne Sf_2
 (8) training distribution averageとworst-case operator errorを区別しているか，<br/>
 (9) training forcing familyのspan / frequency / regularityを記録しているか，<br/>
 (10) nonlinear PDEではsolution mapのuniqueness regimeを確認しているか，<br/>
-(11) physics-informed operator learningではinput samplingとspatial collocation samplingを区別しているか，<br/>
+(11) physics-informed operator learningではstrong / weak formulationのどちらを使うか明示し，strong formならcollocation sampling，weak formならtest space・quadrature・stabilityを監査しているか，<br/>
 (12) offline training costとonline query costを両方報告しているか<br/>
 を順に確認してください．
 </div>
