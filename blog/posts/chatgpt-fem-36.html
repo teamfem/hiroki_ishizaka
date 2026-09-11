@@ -42,7 +42,7 @@ window.MathJax = {
       "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/chatgpt-fem-36.html",
       "inLanguage": "ja",
       "datePublished": "2026-08-30",
-      "dateModified": "2026-08-30",
+      "dateModified": "2026-09-11",
       "articleSection": "Computational FEM with AI — Season 3",
       "genre": "Research note",
       "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
@@ -52,7 +52,7 @@ window.MathJax = {
 </script>
 <meta property="og:type" content="article"/>
 <meta property="article:published_time" content="2026-08-30"/>
-<meta property="article:modified_time" content="2026-08-30"/>
+<meta property="article:modified_time" content="2026-09-11"/>
 <meta property="article:section" content="Computational FEM with AI — Season 3"/>
 <meta property="og:site_name" content="Hiroki Ishizaka"/>
 <meta property="og:locale" content="ja_JP"/>
@@ -538,7 +538,6 @@ d_{M_\varepsilon}(x,z)
 M_\varepsilon
 (x-z)
 }
-}
 \tag{23}
 \]
 <p>
@@ -561,8 +560,7 @@ sensor set \(X_m\) のcoverageを
 h_{X,M}
 =
 \sup_{x\in\Omega}
-\min_{x_j\in X_m}
-d_M(x,x_j)
+\min_{x_j\in X_m}d_M(x,x_j)
 }
 \tag{24}
 \]
@@ -589,8 +587,7 @@ clusteringを見るため
 q_{X,M}
 =
 \frac12
-\min_{i\ne j}
-d_M(x_i,x_j)
+\min_{i\ne j}d_M(x_i,x_j)
 }
 \tag{25}
 \]
@@ -1820,6 +1817,51 @@ outputでは
 </p>
 </article></div>
 
+<h2>49．Season 4へ――forward mapを逆向きに見る</h2>
+<div class="news"><article class="news-item">
+<p>
+ここまでのsolution operatorをright-hand sideだけに限定せず，source・coefficient・initial dataなどのparameter \(p\) からstate \(u\) への写像として
+</p>
+\[
+\boxed{
+S:p\longmapsto u
+}
+\]
+<p>
+と書きます．実際の観測ではstate全体が見えるとは限らないので，観測作用素 \(C\) を通して
+</p>
+\[
+\boxed{
+p\xrightarrow{\ S\ }u\xrightarrow{\ C\ }y,
+\qquad
+F:=C\circ S
+}
+\]
+<p>
+というparameter-to-observation map \(F\) が現れます．Season 3では \(p\) から \(u\)，さらに \(y\) へ進むforward directionを見てきました．Season 4ではこの向きを逆にし，観測 \(y\) から未知のparameterやstateをどこまで復元できるかを考えます．
+</p>
+\[
+\boxed{
+\text{Season 3: }p\longrightarrow y,
+\qquad
+\text{Season 4: }y\longrightarrow p
+}
+\]
+<p>
+ただし逆問題は単純に \(S^{-1}\) を計算する問題ではありません．有限観測を含む \(F=C\circ S\) が情報を失えば，\(F^{-1}\) は一意でないか，不安定になり得ます．このinformation lossが，identifiability・regularisation・sensor placementの問題になります．
+</p>
+<p>
+またforward modelをstrong residualで書く必要もありません．FEMと同様に
+</p>
+\[
+\boxed{
+a_p(u,v)=\ell_p(v)\qquad\forall v\in V}
+\]
+<p>
+というweak formulationから \(S\) を定めれば，Season 4で使うadjointも同じvariational structureから導けます．したがってweak operator approximation，adjoint-based inversion，data assimilationは別々の話ではなく，同じforward mapを異なる向きから見る問題です．
+</p>
+</article></div>
+
 <h2>Season 4 予告――ChatGPTで作る数値PDE・逆問題</h2>
 <div class="news"><article class="news-item">
 <p>
@@ -1827,7 +1869,7 @@ Season 1–3では「ChatGPTで作る有限要素プログラム入門」とし�
 Season 4からは「ChatGPTで作る」というシリーズの軸を残しつつ，副題を<b>数値PDE・逆問題</b>へ広げます．
 </p>
 <p>
-Season 4では，有限観測によってPDE solution operatorのどこまでが見えるかというSeason 3の問いを逆向きにし，有限個の観測から未知のsource・coefficient・state，さらに観測されない自由度の影響をどこまで復元できるかを扱います．
+Season 4では，有限観測によってPDE solution operatorのどこまでが見えるかというSeason 3の問いを逆向きにし，parameter-to-observation map \(F=C\circ S\) を通して，有限個の観測から未知のsource・coefficient・state，さらに観測されない自由度の影響をどこまで復元できるかを扱います．
 </p>
 <p><b>ChatGPTで作る数値PDE・逆問題 — Season 4</b><br/>
 <b>観測から見えないダイナミクスを復元する</b><br/>
