@@ -134,7 +134,7 @@ if(window.jQuery){
     {re:/^pinns-(\d+)$/,label:'PINNs · Deep Ritz · learning-assisted computation',anchor:'../#applications',max:7,prefix:'pinns-',pad:2,tag:'Scientific machine learning'},
     {re:/^dental-math-(\d+)$/,label:'Mathematics for dental modelling',anchor:'../#applications',max:2,prefix:'dental-math-',pad:2,tag:'Applications · Mathematical modelling'},
     {re:/^disease-progression-math-(\d+)$/,label:'Latent-state disease progression',anchor:'../#applications',max:1,prefix:'disease-progression-math-',pad:2,tag:'Applications · Unresolved dynamics'},
-    {re:/^lean4-(\d+)$/,label:'Certified FEM · verified output · AI4Math',anchor:'../#certified',max:10,prefix:'lean4-',pad:2,tag:'Certification · AI4Math'}
+    {re:/^lean4-(\d+)$/,label:'Certified FEM · verified output · AI4Math',anchor:'../#certified',max:11,prefix:'lean4-',pad:2,tag:'Certification · AI4Math'}
   ];
   var def=null, number=null;
   defs.some(function(d){var m=file.match(d.re);if(m){def=d;number=parseInt(m[1],10);return true;}return false;});
