@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>論文を書く主語は誰なのか――人間の好奇心とAI4Math | Hiroki Ishizaka</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,AI4Math,AI,論文執筆,数学研究,有限要素法,研究倫理">
+<meta name="description" content="AIを使って論文を書くことと，AIに論文を書かせることは同じではない．研究の主語は誰なのか，人間の好奇心がどこで論文を生み出すのかをAI4Mathの視点から考えます．">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-06.html">
+
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<noscript>
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+</noscript>
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-06.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-06.html",
+      "headline": "第6回：論文を書く主語は誰なのか――人間の好奇心とAI4Math",
+      "description": "AIを使って論文を書くことと，AIに論文を書かせることは同じではない．研究の主語は誰なのか，人間の好奇心がどこで論文を生み出すのかをAI4Mathの視点から考えます．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-06.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-09-21",
+      "dateModified": "2026-09-21",
+      "articleSection": "AI4Math and research practice",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
+      "keywords": "AI4Math, research writing, mathematical research, human curiosity, finite element method"
+    }
+  ]
+}
+</script>
+
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2026-09-21">
+<meta property="article:modified_time" content="2026-09-21">
+<meta property="article:section" content="AI4Math and research practice">
+<meta property="og:site_name" content="Hiroki Ishizaka">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="論文を書く主語は誰なのか――人間の好奇心とAI4Math | Hiroki Ishizaka">
+<meta property="og:description" content="AIを使って論文を書くことと，AIに論文を書かせることは同じではない．研究の主語と人間の好奇心について考えます．">
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-06.html">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@teamfem16key">
+<meta name="twitter:title" content="論文を書く主語は誰なのか――人間の好奇心とAI4Math">
+<meta name="twitter:description" content="AIを使って研究する時代に，論文を書く主語は誰なのかを考える研究ノート．">
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+</head>
+
+<body class="page">
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../fem/">Visions</a></li>
+        <li><a href="../../suppl/">Supplementary</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">Geometry</a></li>
+        <li><a href="../../links/">Links</a></li>
+        <li><a href="../../contact/">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in">
+    <li class="bcl-first"><a href="../../">ISHIZAKA Hiroki Website TOP</a></li>
+    <li class="bcl-last">Blog post from 21st September 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第6回：論文を書く主語は誰なのか――人間の好奇心とAI4Math</h1>
+
+<div class="news">
+<article class="news-item">
+<b>AI4Mathで最近考えていること</b><br>
+(21st September 2026 <span class="cat cat001">Update</span>)
+<p>
+私は研究でAIをかなり使っている．だから，「AIを使って論文を書いているのですか」と聞かれたら，答えはたぶんYesになる．
+</p>
+<p>
+でも，「AIに論文を書いてもらっているのですか」と聞かれたら，それは少し違う．
+</p>
+<p>
+この二つは，言葉だけ見ると似ている．しかし，私の中ではかなり違う．
+</p>
+<p><b>論文を書く主語は，あくまでも人間だと思っている．</b></p>
+</article>
+</div>
+
+<h2>1．論文は「なぜだろう」から始まる</h2>
+<div class="news"><article class="news-item">
+<p>
+論文が生まれる最初のきっかけは，たいてい立派なものではない．
+</p>
+<p>
+「なぜだろう」．<br>
+「これは本当に正しいのか」．<br>
+「この仮定は必要なのか」．<br>
+「ここだけ挙動が違うのはなぜだ」．
+</p>
+<p>
+私の場合，こういう引っかかりから研究が始まることが多い．
+</p>
+<p>
+有限要素法なら，shape-regularityは本当に必要なのか，maximum-angle conditionと別の幾何条件はどう違うのか，細長い要素で何が壊れるのか，という疑問が出てくる．証明を書くより前に，まず気になる．
+</p>
+<p>
+この「気になる」という感覚は，論文の中にはあまり残らない．完成した論文では，定義，定理，証明がきれいに並ぶからである．
+</p>
+<p>
+でも，本当はその前に，
+</p>
+<p><b>「これを知りたい」</b></p>
+<p>
+という人間の好奇心がある．
+</p>
+</article></div>
+
+<h2>2．人間の好奇心が論文を生み出す</h2>
+<div class="news"><article class="news-item">
+<p>
+AIは，こちらが問題を与えればいろいろなことをしてくれる．反例候補を探す．証明の穴を探す．数値計算のコードを書く．関連するキーワードを出す．文章も直す．
+</p>
+<p>
+でも，その前に「なぜこの問題なのか」と考えたのは誰なのか．
+</p>
+<p>
+少なくとも今の私の研究では，そこは人間である．
+</p>
+<p>
+AIが研究を速くしてくれることと，研究の出発点までAIに渡すことは同じではない．
+</p>
+<p><b>人間の好奇心が論文を生み出し，AIはその好奇心を遠くまで運ぶ道具なのだと思う．</b></p>
+<p>
+この感覚があるので，「AIで論文を書く」という表現には少しだけ違和感がある．AIが主語になったように聞こえるからである．
+</p>
+<p>
+私の感覚に近いのは，
+</p>
+<p><b>人間がAIを使いながら研究し，その結果として論文を書く．</b></p>
+<p>
+という方である．
+</p>
+</article></div>
+
+<h2>3．AIは論文の最後にだけ出てくるわけではない</h2>
+<div class="news"><article class="news-item">
+<p>
+一方で，「AIは英語を直すだけの道具」と考えるのも，今では少し違うと思う．
+</p>
+<p>
+実際には，論文になるずっと前からAIを使うことができる．
+</p>
+<p>
+ある主張を思いついたら，まず壊れる例がないか調べる．証明を書いたら，仮定を勝手に使っていないか確認する．数値実験を考えたら，極端なパラメータも試す．Introductionを書いたら，主張が大きすぎないか見直す．最後にはTeXや英語の表現も整える．
+</p>
+<p>
+私にとってAIは，論文の最後に文章を書かせるためだけのものではない．研究の途中のいろいろな場所に入ってくる．
+</p>
+<p>
+だから，
+\[
+\text{idea}
+\longrightarrow
+\text{counterexample search}
+\longrightarrow
+\text{proof audit}
+\longrightarrow
+\text{numerical experiment}
+\longrightarrow
+\text{literature check}
+\longrightarrow
+\text{writing}
+\longrightarrow
+\text{referee-eye audit}
+\]
+のかなり多くの場所でAIを使うことができる．
+</p>
+<p>
+ただし，矢印の向きを決めるのは人間だと思っている．
+</p>
+</article></div>
+
+<h2>4．AIは，こちらが曖昧だと曖昧なまま進んでしまう</h2>
+<div class="news"><article class="news-item">
+<p>
+AIを使っていて怖いのは，間違ったことを言う時だけではない．
+</p>
+<p>
+こちらの問いが少し曖昧でも，それらしい方向へ話を進めてしまうことがある．
+</p>
+<p>
+本当は必要条件を知りたかったのに，十分条件を証明して終わる．本当は異方性メッシュを扱いたかったのに，知らないうちに強い幾何条件が入る．引用を確認せずに話を進めると，もっともらしい文献名が混ざることもある．
+</p>
+<p>
+文章が滑らかなので，気付かないまま先へ進みやすい．
+</p>
+<p>
+だから私は，AIに文章を作らせることより，途中で何度も
+</p>
+<p><b>「それは本当に私が聞いたことか」</b></p>
+<p>
+と戻る方が大事だと思っている．
+</p>
+</article></div>
+
+<h2>5．AIに書いてもらった一文でも，論文に入れたら自分の一文になる</h2>
+<div class="news"><article class="news-item">
+<p>
+ここはかなり単純に考えている．
+</p>
+<p>
+AIが出した文章でも，自分の論文に入れた瞬間に，その内容を確認する責任は自分にある．
+</p>
+<p>
+定理が正しいか．<br>
+引用先に本当にその結果が書かれているか．<br>
+数値が再現できるか．<br>
+英語が自分の意図と違っていないか．
+</p>
+<p>
+どれも，「AIがそう書いたから」では済まない．
+</p>
+<p>
+むしろAIを使うほど，確認する場所が増えることさえある．書く速度が上がると，間違った方向へ進む速度も上がるからである．
+</p>
+<p>
+AIを使うことと，判断をAIに渡すことは違う．
+</p>
+</article></div>
+
+<h2>6．私にとってAIは，役割が何度も変わる</h2>
+<div class="news"><article class="news-item">
+<p>
+研究の途中で，AIの役割はかなり変わる．
+</p>
+<p>
+ある時は，思いついたアイデアに反論してくる相手になる．ある時は，反例候補を探す探索役になる．ある時は，証明の細部を読む検査役になる．数値実験ではコードを書く補助になるし，最後にはTeXの記号をそろえる係にもなる．
+</p>
+<p>
+同じAIでも，研究のどこに置くかで役割が違う．
+</p>
+<p>
+だから，「AIが論文を書いた」「人間が全部書いた」という二択だけでは，今の研究の実感をうまく表せないと思う．
+</p>
+<p>
+AIは研究の中にかなり深く入ることができる．それでも，研究の方向を決める主体まで自動的にAIになるわけではない．
+</p>
+</article></div>
+
+<h2>7．第2回からここまでを振り返ると</h2>
+<div class="news"><article class="news-item">
+<p>
+この連載では，AIは反例探しに向いているのではないか，というところから始めた．反例を見つけた後は定理の境界を探し，数値的な反例候補はverified computationで確認し，論理の部分はLeanで確認する，という話まで進んできた．
+</p>
+<p>
+ここまで機械に任せられるなら，人間は何をするのか．
+</p>
+<p>
+私は，その答えの一つが好奇心だと思っている．
+</p>
+<p>
+\[
+\boxed{
+\text{human curiosity}
+\longrightarrow
+\text{question}
+\longrightarrow
+\text{AI-assisted exploration}
+\longrightarrow
+\text{verification}
+\longrightarrow
+\text{paper}
+}
+\]
+</p>
+<p>
+この最初の矢印を軽く見たくない．
+</p>
+<p>
+「何か変だ」．<br>
+「もっと弱くできるはずだ」．<br>
+「この結果は本当に限界なのか」．
+</p>
+<p>
+そう思わなければ，そもそも探索する理由がない．
+</p>
+</article></div>
+
+<h2>8．論文を書く主語は，人間であり続けるのか</h2>
+<div class="news"><article class="news-item">
+<p>
+将来は，AI自身が面白い問題を見つけ，仮説を立て，証明し，論文の形までまとめることも増えると思う．だから「人間にしか問題設定はできない」と言い切るつもりはない．
+</p>
+<p>
+それでも今，私がAIを使って研究している感覚では，主語は人間である．
+</p>
+<p>
+人間が気になる．<br>
+人間が問いを作る．<br>
+人間がAIに投げる．<br>
+返ってきたものを疑う．<br>
+そして，もう一度考える．
+</p>
+<p>
+この往復の中で論文ができていく．
+</p>
+<p>
+私にとってAIは，論文を書く代行者というより，研究室の中に置かれた非常に強力な道具に近い．便利だが，何を調べるのかまで決めてもらう必要はない．
+</p>
+<p><b>論文を生み出すのは，やはり「知りたい」という人間の気持ちなのだと思う．</b></p>
+</article></div>
+
+<h2>次に考えたいこと</h2>
+<div class="news"><article class="news-item">
+<p>
+ここまで書くと，次に気になるのはcreditの問題である．
+</p>
+<p>
+AIが反例を見つけ，証明の修正を提案し，コードを書き，文章まで直したとき，その貢献をどう考えればよいのか．
+</p>
+<p>
+AIを単なる道具と考えるだけで十分なのか．それとも，研究の記録としてどこかに残す方がよいのか．
+</p>
+<p>
+次は，AI時代の数学論文でcreditをどう考えるかを考えてみたい．
+</p>
+</article></div>
+
+<h2>関連する記事</h2>
+<div class="news"><article class="news-item">
+<ul>
+<li><a href="./lean4-01.html">第1回：Lean 4は有限要素法研究に何をもたらすか</a></li>
+<li><a href="./lean4-02.html">第2回：AIは証明するより，壊す方が得意なのか――反例から考えるAI4Math</a></li>
+<li><a href="./lean4-03.html">第3回：反例を見つけたあと，どうやって定理にするのか――AIと一緒に「境界」を探す</a></li>
+<li><a href="./lean4-04.html">第4回：AIが見つけた反例は，本当に反例なのか――数値実験と証明のあいだ</a></li>
+<li><a href="./lean4-05.html">第5回：LeanはAIの数学をどこまで確認できるのか――正しい証明と，正しい問題設定は同じではない</a></li>
+</ul>
+</article></div>
+
+</div>
+</article>
+</div>
+</main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+</body>
+</html>
