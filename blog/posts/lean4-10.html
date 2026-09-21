@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>DWRの発想をverified outputへ――adjointで「欲しい量」の誤差を保証する | Hiroki Ishizaka</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,DWR,dual weighted residual,goal-oriented error estimation,adjoint,quantity of interest,verified output,equilibrated flux,CR-RT">
+<meta name="description" content="DWRの核であるadjoint-weighted residualから出発し，goal-oriented error estimationとverified outputの違いを整理します．さらに，Newton–Kantorovichのverified ballとCR–RT equilibrated fluxを使う自分の研究とのつながりを説明します．">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-10.html">
+
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<noscript>
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+</noscript>
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-10.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-10.html",
+      "headline": "第10回：DWRの発想をverified outputへ――adjointで「欲しい量」の誤差を保証する",
+      "description": "DWRの核であるadjoint-weighted residualから出発し，goal-oriented error estimationとverified outputの違いを整理し，CR–RT equilibrated fluxを用いるverified-output研究とのつながりを説明します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-10.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-09-21",
+      "dateModified": "2026-09-21",
+      "articleSection": "Certified FEM and goal-oriented error estimation",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
+      "keywords": "DWR, dual-weighted residual, adjoint, quantity of interest, verified output, equilibrated flux, CR-RT"
+    }
+  ]
+}
+</script>
+
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2026-09-21">
+<meta property="article:modified_time" content="2026-09-21">
+<meta property="article:section" content="Certified FEM and goal-oriented error estimation">
+<meta property="og:site_name" content="Hiroki Ishizaka">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="DWRの発想をverified outputへ――adjointで「欲しい量」の誤差を保証する | Hiroki Ishizaka">
+<meta property="og:description" content="DWR，adjoint，QoI，verified ball，CR–RT equilibrated fluxをつなぎ，目的量そのものを保証するまでを考えます．">
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-10.html">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@teamfem16key">
+<meta name="twitter:title" content="DWRの発想をverified outputへ">
+<meta name="twitter:description" content="adjointで「欲しい量」の誤差を追い，さらにverified outputへ進む研究ノート．">
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+</head>
+
+<body class="page">
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../fem/">Visions</a></li>
+        <li><a href="../../suppl/">Supplementary</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">Geometry</a></li>
+        <li><a href="../../links/">Links</a></li>
+        <li><a href="../../contact/">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in">
+    <li class="bcl-first"><a href="../../">ISHIZAKA Hiroki Website TOP</a></li>
+    <li class="bcl-last">Blog post from 21st September 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第10回：DWRの発想をverified outputへ――adjointで「欲しい量」の誤差を保証する</h1>
+
+<div class="news">
+<article class="news-item">
+<b>Certified FEMで最近考えていること</b><br>
+(21st September 2026 <span class="cat cat001">Update</span>)
+<p>
+第9回では，equilibrated fluxを作ることで，未知の真の解を直接使わずに誤差を上から押さえる考え方を見た．
+</p>
+<p>
+しかし，実際の計算で欲しいのは，解全体とは限らない．
+</p>
+<p>
+ある領域での平均値，ある重み付き積分，エネルギーのような一つの量だけを知りたいことがある．
+</p>
+<p>
+そこで今回は，
+</p>
+<p><b>「誤差がどこにあるか」ではなく，「その誤差が，私の欲しい量にどれだけ効くか」</b></p>
+<p>
+を見るDWR（dual-weighted residual）の考え方から出発して，verified outputまで考えてみたい．
+</p>
+</article>
+</div>
+
+<h2>1．まず「欲しい量」を決める</h2>
+<div class="news"><article class="news-item">
+<p>
+解を \(u\) とするとき，最終的に知りたい量を
+\[
+\mathcal J(u)
+\]
+と書く．これをquantity of interest，QoIと呼ぶ．
+</p>
+<p>
+例えば，
+\[
+\mathcal J(u)
+=
+\int_\Omega \psi u\,dx
+\]
+のような重み付き平均や，
+\[
+\mathcal J(u)
+=
+\frac{1}{|\omega|_d}
+\int_\omega u\,dx
+\]
+のような局所平均が考えられる．
+</p>
+<p>
+解全体の誤差
+\[
+\|u-u_h\|
+\]
+が小さいことと，目的量の誤差
+\[
+|\mathcal J(u)-\mathcal J(u_h)|
+\]
+が小さいことは，同じ問題ではない．
+</p>
+<p>
+ある方向の誤差は \(\mathcal J\) にほとんど影響しないかもしれないし，逆に局所的な小さな誤差が目的量に強く効くこともある．
+</p>
+</article></div>
+
+<h2>2．DWRは何を重み付けしているのか</h2>
+<div class="news"><article class="news-item">
+<p>
+まず線形問題で考える．
+\[
+a(u,v)=F(v)
+\qquad
+\forall v\in V
+\]
+とし，有限要素解を \(u_h\in V_h\) とする．
+</p>
+<p>
+primal residualを
+\[
+R(u_h)(v)
+:=
+F(v)-a(u_h,v)
+\]
+と定める．
+</p>
+<p>
+ここで，目的量 \(\mathcal J\) に対応するdual，あるいはadjoint solution \(z\) を
+\[
+a(w,z)=\mathcal J(w)
+\qquad
+\forall w\in V
+\]
+で定める．
+</p>
+<p>
+すると線形な \(\mathcal J\) について，
+\[
+\mathcal J(u)-\mathcal J(u_h)
+=
+R(u_h)(z)
+\]
+となる．
+</p>
+<p>
+さらに \(z_h\in V_h\) を使い，Galerkin orthogonalityが成り立てば，
+\[
+\mathcal J(u)-\mathcal J(u_h)
+=
+R(u_h)(z-z_h)
+\]
+と書ける．
+</p>
+<p>
+ここにDWRの基本的な考え方がある．
+</p>
+<p><b>residualの大きさだけではなく，そのresidualが目的量へどのくらい伝わるかをadjointで重み付けする．</b></p>
+</article></div>
+
+<h2>3．adjointは「目的量への感度」を運ぶ</h2>
+<div class="news"><article class="news-item">
+<p>
+私はadjointを，目的量 \(\mathcal J\) の感度を方程式の中へ逆向きに伝えるもの，と考えると分かりやすいと思っている．
+</p>
+<p>
+primal problemは
+</p>
+<p><b>「この方程式を解くと，状態 \(u\) はどうなるか」</b></p>
+<p>
+を見る．
+</p>
+<p>
+adjoint problemは逆に，
+</p>
+<p><b>「状態のどの誤差が，最終的な \(\mathcal J\) に効くのか」</b></p>
+<p>
+を教えてくれる．
+</p>
+<p>
+だから，同じprimal residualでも，adjoint weightが小さい場所ならQoIへの影響は小さく，大きい場所なら強く効く．
+</p>
+</article></div>
+
+<h2>4．DWR estimatorとverified outputは同じではない</h2>
+<div class="news"><article class="news-item">
+<p>
+ここは区別したい．
+</p>
+<p>
+DWRは，目的量誤差をgoal-orientedに捉える非常に強力な考え方である．
+</p>
+<p>
+しかし，adjointを数値近似し，
+\[
+R(u_h)(z_h^\star-z_h)
+\]
+のような量を計算しただけで，
+\[
+|\mathcal J(u)-\mathcal J(u_h)|
+\leq
+\Delta_h
+\]
+という厳密な上界が自動的に得られるわけではない．
+</p>
+<p>
+adjoint approximationの誤差，非線形ならTaylor remainder，残差評価に使う定数などを最後まで保証する必要がある．
+</p>
+<p>
+したがって，
+\[
+\boxed{
+\text{DWR estimator}
+\neq
+\text{rigorous output enclosure}
+}
+\]
+である．
+</p>
+<p>
+ただし，DWRのadjoint-weighted residualという発想は，verified outputを鋭くするために非常に自然に使える．
+</p>
+</article></div>
+
+<h2>5．私の論文では，まずverified ballを作る</h2>
+<div class="news"><article class="news-item">
+<p>
+私のpreprint
+<a href="https://arxiv.org/abs/2602.01636">Low-order CR–RT equilibrated-flux certification for semilinear problems on anisotropic meshes</a>
+では，最初からDWR estimatorを作るのではない．
+</p>
+<p>
+まずNewton–Kantorovich型の議論を使って，計算した状態 \(\tilde u_h\) のまわりに
+\[
+B_\rho(\tilde u_h)
+=
+\left\{
+w\in V:
+\|w-\tilde u_h\|_V\leq\rho
+\right\}
+\]
+を作り，
+\[
+u\in B_\rho(\tilde u_h)
+\]
+であることをcertificateする．
+</p>
+<p>
+つまり，真の解がどこにあるかを，まず半径 \(\rho\) の中へ閉じ込める．
+</p>
+<p>
+このとき必要になるresidual boundの一部を，第9回で見たCR–RT equilibrated fluxとMarini型の再構成から作っている．
+</p>
+<p>
+なお，この論文のprimal state \(\tilde u_h\) はconforming有限要素空間で計算し，CR法はcertificate fluxを構成するための補助問題として使っている．
+</p>
+</article></div>
+
+<h2>6．adjointがなくても，まずQoIを囲うことはできる</h2>
+<div class="news"><article class="news-item">
+<p>
+verified ballが得られれば，\(\mathcal J\) の微分がそのball上で
+\[
+\|D\mathcal J(w)\|_{\mathcal L(V,\mathbb R)}
+\leq
+L_{\mathcal J}(\rho)
+\]
+と評価できるとき，
+\[
+|\mathcal J(u)-\mathcal J(\tilde u_h)|
+\leq
+L_{\mathcal J}(\rho)\rho
+\]
+である．
+</p>
+<p>
+したがって，
+\[
+\boxed{
+\mathcal J(u)
+\in
+\left[
+\mathcal J(\tilde u_h)-L_{\mathcal J}(\rho)\rho,,
+\mathcal J(\tilde u_h)+L_{\mathcal J}(\rho)\rho
+\right]
+}
+\]
+というbaseline enclosureが得られる．
+</p>
+<p>
+これは既にrigorousなoutput boundである．
+</p>
+<p>
+ただし，\(L_{\mathcal J}(\rho)\rho\) はworst-caseの感度を見るので，幅が大きくなることがある．
+</p>
+<p>
+そこでadjointが出てくる．
+</p>
+</article></div>
+
+<h2>7．DWRの発想で，certificateを鋭くする</h2>
+<div class="news"><article class="news-item">
+<p>
+非線形問題
+\[
+\mathcal F(u)=0
+\]
+では，\(\tilde u_h\) で線形化して
+\[
+\mathcal L_{\tilde u_h}
+:=
+D\mathcal F(\tilde u_h)
+\]
+を考える．
+</p>
+<p>
+目的量の微分を
+\[
+j_{\tilde u_h}(v)
+:=
+D\mathcal J(\tilde u_h)v
+\]
+とし，adjoint state \(z\) を
+\[
+B_{\tilde u_h}(v,z)
+=
+j_{\tilde u_h}(v)
+\qquad
+\forall v\in V
+\]
+で定める．
+</p>
+<p>
+ここで \(B_{\tilde u_h}\) は線形化 \(\mathcal L_{\tilde u_h}\) に対応するbilinear formである．
+</p>
+<p>
+adjoint approximationを \(z_h\) とすると，output errorの主要部分に
+\[
+\left|
+\langle
+\mathcal F(\tilde u_h),z_h
+\rangle
+\right|
+\]
+が現れる．
+</p>
+<p>
+これは，まさに<b>primal residualをadjointで重み付けした量</b>である．
+</p>
+<p>
+この意味で，私の方法にはDWRの核にあるgoal-orientedな構造が入っている．
+</p>
+</article></div>
+
+<h2>8．ただし，DWR的な主要項だけでは終わらない</h2>
+<div class="news"><article class="news-item">
+<p>
+verified outputにするには，主要項だけを計算して終わることはできない．
+</p>
+<p>
+私の論文では，最終的なerror budgetを
+\[
+E_{\mathcal J}(\rho;z_h)
+\]
+として，
+\[
+\mathcal J(u)
+\in
+\left[
+\mathcal J(\tilde u_h)-E_{\mathcal J}(\rho;z_h),,
+\mathcal J(\tilde u_h)+E_{\mathcal J}(\rho;z_h)
+\right]
+\]
+と囲う．
+</p>
+<p>
+その中には，
+</p>
+<p>
+primal residualをadjointで重み付けした項．<br>
+非線形な \(\mathcal F\) のremainder．<br>
+adjoint approximationの誤差．<br>
+\(\mathcal J\) 自身の非線形remainder．
+</p>
+<p>
+が入る．
+</p>
+<p>
+つまり，
+</p>
+<p><b>DWR的な情報を使って鋭くするが，最後には残ったすべての項を上から押さえてenclosureにする．</b></p>
+</article></div>
+
+<h2>9．adjoint residualもcertificateしなければならない</h2>
+<div class="news"><article class="news-item">
+<p>
+adjoint approximation \(z_h\) を計算しただけでは，真のadjoint \(z\) との差は未知である．
+</p>
+<p>
+そこでadjoint residual
+\[
+\langle\mathcal G(z_h),v\rangle
+:=
+j_{\tilde u_h}(v)
+-
+B_{\tilde u_h}(v,z_h)
+\]
+を考える．
+</p>
+<p>
+coercivity constantを \(\alpha>0\) とすれば，
+\[
+\|z-z_h\|_V
+\leq
+\alpha^{-1}
+\|\mathcal G(z_h)\|_{V^*}
+\]
+と評価できる．
+</p>
+<p>
+すると新しい問題が出てくる．
+</p>
+<p><b>では，\(\|\mathcal G(z_h)\|_{V^*}\) をどう保証するのか．</b></p>
+</article></div>
+
+<h2>10．ここで第9回のequilibrated fluxがもう一度出てくる</h2>
+<div class="news"><article class="news-item">
+<p>
+私の論文では，adjoint residualのdual normにも，第9回で見たのと同じequilibrated-flux residual certificationを使う．
+</p>
+<p>
+つまり，
+\[
+\text{primal residual}
+\quad\text{だけでなく}\quad
+\text{adjoint residual}
+\]
+にもcertificate fluxを作る．
+</p>
+<p>
+adjoint側でも \(H(\operatorname{div})\)-conforming fluxを構成し，そのflux mismatchとelement residualから
+\[
+\|\mathcal G(z_h)\|_{V^*}
+\]
+の上界を作る．
+</p>
+<p>
+しかも，そのfluxはprimal側と同じ低次のMarini型CR–RT routeで構成できる．
+</p>
+<p>
+したがって，第9回と第10回は別々の話ではない．
+</p>
+<p>
+\[
+\boxed{
+\begin{array}{c}
+\text{CR--RT equilibrated flux}
+\\[4pt]
+\Downarrow
+\\[4pt]
+\text{primal residual certificate}
+\\[4pt]
++
+\\[4pt]
+\text{adjoint residual certificate}
+\\[4pt]
+\Downarrow
+\\[4pt]
+\text{verified output}
+\end{array}
+}
+\]
+という一つの流れになっている．
+</p>
+</article></div>
+
+<h2>11．では，私の論文はDWRの応用なのか</h2>
+<div class="news"><article class="news-item">
+<p>
+私は，<b>DWRあるいはgoal-oriented error estimationの発想をverified computationへ持ち込んだものと見ることができる</b>と思っている．
+</p>
+<p>
+ただし，古典的なDWR estimatorをそのまま適用した論文，という言い方では少し違う．
+</p>
+<p>
+DWRの中心にある
+\[
+\text{residual}
+\times
+\text{adjoint information}
+\]
+という構造を使いながら，
+</p>
+<p>
+Newton–Kantorovichによるverified ball．<br>
+equilibrated-flux residual bound．<br>
+adjoint residualのcertificate．<br>
+非線形remainderの評価．
+</p>
+<p>
+を組み合わせて，最終的に
+\[
+\mathcal J(u)
+\]
+そのものをrigorousな区間に入れる．
+</p>
+<p>
+だから私には，
+</p>
+<p><b>DWRからverified outputへ進んだ構成</b></p>
+<p>
+と考えるのが一番自然に見える．
+</p>
+</article></div>
+
+<h2>12．今回の論文で扱うQoIには範囲がある</h2>
+<div class="news"><article class="news-item">
+<p>
+ここも明確にしておきたい．
+</p>
+<p>
+今回の論文でcertificateするQoIは，微分が \(L^2(\Omega)\)-densityを持つvolume-typeの量に絞っている．
+</p>
+<p>
+例えば
+\[
+\mathcal J(u)
+=
+\int_\Omega \psi u\,dx
+\]
+や局所平均，さらに適切な非線形volume outputである．
+</p>
+<p>
+一方，boundary output，normal flux，point valueのような量には，trace estimateや別の正則性，flux-specificな議論が必要になる．
+</p>
+<p>
+DWRという言葉から何でも同じように扱えるように見えるが，certificateまで要求すると，QoIの種類そのものが解析条件に入ってくる．
+</p>
+</article></div>
+
+<h2>13．DWRとverified outputを一言で分けるなら</h2>
+<div class="news"><article class="news-item">
+<p>
+私なりに一言で分ければ，
+</p>
+<p>
+<b>DWRは，「どの誤差が欲しい量に効くか」を見る．</b>
+</p>
+<p>
+<b>verified outputは，「その欲しい量が本当にこの範囲にある」と保証する．</b>
+</p>
+<p>
+この二つは競合するものではない．
+</p>
+<p>
+むしろadjoint informationを使えば，worst-caseのoutput enclosureを，goal-orientedな情報でより鋭くできる．
+</p>
+<p>
+第9回でfluxをcertificateに変え，第10回ではそのcertificateをprimalとadjointの両側に使って，欲しい量そのものを囲うところまで進んだ．
+</p>
+</article></div>
+
+<h2>次に考えたいこと</h2>
+<div class="news"><article class="news-item">
+<p>
+今回扱ったのは，主にvolume-typeのQoIだった．
+</p>
+<p>
+では，一点の値を知りたいときはどうするのか．
+</p>
+<p>
+\[
+u(x_0)
+\]
+をそのまま目的量にしたとき，Sobolev空間上の連続性やGreen関数，maximum normの問題が出てくる．
+</p>
+<p>
+次は，
+</p>
+<p><b>「maximum-normとpointwise certificate――一点の値を保証できるか」</b></p>
+<p>
+を考えてみたい．
+</p>
+</article></div>
+
+<h2>関連する記事・論文</h2>
+<div class="news"><article class="news-item">
+<ul>
+<li><a href="./lean4-08.html">第8回：a prioriとa posterioriは何が違うのか――誤差評価からverified outputまで</a></li>
+<li><a href="./lean4-09.html">第9回：equilibrated fluxはなぜcertificateになるのか――CR–RTとMariniの関係から見る</a></li>
+<li><a href="https://arxiv.org/abs/2602.01636">Low-order CR–RT equilibrated-flux certification for semilinear problems on anisotropic meshes</a></li>
+<li><a href="../../publications/">Publications</a></li>
+</ul>
+</article></div>
+
+</div>
+</article>
+</div>
+</main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+</body>
+</html>
