@@ -1,7 +1,18 @@
 <!DOCTYPE html>
 <html lang="ja" class="col1">
 <head>
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['\\(', '\\)']],
+    displayMath: [['\\[', '\\]']]
+  },
+  startup: {
+    typeset: true
+  }
+};
+</script>
+<script id="MathJax-script" defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
 <title>equilibrated fluxはなぜcertificateになるのか――CR–RTとMariniの関係から見る | Hiroki Ishizaka</title>
 <meta charset="UTF-8">
