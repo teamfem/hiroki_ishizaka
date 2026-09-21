@@ -144,6 +144,12 @@ window.MathJax = {
 <h2>1．Poisson問題ではfluxも未知量である</h2>
 <div class="news"><article class="news-item">
 <p>
+flux（流束）とは，ある量が<b>どの方向へ，どれだけ流れているか</b>を表すベクトル場である．
+</p>
+<p>
+例えば \(u\) を温度と考えると，\(-\nabla u\) は熱が高温側から低温側へ流れる向きと大きさを表す．拡散問題なら物質の流れ，地下水なら流量，電気なら電流密度に対応する量である．
+</p>
+<p>
 まず，
 \[
 -\Delta u=f\quad\text{in }\Omega,
@@ -169,6 +175,22 @@ fluxを
 <p><b>「divergenceが右辺 \(f\) と一致するflux」</b></p>
 <p>
 を持っている．
+</p>
+<p>
+この式は保存則そのものである．領域 \(D\subset\Omega\) に発散定理を使えば，
+\[
+\int_{\partial D}\boldsymbol q\cdot\boldsymbol n\,ds
+=
+\int_D f\,dx
+\]
+となる．左辺は境界を横切って外へ出るfluxの総量，右辺は領域内部で生じる量である．
+</p>
+<p>
+したがってfluxでは，とくに
+\[
+\boldsymbol q\cdot\boldsymbol n
+\]
+という法線方向の成分が重要になる．隣り合う要素の間でこの法線fluxを整合的に扱うために \(H(\operatorname{div};\Omega)\) が現れ，さらにRaviart–Thomas要素へつながっていく．
 </p>
 <p>
 この保存則を離散的にも再現しよう，というのがequilibrated fluxの出発点である．
