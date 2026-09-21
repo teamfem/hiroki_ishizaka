@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>研究にも記憶と履歴がある――AI時代のクレジットをどう残すか | Hiroki Ishizaka</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,AI4Math,credit,priority,attribution,Navier-Stokes,研究記録,memory,history dependence">
+<meta name="description" content="完成した論文には定理と証明が残るが，研究にはその前の疑問，失敗，反例，議論，AIとのやり取りという履歴がある．2026年のNavier–Stokesをめぐるクレジット論争も踏まえ，AI時代に研究の記憶をどう残すかを考えます．">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-07.html">
+
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<noscript>
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+</noscript>
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-07.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-07.html",
+      "headline": "第7回：研究にも記憶と履歴がある――AI時代のクレジットをどう残すか",
+      "description": "完成した論文には定理と証明が残るが，研究にはその前の疑問，失敗，反例，議論，AIとのやり取りという履歴がある．2026年のNavier–Stokesをめぐるクレジット論争も踏まえ，AI時代に研究の記憶をどう残すかを考えます．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-07.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-09-21",
+      "dateModified": "2026-09-21",
+      "articleSection": "AI4Math and research practice",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
+      "keywords": "AI4Math, research credit, attribution, priority, research history, Navier-Stokes"
+    }
+  ]
+}
+</script>
+
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2026-09-21">
+<meta property="article:modified_time" content="2026-09-21">
+<meta property="article:section" content="AI4Math and research practice">
+<meta property="og:site_name" content="Hiroki Ishizaka">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="研究にも記憶と履歴がある――AI時代のクレジットをどう残すか | Hiroki Ishizaka">
+<meta property="og:description" content="研究には，完成した定理だけでなく，疑問，失敗，反例，議論という履歴がある．AI時代のcreditとpriorityを考えます．">
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-07.html">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@teamfem16key">
+<meta name="twitter:title" content="研究にも記憶と履歴がある――AI時代のクレジットをどう残すか">
+<meta name="twitter:description" content="Navier–Stokesをめぐる議論から，AI時代の研究記録とcreditを考える研究ノート．">
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+</head>
+
+<body class="page">
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../fem/">Visions</a></li>
+        <li><a href="../../suppl/">Supplementary</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">Geometry</a></li>
+        <li><a href="../../links/">Links</a></li>
+        <li><a href="../../contact/">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in">
+    <li class="bcl-first"><a href="../../">ISHIZAKA Hiroki Website TOP</a></li>
+    <li class="bcl-last">Blog post from 21st September 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第7回：研究にも記憶と履歴がある――AI時代のクレジットをどう残すか</h1>
+
+<div class="news">
+<article class="news-item">
+<b>AI4Mathで最近考えていること</b><br>
+(21st September 2026 <span class="cat cat001">Update</span>)
+<p>
+前回，論文を書く主語はあくまで人間であり，人間の好奇心が論文を生み出す，ということを書いた．
+</p>
+<p>
+そうすると，その次に気になるのはcreditの問題である．
+</p>
+<p>
+誰が最初に問題を考えたのか．誰が決定的な反例を見つけたのか．誰が証明の形を作ったのか．そこにAIが入ったとき，その経路をどう残せばよいのか．
+</p>
+<p>
+私は最近，もう少し広く考えるようになった．
+</p>
+<p><b>研究にも記憶があり，履歴がある．そして，その履歴自体を大事にした方がよいのではないか．</b></p>
+</article>
+</div>
+
+<h2>1．私自身，memoryやhistory dependenceを研究している</h2>
+<div class="news"><article class="news-item">
+<p>
+私の研究テーマの一つに，memoryを持つ拡散方程式やhistory-dependentな問題がある．
+</p>
+<p>
+こういう問題では，現在の状態だけを見ても系の振る舞いを説明できないことがある．過去が現在に影響しているからである．
+</p>
+<p>
+概念的には，
+\[
+\text{present state}
+\quad\text{だけではなく}\quad
+\text{history}
+\]
+が必要になる．
+</p>
+<p>
+もちろん，数学的なmemory equationと研究活動を同一視するつもりはない．ただ，研究について考えていると，少し似たところがあると思うようになった．
+</p>
+<p>
+完成した論文だけを見ると，最後に残った定理と証明しか見えない．しかし，研究が本当にそこから始まったわけではない．
+</p>
+</article></div>
+
+<h2>2．完成した論文から消えていくもの</h2>
+<div class="news"><article class="news-item">
+<p>
+論文を書くと，途中で失敗した証明は普通は消える．間違っていた予想も消える．うまくいかなかった数値実験も，最終稿にはほとんど残らない．
+</p>
+<p>
+最初は強い仮定を置いていたが，反例を見つけて条件を変えた．ある補題が間違っていて，別の道を探した．誰かとの議論で見方が変わった．
+</p>
+<p>
+そういう経路を全部削ると，最後にはきれいな
+\[
+\text{Definition}
+\longrightarrow
+\text{Theorem}
+\longrightarrow
+\text{Proof}
+\]
+だけが残る．
+</p>
+<p>
+論文としては，それでよい場合も多い．でも研究の歴史としては，かなりの情報が消えている．
+</p>
+<p>
+実際の研究はむしろ，
+\[
+\text{question}
+\longrightarrow
+\text{failed attempt}
+\longrightarrow
+\text{counterexample}
+\longrightarrow
+\text{new conjecture}
+\longrightarrow
+\text{proof}
+\longrightarrow
+\text{verification}
+\]
+のように進むことが多い．
+</p>
+<p>
+私は，この途中の矢印にも研究者の仕事があると思っている．
+</p>
+</article></div>
+
+<h2>3．Navier–Stokesをめぐる騒動でもcreditが問題になった</h2>
+<div class="news"><article class="news-item">
+<p>
+2026年9月のNavier–Stokes Millennium Prize Problemをめぐる発表でも，数学的結果そのものと並んでcreditが大きな話題になった．
+</p>
+<p>
+OpenAIは9月8日の発表で，社内システムによる証明とLean形式化を公開した．同時に，同社が9月1日に関連する噂を聞いて研究を開始したこと，Tristan BuckmasterとLevent Alpögeによる並行研究があったこと，そして調査の結果，Buckmasterの直前のCodexプロンプトが今回のシステムに影響したことはないと判断したことを説明している．
+</p>
+<p>
+一方で，Natureはこの出来事を「AI時代に誰がcreditを得るのか」という問題として報じた．研究者がAIとの対話の中で未公開の考えを使うようになると，従来の「論文を誰が先に出したか」だけでは研究の流れを十分に説明できない可能性がある．
+</p>
+<p>
+Clay Mathematics Instituteも9月11日の声明で，結果の評価とcreditの割り当ては定められた手続きに従って慎重に行うとしている．
+</p>
+<p>
+ここで私は，誰にcreditを与えるべきかをこのブログで判定したいわけではない．むしろ興味があるのは，<b>AIが研究過程に深く入ると，研究の履歴をどう残すかが以前より重要になる</b>という点である．
+</p>
+</article></div>
+
+<h2>4．authorshipとcreditは同じではない</h2>
+<div class="news"><article class="news-item">
+<p>
+AI時代の議論では，「AIを著者にするのか」という話に目が行きやすい．
+</p>
+<p>
+しかし私は，それより広いcreditの問題を考えたい．
+</p>
+<p>
+例えば，人間が問題を考える．AIとの対話で新しい反例候補が見つかる．人間がその意味を理解して定理の形を変える．別の計算でそれを検証する．Leanで論理を確認する．最後に人間が論文を書く．
+</p>
+<p>
+この場合，
+\[
+\text{idea}
+\longrightarrow
+\text{prompt}
+\longrightarrow
+\text{exploration}
+\longrightarrow
+\text{proof}
+\longrightarrow
+\text{verification}
+\longrightarrow
+\text{paper}
+\]
+のどこに何が起きたのかが重要になる．
+</p>
+<p>
+最終的なauthor listだけでは，この流れはほとんど分からない．
+</p>
+<p>
+だから，authorshipをどうするかとは別に，<b>研究がどう生まれたかという記録</b>を残す必要が出てくると思う．
+</p>
+</article></div>
+
+<h2>5．AIとのやり取りにも履歴がある</h2>
+<div class="news"><article class="news-item">
+<p>
+AIを研究に使っていると，同じ問いを一回投げて終わることは少ない．
+</p>
+<p>
+最初の答えがおかしい．反例を探す．仮定を変える．別の証明を試す．数値実験をする．また戻る．
+</p>
+<p>
+この往復そのものが研究になることがある．
+</p>
+<p>
+だから私は，将来的には少なくとも重要な場面について，
+</p>
+<p>
+いつ，どのモデルを使ったのか．<br>
+何を問いとして与えたのか．<br>
+AIが何を提案したのか．<br>
+どこを人間が修正したのか．<br>
+どの段階で検証したのか．
+</p>
+<p>
+という情報を残す方法が必要になると思う．
+</p>
+<p>
+すべてのプロンプトを論文に貼る必要はない．それでは逆に読めなくなる．
+</p>
+<p>
+しかし，決定的な反例，補題，証明方針，数値計算など，研究の方向を変えたやり取りは記録しておく価値がある．
+</p>
+</article></div>
+
+<h2>6．creditを残すことは，AIを著者にすることとは違う</h2>
+<div class="news"><article class="news-item">
+<p>
+私は，AIに人間と同じ意味で著者名を付ければ問題が解決するとは思っていない．
+</p>
+<p>
+むしろ必要なのは，どの部分でどの道具を使い，何が人間の判断で，何がAIから出てきたものなのかを追えるようにすることだと思う．
+</p>
+<p>
+例えば，研究ノートやsupplementary materialに，重要なAI-assisted stepを短く残す．Gitの履歴を残す．数値実験のコードを残す．証明を修正した時点を残す．形式検証したcommitを残す．
+</p>
+<p>
+そうすれば，後から
+</p>
+<p><b>「この結果はどのように生まれたのか」</b></p>
+<p>
+をある程度たどることができる．
+</p>
+<p>
+creditとは名前を一つ付けるだけではなく，研究の生成過程を失わないことでもあるのではないか．
+</p>
+</article></div>
+
+<h2>7．古い研究記録を簡単に消さない方がよい理由</h2>
+<div class="news"><article class="news-item">
+<p>
+このホームページやブログについても，同じことを感じている．
+</p>
+<p>
+研究が進むと，以前に書いたことが古くなる．考えが変わることもある．間違っていたところを直したくなる．
+</p>
+<p>
+もちろん明確な誤りは訂正すべきである．
+</p>
+<p>
+でも，「昔はこう考えていた」という記録まで全部消してしまう必要はないのかもしれない．
+</p>
+<p>
+日付を付けて残しておけば，
+</p>
+<p>
+この時点ではこの問題を考えていた．<br>
+ここで反例を見つけた．<br>
+その後，条件を変えた．<br>
+さらに別の論文につながった．
+</p>
+<p>
+という流れが見える．
+</p>
+<p>
+完成したpublication listとは別に，ブログには研究の時間軸を残す役割があってもよいと思う．
+</p>
+</article></div>
+
+<h2>8．研究にも「系譜」がある</h2>
+<div class="news"><article class="news-item">
+<p>
+数学の定理は，完成した形だけを見ると突然現れたように見えることがある．
+</p>
+<p>
+でも実際には，先行研究があり，うまくいかなかった試みがあり，誰かの問いがあり，そこから次の研究が生まれる．
+</p>
+<p>
+AIが入っても，この系譜が消えてよいわけではない．
+</p>
+<p>
+むしろAIによって研究の速度が上がるほど，途中の履歴は消えやすくなる．一日に何十通りも試せるようになれば，どの発想がどこから出てきたのか，自分自身でも分からなくなる可能性がある．
+</p>
+<p>
+だから，速く研究することと同じくらい，<b>研究の履歴を残すこと</b>が重要になると思う．
+</p>
+</article></div>
+
+<h2>9．数学は定理だけでできているのではない</h2>
+<div class="news"><article class="news-item">
+<p>
+私の研究では，memoryやhistory dependenceを扱う．過去を消してしまえば，現在だけでは説明できないことがある．
+</p>
+<p>
+研究そのものも，少し似ている．
+</p>
+<p>
+最後の定理だけでは，なぜその定理にたどり着いたのか分からない．誰が何を疑い，どの反例で方向が変わり，どこでAIを使い，どこを人間が判断したのか．
+</p>
+<p>
+そういうものを全部消してしまえば，結果は残っても，研究が生まれた経路は残らない．
+</p>
+<p><b>数学は定理だけでできているのではない．研究にも記憶があり，履歴がある．AI時代だからこそ，私はその履歴をできるだけ消さずに残したい．</b></p>
+</article></div>
+
+<h2>参考リンク</h2>
+<div class="news"><article class="news-item">
+<ul>
+<li><a href="https://openai.com/index/navier-stokes-solution/" target="_blank" rel="noopener">OpenAI, “On the Navier–Stokes Millennium Prize Problem” (8 Sep 2026)</a></li>
+<li><a href="https://www.claymath.org/news/navier-stokes-announcement/" target="_blank" rel="noopener">Clay Mathematics Institute, “Navier-Stokes Announcement” (11 Sep 2026)</a></li>
+<li><a href="https://www.nature.com/articles/d41586-026-02910-w" target="_blank" rel="noopener">Nature, “Who gets credit in the AI era? OpenAI maths bombshell sparks debate” (17 Sep 2026)</a></li>
+<li><a href="https://www.nature.com/articles/d41586-026-02886-7" target="_blank" rel="noopener">Nature Editorial, “AI companies must work with the research community to protect attribution” (16 Sep 2026)</a></li>
+</ul>
+</article></div>
+
+<h2>関連する記事</h2>
+<div class="news"><article class="news-item">
+<ul>
+<li><a href="./lean4-02.html">第2回：AIは証明するより，壊す方が得意なのか――反例から考えるAI4Math</a></li>
+<li><a href="./lean4-03.html">第3回：反例を見つけたあと，どうやって定理にするのか――AIと一緒に「境界」を探す</a></li>
+<li><a href="./lean4-04.html">第4回：AIが見つけた反例は，本当に反例なのか――数値実験と証明のあいだ</a></li>
+<li><a href="./lean4-05.html">第5回：LeanはAIの数学をどこまで確認できるのか――正しい証明と，正しい問題設定は同じではない</a></li>
+<li><a href="./lean4-06.html">第6回：論文を書く主語は誰なのか――人間の好奇心とAI4Math</a></li>
+</ul>
+</article></div>
+
+</div>
+</article>
+</div>
+</main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+</body>
+</html>
