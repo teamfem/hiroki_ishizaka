@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>AIは証明するより，壊す方が得意なのか――反例から考えるAI4Math | Hiroki Ishizaka</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,AI4Math,反例,Navier-Stokes,有限要素法,Lean">
+<meta name="description" content="AIは証明するより反例探索に向いているのか．Navier–Stokes問題の最近の動きと異方性有限要素法の経験から，AI4Mathにおける反例・仮説・人間の役割を考えます．">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-02.html">
+
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<noscript>
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+</noscript>
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-02.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-02.html",
+      "headline": "第2回：AIは証明するより，壊す方が得意なのか――反例から考えるAI4Math",
+      "description": "AIは証明するより反例探索に向いているのか．Navier–Stokes問題の最近の動きと異方性有限要素法の経験から，AI4Mathにおける反例・仮説・人間の役割を考えます．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-02.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-09-21",
+      "dateModified": "2026-09-21",
+      "articleSection": "AI4Math and certified mathematics",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
+      "keywords": "AI4Math, counterexample, Navier-Stokes, finite element method, Lean"
+    }
+  ]
+}
+</script>
+
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2026-09-21">
+<meta property="article:modified_time" content="2026-09-21">
+<meta property="article:section" content="AI4Math and certified mathematics">
+<meta property="og:site_name" content="Hiroki Ishizaka">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="AIは証明するより，壊す方が得意なのか――反例から考えるAI4Math | Hiroki Ishizaka">
+<meta property="og:description" content="AIは証明するより反例探索に向いているのか．Navier–Stokes問題の最近の動きと異方性有限要素法の経験から，AI4Mathにおける反例・仮説・人間の役割を考えます．">
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-02.html">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@teamfem16key">
+<meta name="twitter:title" content="AIは証明するより，壊す方が得意なのか――反例から考えるAI4Math">
+<meta name="twitter:description" content="Navier–Stokes問題と異方性FEMから，AIと反例探索の相性を考える研究ノート．">
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+</head>
+
+<body class="page">
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../fem/">Visions</a></li>
+        <li><a href="../../suppl/">Supplementary</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">Geometry</a></li>
+        <li><a href="../../links/">Links</a></li>
+        <li><a href="../../contact/">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<div class="main-body">
+<div class="main-body-in">
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in">
+    <li class="bcl-first"><a href="../../">ISHIZAKA Hiroki Website TOP</a></li>
+    <li class="bcl-last">Blog post from 21st September 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第2回：AIは証明するより，壊す方が得意なのか――反例から考えるAI4Math</h1>
+
+<div class="news">
+<article class="news-item">
+<b>AI4Mathで最近考えていること</b><br>
+(21st September 2026 <span class="cat cat001">Update</span>)
+<p>
+AIと数学の話になると，どうしても「AIは難しい定理を証明できるのか」という話になりやすい．もちろん，それは面白い．Leanのようなproof assistantまで含めれば，AIが作った証明を機械的に確認するところまで来ている．
+</p>
+<p>
+ただ，最近AIを使いながら研究していて，私は少し別のことが気になっている．
+</p>
+<p><b>AIは，証明すること以上に，反例を見つけることに向いているのではないか．</b></p>
+<p>
+「証明してくれ」より，「これを壊してくれ」と頼む方が，新しい数学につながることがあるのではないか．今回はそのことを考えてみたい．
+</p>
+</article>
+</div>
+
+<h2>1．証明と反例は対称ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+ある主張が
+\[
+P(x)\qquad\text{for all }x
+\]
+という形をしているとする．これを証明するなら，許されるすべての \(x\) について正しいことを示さなければならない．
+</p>
+<p>
+ところが，これを壊すには
+\[
+P(x_0)\quad\text{is false}
+\]
+となる \(x_0\) を一つ見つければよい．
+</p>
+<p>
+言葉にすると簡単だが，研究ではこの「一つ」がなかなか見つからない．人間には典型例がある．三角形ならまず形の良いものを描くし，係数なら扱いやすいものから試す．長く研究しているほど，「普通はこうだろう」という感覚も身につく．その感覚は大切なのだが，反例探しでは邪魔をすることもある．
+</p>
+<p>
+AIには，その遠慮があまりない．変なパラメータも試す．極端な形も試す．人間なら早い段階で捨てそうな候補も出してくる．だから，候補を大量に作れて，しかも候補が本当に反例かどうかを別の方法で判定できる問題なら，AIはかなり強いのではないかと思う．
+</p>
+</article></div>
+
+<h2>2．最近のNavier–Stokesも「反例型」の解決だった</h2>
+<div class="news"><article class="news-item">
+<p>
+2026年9月8日，OpenAIは3次元Navier–Stokes方程式について，有限時間で特異点が形成されることを示す解法を公開した．これは「すべての滑らかな流れが永遠に滑らかなままなのか」という問いに対して，破綻する側の構成を与えるものである．証明の解説だけでなく，Leanによる形式化も公開されている．
+</p>
+<p>
+Clay Mathematics Instituteも9月11日に声明を出し，Navier–Stokes問題が「apparently been settled」と述べている．ただし，懸賞問題としての正式な評価やcreditの確定には所定の手続きがあり，そこは急いで結論を出す話ではない．
+</p>
+<p>
+この結果は，広い意味ではかなり<b>反例型</b>である．「常に滑らかである」ことを否定するには，有限時間で壊れる流れを一つ構成すればよい．
+</p>
+<p>
+もちろん，これは数値を一つ探せば終わるような反例とは全く違う．その構成が本当にNavier–Stokes方程式を満たし，必要な条件を満たし，有限時間特異点を生むことまで証明しなければならない．だから「AIは反例を一個見つけただけ」と言ってしまうのは不正確である．
+</p>
+<p>
+それでも発想の向きとして，「すべてを証明する」のではなく，「壊れる構造を一つ作る」という側から問題が決着したことは興味深い．
+</p>
+<p>
+参考：<a href="https://openai.com/index/navier-stokes-solution/" target="_blank" rel="noopener">OpenAI, On the Navier–Stokes Millennium Prize Problem (8 September 2026)</a>，
+<a href="https://www.claymath.org/news/navier-stokes-announcement/" target="_blank" rel="noopener">Clay Mathematics Institute, Navier-Stokes Announcement (11 September 2026)</a>．
+</p>
+</article></div>
+
+<h2>3．有限要素法でも，私は反例に何度も助けられてきた</h2>
+<div class="news"><article class="news-item">
+<p>
+有限要素法の理論をやっていると，「この条件は本当に必要なのか」という問題に何度も出会う．
+</p>
+<p>
+shape-regularityを仮定している．では，本当に必要なのか．maximum-angle conditionを使っている．もっと弱くできないのか．ある補間作用素が安定だという．極端に細長い要素でも本当に大丈夫なのか．
+</p>
+<p>
+こういう問題では，最初から証明を完成させようとするより，壊れる例を探した方が早いことがある．
+</p>
+<p>
+実際，私たちの異方性補間理論でも，以前に得た一般理論の主張を後から修正したことがある．Lagrange型の補間評価でも，Raviart–Thomas補間でも，どの幾何量や仮定が本当に必要なのかを見直すことになった．
+</p>
+<p>
+研究では，これは珍しいことではないと思う．主張を立てる．証明してみる．どこかで引っかかる．反例を探す．仮定を戻す．すると，「本当に必要だった条件」が見えてくる．
+</p>
+<p>
+反例は定理の敵ではない．むしろ，定理の形を決めてくれる．
+</p>
+</article></div>
+
+<h2>4．「証明してくれ」より「これを壊してくれ」</h2>
+<div class="news"><article class="news-item">
+<p>
+AI4Mathというと，自動証明ばかりが注目される．しかし私が研究で試したいのは，むしろ次のような使い方である．
+</p>
+<ul>
+<li>この不等式が破れる単体を探してほしい．</li>
+<li>最大角を \(\pi\) に近づけると，どの評価が最初に壊れるか調べてほしい．</li>
+<li>この補題から仮定を一つ外したら反例があるか探してほしい．</li>
+<li>大量の三角形や四面体を生成して，定数が最も悪化する形を探してほしい．</li>
+<li>数値実験では成立しているように見える予想を，意地悪な条件で壊してほしい．</li>
+</ul>
+<p>
+ここでは，AIが最終的な証明を完成させる必要はない．「この例が怪しい」という候補を持ってきてくれるだけでも十分に役に立つ．
+</p>
+<p>
+そこから先は人間が考える．なぜ壊れたのか．どの仮定が足りなかったのか．偶然の数値現象なのか．それとも一般的な構造なのか．
+</p>
+<p>
+一つの変な例から新しい補題が生まれ，その補題から定理のstatementそのものが変わることがある．私はそこにAI4Mathのかなり面白い使い方があると思っている．
+</p>
+</article></div>
+
+<h2>5．AIは「仮説を作る」より「仮説を削る」のが得意なのかもしれない</h2>
+<div class="news"><article class="news-item">
+<p>
+新しい予想を大量に作ることは，AIならこれからますますできるようになるだろう．しかし数学では，正しそうな命題を大量に並べれば研究になるわけではない．
+</p>
+<p>
+例えば
+\[
+A_1+A_2+A_3\Longrightarrow B
+\]
+という定理があったとする．
+</p>
+<p>
+そこで \(A_1\) を外す．壊れるか．\(A_2\) を外す．まだ成り立つか．\(A_3\) はどうか．係数の範囲を広げる．空間次元を変える．境界条件を変える．
+</p>
+<p>
+AIが大量に候補を調べ，壊れる場所を探してくれれば，
+\[
+\text{too strong}\quad\longrightarrow\quad\text{sharp}
+\]
+へ近づくことができるかもしれない．
+</p>
+<p>
+つまりAIはproof machineだけでなく，<b>theorem sharpener</b>として使えるのではないか．私は最近，こちらの方が気になっている．
+</p>
+</article></div>
+
+<h2>6．ただし，反例かどうかを確かめる方が難しい問題もある</h2>
+<div class="news"><article class="news-item">
+<p>
+ここは重要だと思う．「AIは反例探しが得意」と一般論として言い切るつもりはない．
+</p>
+<p>
+有限次元の不等式や組合せ問題のように，候補を出した後で正誤を自動判定できる場合はAIと非常に相性がよい．一方，PDEの特異解のように，候補そのものが本当に解であるか，必要な正則性を持つか，極限操作が正当か，という確認まで難しい問題では事情が違う．
+</p>
+<p>
+Navier–Stokesの最近の結果が面白いのもそこだと思う．「怪しい流れを見つけた」で終わらず，その構造を証明へ持っていき，さらに形式化まで行っている．反例候補の探索と，反例であることの証明は別の仕事である．
+</p>
+</article></div>
+
+<h2>7．結局，人間は何をするのか</h2>
+<div class="news"><article class="news-item">
+<p>
+もしAIが一晩で100個の反例候補を持ってくるようになったら，研究者は楽になるだろうか．
+</p>
+<p>
+たぶん，別の意味で忙しくなる．
+</p>
+<p>
+どの反例が本質的なのか．なぜその例だけ壊れるのか．そこからどんな一般理論が見えるのか．そして，そもそもその問題を研究する価値があるのか．
+</p>
+<p>
+この判断は残る．
+</p>
+<p>
+以前から，AIが発達すると人間は「未解決問題を解く側」だけでなく，「未解決問題を作る側」に回っていくのではないかと考えている．ただし，問題を作るというのは，何もないところから突然すごい予想を思いつくことだけではない．
+</p>
+<p>
+AIが見つけた変な例を見る．「なぜこれだけ壊れるんだ」と思う．条件を一つ戻す．別の有限要素でも試す．そこで初めて境界が見える．
+</p>
+<p>
+そうやって問題が生まれることもある．
+</p>
+<p>
+AI4Mathで面白いのは，AIが人間の代わりに数学を終わらせることではなく，<b>人間なら見なかった場所を掘ってくれること</b>なのかもしれない．
+</p>
+</article></div>
+
+<h2>関連する記事</h2>
+<div class="news"><article class="news-item">
+<ul>
+<li><a href="./lean4-01.html">第1回：Lean 4は有限要素法研究に何をもたらすか</a></li>
+<li><a href="./ai-human-mathematics-01.html">AIの前に，人間の数学を考える――Navier–Stokes騒動から，未解決問題・引用・査読・研究者の役割へ</a></li>
+</ul>
+</article></div>
+
+</div>
+</article>
+</div>
+</main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+</body>
+</html>
