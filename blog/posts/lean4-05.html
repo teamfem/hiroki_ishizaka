@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>LeanはAIの数学をどこまで確認できるのか――正しい証明と，正しい問題設定は同じではない | Hiroki Ishizaka</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,AI4Math,Lean,Mathlib,形式化数学,有限要素法,verified numerics">
+<meta name="description" content="LeanはAIが作った数学をどこまで確認できるのか．形式的に正しい証明と，正しい問題設定・意味のある定理が同じではないことを，有限要素法研究の視点から考えます．">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-05.html">
+
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<noscript>
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+</noscript>
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-05.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-05.html",
+      "headline": "第5回：LeanはAIの数学をどこまで確認できるのか――正しい証明と，正しい問題設定は同じではない",
+      "description": "LeanはAIが作った数学をどこまで確認できるのか．形式的に正しい証明と，正しい問題設定・意味のある定理が同じではないことを，有限要素法研究の視点から考えます．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-05.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-09-21",
+      "dateModified": "2026-09-21",
+      "articleSection": "AI4Math and certified mathematics",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
+      "keywords": "AI4Math, Lean, formal proof, Mathlib, finite element method, verified numerics"
+    }
+  ]
+}
+</script>
+
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2026-09-21">
+<meta property="article:modified_time" content="2026-09-21">
+<meta property="article:section" content="AI4Math and certified mathematics">
+<meta property="og:site_name" content="Hiroki Ishizaka">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="LeanはAIの数学をどこまで確認できるのか――正しい証明と，正しい問題設定は同じではない | Hiroki Ishizaka">
+<meta property="og:description" content="形式的に正しい証明と，正しい問題設定・意味のある定理が同じではないことを，AI4Mathと有限要素法の視点から考えます．">
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-05.html">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@teamfem16key">
+<meta name="twitter:title" content="LeanはAIの数学をどこまで確認できるのか">
+<meta name="twitter:description" content="正しい証明と，正しい問題設定は同じではない．AI4Mathと形式化数学を考える研究ノート．">
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+</head>
+
+<body class="page">
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../fem/">Visions</a></li>
+        <li><a href="../../suppl/">Supplementary</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">Geometry</a></li>
+        <li><a href="../../links/">Links</a></li>
+        <li><a href="../../contact/">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in">
+    <li class="bcl-first"><a href="../../">ISHIZAKA Hiroki Website TOP</a></li>
+    <li class="bcl-last">Blog post from 21st September 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第5回：LeanはAIの数学をどこまで確認できるのか――正しい証明と，正しい問題設定は同じではない</h1>
+
+<div class="news">
+<article class="news-item">
+<b>AI4Mathで最近考えていること</b><br>
+(21st September 2026 <span class="cat cat001">Update</span>)
+<p>
+前回，AIが見つけた反例候補をどこまで信用できるのか，という話を書いた．数値が出ただけではまだ弱い．必要ならverified computationで固める．PDEなら離散化誤差まで見なければならない．
+</p>
+<p>
+では，数値ではなく証明ならどうだろう．
+</p>
+<p>
+AIが「証明できました」と言い，その証明がLeanで通った．
+</p>
+<p>
+そこまで来たら，もう安心してよいのだろうか．
+</p>
+<p>
+私は，ここにも一つ落とし穴があると思っている．
+</p>
+<p><b>Leanで正しいことと，私たちが本当に証明したかったことが正しいことは，同じではない．</b></p>
+</article>
+</div>
+
+<h2>1．「Leanで通った」とは何を意味するのか</h2>
+<div class="news"><article class="news-item">
+<p>
+Leanは，定義，仮定，命題，証明を形式的に記述し，その証明項が与えられた命題の証明になっているかを検査するproof assistantである．
+</p>
+<p>
+これは非常に強い．人間の論文なら「明らかに」「同様に」と飛ばした場所にも，Leanは容赦なく止まる．型が合わない．仮定が足りない．使おうとした補題の向きが逆である．そういう小さな穴をかなりの精度で見つけてくれる．
+</p>
+<p>
+AIが長い証明を生成する時代になれば，この役割はますます重要になると思う．人間が何十ページものAI生成証明を一行ずつ確認するより，形式化された部分については機械に確認してもらう方がよい．
+</p>
+<p>
+ただし，Leanが確認しているのは，<b>Leanの中に書かれた命題</b>である．
+</p>
+</article></div>
+
+<h2>2．本当にその定理を証明したのか</h2>
+<div class="news"><article class="news-item">
+<p>
+例えば，本当に示したかったことが
+\[
+A\Longrightarrow B
+\]
+だったとする．
+</p>
+<p>
+ところが形式化の途中で，扱いやすくするために少し強い仮定 \(A'\) を入れたとする．
+\[
+A'\Longrightarrow A.
+\]
+そしてLeanでは
+\[
+A'\Longrightarrow B
+\]
+を完全に証明できた．
+</p>
+<p>
+この証明は正しい．Leanも正しい．
+</p>
+<p>
+でも，最初に考えていた
+\[
+A\Longrightarrow B
+\]
+を証明したことにはならない．
+</p>
+<p>
+ここは当たり前に見える．しかし，実際の研究では仮定が十個，二十個と増える．関数空間，正則性，メッシュ条件，係数条件，境界条件が重なる．その中で一つ強い仮定を入れても，証明が長くなれば見えにくくなる．
+</p>
+<p>
+Leanは「その仮定，研究上は強すぎませんか」とは言ってくれない．
+</p>
+</article></div>
+
+<h2>3．有限要素法なら，かなり現実的に起こり得る</h2>
+<div class="news"><article class="news-item">
+<p>
+有限要素法で考えると分かりやすい．
+</p>
+<p>
+例えば，本当は異方性メッシュで補間誤差を評価したいとする．ところが形式化を簡単にするためにshape-regularityを仮定すれば，多くの議論はずっと楽になる．
+</p>
+<p>
+その定理をLeanで完全に形式化したとしても，「異方性メッシュで成立すること」を示したわけではない．
+</p>
+<p>
+証明は正しい．しかし研究として見ると，問題そのものが変わっている．
+</p>
+<p>
+私自身，異方性有限要素法では「どこまで幾何条件を弱くできるか」をずっと考えてきた．maximum-angle conditionなのか，semi-regularityなのか，あるいは別の幾何量で表せるのか．
+</p>
+<p>
+こういう研究では，強い仮定を入れて証明を通すことよりも，<b>どの仮定まで削れるのか</b>の方が本質的なことがある．
+</p>
+<p>
+だから，形式化が完成したことと，数学的に一番面白い定理に到達したことは別である．
+</p>
+</article></div>
+
+<h2>4．AIが証明を作り，Leanが通したとしても</h2>
+<div class="news"><article class="news-item">
+<p>
+AI4Mathでは，次のような流れが増えていくと思う．
+</p>
+<p>
+AIが補題を提案する．証明を作る．Leanに入れる．通らなければ修正する．通れば次へ進む．
+</p>
+<p>
+これはかなり強力である．
+</p>
+<p>
+しかし，このループだけを回していると，「Leanで通る命題」を作る方向へAIが最適化される可能性がある．
+</p>
+<p>
+本当に欲しかった命題より少し弱いものへ逃げる．強い仮定を一つ足す．定義を扱いやすい形に変える．そうすれば証明は通しやすくなる．
+</p>
+<p>
+形式的には何も間違っていない．
+</p>
+<p>
+でも人間としては，
+</p>
+<p><b>「それは，私たちが聞いていた問題だったのか」</b></p>
+<p>
+と確認しなければならない．
+</p>
+</article></div>
+
+<h2>5．Leanは「数学的に面白いか」を判定するものではない</h2>
+<div class="news"><article class="news-item">
+<p>
+数学には，正しい命題が無数にある．
+</p>
+<p>
+例えば既知の定理に強い仮定を一つ追加しても，新しい正しい命題は作れる．定数を少し悪くしても正しい定理は書ける．特殊な場合だけに限定すれば，証明が簡単になることもある．
+</p>
+<p>
+しかし，
+</p>
+<p>
+その仮定は本当に必要なのか．<br>
+結果は既知のものより何を進めたのか．<br>
+なぜその定理を考えるのか．<br>
+どこに新しい構造があるのか．
+</p>
+<p>
+という問いは残る．
+</p>
+<p>
+Leanは論理の穴を見つけることには非常に強い．しかし，「この定理は研究として面白い」と認定する道具ではない．
+</p>
+<p>
+これは欠点というより，役割が違うのだと思う．
+</p>
+</article></div>
+
+<h2>6．数値部分はLeanに入れただけでは終わらない</h2>
+<div class="news"><article class="news-item">
+<p>
+前回のverified numericsの話ともつながる．
+</p>
+<p>
+例えば有限要素計算から得られた数値
+\[
+C_h=0.137842\ldots
+\]
+を証明の途中で使うとする．
+</p>
+<p>
+その値を単なる定数としてLeanに書き込み，そこから先の論理を形式化しても，「その数値が正しく計算された」という保証が自動的に付くわけではない．
+</p>
+<p>
+外部計算を使うなら，その結果をどうcertificateとして渡すのかを考える必要がある．区間演算なのか，厳密整数・有理数計算なのか，verified linear solverなのか．
+</p>
+<p>
+つまり，
+\[
+\text{formal proof}
+\]
+と
+\[
+\text{verified computation}
+\]
+も，同じものではない．
+</p>
+<p>
+だから私は，AI4Mathを考える時にLeanだけを見ても足りないと思っている．
+</p>
+</article></div>
+
+<h2>7．役割を分けると，かなり見通しがよくなる</h2>
+<div class="news"><article class="news-item">
+<p>
+今のところ，私は次のように考えるのが一番自然だと思っている．
+</p>
+<p>
+<b>AI</b>は，広く探索する．証明候補，反例候補，補題候補を大量に出す．
+</p>
+<p>
+<b>verified numerics</b>は，数値計算の部分を保証する．
+</p>
+<p>
+<b>Lean</b>は，形式化された論理の部分を確認する．
+</p>
+<p>
+そして<b>人間</b>は，何を問題にするか，どの仮定が本質的か，結果にどんな意味があるかを考える．
+</p>
+<p>
+式にすると，
+\[
+\boxed{
+\text{AI：探索}
+\quad
+\text{verified numerics：数値保証}
+\quad
+\text{Lean：論理保証}
+\quad
+\text{human：問題設定と意味}
+}
+\]
+という感じになる．
+</p>
+<p>
+もちろん，この境界も将来は動くだろう．AIが問題設定まで行うかもしれないし，形式化の自動化ももっと進むと思う．
+</p>
+<p>
+それでも，役割を一度分けて考えると，「何が保証されていて，何がまだ人間の判断なのか」が見えやすくなる．
+</p>
+</article></div>
+
+<h2>8．LeanはAIの数学の「査読者」になれるのか</h2>
+<div class="news"><article class="news-item">
+<p>
+タイトルを少し変えて，「LeanはAIの数学の査読者になれるのか」と言ってもよいかもしれない．
+</p>
+<p>
+ただ，私はLeanを査読者そのものだとは思わない．
+</p>
+<p>
+査読者は，証明の正しさだけでなく，新規性，重要性，仮定の妥当性，先行研究との関係まで見る．Leanが確認するのは，そのうち形式化された論理の部分である．
+</p>
+<p>
+だから，Leanは査読者というより，
+</p>
+<p><b>「ここからここまでは，本当に論理的に通っています」</b></p>
+<p>
+と保証する非常に厳しい検査役に近いのだと思う．
+</p>
+<p>
+AIが大量の数学を書くようになればなるほど，この役割は重要になるだろう．人間の目だけですべて確認するのは難しくなるからである．
+</p>
+</article></div>
+
+<h2>9．最後に残るのは，やはり問題設定だと思う</h2>
+<div class="news"><article class="news-item">
+<p>
+第2回から，反例を探す話，定理を削る話，反例候補をverified computationで固める話と続けてきた．
+</p>
+<p>
+そして今回は，Leanで論理を固めるところまで来た．
+</p>
+<p>
+かなり機械に任せられるように見える．
+</p>
+<p>
+それでも最後に残る問いがある．
+</p>
+<p><b>そもそも何を証明したかったのか．</b></p>
+<p>
+この問いを間違えると，完璧に形式化された証明を得ても，別の問題を解いていることになる．
+</p>
+<p>
+AIが証明し，verified computationが数値を保証し，Leanが論理を確認する．そこまで行っても，人間は最初と最後に戻ってくる．
+</p>
+<p>
+なぜこの問題なのか．<br>
+なぜこの仮定なのか．<br>
+どこまで弱くできるのか．<br>
+何が本当に新しいのか．
+</p>
+<p>
+私は，AI4Mathが進めば進むほど，こういう問いの重みはむしろ増していくのではないかと思っている．
+</p>
+</article></div>
+
+<h2>参考リンク</h2>
+<div class="news"><article class="news-item">
+<ul>
+<li><a href="https://lean-lang.org/" target="_blank" rel="noopener">Lean Programming Language</a></li>
+<li><a href="https://lean-lang.org/learn/" target="_blank" rel="noopener">Lean: Learn</a></li>
+<li><a href="https://leanprover-community.github.io/" target="_blank" rel="noopener">Lean community</a></li>
+<li><a href="https://leanprover-community.github.io/mathlib4_docs/" target="_blank" rel="noopener">Mathlib documentation</a></li>
+</ul>
+</article></div>
+
+<h2>関連する記事</h2>
+<div class="news"><article class="news-item">
+<ul>
+<li><a href="./lean4-01.html">第1回：Lean 4は有限要素法研究に何をもたらすか</a></li>
+<li><a href="./lean4-02.html">第2回：AIは証明するより，壊す方が得意なのか――反例から考えるAI4Math</a></li>
+<li><a href="./lean4-03.html">第3回：反例を見つけたあと，どうやって定理にするのか――AIと一緒に「境界」を探す</a></li>
+<li><a href="./lean4-04.html">第4回：AIが見つけた反例は，本当に反例なのか――数値実験と証明のあいだ</a></li>
+</ul>
+</article></div>
+
+</div>
+</article>
+</div>
+</main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+</body>
+</html>
