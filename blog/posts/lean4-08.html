@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>a prioriとa posterioriは何が違うのか――誤差評価からverified outputまで | Hiroki Ishizaka</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,a priori,a posteriori,有限要素法,FEM,誤差評価,verified output,数値解析">
+<meta name="description" content="有限要素法でよく聞かれるa priori誤差評価とa posteriori誤差評価は何が違うのか．両者の役割をPoisson問題を例に整理し，computable boundやverified outputとの違いまで考えます．">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-08.html">
+
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<noscript>
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+</noscript>
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-08.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-08.html",
+      "headline": "第8回：a prioriとa posterioriは何が違うのか――誤差評価からverified outputまで",
+      "description": "有限要素法でよく聞かれるa priori誤差評価とa posteriori誤差評価は何が違うのか．両者の役割をPoisson問題を例に整理し，computable boundやverified outputとの違いまで考えます．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-08.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-09-21",
+      "dateModified": "2026-09-21",
+      "articleSection": "Certified FEM and error estimation",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
+      "keywords": "a priori error estimate, a posteriori error estimate, finite element method, verified output, certified computation"
+    }
+  ]
+}
+</script>
+
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2026-09-21">
+<meta property="article:modified_time" content="2026-09-21">
+<meta property="article:section" content="Certified FEM and error estimation">
+<meta property="og:site_name" content="Hiroki Ishizaka">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="a prioriとa posterioriは何が違うのか――誤差評価からverified outputまで | Hiroki Ishizaka">
+<meta property="og:description" content="a prioriとa posterioriは，どちらも誤差評価だが役割が違う．Poisson問題を例に，verified outputまで整理します．">
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-08.html">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@teamfem16key">
+<meta name="twitter:title" content="a prioriとa posterioriは何が違うのか">
+<meta name="twitter:description" content="有限要素法の誤差評価からverified outputまでを整理する研究ノート．">
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+</head>
+
+<body class="page">
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../fem/">Visions</a></li>
+        <li><a href="../../suppl/">Supplementary</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">Geometry</a></li>
+        <li><a href="../../links/">Links</a></li>
+        <li><a href="../../contact/">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in">
+    <li class="bcl-first"><a href="../../">ISHIZAKA Hiroki Website TOP</a></li>
+    <li class="bcl-last">Blog post from 21st September 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第8回：a prioriとa posterioriは何が違うのか――誤差評価からverified outputまで</h1>
+
+<div class="news">
+<article class="news-item">
+<b>Certified FEMで最近考えていること</b><br>
+(21st September 2026 <span class="cat cat001">Update</span>)
+<p>
+ここまでAIと数学の作り方について少し長く考えてきた．ここからは，少し本業に戻りたい．
+</p>
+<p>
+有限要素法の話をしていると，a prioriとa posterioriは何が違うのか，と聞かれることがある．
+</p>
+<p>
+どちらも「誤差評価」なので，同じように見えるのかもしれない．しかし，役割はかなり違う．
+</p>
+<p>
+大まかに言えば，a prioriは<b>近似空間やメッシュを選んだとき，理論上どの程度の誤差が期待できるか</b>を見る．a posterioriは<b>実際に得られた離散解を使って，その計算の誤差を評価する</b>．
+</p>
+<p>
+ただし，「計算前」と「計算後」とだけ覚えると少し乱暴でもある．本質は，評価が何に依存しているかにある．
+</p>
+</article>
+</div>
+
+<h2>1．まずPoisson問題で考える</h2>
+<div class="news"><article class="news-item">
+<p>
+最も基本的な例として，
+\[
+-\Delta u=f\quad\text{in }\Omega,
+\qquad
+u=0\quad\text{on }\partial\Omega
+\]
+を考える．
+</p>
+<p>
+有限要素空間を \(V_h\subset H_0^1(\Omega)\) とし，有限要素解を \(u_h\in V_h\) とする．
+</p>
+<p>
+数値解析で知りたいのは，もちろん
+\[
+u_h
+\]
+そのものだけではない．真の解 \(u\) とどのくらい離れているのかを知りたい．
+</p>
+<p>
+そこで誤差
+\[
+e:=u-u_h
+\]
+をどう評価するか，という問題が出てくる．
+</p>
+</article></div>
+
+<h2>2．a priori誤差評価は「方法そのもの」の力を見る</h2>
+<div class="news"><article class="news-item">
+<p>
+例えばP1有限要素法なら，適切な正則性とメッシュ条件の下で，
+\[
+\|u-u_h\|_{H^1(\Omega)}
+\leq
+C h |u|_{H^2(\Omega)}
+\]
+のような評価が得られる．
+</p>
+<p>
+ここで大事なのは，この評価が特定の計算結果 \(u_h\) の残差を見て作られているわけではない，ということである．
+</p>
+<p>
+有限要素空間の近似性，メッシュの幾何，解の正則性などから，
+</p>
+<p><b>「この方法なら，メッシュを細かくするとこの程度の速さで誤差が減る」</b></p>
+<p>
+と分かる．
+</p>
+<p>
+異方性有限要素法では，ここに単純な \(h\) だけではなく，方向別の長さや要素の幾何量が入ってくる．私が長く扱ってきたのも，まさにこの部分である．
+</p>
+<p>
+a priori評価は，有限要素法そのものの近似能力を理解するために非常に重要である．
+</p>
+</article></div>
+
+<h2>3．でも，そのまま「今回の誤差」は分からないことがある</h2>
+<div class="news"><article class="news-item">
+<p>
+先ほどの
+\[
+\|u-u_h\|_{H^1(\Omega)}
+\leq
+C h |u|_{H^2(\Omega)}
+\]
+をもう一度見る．
+</p>
+<p>
+右辺には，真の解 \(u\) の \(H^2\) seminormが入っている．
+</p>
+<p>
+ところが，そもそも \(u\) が分からないから有限要素法で近似している．
+</p>
+<p>
+さらに，定数 \(C\) が解析上は存在すると分かっていても，実際の数値が明示されていないことも多い．
+</p>
+<p>
+だからこの評価は，
+</p>
+<p>
+「一次収束する」<br>
+「この幾何条件なら安定である」<br>
+「どの方向のメッシュ幅が効く」
+</p>
+<p>
+ということを教えてくれる一方で，そのまま
+</p>
+<p><b>「今回計算した \(u_h\) の誤差は0.01以下です」</b></p>
+<p>
+とは言えない場合がある．
+</p>
+</article></div>
+
+<h2>4．a posteriori誤差評価は，得られた離散解を見る</h2>
+<div class="news"><article class="news-item">
+<p>
+a posterioriでは，実際に得られた \(u_h\) を使う．
+</p>
+<p>
+典型的なresidual estimatorなら，要素ごとの残差や要素境界でのflux jumpを使って，
+\[
+\eta_h^2
+=
+\sum_{T\in\mathcal T_h}
+\eta_T^2
+\]
+のような量を作る．
+</p>
+<p>
+そして例えば，
+\[
+\|u-u_h\|_{H^1(\Omega)}
+\leq
+C_{\mathrm{rel}}\eta_h
+\]
+というreliability estimateを示す．
+</p>
+<p>
+ここでは \(\eta_h\) は，計算済みの \(u_h\)，既知のデータ \(f\)，メッシュなどから求めることができる．
+</p>
+<p>
+つまり，a posterioriは
+</p>
+<p><b>「実際に得られたこの離散解を見て，どこが悪そうか」</b></p>
+<p>
+を調べることができる．
+</p>
+</article></div>
+
+<h2>5．だからadaptive FEMにつながる</h2>
+<div class="news"><article class="news-item">
+<p>
+a posteriori estimatorの大きな利点は，要素ごとの誤差情報を持てることである．
+</p>
+<p>
+ある領域では \(\eta_T\) が小さい．別の領域では大きい．
+</p>
+<p>
+それなら，大きいところだけ細かくすればよい．
+</p>
+<p>
+この考え方が，
+\[
+\text{SOLVE}
+\longrightarrow
+\text{ESTIMATE}
+\longrightarrow
+\text{MARK}
+\longrightarrow
+\text{REFINE}
+\]
+というadaptive FEMの基本ループにつながる．
+</p>
+<p>
+a priori評価が「どのように収束するか」を教えるのに対して，a posteriori評価は「今の計算のどこを改善するか」を教える，と考えると分かりやすい．
+</p>
+</article></div>
+
+<h2>6．a prioriとa posterioriは，厳密さの上下関係ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+ここは誤解されやすいところだと思う．
+</p>
+<p>
+a posterioriの方がa prioriより「厳密」なのではない．
+</p>
+<p>
+a prioriかa posterioriかは，主に<b>評価が何に依存しているか</b>の違いである．
+</p>
+<p>
+a priori評価でも定数まで明示して完全に計算可能にできる場合がある．逆にa posteriori estimatorでも，
+\[
+C_{\mathrm{rel}}
+\]
+が未知だったり，大きく過大評価したりすることがある．
+</p>
+<p>
+だから，
+\[
+\text{a priori}
+\longrightarrow
+\text{a posteriori}
+\]
+を単純な「レベルアップ」と考えるのは少し違う．
+</p>
+<p>
+二つは別の問いに答えている．
+</p>
+</article></div>
+
+<h2>7．では，computable boundとは何か</h2>
+<div class="news"><article class="news-item">
+<p>
+私が最近特に気にしているのは，右辺を本当に計算できるかどうかである．
+</p>
+<p>
+例えば
+\[
+\|u-u_h\|
+\leq
+M_h
+\]
+と書けたとしても，\(M_h\) の中に未知の正則性定数や未評価のgeneric constantが残っていれば，理論評価としては正しくても，そのまま数値的な保証にはならない．
+</p>
+<p>
+一方，
+\[
+\|u-u_h\|
+\leq
+\widehat M_h
+\]
+で，\(\widehat M_h\) が既知のデータ，メッシュ，離散解などから実際に計算できるなら，話が変わってくる．
+</p>
+<p>
+「誤差が小さいはずだ」ではなく，
+</p>
+<p><b>「この計算について，誤差はこの値以下である」</b></p>
+<p>
+という方向へ進めるからである．
+</p>
+</article></div>
+
+<h2>8．verified outputは，もう一つ別の軸で考えたい</h2>
+<div class="news"><article class="news-item">
+<p>
+このブログで私がverified outputという言葉を使うときは，単に収束次数を知るだけではなく，<b>最終的に知りたい量について，計算可能な形で保証を付ける</b>という意味を強く意識している．
+</p>
+<p>
+例えば目的量 \(J(u)\) に対して，
+\[
+|J(u)-J_h|
+\leq
+\Delta_h
+\]
+を得て，\(\Delta_h\) が実際に評価できるなら，
+\[
+J(u)\in
+[J_h-\Delta_h, J_h+\Delta_h]
+\]
+という形で出力そのものを囲うことができる．
+</p>
+<p>
+これはa posterioriで作ることもできるし，問題によってはa prioriな情報から作ることもできる．
+</p>
+<p>
+だからverified outputは，a priori / a posterioriの次に並ぶ第三分類というより，
+</p>
+<p><b>「最終的な数値出力を，どこまで計算可能かつ保証付きにできるか」</b></p>
+<p>
+という別の軸で考えた方がよいと思っている．
+</p>
+</article></div>
+
+<h2>9．「数学的な上界」と「機械上での厳密保証」も分けたい</h2>
+<div class="news"><article class="news-item">
+<p>
+さらにverifiedという言葉を強く使うなら，もう一段注意が必要になる．
+</p>
+<p>
+紙の上で
+\[
+|J(u)-J_h|\leq\Delta_h
+\]
+が成り立っていても，コンピュータで \(\Delta_h\) を通常の浮動小数点演算だけで計算したなら，丸め誤差までは保証していないことがある．
+</p>
+<p>
+線形方程式を反復法で解いたならsolver errorもある．
+</p>
+<p>
+したがって，
+</p>
+<p>
+解析的な誤差評価．<br>
+計算可能な上界．<br>
+solver errorを含む保証．<br>
+rounding errorまで含む機械厳密な保証．
+</p>
+<p>
+は区別した方がよい．
+</p>
+<p>
+この違いは，第4回で書いた「counterexample candidateとverified counterexampleを分けたい」という話にもつながっている．
+</p>
+</article></div>
+
+<h2>10．三つを一枚にすると</h2>
+<div class="news"><article class="news-item">
+<p>
+かなり単純化すれば，私は次のように整理している．
+</p>
+<p>
+\[
+\boxed{
+\begin{array}{ll}
+\text{a priori} &
+\text{方法・近似空間・メッシュから，誤差の構造や収束を理解する},\\[4pt]
+\text{a posteriori} &
+\text{得られた離散解を使って，実際の計算の誤差を評価する},\\[4pt]
+\text{verified output} &
+\text{最終的に欲しい数値出力へ，計算可能な保証を付ける}.
+\end{array}
+}
+\]
+</p>
+<p>
+もちろん，実際の研究では境界はもっと複雑である．a prioriなcomputable boundもあるし，a posteriori estimatorがそのままcertificateになる場合もある．
+</p>
+<p>
+だから大事なのは用語を箱に入れることではなく，
+</p>
+<p><b>「この評価は何を使っていて，右辺は本当に計算できて，最終的に何を保証しているのか」</b></p>
+<p>
+を見ることだと思う．
+</p>
+</article></div>
+
+<h2>次に考えたいこと</h2>
+<div class="news"><article class="news-item">
+<p>
+a posteriori評価からcertificateへ進むとき，かなり重要な道具の一つがequilibrated fluxである．
+</p>
+<p>
+残差を眺めるだけではなく，保存則を満たすfluxを再構成すると，なぜ誤差の上界を直接作れることがあるのか．
+</p>
+<p>
+次は，
+</p>
+<p><b>「equilibrated fluxはなぜcertificateになるのか」</b></p>
+<p>
+を考えてみたい．
+</p>
+</article></div>
+
+<h2>関連する記事</h2>
+<div class="news"><article class="news-item">
+<ul>
+<li><a href="./lean4-04.html">第4回：AIが見つけた反例は，本当に反例なのか――数値実験と証明のあいだ</a></li>
+<li><a href="./lean4-05.html">第5回：LeanはAIの数学をどこまで確認できるのか――正しい証明と，正しい問題設定は同じではない</a></li>
+<li><a href="./lean4-06.html">第6回：論文を書く主語は誰なのか――人間の好奇心とAI4Math</a></li>
+<li><a href="./lean4-07.html">第7回：研究にも記憶と履歴がある――AI時代のクレジットをどう残すか</a></li>
+</ul>
+</article></div>
+
+</div>
+</article>
+</div>
+</main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+</body>
+</html>
