@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>equilibrated fluxはなぜcertificateになるのか――CR–RTとMariniの関係から見る | Hiroki Ishizaka</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,equilibrated flux,certificate,Crouzeix-Raviart,Raviart-Thomas,Marini,hypercircle,Prager-Synge,有限要素法">
+<meta name="description" content="equilibrated fluxはなぜ誤差のcertificateになるのか．Poisson問題の保存則とhypercircle identityから出発し，Raviart–Thomas flux，Crouzeix–Raviart法，Marini型関係までつなげて考えます．">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-09.html">
+
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<noscript>
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+</noscript>
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-09.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-09.html",
+      "headline": "第9回：equilibrated fluxはなぜcertificateになるのか――CR–RTとMariniの関係から見る",
+      "description": "equilibrated fluxはなぜ誤差のcertificateになるのか．Poisson問題の保存則とhypercircle identityから出発し，Raviart–Thomas flux，Crouzeix–Raviart法，Marini型関係までつなげて考えます．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-09.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-09-21",
+      "dateModified": "2026-09-21",
+      "articleSection": "Certified FEM and equilibrated flux",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
+      "keywords": "equilibrated flux, certificate, Crouzeix-Raviart, Raviart-Thomas, Marini, hypercircle"
+    }
+  ]
+}
+</script>
+
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2026-09-21">
+<meta property="article:modified_time" content="2026-09-21">
+<meta property="article:section" content="Certified FEM and equilibrated flux">
+<meta property="og:site_name" content="Hiroki Ishizaka">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="equilibrated fluxはなぜcertificateになるのか――CR–RTとMariniの関係から見る | Hiroki Ishizaka">
+<meta property="og:description" content="保存則，hypercircle，RT flux，CR–RT，Marini型関係から，equilibrated fluxがcertificateになる理由を考えます．">
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-09.html">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@teamfem16key">
+<meta name="twitter:title" content="equilibrated fluxはなぜcertificateになるのか">
+<meta name="twitter:description" content="CR–RTとMariniの関係から見るCertified FEMの研究ノート．">
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+</head>
+
+<body class="page">
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../fem/">Visions</a></li>
+        <li><a href="../../suppl/">Supplementary</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">Geometry</a></li>
+        <li><a href="../../links/">Links</a></li>
+        <li><a href="../../contact/">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in">
+    <li class="bcl-first"><a href="../../">ISHIZAKA Hiroki Website TOP</a></li>
+    <li class="bcl-last">Blog post from 21st September 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第9回：equilibrated fluxはなぜcertificateになるのか――CR–RTとMariniの関係から見る</h1>
+
+<div class="news">
+<article class="news-item">
+<b>Certified FEMで最近考えていること</b><br>
+(21st September 2026 <span class="cat cat001">Update</span>)
+<p>
+前回，a prioriとa posterioriは別の問いに答えるものであり，さらにcomputable boundやverified outputは別の軸で考えた方がよい，ということを書いた．
+</p>
+<p>
+では，実際に
+</p>
+<p><b>「この誤差はこの値以下です」</b></p>
+<p>
+と言える上界をどう作ればよいのか．
+</p>
+<p>
+有限要素法には，そのための非常に強力な考え方がある．fluxを平衡化することである．
+</p>
+<p>
+最初に見ると少し不思議である．なぜfluxを一つ作るだけで，未知の真の解を知らずに誤差を保証できるのか．
+</p>
+<p>
+その理由は，保存則と直交性にある．
+</p>
+</article>
+</div>
+
+<h2>1．Poisson問題ではfluxも未知量である</h2>
+<div class="news"><article class="news-item">
+<p>
+まず，
+\[
+-\Delta u=f\quad\text{in }\Omega,
+\qquad
+u=0\quad\text{on }\partial\Omega
+\]
+を考える．
+</p>
+<p>
+fluxを
+\[
+\boldsymbol q:=-\nabla u
+\]
+と置けば，
+\[
+\operatorname{div}\boldsymbol q=f
+\]
+である．
+</p>
+<p>
+つまりPoisson方程式は，解 \(u\) だけでなく，
+</p>
+<p><b>「divergenceが右辺 \(f\) と一致するflux」</b></p>
+<p>
+を持っている．
+</p>
+<p>
+この保存則を離散的にも再現しよう，というのがequilibrated fluxの出発点である．
+</p>
+</article></div>
+
+<h2>2．保存則を満たすfluxを再構成する</h2>
+<div class="news"><article class="news-item">
+<p>
+近似解を \(v_h\in H_0^1(\Omega)\) とする．さらに，
+\[
+\boldsymbol q_h\in H(\operatorname{div};\Omega)
+\]
+を構成して，
+\[
+\operatorname{div}\boldsymbol q_h=f
+\]
+を満たしたとする．
+</p>
+<p>
+この \(\boldsymbol q_h\) が，理想的な意味でのequilibrated fluxである．
+</p>
+<p>
+重要なのは，\(\boldsymbol q_h\) が単にfluxらしい形をしているだけではなく，<b>真のfluxと同じ保存則を満たしている</b>ことである．
+</p>
+<p>
+この一条件が，次のhypercircle identityを生む．
+</p>
+</article></div>
+
+<h2>3．hypercircle identityを見る</h2>
+<div class="news"><article class="news-item">
+<p>
+真のflux \(\boldsymbol q=-\nabla u\) と，平衡化した \(\boldsymbol q_h\) を考える．
+</p>
+<p>
+\[
+\operatorname{div}(\boldsymbol q_h-\boldsymbol q)=0
+\]
+なので，\(v_h-u\in H_0^1(\Omega)\) を使って部分積分すると，
+\[
+(\nabla(v_h-u),\boldsymbol q_h-\boldsymbol q)=0
+\]
+となる．
+</p>
+<p>
+この直交性から，
+\[
+\|\nabla(u-v_h)\|_{L^2(\Omega)}^2
++
+\|\boldsymbol q-\boldsymbol q_h\|_{L^2(\Omega)}^2
+=
+\|\nabla v_h+\boldsymbol q_h\|_{L^2(\Omega)}^2
+\]
+が得られる．
+</p>
+<p>
+Prager–Syngeのhypercircle identityと呼ばれる関係である．
+</p>
+<p>
+したがって，
+\[
+\boxed{
+\|\nabla(u-v_h)\|_{L^2(\Omega)}
+\leq
+\|\nabla v_h+\boldsymbol q_h\|_{L^2(\Omega)}
+}
+\]
+である．
+</p>
+<p>
+ここで右辺には，もう真の解 \(u\) が現れない．
+</p>
+<p><b>これがequilibrated fluxがcertificateになる最も基本的な理由である．</b></p>
+</article></div>
+
+<h2>4．単なるresidual estimatorと何が違うのか</h2>
+<div class="news"><article class="news-item">
+<p>
+residual estimatorでは，しばしば
+\[
+\|u-u_h\|
+\leq
+C_{\mathrm{rel}}\eta_h
+\]
+のような形になる．
+</p>
+<p>
+もちろん，これはa posteriori error analysisの中心的な結果であり，非常に重要である．
+</p>
+<p>
+ただ，certificateという観点では，
+\[
+C_{\mathrm{rel}}
+\]
+が明示的か，本当に計算可能か，どのくらい鋭いかが問題になる．
+</p>
+<p>
+hypercircle型の上界では，平衡条件を正確に満たせれば，誤差上界が非常に直接的に現れる．
+</p>
+<p>
+つまり，保存則は単に「物理的にきれい」だから入れるのではない．<b>誤差評価の定数を制御し，計算可能な上界へ近づける数学的な役割</b>を持っている．
+</p>
+</article></div>
+
+<h2>5．なぜRaviart–Thomas要素なのか</h2>
+<div class="news"><article class="news-item">
+<p>
+ここでRaviart–Thomas要素が自然に出てくる．
+</p>
+<p>
+RT空間は
+\[
+H(\operatorname{div};\Omega)
+\]
+に適合するように作られており，要素間で法線成分がつながる．
+</p>
+<p>
+そのため，
+\[
+\operatorname{div}\boldsymbol q_h
+\]
+を要素ごとに制御しながら，globalな \(H(\operatorname{div})\)-fluxを作ることができる．
+</p>
+<p>
+つまり，
+</p>
+<p><b>局所保存則を満たすfluxを作りたい</b></p>
+<p>
+という要求とRT要素は非常に相性がよい．
+</p>
+<p>
+equilibrated flux reconstructionでRT系の空間が頻繁に現れるのは，偶然ではない．
+</p>
+</article></div>
+
+<h2>6．CR法から見ると，さらに面白い</h2>
+<div class="news"><article class="news-item">
+<p>
+Crouzeix–Raviart法では，離散解 \(u_h^{CR}\) は非適合である．
+</p>
+<p>
+そのbroken gradient
+\[
+\nabla_h u_h^{CR}
+\]
+は各要素上では非常に単純だが，そのままglobalな \(H(\operatorname{div})\)-fluxになっているわけではない．
+</p>
+<p>
+そこで，CR解からRT fluxを作るという発想が出てくる．
+</p>
+<p>
+これは私にとってかなり重要な組合せである．
+</p>
+<p>
+CR側では低次で単純な離散解を得る．RT側では保存則を持つfluxを得る．
+</p>
+<p>
+\[
+\text{CR solution}
+\quad\longrightarrow\quad
+\text{RT flux}
+\]
+と移ることで，離散解の中にあった情報をcertificateへ使える形に変えることができる．
+</p>
+</article></div>
+
+<h2>7．Marini型の関係は何を教えてくれるのか</h2>
+<div class="news"><article class="news-item">
+<p>
+Poisson型問題で右辺を要素定数に落とすと，CR解と最低次RT解の間には古典的なMarini型の関係が現れる．
+</p>
+<p>
+細かい式はfluxの符号規約や問題の書き方で変わるが，本質は単純である．
+</p>
+<p>
+RT fluxは，各要素上で
+</p>
+<p><b>CRのbroken gradientに，右辺に依存する明示的な一次補正を加えた形</b></p>
+<p>
+で表すことができる．
+</p>
+<p>
+つまり，別に全く新しい情報を外から持ってくるのではなく，CR解と右辺から保存則を満たすRT fluxをかなり直接的に再構成できる．
+</p>
+<p>
+私はここが面白いと思っている．
+</p>
+<p>
+一見すると非適合なCR解とmixed methodのRT fluxは別の近似に見える．しかしMarini型の関係を見ると，両者の間には非常に具体的な橋がある．
+</p>
+</article></div>
+
+<h2>8．ただし，CR解をそのままhypercircleへ入れるわけではない</h2>
+<div class="news"><article class="news-item">
+<p>
+ここは注意が必要である．
+</p>
+<p>
+先ほどの基本的なhypercircle identityでは，
+\[
+v_h\in H_0^1(\Omega)
+\]
+を使った．
+</p>
+<p>
+一方，CR解 \(u_h^{CR}\) は一般に \(H_0^1(\Omega)\) に属さない．
+</p>
+<p>
+したがって，
+</p>
+<p><b>「CR解からRT fluxを作ったので，そのまま同じhypercircle identityを適用できる」</b></p>
+<p>
+と書くのは正確ではない．
+</p>
+<p>
+非適合性に由来する項を別に扱う，conforming reconstructionを使う，あるいはCR–RT関係に適した別の誤差恒等式・評価を用いる必要がある．
+</p>
+<p>
+CR–RTがcertificateに使える，という話は正しいが，<b>conforming FEMのhypercircleをそのままコピーするわけではない</b>．
+</p>
+</article></div>
+
+<h2>9．右辺を射影したときはdata oscillationが残る</h2>
+<div class="news"><article class="news-item">
+<p>
+もう一つ，実際の計算では重要な点がある．
+</p>
+<p>
+一般の \(f\) に対して，最低次RT fluxで
+\[
+\operatorname{div}\boldsymbol q_h=f
+\]
+をそのまま満たすことはできない場合がある．
+</p>
+<p>
+そこで通常は，要素ごとの射影 \(f_h\) を使って
+\[
+\operatorname{div}\boldsymbol q_h=f_h
+\]
+とする．
+</p>
+<p>
+このとき，
+\[
+f-f_h
+\]
+は消えない．
+</p>
+<p>
+その差から生じるdata oscillationやdata approximationの項を別に評価する必要がある．
+</p>
+<p>
+だからequilibrated fluxが強力だからといって，「fluxを一つ作ればすべての誤差項が消える」わけではない．
+</p>
+<p>
+certificateを作るには，何を正確に平衡化していて，残った項が何なのかを最後まで追う必要がある．
+</p>
+</article></div>
+
+<h2>10．私の最近のCR–RT研究とのつながり</h2>
+<div class="news"><article class="news-item">
+<p>
+私が最近考えているCR–RT，Marini，computable boundも，この流れの中にある．
+</p>
+<p>
+CR解は低次で扱いやすい．RT fluxは保存則を持つ．Marini型の関係は両者を結ぶ．
+</p>
+<p>
+すると，
+\[
+\text{discrete solution}
+\longrightarrow
+\text{equilibrated flux}
+\longrightarrow
+\text{computable bound}
+\longrightarrow
+\text{certificate}
+\]
+という道筋が見えてくる．
+</p>
+<p>
+特に異方性メッシュでは，この各段階で定数や幾何依存性がどう入るかが問題になる．
+</p>
+<p>
+単に「RT fluxを作ればよい」ではなく，細長い要素でも本当に上界が壊れないか，どの幾何量が必要か，どの項まで計算可能にできるかを見る必要がある．
+</p>
+<p>
+このあたりは，私がこれまで続けてきた異方性有限要素法とverified outputがちょうど交わる場所だと思っている．
+</p>
+<p>
+<a href="../../publications/">関連する論文はPublicationsページにまとめています．</a>
+</p>
+</article></div>
+
+<h2>11．certificateとmachine verificationはまだ同じではない</h2>
+<div class="news"><article class="news-item">
+<p>
+第8回でも書いたが，数学的にcomputableな上界を作ったことと，コンピュータ上で機械厳密に保証したことは同じではない．
+</p>
+<p>
+例えば
+\[
+\|\nabla(u-v_h)\|
+\leq
+\|\nabla v_h+\boldsymbol q_h\|
+\]
+という上界が正しくても，右辺を通常の浮動小数点演算で評価すればrounding errorは残る．
+</p>
+<p>
+線形系を近似的に解いたならsolver errorもある．
+</p>
+<p>
+だから私は，
+</p>
+<p>
+数学的なcertificateを作ること．<br>
+そのcertificateを数値的に評価すること．<br>
+さらに機械厳密に囲うこと．
+</p>
+<p>
+を分けて考えたい．
+</p>
+<p>
+equilibrated fluxは，その最初の段階を非常に強くしてくれる道具である．
+</p>
+</article></div>
+
+<h2>12．なぜcertificateになるのかを一言で言えば</h2>
+<div class="news"><article class="news-item">
+<p>
+equilibrated fluxがcertificateになる理由を一言でまとめるなら，
+</p>
+<p><b>保存則を満たすfluxを作ることで，未知の真の解との誤差を，計算可能なflux mismatchへ移せるからである．</b></p>
+<p>
+ただし，そのためには
+</p>
+<p>
+何を平衡化しているのか．<br>
+近似解はconformingかnonconformingか．<br>
+data oscillationは残らないか．<br>
+必要な定数は明示されているか．
+</p>
+<p>
+を確認しなければならない．
+</p>
+<p>
+certificateという言葉を使うなら，この最後の確認まで含めたい．
+</p>
+</article></div>
+
+<h2>次に考えたいこと</h2>
+<div class="news"><article class="news-item">
+<p>
+ここまでは，解やfluxの誤差そのものをどう上から押さえるかを考えた．
+</p>
+<p>
+でも実際の計算では，解全体が欲しいとは限らない．
+</p>
+<p>
+領域平均，あるboundary flux，drag，ある一点付近の値など，<b>一つの目的量だけを高精度に知りたい</b>ことも多い．
+</p>
+<p>
+そのとき，解全体の誤差を均等に小さくするのが本当に効率的なのか．
+</p>
+<p>
+次は，
+</p>
+<p><b>「DWRで目的量誤差をどう評価するか」</b></p>
+<p>
+を考えてみたい．
+</p>
+</article></div>
+
+<h2>関連する記事</h2>
+<div class="news"><article class="news-item">
+<ul>
+<li><a href="./lean4-04.html">第4回：AIが見つけた反例は，本当に反例なのか――数値実験と証明のあいだ</a></li>
+<li><a href="./lean4-08.html">第8回：a prioriとa posterioriは何が違うのか――誤差評価からverified outputまで</a></li>
+</ul>
+</article></div>
+
+</div>
+</article>
+</div>
+</main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+</body>
+</html>
