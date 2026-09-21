@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>未解像ダイナミクスをcertificateできるか――model reductionとmemoryの誤差をどう保証するか | Hiroki Ishizaka</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,unresolved dynamics,model reduction,memory equation,memory kernel,verified output,certificate,goal-oriented error estimation,reduced model">
+<meta name="description" content="未解像自由度を消して得たmemory equationやreduced modelは，元の系をどこまで残しているのか．exact reductionとmodel approximationを分け，kernel approximation，reconstruction，goal-oriented output errorをどうcertificateするか考えます．">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-12.html">
+
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<noscript>
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+</noscript>
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-12.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-12.html",
+      "headline": "第12回：未解像ダイナミクスをcertificateできるか――model reductionとmemoryの誤差をどう保証するか",
+      "description": "exact reductionとmodel approximationを分け，memory kernel，reconstruction，goal-oriented output errorをどうcertificateするか考えます．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-12.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-09-21",
+      "dateModified": "2026-09-21",
+      "articleSection": "Certified model reduction and unresolved dynamics",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
+      "keywords": "unresolved dynamics, model reduction, memory kernel, verified output, certificate"
+    }
+  ]
+}
+</script>
+
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2026-09-21">
+<meta property="article:modified_time" content="2026-09-21">
+<meta property="article:section" content="Certified model reduction and unresolved dynamics">
+<meta property="og:site_name" content="Hiroki Ishizaka">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="未解像ダイナミクスをcertificateできるか――model reductionとmemoryの誤差をどう保証するか | Hiroki Ishizaka">
+<meta property="og:description" content="未解像自由度を消したあとに残るmemoryとreconstructionを，verified outputの視点から考えます．">
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-12.html">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@teamfem16key">
+<meta name="twitter:title" content="未解像ダイナミクスをcertificateできるか">
+<meta name="twitter:description" content="model reduction，memory，reconstructionの誤差をどう保証するか考えます．">
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+</head>
+
+<body class="page">
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../fem/">Visions</a></li>
+        <li><a href="../../suppl/">Supplementary</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">Geometry</a></li>
+        <li><a href="../../links/">Links</a></li>
+        <li><a href="../../contact/">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in">
+    <li class="bcl-first"><a href="../../">ISHIZAKA Hiroki Website TOP</a></li>
+    <li class="bcl-last">Blog post from 21st September 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第12回：未解像ダイナミクスをcertificateできるか――model reductionとmemoryの誤差をどう保証するか</h1>
+
+<div class="news">
+<article class="news-item">
+<b>Certified FEMで最近考えていること</b><br>
+(21st September 2026 <span class="cat cat001">Update</span>)
+<p>
+第8回から第11回までは，主にPDEを離散化したあとに残る誤差をどう保証するかを考えてきた．
+</p>
+<p>
+しかし，その前にもう一つ誤差が入る場合がある．
+</p>
+<p>
+元のダイナミクスから一部の自由度を消して，reduced modelやmemory equationを作っている場合である．
+</p>
+<p>
+このとき私は，
+</p>
+<p><b>「数値解は厳密にcertificateできても，解いている縮約モデル自体が元の系からずれていたらどうするのか」</b></p>
+<p>
+という問題が気になる．
+</p>
+<p>
+今回は，未解像ダイナミクスを消したとき，どこで誤差が生まれ，それをどこまでcertificateできるのかを考えたい．
+</p>
+</article>
+</div>
+
+<h2>1．未解像自由度を消すと，何が残るのか</h2>
+<div class="news"><article class="news-item">
+<p>
+最も単純な線形連成系を考える．
+</p>
+<p>
+\[
+\begin{aligned}
+\dot u &= Au+Bv,\\
+\dot v &= Cu+Dv.
+\end{aligned}
+\]
+</p>
+<p>
+ここで \(u\) を観測したいresolved variable，\(v\) を直接は追わないunresolved variableとする．
+</p>
+<p>
+第二式を形式的に解けば，
+\[
+v(t)
+=
+e^{tD}v_0
++
+\int_0^t e^{(t-s)D}C u(s)\,ds.
+\]
+</p>
+<p>
+これを第一式へ代入すると，
+\[
+\dot u(t)
+=
+Au(t)
++
+Be^{tD}v_0
++
+\int_0^t
+Be^{(t-s)D}C u(s)\,ds.
+\]
+</p>
+<p>
+\(v\) は式から消えた．しかし，情報まで消えたわけではない．
+</p>
+<p>
+未解像自由度の影響は，
+\[
+K(t):=Be^{tD}C
+\]
+というmemory kernelと，初期値に由来する項へ移っている．
+</p>
+</article></div>
+
+<h2>2．exact reductionとmodel approximationは分けたい</h2>
+<div class="news"><article class="news-item">
+<p>
+ここは最初に分けておきたい．
+</p>
+<p>
+上の消去が数学的に正確で，再構成まで含めて元の系と同値なら，
+\[
+\boxed{
+\text{exact reduction}
+\neq
+\text{model approximation}
+}
+\]
+である．
+</p>
+<p>
+変数 \(v\) を消したからといって，その時点で近似誤差が生じたわけではない．
+</p>
+<p>
+誤差が入るのは，例えば，
+</p>
+<p>
+memory kernelを簡単なkernelへ置き換える．<br>
+historyを有限時間で切る．<br>
+memoryを有限個の内部変数で近似する．<br>
+closure termを経験的な式へ置き換える．<br>
+reconstructionを近似する．
+</p>
+<p>
+といった段階である．
+</p>
+<p>
+したがって，「縮約誤差」を考えるときには，まず<b>exact eliminationの部分とapproximationの部分を分ける</b>必要がある．
+</p>
+</article></div>
+
+<h2>3．kernelを近似した瞬間に，新しい誤差が生まれる</h2>
+<div class="news"><article class="news-item">
+<p>
+exact kernelを \(K\) とし，実際には
+\[
+K_N
+\]
+で近似するとする．
+</p>
+<p>
+すると，元のmemory term
+\[
+\int_0^t K(t-s)u(s)\,ds
+\]
+と，計算に使う
+\[
+\int_0^t K_N(t-s)u_N(s)\,ds
+\]
+の間に差が生じる．
+</p>
+<p>
+この差には，
+</p>
+<p>
+kernel approximationそのものの誤差．<br>
+kernelの違いによって生じるstate error．<br>
+さらにそのstate errorが将来へ伝播する影響．
+</p>
+<p>
+が混ざっている．
+</p>
+<p>
+だから
+\[
+\|K-K_N\|
+\]
+だけを小さくすれば十分とは限らない．
+</p>
+<p>
+重要なのは，<b>kernelの誤差がsolutionやoutputへどう伝わるか</b>である．
+</p>
+</article></div>
+
+<h2>4．model-reduction errorを直接certificateできるか</h2>
+<div class="news"><article class="news-item">
+<p>
+元のfull systemのresolved componentを \(u_{\mathrm{full}}\)，縮約モデルの解を \(u_{\mathrm{red}}\) とする．
+</p>
+<p>
+まず欲しくなるのは，
+\[
+\boxed{
+\|u_{\mathrm{full}}-u_{\mathrm{red}}\|
+\leq
+\Delta_{\mathrm{red}}
+}
+\]
+という上界である．
+</p>
+<p>
+この \(\Delta_{\mathrm{red}}\) が計算可能なら，model reductionそのものにcertificateを付けられる．
+</p>
+<p>
+ただし，この上界には，
+</p>
+<p>
+memory operatorの安定性．<br>
+kernel perturbationに対するsolution mapの連続性．<br>
+initial historyの影響．<br>
+有限時間区間での増幅率．
+</p>
+<p>
+などが入る．
+</p>
+<p>
+単なる離散化誤差より，一段上の「モデル間の誤差」を扱うことになる．
+</p>
+</article></div>
+
+<h2>5．欲しいのがoutputなら，全状態を保証しなくてもよいかもしれない</h2>
+<div class="news"><article class="news-item">
+<p>
+第10回の流れを使えば，別の見方もできる．
+</p>
+<p>
+本当に知りたいのが
+\[
+\mathcal J(U)
+\]
+というoutputなら，
+\[
+\boxed{
+|\mathcal J(U_{\mathrm{full}})
+-
+\mathcal J(U_{\mathrm{red}})|
+\leq
+\Delta_{\mathcal J,\mathrm{red}}
+}
+\]
+を直接狙うこともできる．
+</p>
+<p>
+つまり，
+</p>
+<p><b>未解像ダイナミクスをどれだけ失ったかではなく，失った情報が欲しいoutputへどれだけ効いたかを見る．</b></p>
+<p>
+これはgoal-oriented model reductionの考え方と自然につながる．
+</p>
+<p>
+概念的には，
+\[
+\text{reduction residual}
+\times
+\text{adjoint information}
+\]
+によってoutput errorを追うことになる．
+</p>
+</article></div>
+
+<h2>6．第10回のDWRと同じ構造が，もう一段上に現れる</h2>
+<div class="news"><article class="news-item">
+<p>
+第10回では，有限要素離散化によるresidualをadjointで重み付けした．
+</p>
+<p>
+未解像ダイナミクスでは，今度は
+</p>
+<p><b>「縮約したことによって生じたresidual」</b></p>
+<p>
+をadjointで見ることができる．
+</p>
+<p>
+したがって，
+\[
+\boxed{
+\begin{array}{c}
+\text{full dynamics}
+\\
+\Downarrow
+\\
+\text{reduced dynamics}
+\\
+\Downarrow
+\\
+\text{reduction residual}
+\\
+\Downarrow
+\\
+\text{adjoint weighting}
+\\
+\Downarrow
+\\
+\text{output-error bound}
+\end{array}
+}
+\]
+という流れが考えられる．
+</p>
+<p>
+DWRの発想は，離散化誤差だけのものではない．
+</p>
+<p>
+モデルそのものを変えたときの誤差にも，かなり自然に現れる．
+</p>
+</article></div>
+
+<h2>7．最終的な誤差には，複数の層がある</h2>
+<div class="news"><article class="news-item">
+<p>
+ここまで考えると，最終的な数値出力の誤差は一種類ではないことが分かる．
+</p>
+<p>
+例えば概念的には，
+\[
+\begin{aligned}
+|\mathcal J(U)-\mathcal J_h^{\mathrm{red}}|
+\leq{}&
+\Delta_{\mathrm{reduction}}
++
+\Delta_{\mathrm{kernel}}
++
+\Delta_{\mathrm{discretisation}}
+\\
+&+
+\Delta_{\mathrm{solver}}
++
+\Delta_{\mathrm{rounding}}.
+\end{aligned}
+\]
+</p>
+<p>
+というerror budgetを考えられる．
+</p>
+<p>
+第8回から第11回までは，主に
+\[
+\Delta_{\mathrm{discretisation}}
+\]
+をどう保証するかを見てきた．
+</p>
+<p>
+しかし未解像ダイナミクスでは，その前に
+\[
+\Delta_{\mathrm{reduction}}
+\quad\text{や}\quad
+\Delta_{\mathrm{kernel}}
+\]
+がある．
+</p>
+<p>
+いくらFEM errorを厳密にcertificateしても，モデル化の段階で大きくずれていれば，最終的なoutputの保証にはならない．
+</p>
+</article></div>
+
+<h2>8．未解像成分は，本当に消えたのか</h2>
+<div class="news"><article class="news-item">
+<p>
+私はここが一番気になっている．
+</p>
+<p>
+未解像変数 \(v\) を消去すると，resolved equationだけを見ることができる．
+</p>
+<p>
+しかし，未解像成分の情報は
+</p>
+<p>
+memory kernel．<br>
+initial-history term．<br>
+reconstruction operator．
+</p>
+<p>
+の中に残っている．
+</p>
+<p>
+したがって，reduced equationが安定に見えることと，元のfull dynamics全体が同じ意味で安全であることは同じではない．
+</p>
+<p>
+特に，reconstruction operatorが大きな増幅を持つ場合には，resolved componentが穏やかでも，unresolved componentの評価が厳しくなる可能性がある．
+</p>
+<p>
+<b>縮約は，不安定性や特異性を消すのではなく，別の場所へ移しているだけかもしれない．</b>
+</p>
+</article></div>
+
+<h2>9．reconstructionまでcertificateしたい</h2>
+<div class="news"><article class="news-item">
+<p>
+exact eliminationの例では，
+\[
+v(t)
+=
+e^{tD}v_0
++
+\int_0^t e^{(t-s)D}C u(s)\,ds
+\]
+だった．
+</p>
+<p>
+縮約モデルから得た \(u_{\mathrm{red}}\) を使えば，
+\[
+v_{\mathrm{rec}}(t)
+=
+e^{tD}v_0
++
+\int_0^t e^{(t-s)D}C u_{\mathrm{red}}(s)\,ds
+\]
+とreconstructできる．
+</p>
+<p>
+すると次に欲しいのは，
+\[
+\|v-v_{\mathrm{rec}}\|
+\leq
+\Delta_{\mathrm{rec}}
+\]
+という保証である．
+</p>
+<p>
+resolved variableだけcertificateするのか．<br>
+unresolved variableのreconstructionまでcertificateするのか．
+</p>
+<p>
+この二つは分けて考えた方がよい．
+</p>
+</article></div>
+
+<h2>10．memory kernel自体をcertificateするという考え方</h2>
+<div class="news"><article class="news-item">
+<p>
+さらに一歩進めると，solutionを囲う前にkernelを囲うという考え方もある．
+</p>
+<p>
+例えば
+\[
+\|K-K_N\|_{\mathcal K}
+\leq
+\varepsilon_K
+\]
+というkernel errorを，ある適切なkernel norm \(\mathcal K\) で保証する．
+</p>
+<p>
+その上でsolution mapの安定性を使って，
+\[
+\varepsilon_K
+\longrightarrow
+\Delta_{\mathrm{red}}
+\]
+へ伝える．
+</p>
+<p>
+ここでは，
+</p>
+<p><b>kernelのcertificateとsolutionのcertificateを分ける</b>
+</p>
+<p>
+ことができる．
+</p>
+<p>
+memory equationでは，kernelそのものがモデルの一部なので，この分解はかなり自然だと思う．
+</p>
+</article></div>
+
+<h2>11．有限時間で安定でも，長時間では別問題になる</h2>
+<div class="news"><article class="news-item">
+<p>
+model-reduction errorは，時間区間にも依存する．
+</p>
+<p>
+固定した
+\[
+0\leq t\leq T
+\]
+では小さなkernel perturbationに対して安定でも，\(T\) を大きくすると誤差が蓄積することがある．
+</p>
+<p>
+したがって，
+\[
+\Delta_{\mathrm{red}}(T)
+\]
+が時間とともにどう増えるかを見る必要がある．
+</p>
+<p>
+これは単に「収束するか」ではなく，
+</p>
+<p><b>どの時間スケールまでcertificateが意味を持つのか</b></p>
+<p>
+という問題になる．
+</p>
+<p>
+memoryやdelayを持つ方程式では，historyの影響が残るので，ここは特に重要だと思う．
+</p>
+</article></div>
+
+<h2>12．verified model reductionという考え方</h2>
+<div class="news"><article class="news-item">
+<p>
+ここまでの流れをまとめると，
+\[
+\boxed{
+\begin{array}{c}
+\text{full dynamics}
+\\
+\Downarrow
+\\
+\text{exact elimination}
+\\
+\Downarrow
+\\
+\text{memory equation}
+\\
+\Downarrow
+\\
+\text{kernel / closure approximation}
+\\
+\Downarrow
+\\
+\text{model-reduction error}
+\\
+\Downarrow
+\\
+\text{goal-oriented / verified output}
+\end{array}
+}
+\]
+となる．
+</p>
+<p>
+私は，最後のFEM discretisationだけをverifiedにするのではなく，
+</p>
+<p><b>full modelからreduced modelへ移る段階そのものにもcertificateを付けたい．</b></p>
+<p>
+そうすれば，最終的な数値結果について，
+</p>
+<p>
+どこまでがmodel reductionの誤差で，<br>
+どこからがFEMの誤差で，<br>
+どこからがsolverやroundingの誤差なのか，
+</p>
+<p>
+を分けて見ることができる．
+</p>
+</article></div>
+
+<h2>13．第11回までとのつながり</h2>
+<div class="news"><article class="news-item">
+<p>
+第10回では，「欲しい量」に効く誤差をadjointで追った．
+</p>
+<p>
+第11回では，欲しい量そのものによって必要な解析空間が変わることを見た．
+</p>
+<p>
+第12回では，さらに一段戻って，
+</p>
+<p><b>「そもそも計算しているモデルは，元のダイナミクスをどこまで残しているのか」</b></p>
+<p>
+を考えた．
+</p>
+<p>
+未解像自由度を消すことは，情報を消すことと同じではない．
+</p>
+<p>
+その情報はmemoryやreconstructionへ移る．
+</p>
+<p>
+問題は，そこを近似したときの誤差を，最終的なoutputまで含めてどこまで保証できるかである．
+</p>
+</article></div>
+
+<h2>次に考えたいこと</h2>
+<div class="news"><article class="news-item">
+<p>
+ここまでで，certificateの対象はかなり広がった．
+</p>
+<p>
+解，flux，QoI，point value，さらにmodel reductionまで来た．
+</p>
+<p>
+では，これらの保証条件を機械が読める形にできるだろうか．
+</p>
+<p>
+異方性有限要素法では，maximum angle condition，semi-regular condition，幾何パラメータなどが解析の前提になる．
+</p>
+<p>
+次は，
+</p>
+<p><b>「幾何条件を機械可読なcertificateへ変換できるか」</b></p>
+<p>
+を考えてみたい．
+</p>
+</article></div>
+
+<h2>関連する記事</h2>
+<div class="news"><article class="news-item">
+<ul>
+<li><a href="./lean4-10.html">第10回：DWRの発想をverified outputへ――adjointで「欲しい量」の誤差を保証する</a></li>
+<li><a href="./lean4-11.html">第11回：maximum-normとpointwise certificate――一点の値を保証できるか</a></li>
+<li><a href="../../research/">Research</a></li>
+<li><a href="../../publications/">Publications</a></li>
+</ul>
+</article></div>
+
+</div>
+</article>
+</div>
+</main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+</body>
+</html>
