@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>maximum-normとpointwise certificate――一点の値を保証できるか | Hiroki Ishizaka</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,maximum norm,pointwise error,pointwise certificate,Green function,adjoint,DWR,verified output,finite element method,FEM">
+<meta name="description" content="一点の値 u(x0) をverified outputとして保証できるか．H1誤差評価だけでは足りない理由，point evaluationとSobolev embedding，Green関数として現れるadjoint，maximum-norm certificate，local averageによる正則化まで整理します．">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-11.html">
+
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<noscript>
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+</noscript>
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-11.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-11.html",
+      "headline": "第11回：maximum-normとpointwise certificate――一点の値を保証できるか",
+      "description": "一点の値をverified outputとして保証するには何が必要か．H1誤差評価とpointwise errorの違い，Green関数，maximum norm，local averageによる正則化を整理します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-11.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-09-21",
+      "dateModified": "2026-09-21",
+      "articleSection": "Certified FEM and pointwise error",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
+      "keywords": "maximum norm, pointwise error, pointwise certificate, Green function, adjoint, verified output"
+    }
+  ]
+}
+</script>
+
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2026-09-21">
+<meta property="article:modified_time" content="2026-09-21">
+<meta property="article:section" content="Certified FEM and pointwise error">
+<meta property="og:site_name" content="Hiroki Ishizaka">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="maximum-normとpointwise certificate――一点の値を保証できるか | Hiroki Ishizaka">
+<meta property="og:description" content="H1のcertificateから一点の値は保証できるのか．point evaluation，Green関数，maximum norm，local averageを通して考えます．">
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-11.html">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@teamfem16key">
+<meta name="twitter:title" content="maximum-normとpointwise certificate">
+<meta name="twitter:description" content="一点の値を保証するには何が必要かを，verified outputの流れから考えます．">
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+</head>
+
+<body class="page">
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../fem/">Visions</a></li>
+        <li><a href="../../suppl/">Supplementary</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">Geometry</a></li>
+        <li><a href="../../links/">Links</a></li>
+        <li><a href="../../contact/">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in">
+    <li class="bcl-first"><a href="../../">ISHIZAKA Hiroki Website TOP</a></li>
+    <li class="bcl-last">Blog post from 21st September 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第11回：maximum-normとpointwise certificate――一点の値を保証できるか</h1>
+
+<div class="news">
+<article class="news-item">
+<b>Certified FEMで最近考えていること</b><br>
+(21st September 2026 <span class="cat cat001">Update</span>)
+<p>
+第10回では，DWRの発想を使って，「どの誤差が欲しい量に効くのか」をadjointで追い，さらにverified outputへ進む流れを考えた．
+</p>
+<p>
+では，欲しい量が
+\[
+\mathcal J(u)=u(x_0)
+\]
+のような<b>一点の値</b>だったらどうなるのか．
+</p>
+<p>
+一見すると，前回の \(\mathcal J\) にこれを代入するだけに見える．
+</p>
+<p>
+しかし，ここで問題の性質が変わる．
+</p>
+<p><b>一点の値を保証することは，領域平均を保証することよりずっと難しい．</b></p>
+</article>
+</div>
+
+<h2>1．H1の誤差が小さくても，一点の誤差は直接には分からない</h2>
+<div class="news"><article class="news-item">
+<p>
+第9回までのcertificateでは，例えば
+\[
+\|u-u_h\|_{H^1(\Omega)}
+\leq
+\Delta_h
+\]
+のようなenergy normの上界を考えてきた．
+</p>
+<p>
+ここから
+\[
+|u(x_0)-u_h(x_0)|
+\leq
+C\Delta_h
+\]
+とすぐに言えれば簡単である．
+</p>
+<p>
+しかし，空間次元 \(d\geq2\) では，一般に
+\[
+H^1(\Omega)
+\not\hookrightarrow
+C^0(\overline\Omega)
+\]
+である．
+</p>
+<p>
+したがって，\(H^1\)-normだけを保証しても，一点での値を直接保証することはできない．
+</p>
+<p>
+これは単なる技術的な問題ではない．
+</p>
+<p><b>verified ballをどのnormで作ったかによって，保証できるoutputの種類が決まる．</b></p>
+</article></div>
+
+<h2>2．point evaluationは普通のvolume QoIとは違う</h2>
+<div class="news"><article class="news-item">
+<p>
+第10回で扱った典型的なQoIは，
+\[
+\mathcal J(u)
+=
+\int_\Omega \psi u\,dx,
+\qquad
+\psi\in L^2(\Omega)
+\]
+のようなvolume-typeの量だった．
+</p>
+<p>
+この場合，
+\[
+D\mathcal J(u)v
+=
+\int_\Omega \psi v\,dx
+\]
+なので，\(H^1\) から \(L^2\) へのembeddingを使って比較的自然に評価できる．
+</p>
+<p>
+一方，
+\[
+\mathcal J(u)=u(x_0)
+\]
+なら，形式的には
+\[
+\mathcal J(u)
+=
+\langle\delta_{x_0},u\rangle
+\]
+である．
+</p>
+<p>
+右辺にDirac deltaが現れる．
+</p>
+<p>
+つまり，一点の値を欲しい量に選んだ瞬間に，adjoint problemの右辺も特異になる．
+</p>
+</article></div>
+
+<h2>3．DWRのadjointはGreen関数になる</h2>
+<div class="news"><article class="news-item">
+<p>
+Poisson問題を例に取る．
+</p>
+<p>
+point value
+\[
+\mathcal J(v)=v(x_0)
+\]
+に対応するadjointは，形式的には
+\[
+-\Delta z
+=
+\delta_{x_0}
+\]
+を満たす．
+</p>
+<p>
+これはGreen関数の問題である．
+</p>
+<p>
+第10回ではadjointを「目的量への感度を運ぶもの」と書いた．一点評価では，その感度が \(x_0\) に集中するため，adjointに特異性が現れる．
+</p>
+<p>
+したがって，
+</p>
+<p><b>pointwise error analysisでは，Green関数あるいはそれに対応する特異なadjointが自然に現れる．</b></p>
+</article></div>
+
+<h2>4．maximum normが分かれば，一点の値は保証できる</h2>
+<div class="news"><article class="news-item">
+<p>
+一番直接的な方法は，
+\[
+\|u-u_h\|_{L^\infty(\Omega)}
+\leq
+\Delta_\infty
+\]
+という上界を作ることである．
+</p>
+<p>
+そうすれば任意の \(x_0\in\Omega\) に対して
+\[
+|u(x_0)-u_h(x_0)|
+\leq
+\Delta_\infty
+\]
+であり，
+\[
+\boxed{
+u(x_0)
+\in
+[
+u_h(x_0)-\Delta_\infty,,
+u_h(x_0)+\Delta_\infty
+]
+}
+\]
+となる．
+</p>
+<p>
+これは非常に分かりやすいpointwise certificateである．
+</p>
+<p>
+しかし，難しいのはもちろん
+\[
+\Delta_\infty
+\]
+を本当に計算可能な上界として作ることである．
+</p>
+</article></div>
+
+<h2>5．maximum-norm estimateとmaximum-norm certificateも同じではない</h2>
+<div class="news"><article class="news-item">
+<p>
+ここでも第8回から続いている区別が必要になる．
+</p>
+<p>
+maximum-norm error estimateが理論上得られていても，そこに未知の正則性normや非明示的な定数が残っていれば，そのままcertificateにはならない．
+</p>
+<p>
+例えば，
+\[
+\|u-u_h\|_{L^\infty}
+\leq
+C,\Xi_h(u)
+\]
+という評価があっても，\(C\) や \(\Xi_h(u)\) が実際には計算できなければ，
+</p>
+<p><b>「一点の誤差はこの値以下です」</b></p>
+<p>
+とはまだ言えない．
+</p>
+<p>
+必要なのは，
+\[
+\|u-u_h\|_{L^\infty}
+\leq
+\widehat\Delta_\infty
+\]
+で，\(\widehat\Delta_\infty\) のすべての成分が計算可能であることだと思う．
+</p>
+</article></div>
+
+<h2>6．第10回のverified ballだけでは足りない</h2>
+<div class="news"><article class="news-item">
+<p>
+私の最近のverified-outputの枠組みでは，
+\[
+\|u-\tilde u_h\|_V
+\leq
+\rho,
+\qquad
+V=H_0^1(\Omega)
+\]
+というverified ballを作っている．
+</p>
+<p>
+これはexistenceやvolume-type QoIには非常に使いやすい．
+</p>
+<p>
+しかし \(d\geq2\) では，このballだけから
+\[
+|u(x_0)-\tilde u_h(x_0)|
+\]
+を直接上から押さえることはできない．
+</p>
+<p>
+したがってpointwise certificateへ進むには，何かを追加しなければならない．
+</p>
+<p>
+例えば，
+</p>
+<p>
+より強いnormでverified enclosureを作る．<br>
+PDEの正則性を使ってenergy errorをmaximum normへ持ち上げる．<br>
+Green関数によるrepresentationを使う．<br>
+point evaluationそのものを正則化する．
+</p>
+<p>
+といった方法が考えられる．
+</p>
+</article></div>
+
+<h2>7．強いnormで囲うという考え方</h2>
+<div class="news"><article class="news-item">
+<p>
+もし
+\[
+\|u-	ilde u_h\|_X
+\leq
+\rho_X
+\]
+を保証でき，さらに
+\[
+X\hookrightarrow C^0(\overline\Omega)
+\]
+なら，
+\[
+|u(x_0)-\tilde u_h(x_0)|
+\leq
+C_X\rho_X
+\]
+とできる．
+</p>
+<p>
+例えば十分大きい \(p\) に対する \(W^{1,p}\) や，十分高いSobolev regularityを持つ空間では，連続関数へのembeddingが使える．
+</p>
+<p>
+ただし，verified computationではembedding constantまで計算可能にしなければならない．
+</p>
+<p>
+「強いnormで囲えば終わり」ではなく，そのnormでのresidual，stability，regularity constantをどうcertificateするかという新しい問題が出てくる．
+</p>
+</article></div>
+
+<h2>8．Green関数を使うと局所的に見られる</h2>
+<div class="news"><article class="news-item">
+<p>
+もう一つは，pointwise errorをGreen関数で直接表す方法である．
+</p>
+<p>
+概念的には，
+\[
+u(x_0)-u_h(x_0)
+=
+R(u_h)(G_{x_0})
+\]
+のように，\(x_0\) に対応するGreen function \(G_{x_0}\) でresidualを重み付けする．
+</p>
+<p>
+これは第10回のDWRと同じ構造に見える．
+</p>
+<p>
+違うのは，weightが滑らかなadjointではなく，点 \(x_0\) に特異性を持つGreen関数になることである．
+</p>
+<p>
+そのため，Green関数自身の評価，特異点近傍のmesh，離散Green関数，定数の明示化などが問題になる．
+</p>
+<p>
+ここまで来ると，pointwise certificateは単なるQoIの一例ではなく，maximum-norm FEM analysisそのものと深くつながる．
+</p>
+</article></div>
+
+<h2>9．local averageに置き換えると，第10回の枠組みに戻れる</h2>
+<div class="news"><article class="news-item">
+<p>
+一点の値そのものが難しいなら，まず小さな領域 \(\omega_\varepsilon(x_0)\) で平均を取る方法もある．
+</p>
+<p>
+\[
+\mathcal J_\varepsilon(u)
+=
+\frac{1}{|\omega_\varepsilon|_d}
+\int_{\omega_\varepsilon(x_0)}
+u\,dx
+\]
+とする．
+</p>
+<p>
+これは
+\[
+\psi_\varepsilon
+=
+\frac{1}{|\omega_\varepsilon|_d}
+\chi_{\omega_\varepsilon(x_0)}
+\]
+を使ったvolume-type QoIなので，固定した \(\varepsilon>0\) に対しては第10回の枠組みに戻せる．
+</p>
+<p>
+つまり，
+</p>
+<p><b>point valueをいきなりcertificateする代わりに，まず「小さな領域の平均」をcertificateする．</b></p>
+<p>
+という考え方である．
+</p>
+<p>
+ただし \(\varepsilon\to0\) とすると，\(\psi_\varepsilon\) のnormは大きくなり，certificateも厳しくなる．
+</p>
+<p>
+一点評価が難しいことが，この正則化からも見えてくる．
+</p>
+</article></div>
+
+<h2>10．これは今の論文の外側にある</h2>
+<div class="news"><article class="news-item">
+<p>
+私のpreprint
+<a href="https://arxiv.org/abs/2602.01636">Low-order CR–RT equilibrated-flux certification for semilinear problems on anisotropic meshes</a>
+では，verified outputを，微分が \(L^2(\Omega)\)-densityを持つvolume-typeのQoIに絞っている．
+</p>
+<p>
+局所平均はこの範囲に入るが，point evaluationはそのままでは入らない．
+</p>
+<p>
+また，boundary outputやnormal-flux outputも，trace estimateやflux-specificな議論が別に必要になる．
+</p>
+<p>
+だから第11回の話は，現在の論文の結果を言い換えているのではなく，<b>その枠組みの次に何を拡張しなければならないか</b>を考えている．
+</p>
+</article></div>
+
+<h2>11．異方性メッシュではさらに面白くなる</h2>
+<div class="news"><article class="news-item">
+<p>
+Green関数は \(x_0\) の近くで特異な構造を持つ．
+</p>
+<p>
+すると，目的量が一点に集中するほど，meshもその場所の構造を強く意識する必要が出てくる．
+</p>
+<p>
+ここではgraded meshやanisotropic refinementが自然に候補になる．
+</p>
+<p>
+ただし，energy normで頑健だったメッシュ条件が，maximum normでもそのまま十分とは限らない．
+</p>
+<p>
+maximum-norm stability，discrete Green function，DMP，mesh geometryなどが絡み始める．
+</p>
+<p>
+私が異方性FEMで扱ってきた幾何条件が，pointwise certificateではどこまで使えて，どこから別の条件が必要になるのか．
+</p>
+<p>
+これはかなり面白い境界だと思っている．
+</p>
+</article></div>
+
+<h2>12．一点を保証するには，何をcertificateすればよいのか</h2>
+<div class="news"><article class="news-item">
+<p>
+ここまでを整理すると，少なくとも三つの方向が見える．
+</p>
+<p>
+\[
+\boxed{
+\begin{array}{c}
+\text{maximum-norm route}
+\\
+\|u-u_h\|_{L^\infty}\leq\widehat\Delta_\infty
+\end{array}}
+\]
+</p>
+<p>
+\[
+\boxed{
+\begin{array}{c}
+\text{Green / adjoint route}
+\\
+u(x_0)-u_h(x_0)
+=
+\text{residual weighted by a singular adjoint}
+\end{array}}
+\]
+</p>
+<p>
+\[
+\boxed{
+\begin{array}{c}
+\text{regularized QoI route}
+\\
+u(x_0)
+\text{ を小領域平均で近似してcertificateする}
+\end{array}}
+\]
+</p>
+<p>
+どれも同じ目的を見ているが，必要な解析は違う．
+</p>
+<p>
+そしてverified numericsとしては，最終的に残る定数やGreen関数評価まで計算可能にしなければならない．
+</p>
+</article></div>
+
+<h2>13．第10回から第11回へ何が変わったのか</h2>
+<div class="news"><article class="news-item">
+<p>
+第10回では，
+</p>
+<p><b>「欲しい量を決めれば，adjointでその誤差を追える」</b></p>
+<p>
+という話をした．
+</p>
+<p>
+第11回で分かったのは，
+</p>
+<p><b>「欲しい量そのものが，解析空間に対して連続であるかを先に確認しなければならない」</b></p>
+<p>
+ということである．
+</p>
+<p>
+QoIを選ぶことは，単に最後の出力を選ぶことではない．
+</p>
+<p>
+そのQoIに応じて，adjointの正則性，必要なnorm，mesh refinement，certificateの作り方まで変わる．
+</p>
+<p>
+一点の値は，そのことを最もはっきり見せる例だと思う．
+</p>
+</article></div>
+
+<h2>次に考えたいこと</h2>
+<div class="news"><article class="news-item">
+<p>
+ここまでは，離散化したPDEとそのoutputをどうcertificateするかを見てきた．
+</p>
+<p>
+では，PDEそのものを縮約したときに生じる誤差はどう扱えばよいのか．
+</p>
+<p>
+未解像自由度を消してmemory equationやreduced modelを作ったとき，
+</p>
+<p><b>「この縮約モデルの出力は，元のPDEの出力からどれだけずれているか」</b></p>
+<p>
+を保証できるだろうか．
+</p>
+<p>
+次は，
+</p>
+<p><b>「model-reduction errorをcertificateにできるか」</b></p>
+<p>
+を考えてみたい．
+</p>
+</article></div>
+
+<h2>関連する記事・論文</h2>
+<div class="news"><article class="news-item">
+<ul>
+<li><a href="./lean4-09.html">第9回：equilibrated fluxはなぜcertificateになるのか――CR–RTとMariniの関係から見る</a></li>
+<li><a href="./lean4-10.html">第10回：DWRの発想をverified outputへ――adjointで「欲しい量」の誤差を保証する</a></li>
+<li><a href="https://arxiv.org/abs/2602.01636">Low-order CR–RT equilibrated-flux certification for semilinear problems on anisotropic meshes</a></li>
+<li><a href="../../publications/">Publications</a></li>
+</ul>
+</article></div>
+
+</div>
+</article>
+</div>
+</main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+</body>
+</html>
