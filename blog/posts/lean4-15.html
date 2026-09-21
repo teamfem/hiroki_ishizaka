@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>CR–RT local reconstructionを形式化してみる――紙の証明をLeanの補題列へ | Hiroki Ishizaka</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Lean 4,formal verification,Crouzeix-Raviart,Raviart-Thomas,Marini relation,equilibrated flux,FEM">
+<meta name="description" content="CR–RTのMarini型local reconstructionを題材に，紙の証明をLean向けの補題列へどう分解するか考えます．RT0 membership，divergence identity，normal continuity，H(div) conformityまでを小さな証明へ分けます．">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-15.html">
+
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<noscript>
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+</noscript>
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-15.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-15.html",
+      "headline": "第15回：CR–RT local reconstructionを形式化してみる――紙の証明をLeanの補題列へ",
+      "description": "CR–RTのMarini型local reconstructionを題材に，RT0 membership，divergence identity，normal continuity，H(div) conformityへ証明を分解します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-15.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-09-22",
+      "dateModified": "2026-09-22",
+      "articleSection": "Formal FEM and CR-RT reconstruction",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
+      "keywords": "Lean 4, CR, RT, Marini relation, equilibrated flux, formal verification"
+    }
+  ]
+}
+</script>
+
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2026-09-22">
+<meta property="article:modified_time" content="2026-09-22">
+<meta property="article:section" content="Formal FEM and CR-RT reconstruction">
+<meta property="og:site_name" content="Hiroki Ishizaka">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="CR–RT local reconstructionを形式化してみる――紙の証明をLeanの補題列へ | Hiroki Ishizaka">
+<meta property="og:description" content="Marini型CR–RT reconstructionを，小さな局所補題へ分解して形式化の入口を考えます．">
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-15.html">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@teamfem16key">
+<meta name="twitter:title" content="CR–RT local reconstructionを形式化してみる">
+<meta name="twitter:description" content="紙のFEM証明をLean向けの補題列へ分けます．">
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+</head>
+
+<body class="page">
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../fem/">Visions</a></li>
+        <li><a href="../../suppl/">Supplementary</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">Geometry</a></li>
+        <li><a href="../../links/">Links</a></li>
+        <li><a href="../../contact/">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in">
+    <li class="bcl-first"><a href="../../">ISHIZAKA Hiroki Website TOP</a></li>
+    <li class="bcl-last">Blog post from 22nd September 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第15回：CR–RT local reconstructionを形式化してみる――紙の証明をLeanの補題列へ</h1>
+
+<div class="news">
+<article class="news-item">
+<b>Certified FEMで最近考えていること</b><br>
+(22nd September 2026 <span class="cat cat001">Update</span>)
+<p>
+第14回では，有限要素法の大きな定理を，Leanで再利用できる小さな補題列へ分けたいと書いた．
+</p>
+<p>
+今回は抽象論を一度止めて，実際に一つの題材を見る．
+</p>
+<p>
+私の研究で何度も現れる
+</p>
+<p><b>CR–RT local reconstruction</b></p>
+<p>
+である．
+</p>
+<p>
+紙の論文では数行で済む関係を，proof assistantへ持っていくなら何を一つずつ証明しなければならないのか．
+</p>
+<p>
+完成したLean codeを書くことより，まず証明の骨格を切り出してみたい．
+</p>
+</article>
+</div>
+
+<h2>1．出発点はPoisson問題とCR解</h2>
+<div class="news"><article class="news-item">
+<p>
+最も基本的な場合として，
+\[
+-\Delta u=f
+\quad\text{in }\Omega,
+\qquad
+u=0
+\quad\text{on }\partial\Omega
+\]
+を考える．
+</p>
+<p>
+右辺をelementwise constantに射影し，
+\[
+f_T^0
+:=
+\Pi_T^0 f
+\]
+とする．
+</p>
+<p>
+CR近似を \(\bar u_h^{\mathrm{CR}}\) と書く．
+</p>
+<p>
+このときMarini型の関係は，\(d=2,3\) でelement \(T\) ごとに
+\[
+\boxed{
+\sigma_h|_T
+=
+\nabla_h\bar u_h^{\mathrm{CR}}|_T
+-
+\frac{f_T^0}{d}
+(x-x_T)
+}
+\]
+という形で書ける．
+</p>
+<p>
+ここで
+\[
+x_T
+:=
+\frac{1}{d+1}
+\sum_{i=1}^{d+1}p_i
+\]
+はsimplexのbarycentreである．
+</p>
+<p>
+符号は
+\[
+-\Delta u=f
+\]
+という今回の規約に合わせている．
+</p>
+</article></div>
+
+<h2>2．紙では一つの式でも，形式化では一つの定理ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+式を見ただけなら，
+</p>
+<p>
+「これはRTのfieldで，divergenceは正しく，faceをまたいでnormal componentもつながる」
+</p>
+<p>
+と言いたくなる．
+</p>
+<p>
+しかしLeanへ入れるなら，少なくとも
+\[
+\boxed{
+\begin{array}{c}
+\text{local formula}
+\\
+\Downarrow
+\\
+\text{RT}^0(T)\text{ membership}
+\\
+\Downarrow
+\\
+\text{divergence identity}
+\\
+\Downarrow
+\\
+\text{face-flux identity}
+\\
+\Downarrow
+\\
+\text{normal continuity}
+\\
+\Downarrow
+\\
+H(\operatorname{div};\Omega)\text{ conformity}
+\end{array}
+}
+\]
+と分けた方がよい．
+</p>
+<p>
+一つの長いproofより，この境界を明示する方が後で再利用しやすい．
+</p>
+</article></div>
+
+<h2>3．補題1：barycentreからのベクトルはaffineである</h2>
+<div class="news"><article class="news-item">
+<p>
+最初は本当に小さいところから始める．
+</p>
+<p>
+\[
+x\longmapsto x-x_T
+\]
+はaffine vector fieldである．
+</p>
+<p>
+最低次Raviart–Thomas空間を
+\[
+RT^0(T)
+:=
+\mathbb P^0(T)^d
++
+x\,\mathbb P^0(T)
+\]
+と定義すれば，
+\[
+x-x_T
+=
+(-x_T)+x
+\]
+なので
+\[
+x-x_T\in RT^0(T).
+\]
+</p>
+<p>
+数学的にはほとんど自明である．
+</p>
+<p>
+しかし形式化では，この「自明なmembership」を独立させておくと，後のproofがかなり短くなるはずである．
+</p>
+</article></div>
+
+<h2>4．補題2：CRのgradientはelementwise constant</h2>
+<div class="news"><article class="news-item">
+<p>
+CR functionは各element上で一次多項式なので，
+\[
+\bar u_h^{\mathrm{CR}}|_T
+\in
+\mathbb P^1(T)
+\]
+である．
+</p>
+<p>
+したがって
+\[
+\nabla_h\bar u_h^{\mathrm{CR}}|_T
+\in
+\mathbb P^0(T)^d.
+\]
+</p>
+<p>
+これと前節を合わせれば，
+\[
+\sigma_h|_T
+=
+\nabla_h\bar u_h^{\mathrm{CR}}|_T
+-
+\frac{f_T^0}{d}(x-x_T)
+\in
+RT^0(T)
+\]
+が出る．
+</p>
+<p>
+つまり最初の大きな主張
+</p>
+<p><b>local RT membership</b></p>
+<p>
+は，二つの極めて小さな多項式補題に分解できる．
+</p>
+</article></div>
+
+<h2>5．補題3：divergenceは手で計算できる</h2>
+<div class="news"><article class="news-item">
+<p>
+次はdivergenceである．
+</p>
+<p>
+\[
+\nabla\cdot
+\nabla_h\bar u_h^{\mathrm{CR}}|_T
+=
+0
+\]
+である．gradientがconstantだからである．
+</p>
+<p>
+また
+\[
+\nabla\cdot(x-x_T)
+=
+d.
+\]
+</p>
+<p>
+したがって
+\[
+\begin{aligned}
+\nabla\cdot\sigma_h|_T
+&=
+0
+-
+\frac{f_T^0}{d}
+\nabla\cdot(x-x_T)
+\\
+&=
+-f_T^0.
+\end{aligned}
+\]
+</p>
+<p>
+つまり
+\[
+\boxed{
+\nabla\cdot\sigma_h|_T
+=
+-\Pi_T^0 f
+}
+\]
+である．
+</p>
+<p>
+ここは解析というより有限次元の微分計算なので，formalisationの最初の標的として扱いやすい．
+</p>
+</article></div>
+
+<h2>6．ここまでは完全にlocalで終わる</h2>
+<div class="news"><article class="news-item">
+<p>
+ここまでの証明には，隣のelementは一つも出てこない．
+</p>
+<p>
+必要なのは
+</p>
+<p>
+simplex．<br>
+barycentre．<br>
+\(\mathbb P^1(T)\)．<br>
+\(RT^0(T)\)．<br>
+divergence．
+</p>
+<p>
+だけである．
+</p>
+<p>
+この段階までなら，Sobolev空間もglobal meshもPDEのwell-posednessもほとんど要らない．
+</p>
+<p>
+私はformal FEMを始めるなら，こうした<b>局所多項式で閉じる部分</b>をまず固めたい．
+</p>
+</article></div>
+
+<h2>7．難しくなるのはfaceをまたぐところから</h2>
+<div class="news"><article class="news-item">
+<p>
+\[
+\sigma_h|_T\in RT^0(T)
+\]
+だけでは，global RT fieldにはならない．
+</p>
+<p>
+内部face
+\[
+F=T^+\cap T^-
+\]
+について，
+\[
+[\![\sigma_h\cdot n]\!]_F
+=
+0
+\]
+を示さなければならない．
+</p>
+<p>
+ここで初めて，CRのnonconforming continuityが効いてくる．
+</p>
+<p>
+CR functionそのものはface上でpointwise continuousではない．
+</p>
+<p>
+しかしface averageは一致する．
+</p>
+<p>
+この弱い連続性からRTのnormal-flux continuityを取り出すところが，CR–RT relationの面白い部分である．
+</p>
+</article></div>
+
+<h2>8．補題4：CRのface momentを独立させる</h2>
+<div class="news"><article class="news-item">
+<p>
+内部face \(F\) に対してCR spaceの定義から
+\[
+\int_F
+[\![\bar u_h^{\mathrm{CR}}]\!]_F
+\,ds
+=
+0
+\]
+が成り立つ．
+</p>
+<p>
+これは「CR functionはface midpointでつながる」とだけ書くより，任意次元へ持っていきやすい形である．
+</p>
+<p>
+形式化では，このmoment continuityをCR spaceのinterfaceとして独立に持たせたい．
+</p>
+<p>
+すると，後の証明はCR basisの具体式を毎回展開しなくてもよくなる．
+</p>
+</article></div>
+
+<h2>9．補題5：RT0のnormal componentはface上でconstant</h2>
+<div class="news"><article class="news-item">
+<p>
+\[
+q(x)=a+bx
+\in
+RT^0(T)
+\]
+とする．
+</p>
+<p>
+face \(F\) 上では
+\[
+x\cdot n_F
+\]
+が一定なので，
+\[
+q\cdot n_F
+\]
+もface上でconstantになる．
+</p>
+<p>
+これはRT0の非常に基本的な構造である．
+</p>
+<p>
+したがって，normal fluxの平均が一致すれば，pointwiseにも一致する．
+</p>
+<p>
+この
+</p>
+<p><b>face momentからnormal continuityへ上げる小さな補題</b></p>
+<p>
+は，formalisationでかなり再利用価値が高いと思う．
+</p>
+</article></div>
+
+<h2>10．補題6：CR equationからface flux balanceを取り出す</h2>
+<div class="news"><article class="news-item">
+<p>
+ここが紙の証明では圧縮されやすいところである．
+</p>
+<p>
+CRの離散方程式に，ある内部face \(F\) に対応するCR basis functionを入れる．
+</p>
+<p>
+elementwise integration by partsを行い，
+\[
+\nabla\cdot\sigma_h|_T
+=
+-f_T^0
+\]
+を使うと，volume termが整理され，face上のnormal fluxの関係が残る．
+</p>
+<p>
+最終的には
+\[
+\int_F
+[\![\sigma_h\cdot n]\!]_F
+\,ds
+=
+0
+\]
+を得る．
+</p>
+<p>
+さらに前節の「RT0のnormal componentはconstant」を使えば，
+\[
+[\![\sigma_h\cdot n]\!]_F
+=
+0
+\]
+となる．
+</p>
+<p>
+この部分は，一つの長いproofではなく
+</p>
+<p>
+CR test functionの局所support．<br>
+elementwise Green formula．<br>
+volume cancellation．<br>
+face-flux moment identity．<br>
+constant normal trace．
+</p>
+<p>
+に分ける方がよい．
+</p>
+</article></div>
+
+<h2>11．補題7：local RTからglobal H(div)へ</h2>
+<div class="news"><article class="news-item">
+<p>
+各elementで
+\[
+\sigma_h|_T
+\in
+RT^0(T)
+\]
+かつ各内部faceで
+\[
+[\![\sigma_h\cdot n]\!]_F
+=
+0
+\]
+なら，
+\[
+\sigma_h
+\in
+RT_h^0
+\subset
+H(\operatorname{div};\Omega)
+\]
+と上げられる．
+</p>
+<p>
+数学的にはstandardなassemblyの主張である．
+</p>
+<p>
+しかしproof assistantでは，
+</p>
+<p><b>local fieldを集めたpiecewise functionが，どの条件でglobal function spaceへ入るか</b></p>
+<p>
+というinterface theoremが必要になる．
+</p>
+<p>
+これはCR–RTだけでなく，Nédélec elementなどへ進むときにも再利用できそうである．
+</p>
+</article></div>
+
+<h2>12．これでequilibrated flux certificateの入口まで来る</h2>
+<div class="news"><article class="news-item">
+<p>
+第9回では，certificate fluxに欲しい性質を
+</p>
+<p>
+\[
+\sigma_h\in H(\operatorname{div};\Omega)
+\]
+と
+\[
+\nabla\cdot\sigma_h
+=
+-r_h
+\]
+のようなequilibration propertyとして見た．
+</p>
+<p>
+今回の補題列は，まさにそこへ入るためのlocal proofを分解している．
+</p>
+<p>
+つまり，
+\[
+\boxed{
+\text{CR discrete solution}
+\longrightarrow
+\text{Marini local formula}
+\longrightarrow
+RT_h^0
+\longrightarrow
+\text{equilibrated flux}
+}
+\]
+というchainである．
+</p>
+<p>
+ここまで形式化できれば，verified residual estimatorとの接続点がかなり明確になる．
+</p>
+</article></div>
+
+<h2>13．紙では省略する補題が，形式化では資産になる</h2>
+<div class="news"><article class="news-item">
+<p>
+論文では，
+</p>
+<p>
+「simple calculationより」<br>
+「standard argumentより」<br>
+「Marini relationより」
+</p>
+<p>
+で済ませることがある．
+</p>
+<p>
+それは紙の論文としては自然である．
+</p>
+<p>
+しかしproof assistantでは，その省略した部分がすべてinterfaceになる．
+</p>
+<p>
+例えば
+\[
+\nabla\cdot(x-x_T)=d
+\]
+という補題は小さい．
+</p>
+<p>
+しかし一度一般次元で形式化しておけば，CR–RT reconstructionだけでなく，他のaffine vector fieldでも使える．
+</p>
+<p>
+だから
+\[
+\boxed{
+\text{紙では省略する補題}
+\longrightarrow
+\text{形式化では再利用できる研究資産}
+}
+\]
+と考えたい．
+</p>
+</article></div>
+
+<h2>14．証明を短くすることと，形式化しやすくすることは逆方向のことがある</h2>
+<div class="news"><article class="news-item">
+<p>
+人間向けの論文では，共通知識を省略して主結果へ早く進む方が読みやすい．
+</p>
+<p>
+形式証明では逆に，
+</p>
+<p>
+どの定義を使ったか．<br>
+どのspace membershipが必要か．<br>
+どの向きのnormalを使ったか．<br>
+符号規約は何か．
+</p>
+<p>
+を明示した方がよい．
+</p>
+<p>
+特に
+\[
+-\Delta u=f
+\]
+と
+\[
+\sigma=\nabla u
+\]
+を採用するのか，
+\[
+\sigma=-\nabla u
+\]
+を採用するのかでdivergenceの符号が変わる．
+</p>
+<p>
+こうした規約を最初に固定すること自体がformalisationの一部になる．
+</p>
+</article></div>
+
+<h2>15．最初のLean実装では，どこまでやればよいか</h2>
+<div class="news"><article class="news-item">
+<p>
+私なら第1段階では，global Poisson problemのwell-posednessまでは入れない．
+</p>
+<p>
+まず一つのsimplex上で，
+</p>
+<p>
+\[
+x-x_T\in RT^0(T),
+\]
+\[
+\nabla v_h\in\mathbb P^0(T)^d
+\quad
+(v_h\in\mathbb P^1(T)),
+\]
+\[
+\sigma_T\in RT^0(T),
+\]
+\[
+\nabla\cdot\sigma_T=-f_T^0
+\]
+までを確実に通す．
+</p>
+<p>
+次にtwo-element patchへ広げてnormal continuityを証明する．
+</p>
+<p>
+その後でglobal mesh assemblyへ進む．
+</p>
+<p>
+<b>one element → two-element patch → global mesh</b>
+</p>
+<p>
+という順番が，FEMの形式化にはかなり自然ではないかと思う．
+</p>
+</article></div>
+
+<h2>16．AIを使うなら，証明生成より分解にも使いたい</h2>
+<div class="news"><article class="news-item">
+<p>
+この作業でAIに期待したいことも，第2回の反例探索とは少し違う．
+</p>
+<p>
+紙のproofを与えて，
+</p>
+<p>
+隠れているspace membershipを列挙する．<br>
+暗黙に使っている局所恒等式を抽出する．<br>
+normalの向きや符号の依存関係を洗い出す．<br>
+Leanで不足しそうな補題を先に候補化する．
+</p>
+<p>
+といった<b>proof decomposition</b>に使う．
+</p>
+<p>
+最終的なlemma graphをどう設計するかは人間が決めるとしても，証明の中に隠れている前提を掘り出す作業にはかなり向いていると思う．
+</p>
+</article></div>
+
+<h2>17．第14回から何が具体化したのか</h2>
+<div class="news"><article class="news-item">
+<p>
+第14回では，
+\[
+\text{large theorem}
+\longrightarrow
+\text{small reusable lemmas}
+\]
+という方針だけを考えた．
+</p>
+<p>
+第15回では，CR–RT relationを使って，
+\[
+\boxed{
+\begin{array}{c}
+\text{polynomial membership}
+\\
+\Downarrow
+\\
+\text{divergence}
+\\
+\Downarrow
+\\
+\text{face moment}
+\\
+\Downarrow
+\\
+\text{normal continuity}
+\\
+\Downarrow
+\\
+H(\operatorname{div})\text{ conformity}
+\end{array}
+}
+\]
+という具体的なlemma chainまで下ろした．
+</p>
+<p>
+このchainは，私のanisotropic FEM，equilibrated flux，verified outputの複数の研究に共通して現れる．
+</p>
+<p>
+一つの論文を形式化するより，この共通骨格を残す方が意味があると思う．
+</p>
+</article></div>
+
+<h2>次に考えたいこと</h2>
+<div class="news"><article class="news-item">
+<p>
+CR–RT reconstructionを形式化する道筋は見えてきた．
+</p>
+<p>
+しかし実際のverified computationでは，Leanだけで全計算をするわけではない．
+</p>
+<p>
+mesh geometry，linear solver，interval arithmetic，flux reconstructionなどは数値計算側にある．
+</p>
+<p>
+では，
+</p>
+<p><b>「どこまでをLeanに，どこからをverified numericsに任せるのか」</b></p>
+<p>
+というtrusted boundaryをどこに置けばよいのか．
+</p>
+<p>
+次は，proof assistantと数値certificateの役割分担をもう少し具体的に考えてみたい．
+</p>
+</article></div>
+
+<h2>関連する記事・論文</h2>
+<div class="news"><article class="news-item">
+<ul>
+<li><a href="./lean4-09.html">第9回：equilibrated fluxはなぜcertificateになるのか――CR–RTとMariniの関係から見る</a></li>
+<li><a href="./lean4-14.html">第14回：Leanで形式化しやすい補題列とは何か――FEMの大定理を小さな証明へ分解する</a></li>
+<li><a href="https://doi.org/10.1007/s13160-021-00474-6">Crouzeix–Raviart and Raviart–Thomas finite-element error analysis on anisotropic meshes violating the maximum-angle condition</a></li>
+<li><a href="../../publications/">Publications</a></li>
+</ul>
+</article></div>
+
+</div>
+</article>
+</div>
+</main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+</body>
+</html>
