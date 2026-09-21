@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>Leanで形式化しやすい補題列とは何か――FEMの大定理を小さな証明へ分解する | Hiroki Ishizaka</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,Lean 4,formal verification,finite element method,FEM,anisotropic mesh,Raviart-Thomas,Crouzeix-Raviart,certificate">
+<meta name="description" content="有限要素法の大定理をいきなりLeanへ入れるのではなく，局所幾何，affine mapping，projection，CR–RTの恒等式，certificate implicationへ分解する．形式化しやすい補題列を研究者の視点から考えます．">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-14.html">
+
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<noscript>
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+</noscript>
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-14.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-14.html",
+      "headline": "第14回：Leanで形式化しやすい補題列とは何か――FEMの大定理を小さな証明へ分解する",
+      "description": "FEMの大定理を局所幾何，affine mapping，projection，CR–RT恒等式，certificate implicationへ分解し，Leanで形式化しやすい補題列を考えます．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-14.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-09-21",
+      "dateModified": "2026-09-21",
+      "articleSection": "Formal verification and finite element analysis",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
+      "keywords": "Lean 4, formal verification, finite element method, anisotropic mesh, CR-RT, certificate"
+    }
+  ]
+}
+</script>
+
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2026-09-21">
+<meta property="article:modified_time" content="2026-09-21">
+<meta property="article:section" content="Formal verification and finite element analysis">
+<meta property="og:site_name" content="Hiroki Ishizaka">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="Leanで形式化しやすい補題列とは何か――FEMの大定理を小さな証明へ分解する | Hiroki Ishizaka">
+<meta property="og:description" content="FEMの大定理を一度に形式化せず，小さな局所補題とcertificate chainへ分解して考えます．">
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-14.html">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@teamfem16key">
+<meta name="twitter:title" content="Leanで形式化しやすい補題列とは何か">
+<meta name="twitter:description" content="FEMの大定理を，小さな局所証明とcertificate chainへ分解する．">
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+</head>
+
+<body class="page">
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../fem/">Visions</a></li>
+        <li><a href="../../suppl/">Supplementary</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">Geometry</a></li>
+        <li><a href="../../links/">Links</a></li>
+        <li><a href="../../contact/">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in">
+    <li class="bcl-first"><a href="../../">ISHIZAKA Hiroki Website TOP</a></li>
+    <li class="bcl-last">Blog post from 21st September 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第14回：Leanで形式化しやすい補題列とは何か――FEMの大定理を小さな証明へ分解する</h1>
+
+<div class="news">
+<article class="news-item">
+<b>Certified FEMで最近考えていること</b><br>
+(21st September 2026 <span class="cat cat001">Update</span>)
+<p>
+第13回では，mesh geometryを数値的なcertificateに変えることを考えた．
+</p>
+<p>
+すると次に，
+</p>
+<p><b>「このcertificateが成立したら，なぜFEMの定理を使ってよいのか」</b></p>
+<p>
+という論理の部分を機械で確認したくなる．
+</p>
+<p>
+ここでLeanのようなproof assistantが候補になる．
+</p>
+<p>
+ただし，有限要素法の論文にある最終定理を，そのままLeanへ移すのはたぶんよくない．
+</p>
+<p>
+私ならまず，証明を小さな補題へばらすところから始める．
+</p>
+</article>
+</div>
+
+<h2>1．FEMの最終定理は，形式化の出発点として大きすぎる</h2>
+<div class="news"><article class="news-item">
+<p>
+例えば論文の最後には，
+\[
+\|u-u_h\|_V
+\leq
+C\,\mathcal E_h(u)
+\]
+のようなerror estimateが現れる．
+</p>
+<p>
+人間が読むと，これは一つの定理である．
+</p>
+<p>
+しかし証明の中には，
+</p>
+<p>
+mesh geometry．<br>
+affine transformation．<br>
+interpolation estimate．<br>
+projection property．<br>
+integration by parts．<br>
+discrete stability．<br>
+consistency．
+</p>
+<p>
+が積み重なっている．
+</p>
+<p>
+proof assistantから見ると，最終定理より，この途中の構造をどう分けるかの方が重要になる．
+</p>
+</article></div>
+
+<h2>2．最初に形式化したいのは，局所的で閉じた主張</h2>
+<div class="news"><article class="news-item">
+<p>
+私は，最初からSobolev空間全体やPDEのwell-posednessを狙うより，
+</p>
+<p><b>一つのsimplexの中だけで完結する補題</b></p>
+<p>
+から始めたい．
+</p>
+<p>
+例えば
+\[
+T:=\operatorname{conv}\{p_1,\ldots,p_{d+1}\}
+\subset\mathbb R^d
+\]
+に対して，
+</p>
+<p>
+edge vector．<br>
+face．<br>
+volume．<br>
+barycentre．<br>
+outward normal．
+</p>
+<p>
+を定義する．
+</p>
+<p>
+有限次元線形代数と多項式で閉じる部分は，解析的な極限操作が少なく，証明の依存関係も見えやすい．
+</p>
+</article></div>
+
+<h2>3．補題列その1：affine mapping</h2>
+<div class="news"><article class="news-item">
+<p>
+reference simplex \(\widehat T\) からphysical simplex \(T\) への写像を
+\[
+F_T(\widehat x)
+=
+B_T\widehat x+b_T
+\]
+とする．
+</p>
+<p>
+ここで最初に必要になるのは，
+</p>
+<p>
+\(B_T\) が可逆であること．<br>
+\(F_T(\widehat T)=T\) であること．<br>
+Jacobianが一定であること．<br>
+volume scalingが成立すること．
+</p>
+<p>
+である．
+</p>
+<p>
+例えば
+\[
+|T|_d
+=
+|\det B_T|,|\widehat T|_d
+\]
+という恒等式は，FEMのいたるところで使う．
+</p>
+<p>
+こういう補題は小さいが，再利用回数が非常に多い．
+</p>
+</article></div>
+
+<h2>4．補題列その2：gradientの変換</h2>
+<div class="news"><article class="news-item">
+<p>
+\[
+\widehat v
+=
+v\circ F_T
+\]
+とすると，
+\[
+\widehat\nabla\widehat v
+=
+B_T^{\top}(\nabla v)\circ F_T
+\]
+というchain ruleが出てくる．
+</p>
+<p>
+したがって
+\[
+(\nabla v)\circ F_T
+=
+B_T^{-\top}\widehat\nabla\widehat v.
+\]
+</p>
+<p>
+これも人間のFEM証明では一行で済ませることが多い．
+</p>
+<p>
+しかし，mappingの向き，transpose，inverseの位置を間違えると，その後の議論が全部ずれる．
+</p>
+<p>
+私は，こういう<b>一行で済むが間違えると致命的な式</b>こそ，形式化の価値が高いと思う．
+</p>
+</article></div>
+
+<h2>5．補題列その3：simplex geometry</h2>
+<div class="news"><article class="news-item">
+<p>
+第13回のgeometry certificateにつなぐなら，
+\[
+h_T:=\operatorname{diam}(T),
+\qquad
+|T|_d>0
+\]
+のような基本量から始めて，
+\[
+H_T
+=
+\frac{\prod_{i=1}^d h_i}{|T|_d}h_T
+\]
+を定義する．
+</p>
+<p>
+次に
+\[
+\frac{H_T}{h_T}
+\leq
+\gamma_0
+\]
+から，解析で必要なsemi-regularity hypothesisへ入るinterfaceを作る．
+</p>
+<p>
+ここでは，数値コードが出したcertificateそのものをLeanで再計算する必要はない．
+</p>
+<p>
+Lean側では，
+</p>
+<p><b>「この不等式が正しいなら，次の補題を使ってよい」</b></p>
+<p>
+というimplicationを保持すればよい．
+</p>
+</article></div>
+
+<h2>6．補題列その4：P0 projection</h2>
+<div class="news"><article class="news-item">
+<p>
+cell average
+\[
+\Pi_T^0 v
+:=
+\frac{1}{|T|_d}
+\int_T v\,dx
+\]
+も，低次FEMでは何度も現れる．
+</p>
+<p>
+ここで必要な性質は，
+\[
+\int_T
+(v-\Pi_T^0v)\,dx
+=
+0
+\]
+というmean-zero propertyである．
+</p>
+<p>
+さらに
+\[
+\Pi_T^0 c=c
+\]
+for constants，linearity，idempotenceなどを独立した補題にしておけば，CR，RT，residual estimateで再利用できる．
+</p>
+<p>
+一つ一つは簡単でも，証明全体の部品としては重要である．
+</p>
+</article></div>
+
+<h2>7．補題列その5：face averageとCR interpolation</h2>
+<div class="news"><article class="news-item">
+<p>
+Crouzeix–Raviart interpolationでは，face averageが自由度になる．
+</p>
+<p>
+局所補間 \(I_T^{\mathrm{CR}}v\) について，
+\[
+\int_F
+\left(
+v-I_T^{\mathrm{CR}}v
+\right),ds
+=
+0
+\]
+for every face \(F\subset\partial T\)
+という性質が基本になる．
+</p>
+<p>
+ここから，elementwise integration by partsで現れるface termを消したり，RTとの関係を作ったりできる．
+</p>
+<p>
+この性質も，巨大なerror theoremの中へ埋め込むより，独立したinterface theoremとして持つ方がよいと思う．
+</p>
+</article></div>
+
+<h2>8．補題列その6：RTのnormal flux</h2>
+<div class="news"><article class="news-item">
+<p>
+Raviart–Thomas側ではnormal fluxが中心になる．
+</p>
+<p>
+最低次なら，
+\[
+RT^0(T)
+=
+\mathbb P^0(T)^d
++
+x\mathbb P^0(T)
+\]
+を定義し，faceごとのnormal flux momentを自由度として持つ．
+</p>
+<p>
+形式化したいのは，例えば，
+</p>
+<p>
+normal componentのface上での構造．<br>
+degrees of freedomのunisolvence．<br>
+divergenceがelementwise constantになること．
+</p>
+<p>
+である．
+</p>
+<p>
+この辺りまで入れば，equilibrated fluxの「divergence targetを満たす」という主張をかなり小さな代数問題へ落とせる．
+</p>
+</article></div>
+
+<h2>9．補題列その7：局所Green formula</h2>
+<div class="news"><article class="news-item">
+<p>
+CRとRTをつなぐとき，結局何度も使うのは
+\[
+\int_T
+q\cdot\nabla v\,dx
++
+\int_T
+(\nabla\cdot q)v\,dx
+=
+\int_{\partial T}
+(q\cdot n_T)v\,ds
+\]
+である．
+</p>
+<p>
+この式そのものは古典的である．
+</p>
+<p>
+しかしFEMで使うときには，
+</p>
+<p>
+\(q\) がRT polynomialである．<br>
+normal fluxがface上で扱いやすい．<br>
+\(v\) がCR functionである．<br>
+face averageが一致する．
+</p>
+<p>
+という有限要素固有の構造が重なる．
+</p>
+<p>
+したがって，Green formulaを一から全部形式化することと，FEMで使うlocal corollaryを切り出すことは分けて考えたい．
+</p>
+</article></div>
+
+<h2>10．補題列その8：CR–RTのlocal identity</h2>
+<div class="news"><article class="news-item">
+<p>
+私の最近の研究では，CRとRTの関係を何度も使っている．
+</p>
+<p>
+そこでformalisationの目標として面白いのは，
+</p>
+<p><b>「あるCR solutionから作ったvector fieldが，本当にRT spaceに入り，指定したdivergenceを持つ」</b></p>
+<p>
+ことを証明する局所補題である．
+</p>
+<p>
+ここではPDE全体を形式化しなくても，
+</p>
+<p>
+多項式の次数．<br>
+normal continuity．<br>
+divergence identity．
+</p>
+<p>
+を確認できればよい．
+</p>
+<p>
+第9回のequilibrated-flux certificateへつながる部分を，小さなalgebraic theoremとして切り出せる可能性がある．
+</p>
+</article></div>
+
+<h2>11．最初からSobolev inequalityを狙わなくてもよい</h2>
+<div class="news"><article class="news-item">
+<p>
+有限要素解析では，
+</p>
+<p>
+Poincaré inequality．<br>
+trace inequality．<br>
+Sobolev embedding．<br>
+elliptic regularity．
+</p>
+<p>
+が不可欠である．
+</p>
+<p>
+しかし，これらは測度論，関数空間，弱微分，境界traceなど大きな基盤を必要とする．
+</p>
+<p>
+もちろん最終的には必要になる．
+</p>
+<p>
+ただ，最初の研究テーマとしては，そこから始める必要はないと思う．
+</p>
+<p>
+まず有限次元で閉じるlocal FEM algebraを固め，解析的な部分との境界を明確にする方がよい．
+</p>
+</article></div>
+
+<h2>12．「形式化しやすい」は「数学的に簡単」と同じではない</h2>
+<div class="news"><article class="news-item">
+<p>
+ここは誤解したくない．
+</p>
+<p>
+数学的には簡単な補題でも，libraryに必要な定義がなければ形式化は重くなる．
+</p>
+<p>
+逆に，かなり抽象的な定理でも，既に一般定理が整っていれば短く書けることがある．
+</p>
+<p>
+したがって，形式化の難しさは
+\[
+\text{mathematical difficulty}
+\]
+だけでは決まらない．
+</p>
+<p>
+\[
+\boxed{
+\text{formalisation cost}
+=
+\text{mathematics}
++
+\text{missing infrastructure}
++
+\text{interface design}
+}
+\]
+くらいに考えた方がよいと思う．
+</p>
+</article></div>
+
+<h2>13．certificateを境界に置く</h2>
+<div class="news"><article class="news-item">
+<p>
+第13回で考えたgeometry certificateは，形式証明との境界として使いやすい．
+</p>
+<p>
+例えば数値側が
+\[
+\overline\eta_h
+\leq
+\gamma_0
+\]
+をoutward roundingで保証したとする．
+</p>
+<p>
+Lean側では，
+\[
+\overline\eta_h
+\leq
+\gamma_0
+\Longrightarrow
+\text{semi-regular hypothesis}
+\Longrightarrow
+\text{interpolation theorem applicable}
+\]
+という論理だけを追う．
+</p>
+<p>
+つまりproof assistantへ巨大なfloating-point computationを持ち込むのではなく，<b>小さなcertificateを境界に置く</b>．
+</p>
+<p>
+私はこの設計の方が，実際のnumerical PDEとformal verificationをつなぎやすいと思う．
+</p>
+</article></div>
+
+<h2>14．依存関係をDAGとして考える</h2>
+<div class="news"><article class="news-item">
+<p>
+論文の証明は，上から順に文章で読む．
+</p>
+<p>
+しかしformalisationでは，依存関係を
+\[
+\text{definitions}
+\to
+\text{local lemmas}
+\to
+\text{interface lemmas}
+\to
+\text{global theorem}
+\]
+というDAGとして見る方がよい．
+</p>
+<p>
+例えば，
+\[
+\boxed{
+\begin{array}{c}
+\text{simplex geometry}
+\\
+\Downarrow
+\\
+\text{affine-map identities}
+\\
+\Downarrow
+\\
+\text{projection / CR / RT local lemmas}
+\\
+\Downarrow
+\\
+\text{local conservation identity}
+\\
+\Downarrow
+\\
+\text{residual certificate}
+\\
+\Downarrow
+\\
+\text{global FEM theorem}
+\end{array}
+}
+\]
+という形である．
+</p>
+<p>
+この依存関係を先に設計すると，どの補題が複数の論文で再利用できるかも見えやすくなる．
+</p>
+</article></div>
+
+<h2>15．私なら最初のformal FEM packageをどう切るか</h2>
+<div class="news"><article class="news-item">
+<p>
+私なら，最初のpackageを「Poisson問題を全部形式化する」にはしない．
+</p>
+<p>
+もっと小さく，
+</p>
+<p>
+simplex geometry．<br>
+affine equivalence．<br>
+cell / face averages．<br>
+CR local interpolation．<br>
+RT0 local space．<br>
+local integration-by-parts identity．<br>
+CR–RT local reconstruction．
+</p>
+<p>
+までを一つの塊にする．
+</p>
+<p>
+ここまでなら，私が現在使っている異方性FEM，equilibrated flux，verified outputの複数の方向へ再利用できる．
+</p>
+<p>
+「一つの論文をLean化する」のではなく，<b>何本もの論文の下にある共通骨格を形式化する</b>方が研究資産として価値が高いと思う．
+</p>
+</article></div>
+
+<h2>16．AIに任せたい部分，人間が決めたい部分</h2>
+<div class="news"><article class="news-item">
+<p>
+この作業ではAIも使える．
+</p>
+<p>
+例えば，
+</p>
+<p>
+既存証明から局所補題を抽出する．<br>
+依存関係を候補として並べる．<br>
+Leanの定義に合わせてstatementの形を試す．<br>
+証明が通らない箇所から不足補題を探す．
+</p>
+<p>
+といった作業はかなり助けになると思う．
+</p>
+<p>
+ただし，
+</p>
+<p><b>どの補題を研究資産として残すか，どのinterfaceを長く使うかを決めるのは人間である．</b></p>
+<p>
+証明が通ることだけを目標にすると，その論文でしか使えない定理が大量にできるかもしれない．
+</p>
+<p>
+私は，再利用できる数学の境界を人間が設計することの方が重要だと思う．
+</p>
+</article></div>
+
+<h2>17．第13回までとのつながり</h2>
+<div class="news"><article class="news-item">
+<p>
+第13回では，mesh geometryを
+</p>
+<p><b>「人間が読む仮定」から「計算して検証できる契約」へ変える</b></p>
+<p>
+ことを考えた．
+</p>
+<p>
+第14回では，その契約から先の数学を，
+</p>
+<p><b>「一つの巨大な証明」から「再利用できる小さな補題列」へ変える</b></p>
+<p>
+ことを考えた．
+</p>
+<p>
+この二つをつなげると，
+\[
+\boxed{
+\text{numerical certificate}
++
+\text{formal lemma chain}
+=
+\text{traceable FEM guarantee}
+}
+\]
+という構図になる．
+</p>
+<p>
+私は，AI4Mathやformal verificationをFEMへ入れるなら，まずこの境界を丁寧に作るところから始めたい．
+</p>
+</article></div>
+
+<h2>次に考えたいこと</h2>
+<div class="news"><article class="news-item">
+<p>
+ここまでで，当初予定していたcertificate，geometry，formal reasoningが一周つながった．
+</p>
+<p>
+次に進むなら，実際に一つのlocal theoremを選んで，
+</p>
+<p><b>「紙の証明をLean向けのstatementへどう分解するか」</b></p>
+<p>
+を具体的にやってみたい．
+</p>
+<p>
+候補としてはCR–RTのlocal reconstructionが面白い．
+</p>
+<p>
+PDE全体を形式化する前に，まず一つのelement上で何が本当に必要なのかを切り出せるからである．
+</p>
+</article></div>
+
+<h2>関連する記事</h2>
+<div class="news"><article class="news-item">
+<ul>
+<li><a href="./lean4-01.html">第1回：Lean 4は有限要素法研究に何をもたらすか</a></li>
+<li><a href="./lean4-09.html">第9回：equilibrated fluxはなぜcertificateになるのか――CR–RTとMariniの関係から見る</a></li>
+<li><a href="./lean4-13.html">第13回：幾何条件を機械可読なcertificateへ――異方性メッシュを数値で判定できるか</a></li>
+<li><a href="../../publications/">Publications</a></li>
+</ul>
+</article></div>
+
+</div>
+</article>
+</div>
+</main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+</body>
+</html>
