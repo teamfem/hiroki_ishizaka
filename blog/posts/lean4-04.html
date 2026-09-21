@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>AIが見つけた反例は，本当に反例なのか――数値実験と証明のあいだ | Hiroki Ishizaka</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,AI4Math,反例,verified numerics,区間演算,有限要素法,数値解析">
+<meta name="description" content="AIが見つけた反例候補を，どこまで信用してよいのか．数値実験，丸め誤差，区間演算，verified numerics，証明の違いを有限要素法研究の視点から考えます．">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-04.html">
+
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<noscript>
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+</noscript>
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-04.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-04.html",
+      "headline": "第4回：AIが見つけた反例は，本当に反例なのか――数値実験と証明のあいだ",
+      "description": "AIが見つけた反例候補を，どこまで信用してよいのか．数値実験，丸め誤差，区間演算，verified numerics，証明の違いを有限要素法研究の視点から考えます．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-04.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-09-21",
+      "dateModified": "2026-09-21",
+      "articleSection": "AI4Math and certified mathematics",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
+      "keywords": "AI4Math, counterexample, verified numerics, interval arithmetic, finite element method"
+    }
+  ]
+}
+</script>
+
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2026-09-21">
+<meta property="article:modified_time" content="2026-09-21">
+<meta property="article:section" content="AI4Math and certified mathematics">
+<meta property="og:site_name" content="Hiroki Ishizaka">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="AIが見つけた反例は，本当に反例なのか――数値実験と証明のあいだ | Hiroki Ishizaka">
+<meta property="og:description" content="AIが見つけた反例候補を，どこまで信用してよいのか．数値実験，丸め誤差，verified numerics，証明の違いを考えます．">
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-04.html">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@teamfem16key">
+<meta name="twitter:title" content="AIが見つけた反例は，本当に反例なのか">
+<meta name="twitter:description" content="数値実験，verified numerics，証明のあいだを考えるAI4Math研究ノート．">
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+</head>
+
+<body class="page">
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../fem/">Visions</a></li>
+        <li><a href="../../suppl/">Supplementary</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">Geometry</a></li>
+        <li><a href="../../links/">Links</a></li>
+        <li><a href="../../contact/">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in">
+    <li class="bcl-first"><a href="../../">ISHIZAKA Hiroki Website TOP</a></li>
+    <li class="bcl-last">Blog post from 21st September 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第4回：AIが見つけた反例は，本当に反例なのか――数値実験と証明のあいだ</h1>
+
+<div class="news">
+<article class="news-item">
+<b>AI4Mathで最近考えていること</b><br>
+(21st September 2026 <span class="cat cat001">Update</span>)
+<p>
+前回まで，AIに「この定理を壊してくれ」と頼む話を書いてきた．反例を探して，そこから仮定を削り，定理の境界を探す．これは研究のやり方としてかなり面白いと思っている．
+</p>
+<p>
+ただ，その次に面倒な問題がある．
+</p>
+<p><b>AIが「反例を見つけました」と言ってきたとき，私はそれを信用してよいのだろうか．</b></p>
+<p>
+数値が少し負になった．グラフが急に振れた．誤差が一つだけ大きくなった．それだけで「反例が見つかった」と言ってよいのか．
+</p>
+<p>
+たぶん，ここでまた数学に戻らなければならない．
+</p>
+</article>
+</div>
+
+<h2>1．100万回うまくいっても，定理にはならない</h2>
+<div class="news"><article class="news-item">
+<p>
+数値実験をしていると，たくさんの例で同じ現象が出ると安心する．
+</p>
+<p>
+例えば
+\[
+F(T)\geq 0
+\]
+という性質を調べていて，ランダムに作った三角形を100万個試して，全部で成り立ったとする．
+</p>
+<p>
+これはかなり強い手掛かりになる．少なくとも，簡単に壊れる主張ではなさそうだと分かる．次に何を証明すべきか考える材料にもなる．
+</p>
+<p>
+でも，100万個目の次に反例があるかもしれない．
+</p>
+<p>
+有限回の数値実験と
+\[
+F(T)\geq 0\qquad\text{for every admissible }T
+\]
+という数学的主張の間には，やはり距離がある．
+</p>
+<p>
+AIなら，人間よりはるかに多くの例を試すことができる．それは大きな力だと思う．しかし，試した個数が100万から1億になっても，「すべて」と同じにはならない．
+</p>
+</article></div>
+
+<h2>2．では，一回壊れれば反例なのか</h2>
+<div class="news"><article class="news-item">
+<p>
+論理だけを見れば，一つで十分である．
+</p>
+<p>
+\[
+F(T)\geq 0\qquad\text{for all }T
+\]
+という主張に対して，
+\[
+F(T_0)<0
+\]
+となる \(T_0\) が一つあれば，それで反例である．
+</p>
+<p>
+ところが，コンピュータで
+\[
+F(T_0)=-10^{-14}
+\]
+と出たらどうだろう．
+</p>
+<p>
+私は，これをそのまま反例とは呼びたくない．
+</p>
+<p>
+丸め誤差かもしれない．条件数が悪くなっているだけかもしれない．極端に潰れた要素で計算が不安定になったのかもしれない．あるいは，単純に自分のコードが間違っているかもしれない．
+</p>
+<p>
+紙の上では「一つ見つければよい」．しかし計算機上で見つかった「一つ」が，本当に数学の世界の一つなのかは別の話になる．
+</p>
+</article></div>
+
+<h2>3．浮動小数点数は便利だが，そのまま証明ではない</h2>
+<div class="news"><article class="news-item">
+<p>
+数値解析をしていると，浮動小数点計算なしにはほとんど何もできない．私もPythonや数値計算を普通に使う．反例候補を探す段階では，むしろ積極的に使った方がよいと思っている．
+</p>
+<p>
+ただし，コンピュータが表示した数値をそのまま実数の値だと思うのは危ない．
+</p>
+<p>
+例えば，本当の値がゼロに非常に近いところで符号だけを見たい場合，最後の数桁が丸めによって動けば結論まで変わる．
+</p>
+<p>
+だから，AIが大量探索をして
+</p>
+<p><b>「ここが怪しい」</b></p>
+<p>
+と教えてくれるところまではよい．その次に，その符号や不等式をどう保証するかを考える必要がある．
+</p>
+</article></div>
+
+<h2>4．反例候補からverified counterexampleへ</h2>
+<div class="news"><article class="news-item">
+<p>
+ここで，私が最近取り組んでいるverified numericsとAI4Mathがつながってくる．
+</p>
+<p>
+例えば通常の浮動小数点計算で
+\[
+F(T_0)\approx -0.012
+\]
+と出たとする．これだけなら数値結果である．
+</p>
+<p>
+一方で，丸め誤差まで含めて
+\[
+F(T_0)\in[-0.013,-0.011]
+\]
+と厳密に囲うことができれば，少なくとも
+\[
+F(T_0)<0
+\]
+という符号は保証できる．
+</p>
+<p>
+この違いは大きい．
+</p>
+<p>
+AIが反例の<b>候補</b>を探し，verified computationがその候補を数学的に固める．そうすれば，単なる「変な数値が出た」から一歩進める．
+</p>
+<p>
+私は，AI4Mathとverified numericsは別々の流れではないと思っている．むしろ，相性はかなりよいのではないかと思う．
+</p>
+</article></div>
+
+<h2>5．ただし，PDEではもっと面倒になる</h2>
+<div class="news"><article class="news-item">
+<p>
+有限次元の不等式なら，候補を厳密に評価できれば話がかなり進む．
+</p>
+<p>
+PDEではそう簡単ではない．
+</p>
+<p>
+コンピュータで求めた \(u_h\) に奇妙な振る舞いが出たとしても，それは離散解の性質かもしれない．真の解 \(u\) も同じ性質を持つとは限らない．メッシュが悪いのかもしれないし，離散化が悪いのかもしれない．
+</p>
+<p>
+つまり，
+\[
+\text{discrete counterexample}
+\]
+と
+\[
+\text{counterexample for the continuous problem}
+\]
+は同じではない．
+</p>
+<p>
+有限要素法では，ここに誤差評価が必要になる．離散解と真の解の距離を保証し，それでも問題の性質が壊れていると言えるのかを確認しなければならない．
+</p>
+<p>
+この点では，反例を見つけることとverified error boundを作ることが直接つながってくる．
+</p>
+</article></div>
+
+<h2>6．「反例」と「反例候補」は分けて書きたい</h2>
+<div class="news"><article class="news-item">
+<p>
+AIを研究に使うようになると，言葉の使い方も少し慎重にした方がよいと思う．
+</p>
+<p>
+AIや数値探索によって怪しい例が見つかった段階では，私はまず
+</p>
+<p><b>counterexample candidate</b></p>
+<p>
+と呼びたい．
+</p>
+<p>
+その候補について，計算誤差を押さえる．必要なら区間演算を使う．PDEなら離散化誤差まで見る．最後に，数学的に主張を否定していることが確認できたところで，初めてcounterexampleと呼ぶ．
+</p>
+<p>
+少し堅苦しく見えるが，AIが大量の候補を出せる時代には，この区別はむしろ重要になると思う．
+</p>
+</article></div>
+
+<h2>7．AI，verified computation，人間の役割</h2>
+<div class="news"><article class="news-item">
+<p>
+ここまで考えると，私の中では役割分担がかなりはっきりしてくる．
+</p>
+<p>
+AIは広く探す．
+</p>
+<p>
+数値計算は怪しい場所を詳しく見る．
+</p>
+<p>
+verified computationは，そこで得られた数値的主張を固める．
+</p>
+<p>
+そして人間は，なぜそこで壊れたのかを考える．
+</p>
+<p>
+式にすれば，
+\[
+\text{AI exploration}
+\longrightarrow
+\text{counterexample candidate}
+\longrightarrow
+\text{verification}
+\longrightarrow
+\text{mathematics}
+\]
+という流れになる．
+</p>
+<p>
+私はこの流れがかなり好きである．AIに数学を全部任せるわけでもないし，人間がAIを単なる計算機として使うだけでもない．それぞれが得意なところを受け持っている．
+</p>
+<p>
+AIが人間なら見なかった場所を掘る．verified computationが「そこは本当に壊れている」と保証する．そして人間が，「ではなぜ壊れたのか」と戻っていく．
+</p>
+<p>
+そこから新しい定理が出てくるなら，かなり面白い研究の形だと思う．
+</p>
+</article></div>
+
+<h2>8．次に考えたいこと</h2>
+<div class="news"><article class="news-item">
+<p>
+ここまで来ると，もう一つ気になることがある．
+</p>
+<p>
+数値的な候補をverified computationで固めても，その背後にある証明の論理まで自動的に正しくなるわけではない．
+</p>
+<p>
+では，Leanのようなproof assistantは，AIが作った数学をどこまで確認できるのか．
+</p>
+<p>
+AIが補題を作る．人間が定理の構造を考える．verified computationが数値部分を保証する．Leanが論理部分を確認する．
+</p>
+<p>
+ここまでつながると，AI4Mathとverified numericsとformal proofが，ようやく一つの研究の流れに見えてくる．
+</p>
+<p>
+次はこの「LeanはAIの数学の査読者になれるのか」を考えてみたい．
+</p>
+</article></div>
+
+<h2>関連する記事</h2>
+<div class="news"><article class="news-item">
+<ul>
+<li><a href="./lean4-01.html">第1回：Lean 4は有限要素法研究に何をもたらすか</a></li>
+<li><a href="./lean4-02.html">第2回：AIは証明するより，壊す方が得意なのか――反例から考えるAI4Math</a></li>
+<li><a href="./lean4-03.html">第3回：反例を見つけたあと，どうやって定理にするのか――AIと一緒に「境界」を探す</a></li>
+</ul>
+</article></div>
+
+</div>
+</article>
+</div>
+</main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+</body>
+</html>
