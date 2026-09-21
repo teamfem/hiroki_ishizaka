@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>反例を見つけたあと，どうやって定理にするのか――AIと一緒に「境界」を探す | Hiroki Ishizaka</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,AI4Math,反例,必要条件,十分条件,異方性有限要素法,有限要素法">
+<meta name="description" content="反例を見つけたあと，どうやって新しい定理へ進むのか．異方性有限要素法での経験を題材に，仮定を削ること，必要条件と十分条件，AIをtheorem sharpenerとして使う可能性を考えます．">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-03.html">
+
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<noscript>
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+</noscript>
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-03.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-03.html",
+      "headline": "第3回：反例を見つけたあと，どうやって定理にするのか――AIと一緒に「境界」を探す",
+      "description": "反例を見つけたあと，どうやって新しい定理へ進むのか．異方性有限要素法での経験を題材に，仮定を削ること，必要条件と十分条件，AIをtheorem sharpenerとして使う可能性を考えます．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-03.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-09-21",
+      "dateModified": "2026-09-21",
+      "articleSection": "AI4Math and certified mathematics",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
+      "keywords": "AI4Math, counterexample, necessary condition, sufficient condition, anisotropic finite element method"
+    }
+  ]
+}
+</script>
+
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2026-09-21">
+<meta property="article:modified_time" content="2026-09-21">
+<meta property="article:section" content="AI4Math and certified mathematics">
+<meta property="og:site_name" content="Hiroki Ishizaka">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="反例を見つけたあと，どうやって定理にするのか――AIと一緒に「境界」を探す | Hiroki Ishizaka">
+<meta property="og:description" content="反例を見つけたあと，どうやって新しい定理へ進むのか．必要条件と十分条件，仮定を削る作業，AIをtheorem sharpenerとして使う可能性を考えます．">
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-03.html">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@teamfem16key">
+<meta name="twitter:title" content="反例を見つけたあと，どうやって定理にするのか">
+<meta name="twitter:description" content="AIと反例から，定理の本当の境界を探す研究ノート．">
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+</head>
+
+<body class="page">
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../fem/">Visions</a></li>
+        <li><a href="../../suppl/">Supplementary</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">Geometry</a></li>
+        <li><a href="../../links/">Links</a></li>
+        <li><a href="../../contact/">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in">
+    <li class="bcl-first"><a href="../../">ISHIZAKA Hiroki Website TOP</a></li>
+    <li class="bcl-last">Blog post from 21st September 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第3回：反例を見つけたあと，どうやって定理にするのか――AIと一緒に「境界」を探す</h1>
+
+<div class="news">
+<article class="news-item">
+<b>AI4Mathで最近考えていること</b><br>
+(21st September 2026 <span class="cat cat001">Update</span>)
+<p>
+前回，「証明してくれ」より「これを壊してくれ」とAIに頼む方が，研究では面白いかもしれないと書いた．
+</p>
+<p>
+では，本当に反例が見つかったら，それで研究は終わるのだろうか．もちろん終わらない．たぶん，そこからが一番面白いところである．
+</p>
+<p>
+反例を一つ見つけると，「この定理は間違っていた」で終わらせたくなる．しかし実際には，その反例が<b>どの仮定を壊しているのか</b>を調べ始めることになる．そして，条件を少し戻す．また削る．もう一度壊す．
+</p>
+<p>
+そうしているうちに，定理の本当の境界が見えてくる．
+</p>
+</article>
+</div>
+
+<h2>1．反例は「終わり」ではなく，定理の形を教えてくれる</h2>
+<div class="news"><article class="news-item">
+<p>
+例えば，
+\[
+A_1, A_2, A_3 \Longrightarrow B
+\]
+という定理を考える．
+</p>
+<p>
+証明できたとしても，これで話が終わったとは限らない．本当に \(A_1,A_2,A_3\) が全部必要なのか，という問いが残る．
+</p>
+<p>
+そこで \(A_3\) を外してみる．
+\[
+A_1, A_2 \Longrightarrow B ?
+\]
+ここで反例が出たとする．
+</p>
+<p>
+普通なら「やはり \(A_3\) が必要だった」と言いたくなる．でも，まだ早い．必要なのは \(A_3\) そのものではなく，もっと弱い \(\widetilde A_3\) かもしれない．
+</p>
+<p>
+すると次の問いが出てくる．
+\[
+A_1, A_2, \widetilde A_3 \Longrightarrow B
+\]
+はどこまで弱められるか．
+</p>
+<p>
+私は，この作業が数学のかなり大事な部分だと思っている．反例は定理を壊すが，同時に「ここまでは行ける」という線を引いてくれる．
+</p>
+</article></div>
+
+<h2>2．有限要素法では，この「境界」を何度も探してきた</h2>
+<div class="news"><article class="news-item">
+<p>
+異方性有限要素法の研究をしていると，この問題に何度も出会う．
+</p>
+<p>
+shape-regularityがあれば，多くの標準的な誤差評価はきれいに証明できる．しかし，細長い要素を使いたいならshape-regularityは強すぎる．そこでmaximum-angle conditionが出てくる．さらに，別の幾何量で同じ境界を表せないかと考える．
+</p>
+<p>
+三次元四面体については，私たちは新しい幾何条件とmaximum-angle conditionが実は同値になることを示した．一見すると「もっと弱い条件を見つけた」ように見えても，調べてみると同じ境界を別の形で見ていた，ということがある．
+</p>
+<p>
+これは私にはかなり面白かった．条件を弱める研究をしていると，「弱くできた」と思いたくなる．しかし本当に大事なのは，弱く見えることではなく，<b>何が必要で，何が十分で，どこから壊れるのか</b>を正確に切り分けることだと思う．
+</p>
+<p>
+関連論文：<a href="https://doi.org/10.1016/j.camwa.2021.08.017" target="_blank" rel="noopener">A new geometric condition equivalent to the maximum angle condition for tetrahedrons</a>．
+</p>
+</article></div>
+
+<h2>3．必要条件と十分条件は，似ているようで全く違う</h2>
+<div class="news"><article class="news-item">
+<p>
+AIと数学をやっていて，特に危ないと思うのがここである．
+</p>
+<p>
+\[
+A\Longrightarrow B
+\]
+を証明したとする．これは「\(A\) ならば \(B\)」である．
+</p>
+<p>
+ところが，例をたくさん見せると，AIはつい
+\[
+B\Longrightarrow A
+\]
+まで言いたくなることがある．人間も同じである．うまくいく例ばかり見ていると，「たぶんこれが必要なのだろう」と思ってしまう．
+</p>
+<p>
+でも，十分条件と必要条件の間には大きな距離がある．
+</p>
+<p>
+有限要素法では，あるメッシュ条件の下で補間が安定であることを証明するのと，その条件を破れば必ず安定性が失われることを示すのは別問題である．前者だけなら安全側の仮定を置けばよい．後者まで行こうとすると，反例や極端な要素族をかなり丁寧に調べなければならない．
+</p>
+<p>
+AIに任せるなら，私はむしろこの間を攻めさせたい．「十分条件を一つ見つけて終わり」ではなく，「どこまで外してもまだ成立するか」を何度も試させる．
+</p>
+</article></div>
+
+<h2>4．私自身も，条件を見直してきた</h2>
+<div class="news"><article class="news-item">
+<p>
+研究を続けていると，一度書いた定理を後から見直すこともある．
+</p>
+<p>
+私たちの異方性補間理論でも，最初の一般理論を発表したあと，Lagrange型の補間評価やRaviart–Thomas補間について，仮定や主張を修正する必要が出てきた．2023年の論文では以前のTheorem 2を修正し，Raviart–Thomas補間についても2022年の論文で以前の主張を修正している．
+</p>
+<p>
+こういう経験をすると，「最初から完全な定理を当てる」ことにあまり意味を感じなくなる．大事なのは，何が間違っていたのかを隠さずに調べて，どこまでなら正しいかを取り直すことだと思う．
+</p>
+<p>
+関連論文：<a href="https://doi.org/10.1007/s13160-022-00535-w" target="_blank" rel="noopener">Anisotropic interpolation error estimates using a new geometric parameter</a>，
+<a href="https://doi.org/10.1007/s10092-022-00494-1" target="_blank" rel="noopener">Anisotropic Raviart–Thomas interpolation error estimates using a new geometric parameter</a>．
+</p>
+</article></div>
+
+<h2>5．AIは「定理を作る機械」より「定理を削る機械」かもしれない</h2>
+<div class="news"><article class="news-item">
+<p>
+前回，AIを<b>theorem sharpener</b>として使えるのではないかと書いた．私はこの言葉が意外としっくり来ている．
+</p>
+<p>
+AIに最初から美しい定理を作ってもらう必要はない．むしろ，少し強すぎる定理を人間が置いて，AIに壊してもらう．
+</p>
+<p>
+例えば，係数の範囲を広げる．空間次元を変える．境界条件を変える．メッシュを極端に潰す．反応項をゼロにする．逆に大きくする．局所条件を一つ外す．
+</p>
+<p>
+壊れたら，その方向には行けない．壊れなければ，もう一歩進む．
+</p>
+<p>
+こうして
+\[
+\text{safe theorem}
+\quad\longrightarrow\quad
+\text{sharp theorem}
+\]
+へ近づけていく．
+</p>
+<p>
+これは，AIが一発で証明を出す姿よりも，私には研究らしく見える．
+</p>
+</article></div>
+
+<h2>6．ただし，数値的に壊れたことと数学的に壊れたことは違う</h2>
+<div class="news"><article class="news-item">
+<p>
+ここはかなり注意が必要である．
+</p>
+<p>
+コンピュータで100万個の三角形を調べて，一つだけ不等式が破れたとする．それは反例候補としては非常に価値がある．しかし，丸め誤差かもしれない．実装ミスかもしれない．境界ぎりぎりで桁落ちしているだけかもしれない．
+</p>
+<p>
+逆に，100万個すべてで成立しても，定理になったわけではない．100万個目の次に反例があるかもしれない．
+</p>
+<p>
+だから私は，AIによる探索と数学的証明を分けて考えたい．
+</p>
+<p>
+AIは「怪しい場所」を探す．人間はそこに構造があるかを見る．必要なら区間演算やsymbolic calculationで候補を固める．最後に証明へ戻る．Leanのようなproof assistantを使うなら，さらにその証明の依存関係まで確認できる．
+</p>
+<p>
+探索，検証，証明は同じものではない．でも，うまくつなげればかなり強い．
+</p>
+</article></div>
+
+<h2>7．次にやりたいこと</h2>
+<div class="news"><article class="news-item">
+<p>
+この考え方は，今の自分の研究にもそのまま使えると思っている．
+</p>
+<p>
+例えば離散最大値原理では，メッシュ条件や移流・反応係数のどこまでが許されるのかを調べたい．Raviart–Thomas補間なら，どの安定性にmaximum-angle conditionが本当に必要なのかを見たい．verified numericsなら，どの異方性まで区間評価が耐えられるのかを試したい．
+</p>
+<p>
+どれも，「証明してください」とAIに丸投げするより，
+</p>
+<p><b>この主張を壊す一番嫌な例を探してほしい．</b></p>
+<p>
+と頼むところから始めた方が面白そうである．
+</p>
+<p>
+そして，その例を見て「なぜ？」と考える．
+</p>
+<p>
+結局，定理は最初からそこに置いてあるわけではない．反例と行ったり来たりしながら，少しずつ形が見えてくる．AIがそこを速く掘ってくれるなら，AI4Mathはかなり研究のやり方を変えるのかもしれない．
+</p>
+</article></div>
+
+<h2>関連する記事</h2>
+<div class="news"><article class="news-item">
+<ul>
+<li><a href="./lean4-01.html">第1回：Lean 4は有限要素法研究に何をもたらすか</a></li>
+<li><a href="./lean4-02.html">第2回：AIは証明するより，壊す方が得意なのか――反例から考えるAI4Math</a></li>
+</ul>
+</article></div>
+
+</div>
+</article>
+</div>
+</main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+</body>
+</html>
