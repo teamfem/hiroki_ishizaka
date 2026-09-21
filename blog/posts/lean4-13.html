@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<title>幾何条件を機械可読なcertificateへ――異方性メッシュを数値で判定できるか | Hiroki Ishizaka</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,anisotropic finite element,semi-regular mesh,maximum angle condition,geometric parameter,H_T,mesh certificate,verified numerics,finite element method">
+<meta name="description" content="maximum angle conditionやsemi-regular conditionを，有限要素コードが読める数値certificateへ変換できるか．H_T，H_T^*，mesh-level bound，interval arithmetic，formal verificationとの接続まで考えます．">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-13.html">
+
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<noscript>
+<link rel="stylesheet" href="../../css/base.css">
+<link rel="stylesheet" href="../../css/rwd.css">
+</noscript>
+<link rel="shortcut icon" type="image/x-icon" href="../../favicon.ico">
+<link rel="icon" href="../../favicon.ico">
+
+<script id="site-structured-data" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-13.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-13.html",
+      "headline": "第13回：幾何条件を機械可読なcertificateへ――異方性メッシュを数値で判定できるか",
+      "description": "maximum angle conditionやsemi-regular conditionを，H_TとH_T^*を使って有限要素コードが読める数値certificateへ変換する考え方を整理します．",
+      "author": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "publisher": {"@id": "https://teamfem.github.io/hiroki_ishizaka/#person"},
+      "isPartOf": {"@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"},
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-13.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-09-21",
+      "dateModified": "2026-09-21",
+      "articleSection": "Certified FEM and mesh geometry",
+      "genre": "Research note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
+      "keywords": "anisotropic FEM, semi-regular mesh, maximum angle condition, H_T, mesh certificate, verified numerics"
+    }
+  ]
+}
+</script>
+
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2026-09-21">
+<meta property="article:modified_time" content="2026-09-21">
+<meta property="article:section" content="Certified FEM and mesh geometry">
+<meta property="og:site_name" content="Hiroki Ishizaka">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="幾何条件を機械可読なcertificateへ――異方性メッシュを数値で判定できるか | Hiroki Ishizaka">
+<meta property="og:description" content="異方性FEMの幾何条件を，elementwiseに計算できるcertificateへ変換するには何が必要かを考えます．">
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-13.html">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:creator" content="@teamfem16key">
+<meta name="twitter:title" content="幾何条件を機械可読なcertificateへ">
+<meta name="twitter:description" content="H_T，semi-regular condition，interval arithmeticをつないでmesh geometryをcertificateする．">
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+</head>
+
+<body class="page">
+<header id="top" class="site-header">
+  <div class="site-header-in">
+    <div class="site-header-conts">
+      <p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p>
+    </div>
+  </div>
+  <nav class="global-nav">
+    <div class="global-nav-in">
+      <div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+      <ul id="menu">
+        <li><a href="../../research/">Research</a></li>
+        <li><a href="../../publications/">Publications</a></li>
+        <li><a href="../../fem/">Visions</a></li>
+        <li><a href="../../suppl/">Supplementary</a></li>
+        <li><a href="../../blog/">Blog</a></li>
+        <li><a href="../../geo/">Geometry</a></li>
+        <li><a href="../../links/">Links</a></li>
+        <li><a href="../../contact/">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<div class="main-body">
+<div class="main-body-in">
+
+<nav class="breadcrumbs">
+  <ol class="breadcrumbs-in">
+    <li class="bcl-first"><a href="../../">ISHIZAKA Hiroki Website TOP</a></li>
+    <li class="bcl-last">Blog post from 21st September 2026</li>
+  </ol>
+</nav>
+
+<main>
+<div class="main-conts">
+<article class="section-wrap">
+<div class="section-in">
+
+<h1 class="section-title">第13回：幾何条件を機械可読なcertificateへ――異方性メッシュを数値で判定できるか</h1>
+
+<div class="news">
+<article class="news-item">
+<b>Certified FEMで最近考えていること</b><br>
+(21st September 2026 <span class="cat cat001">Update</span>)
+<p>
+第12回では，full modelからreduced modelへ移る段階そのものにもcertificateを付けたい，という話をした．
+</p>
+<p>
+今回はPDEやoutputではなく，もっと手前にある<b>mesh geometry</b>を見る．
+</p>
+<p>
+有限要素法の定理には，
+</p>
+<p>
+shape-regularity condition．<br>
+maximum angle condition．<br>
+semi-regular condition．
+</p>
+<p>
+のような幾何条件が前提として現れる．
+</p>
+<p>
+では，数値計算を始める前に，
+</p>
+<p><b>「このmeshは，今から使う定理の幾何仮定を本当に満たしている」</b></p>
+<p>
+とコンピュータ自身が確認できないだろうか．
+</p>
+<p>
+私は，幾何条件を単なる仮定として置くのではなく，<b>計算可能なmesh certificate</b>へ変えたいと思っている．
+</p>
+</article>
+</div>
+
+<h2>1．理論では「仮定する」で終わる</h2>
+<div class="news"><article class="news-item">
+<p>
+例えばmaximum angle conditionでは，三角形なら最大内角が \(\pi\) へ近づかないことを要求する．
+</p>
+<p>
+三次元ではさらに，各faceの角度だけでなくdihedral angleも制御しなければならない．
+</p>
+<p>
+数学の論文なら，
+</p>
+<p><b>「mesh familyはmaximum angle conditionを満たすと仮定する」</b></p>
+<p>
+と書けば先へ進める．
+</p>
+<p>
+しかし実際のmesh generatorが作った数百万個のelementについて，その仮定が本当に成立しているかは別問題である．
+</p>
+<p>
+ここに，理論と計算の間の小さな隙間がある．
+</p>
+</article></div>
+
+<h2>2．角度を全部調べることはできる．でも別の表し方もある</h2>
+<div class="news"><article class="news-item">
+<p>
+もちろん，maximum angle conditionそのものを数値的に確認することはできる．
+</p>
+<p>
+二次元なら各三角形の角度を計算すればよい．三次元ならface angleとdihedral angleを計算できる．
+</p>
+<p>
+ただし，inverse trigonometric functionを使い，三次元では角度の種類も増え，degenerate elementに近づくほど数値的な扱いに注意が必要になる．
+</p>
+<p>
+そこで私は以前から，angleそのものではなく，edge lengthとvolumeから作る幾何パラメータを使ってきた．
+</p>
+<p>
+その一つが
+\[
+H_T
+\]
+である．
+</p>
+</article></div>
+
+<h2>3．幾何パラメータ H_T</h2>
+<div class="news"><article class="news-item">
+<p>
+単体
+\[
+T\subset\mathbb R^d,
+\qquad
+d\in\{2,3\},
+\]
+に対し，
+\[
+h_T:=\operatorname{diam}(T)
+\]
+とする．
+</p>
+<p>
+私たちのanisotropic interpolation theoryでは，standard elementを構成したときのdirectional lengthを
+\[
+h_1,\ldots,h_d
+\]
+として，
+\[
+\boxed{
+H_T
+:=
+\frac{\prod_{i=1}^d h_i}{|T|_d},h_T
+}
+\]
+を使う．
+</p>
+<p>
+ここで \(|T|_d\) は \(d\)-dimensional measureである．
+</p>
+<p>
+重要なのは，\(h_i\) を単に任意の \(d\) 本のedge lengthとして選んでいるわけではないことである．standard elementを作る幾何学的な選択と対応している．
+</p>
+<p>
+この \(H_T\) は，単体がどれだけflatになっているかを反映する．
+</p>
+</article></div>
+
+<h2>4．semi-regular conditionは一つの無次元量で書ける</h2>
+<div class="news"><article class="news-item">
+<p>
+semi-regular conditionは，
+\[
+\boxed{
+\frac{H_T}{h_T}
+\leq
+\gamma_0
+}
+\]
+という形で書ける．
+</p>
+<p>
+mesh family \(\{\mathcal T_h\}\) について，同じ \(\gamma_0>0\) がすべてのmesh，すべてのelementで使えることを要求する．
+</p>
+<p>
+この条件はmaximum angle conditionと同値である．
+</p>
+<p>
+二次元では関係が特に分かりやすい．最大角を \(\theta_{T,\max}\) とすると，
+\[
+\frac{H_T}{h_T}
+=
+\frac{2}{\sin\theta_{T,\max}}.
+\]
+</p>
+<p>
+したがって
+\[
+\theta_{T,\max}\to\pi
+\]
+なら
+\[
+\frac{H_T}{h_T}\to\infty.
+\]
+</p>
+<p>
+angleが危険な状態へ近づくことを，一つのscalarが検出している．
+</p>
+</article></div>
+
+<h2>5．aspect ratioが大きいことと，悪いelementであることは同じではない</h2>
+<div class="news"><article class="news-item">
+<p>
+異方性meshでは，ここを区別することが重要である．
+</p>
+<p>
+例えば
+\[
+T_\varepsilon
+:=
+\operatorname{conv}\{
+(0,0)^{\top},
+(1,0)^{\top},
+(0,\varepsilon)^{\top}
+\},
+\qquad
+0<\varepsilon\ll1,
+\]
+を考える．
+</p>
+<p>
+これは非常に細長い三角形で，aspect ratioは \(\varepsilon\to0\) とともに大きくなる．
+</p>
+<p>
+しかし最大角は \(\pi/2\) なので，
+\[
+\frac{H_{T_\varepsilon}}{h_{T_\varepsilon}}
+=
+2.
+\]
+</p>
+<p>
+つまり，
+</p>
+<p><b>細長いから駄目なのではない．有限要素解析にとって危険な方向へflatになることが問題なのである．</b></p>
+<p>
+shape-regularityだけを見ると捨ててしまうelementでも，semi-regular conditionの下では許容できる．
+</p>
+</article></div>
+
+<h2>6．実装では H_T より直接計算しやすい量も使える</h2>
+<div class="news"><article class="news-item">
+<p>
+\(H_T\) を定義するにはstandard elementの構成が入る．
+</p>
+<p>
+mesh checkerとしては，頂点座標からもっと直接計算できる量の方が便利である．
+</p>
+<p>
+そこで，全edgeを \(L_i\) として
+\[
+H_T^*
+:=
+\frac{h_T^2}{|T|_2}
+\min_{1\leq i\leq3}|L_i|
+\qquad
+(d=2),
+\]
+</p>
+<p>
+\[
+H_T^*
+:=
+\frac{h_T^2}{|T|_3}
+\min_{\substack{1\leq i,j\leq6\\ i\neq j}}
+|L_i|,|L_j|
+\qquad
+(d=3)
+\]
+と置ける．
+</p>
+<p>
+この量と \(H_T\) には
+\[
+\frac12 H_T^*
+<
+H_T
+<
+2H_T^*
+\]
+という比較がある．
+</p>
+<p>
+したがって，機械的なgeometry checkでは \(H_T^*\) を使い，必要なら定数を調整して \(H_T\) の条件へ戻すことができる．
+</p>
+</article></div>
+
+<h2>7．elementごとのcertificateを作る</h2>
+<div class="news"><article class="news-item">
+<p>
+各element \(T\) について，
+\[
+\eta_T
+:=
+\frac{H_T}{h_T}
+\]
+あるいは
+\[
+\eta_T^*
+:=
+\frac{H_T^*}{h_T}
+\]
+を計算する．
+</p>
+<p>
+するとelement certificateとして必要なのは，例えば
+</p>
+<p>
+element ID．<br>
+頂点座標．<br>
+\(h_T\)．<br>
+\(|T|_d\)．<br>
+\(H_T^*\)．<br>
+\(\eta_T^*\)．<br>
+採用した閾値 \(\gamma_0\)．
+</p>
+<p>
+である．
+</p>
+<p>
+最後に
+\[
+\eta_T^*
+\leq
+\gamma_0^*
+\]
+かどうかを記録する．
+</p>
+<p>
+これなら「maximum angle conditionを仮定した」という文章ではなく，<b>どのelementがどの程度条件から離れているか</b>まで機械が持てる．
+</p>
+</article></div>
+
+<h2>8．mesh全体では max を取ればよい</h2>
+<div class="news"><article class="news-item">
+<p>
+一つのmesh \(\mathcal T_h\) について，
+\[
+\eta_h^*
+:=
+\max_{T\in\mathcal T_h}
+\eta_T^*
+\]
+とすれば，mesh全体のgeometry diagnosticになる．
+</p>
+<p>
+さらに最悪のelement
+\[
+T_{\mathrm{worst}}
+\in
+\operatorname*{arg\,max}_{T\in\mathcal T_h}
+\eta_T^*
+\]
+を保存すれば，mesh generatorへfeedbackすることもできる．
+</p>
+<p>
+ただし，ここで注意したいことがある．
+</p>
+<p><b>一つの有限meshを調べただけでは，mesh familyがsemi-regularであることを証明したことにはならない．</b></p>
+<p>
+semi-regularityは
+\[
+\sup_h\max_{T\in\mathcal T_h}
+\frac{H_T}{h_T}
+<
+\infty
+\]
+というfamily-levelの条件である．
+</p>
+<p>
+したがって実際には，あらかじめ閾値 \(\gamma_0\) を決め，同じ閾値がrefinementを通して維持されるかを監視する必要がある．
+</p>
+</article></div>
+
+<h2>9．pass / failだけではなくmarginを残したい</h2>
+<div class="news"><article class="news-item">
+<p>
+私は，geometry checkerを単なるBooleanにしたくない．
+</p>
+<p>
+例えば
+\[
+m_T
+:=
+\gamma_0-\eta_T
+\]
+を残しておけば，
+</p>
+<p>
+\(m_T>0\) なら条件内．<br>
+\(m_T\approx0\) なら境界に近い．<br>
+\(m_T<0\) なら設定した閾値を越えた．
+</p>
+<p>
+と分かる．
+</p>
+<p>
+理論上は同じ「条件を満たす」でも，境界から十分離れているmeshと，ほとんど破綻しかけているmeshは同じではない．
+</p>
+<p>
+このmarginはadaptive meshingにも使えると思う．
+</p>
+</article></div>
+
+<h2>10．三次元ではsliverをvolumeが教えてくれる</h2>
+<div class="news"><article class="news-item">
+<p>
+三次元では見た目だけでmesh qualityを判断するのがさらに難しい．
+</p>
+<p>
+edge lengthが互いに大きく違わなくても，四点がほとんど同一平面上に並べばtetrahedronのvolumeは非常に小さくなる．いわゆるsliver型の劣化である．
+</p>
+<p>
+\(H_T^*\) には
+\[
+\frac{1}{|T|_3}
+\]
+が入るので，こうしたflatteningは直接scalarへ現れる．
+</p>
+<p>
+つまり，geometry certificateはaspect ratioだけでは拾えない三次元の悪化も監視できる．
+</p>
+</article></div>
+
+<h2>11．floating-pointで計算しただけなら，まだmachine-rigorousではない</h2>
+<div class="news"><article class="news-item">
+<p>
+ここは第9回のcertificateと同じである．
+</p>
+<p>
+double precisionで
+\[
+\eta_T^*=3.217
+\]
+と出たことと，
+\[
+\eta_T^*\leq3.218
+\]
+を数学的に保証したことは同じではない．
+</p>
+<p>
+特にvolumeが小さいelementでは，determinant計算のrounding errorが効く可能性がある．
+</p>
+<p>
+したがって厳密なmesh certificateにするなら，edge lengthやdeterminantをinterval arithmeticあるいはoutward roundingで評価し，
+\[
+\eta_T^*
+\in
+[
+\underline\eta_T^*,
+\overline\eta_T^*
+]
+\]
+を作る方が自然である．
+</p>
+<p>
+その上で
+\[
+\overline\eta_T^*
+\leq
+\gamma_0^*
+\]
+なら，設定したthresholdを確実に満たすと言える．
+</p>
+</article></div>
+
+<h2>12．volume intervalが0を含んだら，判定不能にする</h2>
+<div class="news"><article class="news-item">
+<p>
+verified computationでは，「無理にpassを出さない」ことも重要である．
+</p>
+<p>
+例えばinterval evaluationで
+\[
+|T|_d
+\in
+[
+\underline V_T,
+\overline V_T
+]
+\]
+を得たとき，
+\[
+0\in
+[
+\underline V_T,
+\overline V_T
+]
+\]
+なら，その精度ではnondegeneracyを保証できない．
+</p>
+<p>
+この場合は
+</p>
+<p><b>passでもfailでもなく，undeterminedとして再計算する．</b></p>
+<p>
+precisionを上げるか，meshそのものを修正する．
+</p>
+<p>
+こういう三値判定の方が，本当のcertificateには向いていると思う．
+</p>
+</article></div>
+
+<h2>13．geometry certificateからFEM theoremへつなぐ</h2>
+<div class="news"><article class="news-item">
+<p>
+geometry checkerだけでは，まだ有限要素解の保証にはならない．
+</p>
+<p>
+必要なのは，
+\[
+\boxed{
+\begin{array}{c}
+\text{vertex coordinates}
+\\
+\Downarrow
+\\
+\text{verified geometric quantities}
+\\
+\Downarrow
+\\
+\text{semi-regular certificate}
+\\
+\Downarrow
+\\
+\text{interpolation / stability theorem}
+\\
+\Downarrow
+\\
+\text{FEM error certificate}
+\end{array}
+}
+\]
+というchainである．
+</p>
+<p>
+例えば私の異方性FEMの解析では，semi-regular conditionの下でCR，RT，Morley，Nitscheなどのerror estimateやstability estimateを作ってきた．
+</p>
+<p>
+幾何仮定そのものを計算時にcheckできれば，<b>「定理を適用してよいmeshか」という入口もcertificateできる</b>ことになる．
+</p>
+</article></div>
+
+<h2>14．これはadaptive FEMとも相性がよい</h2>
+<div class="news"><article class="news-item">
+<p>
+adaptive refinementでは，error indicatorだけを見てelementを細分することが多い．
+</p>
+<p>
+しかしanisotropic refinementでは，細分の方向を誤ると，誤差は小さくなってもgeometryが解析条件の境界へ近づく可能性がある．
+</p>
+<p>
+そこで各refinement stepで
+\[
+\eta_h^*
+=
+\max_{T\in\mathcal T_h}
+\frac{H_T^*}{h_T}
+\]
+を同時に監視する．
+</p>
+<p>
+すると，
+</p>
+<p>
+errorを下げること．<br>
+geometry certificateを維持すること．
+</p>
+<p>
+を二つの条件としてmesh generatorへ返せる．
+</p>
+<p>
+これは「良いmeshを経験的に作る」のではなく，<b>解析で必要な幾何条件を維持しながらmeshを作る</b>方向である．
+</p>
+</article></div>
+
+<h2>15．Leanや形式検証とはどこでつながるのか</h2>
+<div class="news"><article class="news-item">
+<p>
+ここで第1回のLeanの話へ戻る．
+</p>
+<p>
+私は，数百万個のelementの浮動小数点計算をLeanだけで行うことが目的だとは思っていない．
+</p>
+<p>
+役割を分けた方がよい．
+</p>
+<p>
+数値計算側では，
+\[
+\overline\eta_T^*
+\leq
+\gamma_0^*
+\]
+というlocal certificateを大量に作る．
+</p>
+<p>
+形式推論側では，
+</p>
+<p><b>「このcertificateが成立すれば，semi-regularityが成立し，したがってこのFEM theoremを適用できる」</b></p>
+<p>
+という論理のchainを確認する．
+</p>
+<p>
+つまり，
+\[
+\text{numerical certificate}
++
+\text{formal implication}
+\]
+を組み合わせる．
+</p>
+<p>
+この分業なら，verified numericsとformal mathematicsがかなり自然につながると思う．
+</p>
+</article></div>
+
+<h2>16．機械可読にするとは，数式をJSONにすることではない</h2>
+<div class="news"><article class="news-item">
+<p>
+「machine-readable」というと，数式を特定のdata formatへ変換する話に見えるかもしれない．
+</p>
+<p>
+しかし本質はそこではない．
+</p>
+<p>
+私が欲しいのは，
+</p>
+<p>
+何を入力すればよいか．<br>
+どのscalarを計算すればよいか．<br>
+どのthresholdと比較すればよいか．<br>
+rounding errorをどう扱うか．<br>
+passしたとき，どの定理が使えるか．
+</p>
+<p>
+が明示されたことである．
+</p>
+<p>
+つまり，幾何条件を
+</p>
+<p><b>「人間が読む仮定」から「計算して検証できる契約」へ変える</b></p>
+<p>
+という意味でmachine-readableにしたい．
+</p>
+</article></div>
+
+<h2>17．第12回までとのつながり</h2>
+<div class="news"><article class="news-item">
+<p>
+このシリーズでは，certificateの対象を少しずつ広げてきた．
+</p>
+<p>
+第9回ではflux．<br>
+第10回ではQoI．<br>
+第11回ではpoint value．<br>
+第12回ではmodel reduction．
+</p>
+<p>
+そして第13回では，その解析を支える<b>mesh geometryそのもの</b>をcertificateの対象にした．
+</p>
+<p>
+数値解だけを保証するのではなく，
+</p>
+<p>
+モデル．<br>
+離散化．<br>
+目的量．<br>
+mesh geometry．
+</p>
+<p>
+のどこに仮定があるのかを一つずつ計算可能な形にしていく．
+</p>
+<p>
+この方向へ進めば，最終的には「この数値結果が正しい」という一つのcertificateだけでなく，<b>なぜその定理を使ってよいのかまで追跡できるcertificate chain</b>が作れるかもしれない．
+</p>
+</article></div>
+
+<h2>次に考えたいこと</h2>
+<div class="news"><article class="news-item">
+<p>
+geometry certificateまで機械可読にしたとする．
+</p>
+<p>
+では，そのcertificateからFEMの最終定理までを形式化するとき，どの補題から始めればよいのか．
+</p>
+<p>
+巨大なFEM theoremを一度にLeanへ入れるのは現実的ではない．
+</p>
+<p>
+次は，
+</p>
+<p><b>「Leanで形式化しやすい補題列とは何か」</b></p>
+<p>
+を考えてみたい．
+</p>
+</article></div>
+
+<h2>関連する記事・論文</h2>
+<div class="news"><article class="news-item">
+<ul>
+<li><a href="./lean4-12.html">第12回：未解像ダイナミクスをcertificateできるか――model reductionとmemoryの誤差をどう保証するか</a></li>
+<li><a href="https://doi.org/10.1016/j.camwa.2021.08.017">A new geometric condition equivalent to the maximum angle condition for tetrahedrons</a></li>
+<li><a href="https://doi.org/10.1007/s13160-022-00535-w">Anisotropic interpolation error estimates using a new geometric parameter</a></li>
+<li><a href="../../geo/">Geometry</a></li>
+<li><a href="../../publications/">Publications</a></li>
+</ul>
+</article></div>
+
+</div>
+</article>
+</div>
+</main>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div>
+</footer>
+<p class="page-top"><a href="#top"><img class="over" src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js" charset="utf-8"></script>
+</body>
+</html>
