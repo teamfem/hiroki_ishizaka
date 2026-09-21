@@ -7,8 +7,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,unresolved dynamics,model reduction,memory equation,memory kernel,verified output,certificate,goal-oriented error estimation,reduced model">
-<meta name="description" content="未解像自由度を消して得たmemory equationやreduced modelは，元の系をどこまで残しているのか．exact reductionとmodel approximationを分け，kernel approximation，reconstruction，goal-oriented output errorをどうcertificateするか考えます．">
+<meta name="keywords" content="石坂宏樹,Hiroki Ishizaka,unresolved dynamics,model reduction,memory equation,memory kernel,finite-time blow-up,verified output,certificate,goal-oriented error estimation,reduced model">
+<meta name="description" content="未解像自由度を消して得たmemory equationやreduced modelは，元の系をどこまで残しているのか．exact reductionとmodel approximationを分け，kernel approximation，reconstruction，有限時間爆発，goal-oriented output errorをどうcertificateするか考えます．">
 <link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean4-12.html">
 
 <link rel="stylesheet" href="../../css/modern.css">
@@ -462,7 +462,131 @@ reconstruction operator．
 </p>
 </article></div>
 
-<h2>9．reconstructionまでcertificateしたい</h2>
+<h2>9．PDEの有限時間爆発は，縮約するとどう見えるのか</h2>
+<div class="news"><article class="news-item">
+<p>
+この問題を考えていると，PDEの有限時間爆発との関係が気になってくる．
+</p>
+<p>
+full systemに最大存在時刻
+\[
+T_{\mathrm{full}}^*
+\]
+があり，
+\[
+\|U(t)\|
+\longrightarrow
+\infty
+\qquad
+(t\uparrow T_{\mathrm{full}}^*)
+\]
+のようなblow-upが起こるとする．
+</p>
+<p>
+もしreductionがexactで，reconstructionまで含めてfull systemと本当に同値であるなら，その爆発機構だけが縮約によって勝手に消えることはないはずである．
+</p>
+<p>
+ただし，爆発がresolved variable \(u\) に直接見えるとは限らない．
+</p>
+<p>
+例えば
+\[
+\|u(t)\|
+\leq C
+\]
+のままでも，
+\[
+\|v(t)\|
+\longrightarrow
+\infty
+\]
+となる可能性はある．
+</p>
+<p>
+その場合，reduced equationだけを見ると穏やかに見えても，memory term，initial-history term，あるいはreconstruction operatorの側に特異な挙動が現れなければならない．
+</p>
+<p><b>exact reductionでは，singularityが消えるというより，別の表現へ移る可能性がある．</b></p>
+</article></div>
+
+<h2>10．近似縮約は，爆発を消したり作ったりするかもしれない</h2>
+<div class="news"><article class="news-item">
+<p>
+問題がさらに難しくなるのは，
+\[
+K
+\longrightarrow
+K_N
+\]
+のようにmemory kernelやclosureを近似したときである．
+</p>
+<p>
+本来の不安定化を担う成分を近似の過程で弱めてしまえば，full modelでは爆発するのにreduced modelでは爆発しない，ということが起こるかもしれない．
+</p>
+<p>
+逆に，近似kernelやclosureが人工的な増幅を作れば，元のfull modelにはないspurious blow-upをreduced modelが示す可能性もある．
+</p>
+<p>
+したがって，model reductionの品質を見るときには，
+\[
+\|u_{\mathrm{full}}-u_{\mathrm{red}}\|
+\]
+だけでなく，
+\[
+T_{\mathrm{full}}^*
+\quad\text{と}\quad
+T_{\mathrm{red}}^*
+\]
+の関係も重要になる．
+</p>
+<p>
+理想的には，
+\[
+|T_{\mathrm{full}}^*-T_{\mathrm{red}}^*|
+\]
+を評価したい．
+</p>
+<p>
+しかし，blow-up timeそのものを厳密に囲うのは難しい．まずは，
+</p>
+<p>
+<b>「少なくとも時刻 \(T\) まではfull solutionが存在し，reduced modelとの誤差もこの範囲にある」</b>
+</p>
+<p>
+というno-blow-up certificateから考える方が現実的かもしれない．
+</p>
+</article></div>
+
+<h2>11．reconstructionの爆発を見逃さない</h2>
+<div class="news"><article class="news-item">
+<p>
+resolved variableだけをcertificateすると，未解像側の発散を見逃す可能性がある．
+</p>
+<p>
+だからblow-upを含む問題では，
+\[
+v_{\mathrm{rec}}(t)
+=
+e^{tD}v_0
++
+\int_0^t e^{(t-s)D}C u_{\mathrm{red}}(s)\,ds
+\]
+のようなreconstructionも重要になる．
+</p>
+<p>
+例えば
+\[
+\|v-v_{\mathrm{rec}}\|
+\leq
+\Delta_{\mathrm{rec}}(T)
+\]
+を有限時間区間 \([0,T]\) で保証できれば，resolved componentが穏やかなだけなのか，full state全体も本当に制御されているのかを区別できる．
+</p>
+<p>
+私は，未解像ダイナミクスのcertificateには，このreconstruction側の監視が必要だと思う．
+</p>
+</article></div>
+
+<h2>12．reconstructionまでcertificateしたい</h2>
 <div class="news"><article class="news-item">
 <p>
 exact eliminationの例では，
@@ -504,7 +628,7 @@ unresolved variableのreconstructionまでcertificateするのか．
 </p>
 </article></div>
 
-<h2>10．memory kernel自体をcertificateするという考え方</h2>
+<h2>13．memory kernel自体をcertificateするという考え方</h2>
 <div class="news"><article class="news-item">
 <p>
 さらに一歩進めると，solutionを囲う前にkernelを囲うという考え方もある．
@@ -540,7 +664,7 @@ memory equationでは，kernelそのものがモデルの一部なので，こ�
 </p>
 </article></div>
 
-<h2>11．有限時間で安定でも，長時間では別問題になる</h2>
+<h2>14．有限時間で安定でも，長時間では別問題になる</h2>
 <div class="news"><article class="news-item">
 <p>
 model-reduction errorは，時間区間にも依存する．
@@ -571,7 +695,7 @@ memoryやdelayを持つ方程式では，historyの影響が残るので，こ�
 </p>
 </article></div>
 
-<h2>12．verified model reductionという考え方</h2>
+<h2>15．verified model reductionという考え方</h2>
 <div class="news"><article class="news-item">
 <p>
 ここまでの流れをまとめると，
@@ -621,7 +745,7 @@ memoryやdelayを持つ方程式では，historyの影響が残るので，こ�
 </p>
 </article></div>
 
-<h2>13．第11回までとのつながり</h2>
+<h2>16．第11回までとのつながり</h2>
 <div class="news"><article class="news-item">
 <p>
 第10回では，「欲しい量」に効く誤差をadjointで追った．
