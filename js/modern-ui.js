@@ -56,13 +56,19 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
       {href:base+'research/',label:'Research'},
       {href:base+'publications/',label:'Publications'},
       {href:base+'fem/',label:'Visions'},
-      {href:base+'suppl/',label:'Supplementary'},
+      {href:base+'suppl/',label:'Education & Learning'},
       {href:base+'blog/',label:'Blog'},
       {href:base+'geo/',label:'Geometry'},
       {href:base+'links/',label:'Links'},
       {href:base+'contact/',label:'Contact'}
     ];
     var links=desktop.querySelectorAll('a');
+    links.forEach(function(link){
+      try{
+        var target=new URL(link.href,window.location.href).pathname;
+        if(target===base+'suppl/' || target.indexOf(base+'suppl/')===0) link.textContent='Education & Learning';
+      }catch(e){}
+    });
 
     // Static HTML is the source of truth. Rebuild only as a fallback if a
     // future page is unexpectedly missing navigation entries.
