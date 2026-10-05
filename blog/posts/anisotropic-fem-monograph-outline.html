@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja" class="col1">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>異方性有限要素解析を一冊にまとめるための目次案 | Hiroki Ishizaka</title>
+<meta name="description" content="博士論文を起点として発展してきた異方性有限要素解析を，幾何条件，変換，補間誤差評価，各種有限要素法，数値PDEの誤差解析まで一つの研究モノグラフとして体系化するための目次案です．">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-fem-monograph-outline.html">
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<link rel="icon" href="../../favicon.ico">
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]}};</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Hiroki Ishizaka">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="異方性有限要素解析を一冊にまとめるための目次案 | Hiroki Ishizaka">
+<meta property="og:description" content="異方性有限要素解析を，幾何条件から補間，有限要素誤差解析，数値PDEまで一つの体系として整理する研究モノグラフ構想です．">
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-fem-monograph-outline.html">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="異方性有限要素解析を一冊にまとめるための目次案 | Hiroki Ishizaka">
+<meta name="twitter:description" content="異方性有限要素解析を，幾何条件から補間，有限要素誤差解析，数値PDEまで一つの体系として整理する研究モノグラフ構想です．">
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"BlogPosting",
+  "headline":"異方性有限要素解析を一冊にまとめるための目次案",
+  "datePublished":"2026-10-05",
+  "dateModified":"2026-10-05",
+  "author":{"@type":"Person","name":"Hiroki Ishizaka","url":"https://teamfem.github.io/hiroki_ishizaka/"},
+  "mainEntityOfPage":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/anisotropic-fem-monograph-outline.html",
+  "inLanguage":"ja"
+}
+</script>
+</head>
+<body class="page">
+<header id="top" class="site-header">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div><ul id="menu">
+<li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li>
+</ul></div></nav>
+</header>
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in"><li><a href="../../">ISHIZAKA Hiroki Website TOP</a></li><li><a href="../">Blog</a></li><li class="bcl-last">異方性有限要素解析のモノグラフ構想</li></ol></nav>
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+<h1 class="section-title">異方性有限要素解析を一冊にまとめるための目次案</h1>
+<p><time datetime="2026-10-05">5th October 2026</time></p>
+
+<h2>はじめに</h2>
+<div class="news"><article class="news-item">
+<p>
+異方性有限要素解析の研究も，博士論文を起点として，幾何条件，affine／Piola変換，
+Lagrange・Raviart–Thomas・Crouzeix–Raviart・Morley補間，DG・Nitsche法，
+Stokes・Navier–Stokes問題へと，ある程度まとまった体系になってきました．
+</p>
+<p>
+有限要素法の誤差解析では，補間誤差評価は一度証明して終わる結果ではなく，
+後続の有限要素法や偏微分方程式の誤差評価で繰り返し用いられる基盤です．
+そこで，これまで個別の論文に分かれていた結果を，
+</p>
+\[
+\text{Geometry}
+\longrightarrow
+\text{Transformation}
+\longrightarrow
+\text{Interpolation}
+\longrightarrow
+\text{Finite element analysis}
+\longrightarrow
+\text{PDE error estimates}
+\]
+<p>
+という一つの流れとして整理する研究モノグラフを構想しています．
+以下は現時点での目次案です．出版予定を告知するものではなく，
+今後の研究整理に応じて章構成は変更する可能性があります．
+</p>
+<p><b>Working title:</b><br>
+<i>Anisotropic Finite Element Analysis: Geometry, Interpolation, and Error Estimates</i></p>
+</article></div>
+
+<h2>Contents</h2>
+
+<h3>Part I. Geometric and Analytical Foundations</h3>
+<ol>
+<li><b>Introduction</b></li>
+<li><b>Geometry of Anisotropic Simplices</b> — triangles and tetrahedra，maximum-angle conditions，semi-regularity，geometric parameters</li>
+<li><b>Affine Transformations and Directional Scaling</b> — reference simplices，two-step transformations，directional scales，Piola transformations</li>
+</ol>
+
+<h3>Part II. Anisotropic Interpolation Theory</h3>
+<ol start="4">
+<li><b>Lagrange Interpolation</b></li>
+<li><b>Raviart–Thomas Interpolation</b></li>
+<li><b>Crouzeix–Raviart Interpolation</b></li>
+<li><b>Morley-Type Interpolation</b></li>
+</ol>
+
+<h3>Part III. From Interpolation to Finite Element Error Analysis</h3>
+<ol start="8">
+<li><b>A General Framework for Anisotropic Error Estimates</b></li>
+<li><b>Crouzeix–Raviart Methods for Elliptic Problems</b></li>
+<li><b>Raviart–Thomas Mixed Methods</b></li>
+<li><b>Morley Methods for Fourth-Order Problems</b></li>
+</ol>
+
+<h3>Part IV. Stabilised and Weakly Conforming Methods</h3>
+<ol start="12">
+<li><b>Discontinuous Galerkin Methods on Anisotropic Meshes</b></li>
+<li><b>Nitsche Methods on Anisotropic Meshes</b></li>
+</ol>
+
+<h3>Part V. Numerical PDE Applications</h3>
+<ol start="14">
+<li><b>The Stokes Problem</b></li>
+<li><b>The Stationary Navier–Stokes Problem</b></li>
+</ol>
+
+<h3>Part VI. Recent Extensions</h3>
+<ol start="16">
+<li><b>Computable and Certified Error Bounds</b></li>
+<li><b>Curved and Spherical Finite Elements</b></li>
+<li><b>Further Directions</b></li>
+</ol>
+
+<h2>二次元と三次元について</h2>
+<div class="news"><article class="news-item">
+<p>
+三次元異方性は将来課題ではなく，本書の基礎部分に最初から含める予定です．
+特に，四面体の幾何条件，三次元のaffine／Piola変換，Lagrange補間，
+Raviart–Thomas補間は本文の基盤として扱います．
+各有限要素法の応用章については，既存理論の範囲に応じて二次元と三次元を区別します．
+</p>
+</article></div>
+
+<h2>この構成で整理したいこと</h2>
+<div class="news"><article class="news-item">
+<p>
+この目次の中心は，補間誤差評価を独立した一回限りの結果としてではなく，
+後続の有限要素誤差解析を支える共通基盤として位置付けることです．
+博士論文で構築した基礎理論が，その後の複数の有限要素法・数値PDE解析へ
+どのようにつながっているかを，一冊の中で明示できればと考えています．
+</p>
+</article></div>
+
+<p><a href="../">← Blog index</a></p>
+</div></article></div></main>
+</div></div>
+</body>
+</html>
