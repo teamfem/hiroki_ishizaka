@@ -34,6 +34,28 @@
   "inLanguage":"ja"
 }
 </script>
+
+<style>
+.arch-legend{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 24px}
+.arch-badge{display:inline-flex;align-items:center;padding:4px 9px;border-radius:999px;border:1px solid var(--line);background:var(--soft);font-size:.76rem;font-weight:760;white-space:nowrap}
+.arch-badge.note{color:#235a76}.arch-badge.paper{color:#5c4d86}.arch-badge.mix{color:#8a5b1f}.arch-badge.open{color:#8a3e4c}
+.arch-core{margin:22px 0;padding:22px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(135deg,#f8fafc,#eef3f8)}
+.arch-core .formula{font-size:1.02rem;text-align:center;margin:14px 0}
+.arch-group{margin:18px 0;border:1px solid var(--line);border-radius:18px;background:#fff;overflow:hidden}
+.arch-group summary{cursor:pointer;padding:16px 18px;font-weight:800;background:var(--soft);list-style:none}
+.arch-group summary::-webkit-details-marker{display:none}
+.arch-group summary:after{content:"＋";float:right;color:var(--accent)}
+.arch-group[open] summary:after{content:"−"}
+.arch-body{padding:18px}
+.arch-topic{margin:0;padding-left:1.25em}
+.arch-topic li{margin:.48em 0}
+.arch-topic strong{font-weight:760}
+.arch-note{font-size:.9rem;color:var(--muted);margin-top:12px}
+.arch-chain{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:14px 0}
+.arch-chain span{padding:6px 9px;border-radius:999px;background:var(--soft);border:1px solid var(--line);font-size:.8rem;font-weight:700}
+.arch-chain b{color:var(--accent)}
+@media(max-width:640px){.arch-body{padding:15px}.arch-group summary{padding:14px 15px}}
+</style>
 </head>
 <body class="page">
 <header id="top" class="site-header">
@@ -123,49 +145,173 @@ computable geometric parametersへ至る流れは，別ページ
 </p>
 </article></div>
 
-<h2>研究体系の整理案</h2>
+<h2>研究体系の詳細マップ</h2>
+<p>
+以下では，研究成果の由来と現在の位置付けが分かるように，
+基礎ノート，既発表・現行原稿，複数成果の統合，新しい研究方向を区別して整理します．
+これは執筆工程ではなく，研究体系の依存関係を可視化するための分類です．
+</p>
+<div class="arch-legend">
+<span class="arch-badge note">Research note [N2]</span>
+<span class="arch-badge paper">Published / manuscript basis</span>
+<span class="arch-badge mix">Synthesis</span>
+<span class="arch-badge open">Open direction</span>
+</div>
 
-<h3>I. Geometric and Analytical Foundations</h3>
-<ol>
-<li><b>Introduction</b></li>
-<li><b>Geometry of Simplices under General Mesh Conditions</b> — triangles and tetrahedra，maximum-angle conditions，semi-regularity，geometric parameters；see also <a href="../../../geo/">History of Geometric Conditions in FEM</a></li>
-<li><b>Affine Transformations and Directional Scaling</b> — reference simplices，two-step transformations，directional scales，Piola transformations</li>
-</ol>
+<div class="arch-core">
+<strong>共通する誤差解析の骨格</strong>
+<div class="arch-chain">
+<span>Geometry</span><b>→</b>
+<span>Transformation</span><b>→</b>
+<span>Interpolation</span><b>→</b>
+<span>Stability &amp; consistency</span><b>→</b>
+<span>PDE error estimates</span>
+</div>
+<div class="formula">
+\[
+\boxed{
+\text{approximation}
++
+\text{consistency}
++
+\text{stability}
+\Longrightarrow
+\text{finite-element error analysis}
+}
+\]
+</div>
+<p class="arch-note">
+この枠組みは異方性メッシュだけの理論ではありません．通常の等方性メッシュも含み，
+幾何依存性と方向スケールを明示することで，強い異方性をもつメッシュまで同じ流れで扱えるようにしています．
+</p>
+</div>
 
-<h3>II. Interpolation Theory for General Mesh Geometry</h3>
-<ol start="4">
-<li><b>Lagrange Interpolation</b></li>
-<li><b>Raviart–Thomas Interpolation</b></li>
-<li><b>Crouzeix–Raviart Interpolation</b></li>
-<li><b>Morley-Type Interpolation</b></li>
+<details class="arch-group" open>
+<summary>I. Geometric and Analytical Foundations</summary>
+<div class="arch-body">
+<ol class="arch-topic">
+<li><strong>Why geometry matters in finite element analysis</strong> <span class="arch-badge open">Open direction</span></li>
+<li><strong>From shape regularity to semi-regular meshes</strong> <span class="arch-badge mix">Synthesis</span></li>
+<li><strong>Isotropic and anisotropic mesh elements</strong> <span class="arch-badge note">[N2 §2]</span></li>
+<li><strong>Classical geometric conditions and their limitations</strong> <span class="arch-badge note">[N2 §3]</span></li>
+<li><strong>Semi-regular conditions in two and three dimensions</strong> <span class="arch-badge note">[N2 §4]</span></li>
+<li><strong>The geometric parameter \(H_T\) and condition numbers</strong> <span class="arch-badge note">[N2 §6]</span></li>
+<li><strong>Maximum-angle conditions and equivalent geometric conditions</strong> <span class="arch-badge note">[N2 §7]</span></li>
+<li><strong>Good and bad elements in two and three dimensions</strong> <span class="arch-badge note">[N2 §8]</span></li>
+<li><strong>Representative mesh families</strong> <span class="arch-badge note">[N2 §9]</span></li>
+<li><strong>Historical perspective on geometric conditions</strong> <span class="arch-badge mix">Synthesis</span></li>
 </ol>
+<p class="arch-note">See also <a href="../../../geo/">History of Geometric Conditions in FEM</a>.</p>
+</div>
+</details>
 
-<h3>III. From Interpolation to Finite Element Error Analysis</h3>
-<ol start="8">
-<li><b>A General Framework for Geometry-Aware Error Estimates</b></li>
-<li><b>Crouzeix–Raviart Methods for Elliptic Problems</b></li>
-<li><b>Raviart–Thomas Mixed Methods</b></li>
-<li><b>Morley Methods for Fourth-Order Problems</b></li>
+<details class="arch-group" open>
+<summary>II. Transformations and Interpolation Theory</summary>
+<div class="arch-body">
+<ol class="arch-topic">
+<li><strong>Reference simplices and the two-step affine mapping</strong> <span class="arch-badge note">[N2 §5]</span></li>
+<li><strong>Finite-element generation, directional coordinates and scales</strong> <span class="arch-badge note">[N2 §§10–11]</span></li>
+<li><strong>Scalar transformation estimates</strong> <span class="arch-badge note">[N2 §11]</span></li>
+<li><strong>Two-step Piola transformations and \(H(\mathrm{div})\) scaling</strong> <span class="arch-badge note">[N2 §19]</span></li>
+<li><strong>A unified transfer viewpoint</strong> <span class="arch-badge open">Open direction</span></li>
+<li><strong>Classical and geometry-aware Lagrange interpolation</strong> <span class="arch-badge note">[N2 §§12–16]</span></li>
+<li><strong>General local and global interpolation estimates</strong> <span class="arch-badge note">[N2 §15]</span></li>
+<li><strong>Maximum-angle violation and limiting configurations</strong> <span class="arch-badge note">[N2 §15]</span></li>
+<li><strong>Raviart–Thomas interpolation in two and three dimensions</strong> <span class="arch-badge note">[N2 §§19–20]</span></li>
+<li><strong>Component-wise RT stability: 2D, 3D Type i and Type ii</strong> <span class="arch-badge note">[N2 §20.3]</span></li>
+<li><strong>Crouzeix–Raviart interpolation and weak moments</strong> <span class="arch-badge note">[N2 §18.1–18.6]</span></li>
+<li><strong>Morley-type interpolation</strong> <span class="arch-badge note">[N2 §18.7–18.10]</span></li>
+<li><strong>CR–RT and Morley–RT structural relations</strong> <span class="arch-badge mix">Synthesis</span></li>
 </ol>
+</div>
+</details>
 
-<h3>IV. Stabilised and Weakly Conforming Methods</h3>
-<ol start="12">
-<li><b>Discontinuous Galerkin Methods under General Mesh Conditions</b></li>
-<li><b>Nitsche Methods under General Mesh Conditions</b></li>
+<details class="arch-group" open>
+<summary>III. From Interpolation to Finite-Element Error Analysis</summary>
+<div class="arch-body">
+<ol class="arch-topic">
+<li><strong>Approximation, stability and consistency</strong> <span class="arch-badge open">Open direction</span></li>
+<li><strong>Conforming Galerkin and Céa-type estimates</strong> <span class="arch-badge open">Open direction</span></li>
+<li><strong>Nonconforming approximation and Strang-type estimates</strong> <span class="arch-badge open">Open direction</span></li>
+<li><strong>\(L^2\)-orthogonal projection</strong> <span class="arch-badge note">[N2 §17]</span></li>
+<li><strong>Trace inequalities on general simplex geometries</strong> <span class="arch-badge mix">Synthesis</span></li>
+<li><strong>Inverse inequalities</strong> <span class="arch-badge note">[N2 §21]</span></li>
+<li><strong>Discrete Poincaré inequalities</strong> <span class="arch-badge mix">Synthesis</span></li>
+<li><strong>Discrete Sobolev inequalities</strong> <span class="arch-badge paper">Published basis</span></li>
+<li><strong>RT-based integration by parts and consistency estimates</strong> <span class="arch-badge mix">Synthesis</span></li>
+<li><strong>A reusable geometry-aware error-analysis template</strong> <span class="arch-badge open">Open direction</span></li>
 </ol>
+<div class="arch-chain">
+<span>Interpolation</span><b>→</b>
+<span>Trace / inverse estimates</span><b>→</b>
+<span>Discrete Poincaré–Sobolev</span><b>→</b>
+<span>Consistency control</span><b>→</b>
+<span>Stability</span><b>→</b>
+<span>Error estimate</span>
+</div>
+<p class="arch-note">
+この部分が，CR，Morley，WOPSIP，Nitsche，Stokes，Navier–Stokesなどに共通して現れる解析手順を最も直接に表しています．
+</p>
+</div>
+</details>
 
-<h3>V. Numerical PDE Applications</h3>
-<ol start="14">
-<li><b>The Stokes Problem</b></li>
-<li><b>The Stationary Navier–Stokes Problem</b></li>
+<details class="arch-group">
+<summary>IV. Elliptic, Mixed and Fourth-Order Problems</summary>
+<div class="arch-body">
+<ol class="arch-topic">
+<li><strong>Crouzeix–Raviart approximation of the Poisson problem</strong> <span class="arch-badge paper">Published basis</span></li>
+<li><strong>Classical CR analysis versus RT-based consistency analysis</strong> <span class="arch-badge paper">Published basis</span></li>
+<li><strong>Broken \(H^1\)- and \(L^2\)-error estimates</strong> <span class="arch-badge paper">Published basis</span></li>
+<li><strong>Meshes violating the maximum-angle condition</strong> <span class="arch-badge paper">Published basis</span></li>
+<li><strong>Dual mixed formulation and lowest-order RT approximation</strong> <span class="arch-badge paper">Published basis</span></li>
+<li><strong>Flux conservation, commuting structure and CR–RT relations</strong> <span class="arch-badge mix">Synthesis</span></li>
+<li><strong>Marini-type identities and flux reconstruction</strong> <span class="arch-badge mix">Synthesis</span></li>
+<li><strong>Morley methods for fourth-order elliptic problems</strong> <span class="arch-badge paper">Published basis</span></li>
+<li><strong>RT-based Morley consistency analysis</strong> <span class="arch-badge paper">Published basis</span></li>
+<li><strong>Regularity requirements and two-/three-dimensional issues</strong> <span class="arch-badge mix">Synthesis</span></li>
 </ol>
+</div>
+</details>
 
-<h3>VI. Recent Extensions</h3>
-<ol start="16">
-<li><b>Computable and Certified Error Bounds</b></li>
-<li><b>Curved and Spherical Finite Elements</b></li>
-<li><b>Further Directions</b></li>
+<details class="arch-group">
+<summary>V. Stabilised, Weakly Conforming and Flow Problems</summary>
+<div class="arch-body">
+<ol class="arch-topic">
+<li><strong>Weakly over-penalised and hybrid interior penalty methods</strong> <span class="arch-badge paper">Published basis</span></li>
+<li><strong>Penalty parameters, stability and consistency</strong> <span class="arch-badge paper">Published basis</span></li>
+<li><strong>Energy- and \(L^2\)-error estimates for HWOPSIP</strong> <span class="arch-badge paper">Published basis</span></li>
+<li><strong>Nitsche methods under general mesh conditions</strong> <span class="arch-badge paper">Published basis</span></li>
+<li><strong>Boundary consistency and weak Dirichlet imposition</strong> <span class="arch-badge paper">Published basis</span></li>
+<li><strong>Comparison of Nitsche and WOPSIP structures</strong> <span class="arch-badge mix">Synthesis</span></li>
+<li><strong>Stokes equations, inf-sup structure and pressure robustness</strong> <span class="arch-badge mix">Synthesis</span></li>
+<li><strong>WOPSIP and Nitsche formulations for Stokes</strong> <span class="arch-badge paper">Published basis</span></li>
+<li><strong>Stationary Navier–Stokes equations in rotational form</strong> <span class="arch-badge paper">Published basis</span></li>
+<li><strong>Modified CR method, RT lifting and the trilinear form</strong> <span class="arch-badge paper">Published basis</span></li>
+<li><strong>Discrete Sobolev control of nonlinear terms</strong> <span class="arch-badge paper">Published basis</span></li>
+<li><strong>Discrete well-posedness, stability and anisotropic velocity errors</strong> <span class="arch-badge paper">Published basis</span></li>
 </ol>
+</div>
+</details>
+
+<details class="arch-group">
+<summary>VI. Certification, Curved Geometry and Open Directions</summary>
+<div class="arch-body">
+<ol class="arch-topic">
+<li><strong>From asymptotic estimates to computable bounds</strong> <span class="arch-badge open">Open direction</span></li>
+<li><strong>CR–RT–Marini flux reconstruction</strong> <span class="arch-badge mix">Synthesis</span></li>
+<li><strong>Computable operator defects and verified inverse bounds</strong> <span class="arch-badge paper">Manuscript basis</span></li>
+<li><strong>Equilibrated-flux certification for nonlinear problems</strong> <span class="arch-badge paper">Manuscript basis</span></li>
+<li><strong>Newton–Kantorovich certification and quantities of interest</strong> <span class="arch-badge paper">Manuscript basis</span></li>
+<li><strong>Analytical guarantees versus machine verification</strong> <span class="arch-badge open">Open direction</span></li>
+<li><strong>Exact-curved finite elements and affine cores</strong> <span class="arch-badge paper">Manuscript basis</span></li>
+<li><strong>Composite maps: affine scaling plus curvature correction</strong> <span class="arch-badge paper">Manuscript basis</span></li>
+<li><strong>Exact spherical triangles, radial projection and directional scales</strong> <span class="arch-badge paper">Manuscript basis</span></li>
+<li><strong>Laplace–Beltrami applications</strong> <span class="arch-badge paper">Manuscript basis</span></li>
+<li><strong>General transfer principles for composite curved maps</strong> <span class="arch-badge open">Open direction</span></li>
+<li><strong>Higher-order elements, Nédélec/de Rham, adaptive meshes and certified adaptivity</strong> <span class="arch-badge open">Open direction</span></li>
+</ol>
+</div>
+</details>
 
 <h2>二次元と三次元について</h2>
 <div class="news"><article class="news-item">
