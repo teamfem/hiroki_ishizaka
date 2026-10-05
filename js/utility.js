@@ -101,7 +101,11 @@ if(window.jQuery){
 /* Modern Blog post shell -------------------------------------------------- */
 (function(){
   var path = window.location.pathname;
-  if(!/\/blog\/posts\/[^/]+\.html$/.test(path) || /-modern-preview\.html$/.test(path)) return;
+  var classicPost=/\/blog\/posts\/[^/]+\.html$/.test(path);
+  var cleanPost=path.match(/\/blog\/posts\/([^/]+)\/$/);
+  if((!classicPost && !cleanPost) || /-modern-preview\.html$/.test(path)) return;
+  var siteRoot=cleanPost ? '../../../' : '../../';
+  var blogRoot=siteRoot+'blog/';
 
   var source = document.querySelector('.section-in');
   if(!source) return;
@@ -113,15 +117,15 @@ if(window.jQuery){
     link.href=href;
     document.head.appendChild(link);
   }
-  addStylesheet('../../css/modern.css');
-  addStylesheet('../../css/blog-post-modern.css');
+  addStylesheet(siteRoot+'css/modern.css');
+  addStylesheet(siteRoot+'css/blog-post-modern.css');
   document.querySelectorAll('link[rel="stylesheet"]').forEach(function(link){
     var href=link.getAttribute('href')||'';
     if(/(?:^|\/)css\/(?:base|rwd)\.css(?:\?|$)/.test(href)) link.disabled=true;
   });
 
   var originalTitle=document.title;
-  var file=(path.split('/').pop()||'').replace(/\.html$/,'');
+  var file=cleanPost ? cleanPost[1] : (path.split('/').pop()||'').replace(/\.html$/,'');
   var titleNode=source.querySelector('h1.section-title, h1');
   var title=titleNode ? titleNode.textContent.trim() : originalTitle.split('|')[0].trim();
   if(title) document.title=title+' | Hiroki Ishizaka';
@@ -140,6 +144,7 @@ if(window.jQuery){
   defs.some(function(d){var m=file.match(d.re);if(m){def=d;number=parseInt(m[1],10);return true;}return false;});
   if(!def && /^article/.test(file)) def={label:'Foundational and computational notes',anchor:'../#foundations',tag:'Numerical methods · Implementation'};
   if(!def) def={label:'Research Note',anchor:'../',tag:'Numerical analysis · PDEs · FEM'};
+  if(cleanPost && def.anchor.indexOf('../')===0) def.anchor='../'+def.anchor;
 
   var metaCandidate=titleNode ? titleNode.nextElementSibling : null;
   var metaTime=metaCandidate && metaCandidate.querySelector ? metaCandidate.querySelector('time[datetime]') : null;
@@ -197,8 +202,8 @@ if(window.jQuery){
 
   document.body.className='modern-blog-post';
   document.body.innerHTML='\
-<header class="topbar"><div class="shell nav"><a class="brand" href="../../">Hiroki Ishizaka<small>Numerical Analysis · PDEs · FEM</small></a><nav class="navlinks" aria-label="Primary navigation"><a href="../../research/">Research</a><a href="../../publications/">Publications</a><a href="../../fem/">Visions</a><a href="../../suppl/">Supplementary</a><a href="../../blog/" aria-current="page">Blog</a><a href="../../geo/">Geometry</a><a href="../../links/">Links</a><a href="../../contact/">Contact</a></nav></div></header>\
-<main id="top"><section class="article-hero"><div class="shell"><div class="crumbs"><a href="../../">Home</a><span>›</span><a href="../">Blog</a><span>›</span><a href="'+def.anchor+'">'+def.label+'</a></div><div class="article-series"></div><h1></h1><div class="article-meta"></div></div></section><div class="article-layout"><article id="article-body" class="article-body"></article><aside class="article-side"><nav class="toc" aria-label="Table of contents"><div class="toc-title">On this page</div><div id="toc-links"></div></nav><div class="series-nav"><b>Series navigation</b><a href="'+def.anchor+'">← Blog series index</a></div></aside></div><div class="article-footer-nav"><div class="navbox" id="post-nav"></div></div></main>\
+<header class="topbar"><div class="shell nav"><a class="brand" href="'+siteRoot+'">Hiroki Ishizaka<small>Numerical Analysis · PDEs · FEM</small></a><nav class="navlinks" aria-label="Primary navigation"><a href="'+siteRoot+'research/">Research</a><a href="'+siteRoot+'publications/">Publications</a><a href="'+siteRoot+'fem/">Visions</a><a href="'+siteRoot+'suppl/">Supplementary</a><a href="'+blogRoot+'" aria-current="page">Blog</a><a href="'+siteRoot+'geo/">Geometry</a><a href="'+siteRoot+'links/">Links</a><a href="'+siteRoot+'contact/">Contact</a></nav></div></header>\
+<main id="top"><section class="article-hero"><div class="shell"><div class="crumbs"><a href="'+siteRoot+'">Home</a><span>›</span><a href="'+blogRoot+'">Blog</a><span>›</span><a href="'+def.anchor+'">'+def.label+'</a></div><div class="article-series"></div><h1></h1><div class="article-meta"></div></div></section><div class="article-layout"><article id="article-body" class="article-body"></article><aside class="article-side"><nav class="toc" aria-label="Table of contents"><div class="toc-title">On this page</div><div id="toc-links"></div></nav><div class="series-nav"><b>Series navigation</b><a href="'+def.anchor+'">← Blog series index</a></div></aside></div><div class="article-footer-nav"><div class="navbox" id="post-nav"></div></div></main>\
 <footer class="footer"><div class="shell footer-inner"><span>© 2026 Hiroki Ishizaka</span><span>Research Notes · Numerical Analysis</span></div></footer><a class="article-toplink" href="#top" aria-label="Back to top">↑</a>';
 
   document.querySelector('.article-series').textContent=seriesLabel;
@@ -227,7 +232,7 @@ if(window.jQuery){
   if(next) navLink(next,'Next article','Next in this series →');
   if(!prev && !next) postNav.classList.add('single');
 
-  if(!document.querySelector('script[src*=\"modern-ui.js\"]')){var ui=document.createElement('script');ui.src='../../js/modern-ui.js';document.body.appendChild(ui);}
+  if(!document.querySelector('script[src*=\"modern-ui.js\"]')){var ui=document.createElement('script');ui.src=siteRoot+'js/modern-ui.js';document.body.appendChild(ui);}
 
   function fitDisplayMath(root){
     var boxes=Array.prototype.slice.call(root.querySelectorAll('mjx-container[display="true"]'));
