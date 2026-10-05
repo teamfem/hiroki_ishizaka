@@ -103,10 +103,21 @@
 <body>
 <header class="topbar"><div class="shell nav"><a class="brand" href="../">Hiroki Ishizaka<small>Numerical Analysis · PDEs · FEM</small></a><nav class="navlinks" aria-label="Primary navigation"><a href="../research/">Research</a><a href="../publications/">Publications</a><a href="../fem/">Visions</a><a href="../suppl/">Supplementary</a><a href="../blog/" aria-current="page">Blog</a><a href="../geo/">Geometry</a><a href="../links/">Links</a><a href="../contact/">Contact</a></nav></div></header>
 <main>
-<section class="page-hero"><div class="shell"><div class="eyebrow"><span class="dot"></span>Research Notes</div><h1>Ideas, calculations,<br>counterexamples and open questions.</h1><p>The Blog sits between formal publications and long-term Research Visions. It records mathematical background, minimal models, numerical experiments, implementation details and the questions that appear before a theorem becomes a paper.</p><div class="blog-tabs"><a href="#chatgpt-fem">ChatGPT FEM</a><a href="#start-here">FEM start</a><a href="#memory-start">Stable reduction</a><a href="#curved-start">Exact-curved FEM</a><a href="#core">Core series</a><a href="#paradoxes">Paradoxes</a><a href="#applications">Applications</a><a href="#foundations">Foundations</a><a href="#exploratory">Exploratory</a></div></div></section>
+<section class="page-hero"><div class="shell"><div class="eyebrow"><span class="dot"></span>Research Notes</div><h1>Ideas, calculations,<br>counterexamples and open questions.</h1><p>The Blog sits between formal publications and long-term Research Visions. It records mathematical background, minimal models, numerical experiments, implementation details and the questions that appear before a theorem becomes a paper.</p><div class="blog-tabs"><a href="#chatgpt-fem">ChatGPT FEM</a><a href="#monograph">Monograph</a><a href="#start-here">FEM start</a><a href="#memory-start">Stable reduction</a><a href="#curved-start">Exact-curved FEM</a><a href="#core">Core series</a><a href="#paradoxes">Paradoxes</a><a href="#applications">Applications</a><a href="#foundations">Foundations</a><a href="#exploratory">Exploratory</a></div></div></section>
 <section class="section"><div class="shell"><div class="blog-intro"><article class="blog-note"><div class="kicker">How to read the Blog</div><h2>Research in motion.</h2><p>Publications records completed and active manuscripts. Research Visions maps the longer programme. Supplementary Visions gives learning routes. The Blog is where background, trial calculations, implementation and research bottlenecks are developed in public.</p></article><aside class="blog-stat"><span>Published notes</span><strong>50+</strong><p>Across anisotropic FEM, memory and unresolved dynamics, exact-curved geometry, PINNs, computational FEM and classical numerical-analysis questions.</p></aside></div></div></section>
 
 <!-- pages-refresh-post-10 -->
+<section id="monograph" class="section"><div class="shell">
+<div class="section-head"><div><div class="kicker">Research monograph project</div><h2>Anisotropic finite element analysis as one connected theory.</h2></div>
+<p>異方性FEMの研究が，幾何条件，変換，補間誤差評価，各種有限要素法，数値PDEの誤差解析まで一つの流れとしてまとまってきたため，研究モノグラフとして整理するための目次案を公開しました．</p></div>
+<div class="entry-grid">
+<a class="entry-card feature" href="./posts/anisotropic-fem-monograph-outline.html">
+<span class="entry-label">Monograph outline · 5 Oct 2026</span>
+<h3>Anisotropic Finite Element Analysis: Geometry, Interpolation, and Error Estimates</h3>
+<p>博士論文を起点とする異方性解析の基盤から，CR・RT・Morley，DG・Nitsche，Stokes・Navier–Stokes，certified error bounds，curved and spherical FEMまでを一冊として整理するための目次案です．</p>
+</a>
+</div></div></section>
+
 <section id="chatgpt-fem" class="section"><div class="shell">
 <div class="section-head"><div><div class="kicker">Computational PDE with AI</div><h2>ChatGPTで作る数値PDE</h2></div>
 <p>Season 1–3では有限要素法を出発点に，数式からPythonコード，数値実験，数学的監査へ進みました．Season 4からは「ChatGPTで作る」という軸を保ったまま，inverse problems・data assimilation・memory・stable reductionまで対象を広げます．</p></div>
