@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ISHIZAKA Hiroki — Numerical Analysis</title>
-  <meta name="description" content="Hiroki Ishizaka — numerical analysis, anisotropic finite element methods, stable reduction theory, computable certification, and AI4Math.">
+  <meta name="description" content="Hiroki Ishizaka — Mathematics for Trustworthy Simulation: certified finite element analysis, stable reduction of unresolved dynamics, and AI4Math.">
   <style>
 .manuscript-link-pending { display: inline-block; margin-top: 10px; padding-block: 4px; font-size: 13px; color: var(--muted); }
 :root {
@@ -84,7 +84,8 @@ p { margin: 0 0 18px; }
 .button:hover { background: var(--soft); }
 .button.primary:hover { background: #0f2a49; }
 .at-a-glance { background: var(--soft); padding: 27px 28px; border: 1px solid var(--line); border-radius: 9px; }
-.at-a-glance h2 { font-family: inherit; font-size: 14px; font-weight: 700; margin-bottom: 20px; }
+.at-a-glance h2 { font-family: Georgia, "Times New Roman", serif; font-size: 19px; font-weight: 500; margin-bottom: 5px; }
+.glance-intro { color: var(--muted); font-size: 13px; margin: 0 0 15px; }
 .glance-link { display: block; padding: 16px 0; border-top: 1px solid var(--line); text-decoration: none; }
 .glance-link strong { display: block; font-size: 18px; font-weight: 650; color: var(--navy); line-height: 1.4; }
 .glance-link span { display: block; color: var(--muted); font-size: 14px; margin-top: 5px; }
@@ -226,7 +227,8 @@ footer { border-top: 1px solid var(--line); padding: 24px 0 30px; color: var(--m
           </div>
         </div>
         <aside class="at-a-glance" aria-labelledby="glance-title">
-          <h2 id="glance-title">Research at a glance</h2>
+          <h2 id="glance-title">Mathematics for Trustworthy Simulation</h2>
+          <p class="glance-intro">Two complementary research programmes:</p>
           <a class="glance-link" href="#finite-elements">
             <strong>Certified finite element analysis</strong>
             <span>Mesh geometry, computable error bounds and reliable certification.</span>
@@ -254,8 +256,9 @@ footer { border-top: 1px solid var(--line); padding: 24px 0 30px; color: var(--m
     <section id="research" aria-labelledby="research-title">
       <div class="wrap">
         <div class="section-head">
-          <h2 id="research-title">Two research programmes</h2>
-          <p>Geometry and dynamics, connected by the need for reliable computation.</p>
+          <div class="section-label">Research vision</div>
+          <h2 id="research-title">Mathematics for Trustworthy Simulation</h2>
+          <p>This research vision is developed through two complementary programmes: <strong>Certified finite element analysis</strong> and <strong>Stable reduction of unresolved dynamics</strong>. The first asks when a discretised computation can be trusted; the second asks when a reduced model can be trusted after dynamically relevant information has been eliminated.</p>
         </div>
         <div class="programmes">
           <article class="programme" id="finite-elements">
