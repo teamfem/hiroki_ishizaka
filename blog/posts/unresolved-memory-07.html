@@ -46,7 +46,7 @@
       "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-07.html",
       "inLanguage": "ja",
       "datePublished": "2026-08-03",
-      "dateModified": "2026-08-17",
+      "dateModified": "2026-10-11",
       "articleSection": "Memory, delay and stable reduction",
       "genre": "Research note",
       "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
@@ -566,6 +566,15 @@ transport planは，\(\mu\) のdelay location \(s\) にあるmassを，
 <div class="news">
 <article class="news-item">
 <p>
+以下，空間を省略していた比較には，統一したtarget norm
+\[
+  \|v\|_{\mathfrak X}:=
+  \|v\|_{W(0,T)}+
+  \|v\|_{C([0,T];H)}
+\]
+を使います．完全離散解との比較では，その時間再構成も同じ空間に属すると仮定します．
+</p>
+<p>
 式 (9) とtransport couplingを組み合わせると，
 \[
   \|u_\mu-u_\nu\|_{L^2_\beta(0,T;V)}
@@ -603,7 +612,7 @@ transport planは，\(\mu\) のdelay location \(s\) にあるmassを，
 \]
 従って，
 \[
-  \|u_\mu-u_\nu\|
+  \|u_\mu-u_\nu\|_{\mathfrak X}
   \le
   C M\omega_G(\varepsilon).
 \tag{25}
@@ -762,7 +771,7 @@ regularityを上げてalgebraic rateを得ようとしたときに初めて，
 \(H^1(\mathbb R;V)\)-extensionをもちます．
 従って式 (27) は
 \[
-  \|u_\mu-u_\nu\|
+  \|u_\mu-u_\nu\|_{\mathfrak X}
   \le
   C W_1(\mu,\nu)
 \tag{33}
@@ -808,7 +817,7 @@ regularityを上げてalgebraic rateを得ようとしたときに初めて，
 <p>
 従って，
 \[
-  \|u_{\mu_\varepsilon}-u_{m\delta_{\tau_d}}\|
+  \|u_{\mu_\varepsilon}-u_{m\delta_{\tau_d}}\|_{\mathfrak X}
   \le
   C\omega_G(\varepsilon)
   \longrightarrow0.
@@ -816,7 +825,7 @@ regularityを上げてalgebraic rateを得ようとしたときに初めて，
 \]
 reference trajectoryが \(H^\theta\)-regularなら
 \[
-  \|u_{\mu_\varepsilon}-u_{m\delta_{\tau_d}}\|
+  \|u_{\mu_\varepsilon}-u_{m\delta_{\tau_d}}\|_{\mathfrak X}
   \le
   C\varepsilon^\theta.
 \tag{36}
@@ -944,7 +953,7 @@ atomの位置誤差を，解誤差へ直接変換できます．
 \]
 また \(H^\theta\)-regularityがあれば
 \[
-  \|u_{\mu_N}-u_\mu\|
+  \|u_{\mu_N}-u_\mu\|_{\mathfrak X}
   =
   O(N^{-\theta}).
 \tag{44}
@@ -965,11 +974,11 @@ solution estimateへ入る量は，まずdelay massのtransport costです．
 空間・時間離散解とします．三角不等式により
 \[
 \begin{aligned}
-  \|u_\mu-U_{h,k,N}\|
+  \|u_\mu-U_{h,k,N}\|_{\mathfrak X}
   \le{}&amp;
-  \|u_\mu-u_{\mu_N}\|\\
+  \|u_\mu-u_{\mu_N}\|_{\mathfrak X}\\
   &amp;+
-  \|u_{\mu_N}-U_{h,k,N}\|.
+  \|u_{\mu_N}-U_{h,k,N}\|_{\mathfrak X}.
 \end{aligned}
 \tag{45}
 \]
@@ -977,7 +986,7 @@ solution estimateへ入る量は，まずdelay massのtransport costです．
 <p>
 第一項はkernel approximation errorで，
 \[
-  \|u_\mu-u_{\mu_N}\|
+  \|u_\mu-u_{\mu_N}\|_{\mathfrak X}
   \le
   C W_1(\mu_N,\mu)^\theta.
 \tag{46}
