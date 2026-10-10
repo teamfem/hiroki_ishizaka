@@ -46,7 +46,7 @@
       "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-08.html",
       "inLanguage": "ja",
       "datePublished": "2026-08-03",
-      "dateModified": "2026-08-17",
+      "dateModified": "2026-10-11",
       "articleSection": "Memory, delay and stable reduction",
       "genre": "Research note",
       "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
@@ -300,7 +300,9 @@ semidiscrete systemは
 \tag{10}
 \]
 <p>
-です．両方の方程式で同じ \(a_{1,h}\) を使うことが，
+です．ここで \(a_{1,h}\) を非負とするだけで十分なのはenergyの代数的恒等式についてです．\(a_{1,h}\) に核があると，式 (10) だけでは内部変数の核方向が一意に定まらず，厳密な内部変数realisationを主張できません．内部変数まで一意に決めたい場合は，\(a_{1,h}\) のcoercivityを課すか，核で割った空間を使う，あるいは独立に内部変数ODEを指定する必要があります．
+</p><p>
+両方の方程式で同じ \(a_{1,h}\) を使うことが，
 離散adjoint relationを作ります．片側だけに異なるquadratureやprojectionを入れると，
 相殺は一般に残りません．
 </p>
@@ -479,7 +481,7 @@ BDF1 startは自然ですが，globalな二次精度には，
 \tag{23}
 \]
 <p>
-内部変数schemeを生成関数で書くと，\(q\in\{1,2\}\) に対して
+BDFの開始値をCQと整合させ，負の添字の内部状態を0とする列に生成関数を適用すると，\(q\in\{1,2\}\) に対して
 </p>
 \[
   \left(\frac{\delta_q(\xi)}{\Delta t}+\lambda_\ell\right)
@@ -495,15 +497,17 @@ BDF1 startは自然ですが，globalな二次精度には，
 <div style="padding:12px; margin:14px 0; border:5px double #333333;">
 \[
   \boxed{
-  \text{BDF-CQによる離散畳み込み}
+  \text{BDF--CQによる離散畳み込み}
   =
-  \text{BDF内部変数を消去したscheme}
+  \text{互換な開始規約を用いた内部変数scheme}
   }
 \]
 </div>
 <p>
 finite Prony kernelでは，CQとinternal-variable methodは別の方法ではなく，
-同じ離散memory operatorの二つの表現です．
+同じ離散memory operatorの二つの表現です．ただし<strong>開始規約を一致させることが条件</strong>です．上の生成関数による恒等式は，離散列を負の添字で0へ延長し，\(n=0\) を含め同じBDF relationから状態を定める場合の恒等式です．一方，式 (7) のzero initial memory \(\zeta_\ell^0=0\) を固定し，BDF2の初回だけBDF1で開始したschemeは，通常の無補正BDF2-CQと一般には完全一致しません．この違いはstarting discrepancyとして別に評価する必要があります．
+</p><p>
+例えば \(\Delta t=1\)，\(\lambda=1\)，入力 \(u^0=0,\ u^1=1\) のとき，BDF1で始めた内部変数は \(\zeta^1=1/2\) ですが，標準BDF2-CQの初回係数は \(\omega_0=1/(3/2+1)=2/5\) です．数値が異なるので，開始値を無視した「完全同値」は成り立ちません．
 </p>
 </article></div>
 <h2>10．一般kernelでは三つの誤差を分離する</h2>
@@ -611,7 +615,7 @@ energy residual \(\mathfrak R_{\mathrm{en}}^n\) とします．
 <li>BDF1では通常のgraph energyに対するexact balanceが成り立つ．</li>
 <li>BDF2ではtwo-step G-energyに対するexact balanceが成り立つ．</li>
 <li>同じtime level・spatial form・mode weightによりcross termsが相殺する．</li>
-<li>finite Prony kernelではBDF-CQとBDF internal-variable schemeが代数的に同値である．</li>
+<li>finite Prony kernelでは，開始規約が互換なときにBDF-CQとBDF internal-variable schemeが代数的に同値である．</li>
 </ul>
 <h3>別途必要な解析</h3>
 <ul>
@@ -645,7 +649,7 @@ finite Prony approximationに対し，物理変数と内部変数を同じBDF fo
 BDF1では一時刻energyが，BDF2ではtwo-step G-energyが自然です．
 </p>
 <p>
-またfinite Prony kernelでは，内部変数を消去したschemeがBDF convolution quadratureと一致します．
+またfinite Prony kernelでは，開始規約を一致させれば内部変数を消去したschemeがBDF convolution quadratureと一致します．BDF1で開始したBDF2には，対応するstarting termへの注意が必要です．
 CQとinternal-variable methodは競合する方法ではなく，同じ離散memory operatorの異なる状態表現です．
 </p>
 <div style="padding:12px; margin:14px 0; border:5px double #333333;">
