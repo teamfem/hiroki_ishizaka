@@ -1,0 +1,427 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#172a42">
+<title>第6回：変数が100万個あったら？――偏微分方程式への入口 | Hiroki Ishizaka</title>
+<meta name="description" content="未解像ダイナミクスの安定縮約入門・最終第6回．100万変数の離散化モデルから，記憶核，安定性，誤差評価へ進み，偏微分方程式とのつながりを説明します．">
+<meta name="keywords" content="未解像ダイナミクス,安定縮約,100万変数,偏微分方程式,熱方程式,記憶核,モデル縮約,誤差評価">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_06.html"><link rel="up" href="../stable-reduction-intro/"><link rel="prev" href="./unresolved_dynamics_intro_05.html"><link rel="icon" href="../../favicon.ico">
+<meta property="og:type" content="article"><meta property="og:locale" content="ja_JP"><meta property="og:title" content="第6回：変数が100万個あったら？"><meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_06.html">
+<meta property="og:description" content="二変数で学んだ縮約理論は，100万変数や偏微分方程式にどうつながる？">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"第6回：変数が100万個あったら？","description":"大学1年生から学ぶ未解像ダイナミクスの安定縮約・最終第6回","url":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_06.html","datePublished":"2026-10-10","dateModified":"2026-10-10","author":{"@type":"Person","name":"Hiroki Ishizaka"},"inLanguage":"ja"}</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --page:#f3f6fa;--paper:#fff;--ink:#1d2a3b;--muted:#53677b;
+  --line:#dce4ee;--accent:#225e88;--accent-dark:#164668;--soft:#f3f7fb;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  margin:0;min-height:100vh;color:var(--ink);
+  background:linear-gradient(180deg,#edf2f8 0,#f3f6fa 420px,#f3f6fa 100%);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,system-ui,sans-serif;
+  font-size:16px;line-height:1.85;overflow-wrap:anywhere;
+}
+a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+a:hover{color:var(--accent-dark)}
+a:focus-visible,summary:focus-visible{outline:3px solid #98c5e2;outline-offset:4px}
+.intro-site-header{background:#172a42;color:#fff;border-bottom:1px solid #253b56}
+.intro-site-nav{width:min(1060px,calc(100% - 36px));min-height:78px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:12px 0}
+.intro-site-nav .brand{color:#fff;text-decoration:none;font-size:1.02rem;font-weight:750;letter-spacing:.018em;line-height:1.4}
+.intro-site-nav .brand small{display:block;font-size:.69rem;font-weight:450;letter-spacing:.07em;color:#c4d2e1}
+.intro-site-nav .links{display:flex;gap:22px;flex-wrap:wrap;font-size:.91rem}
+.intro-site-nav .links a{color:#d9e6f3;text-decoration:none}
+.intro-site-nav .links a[aria-current="page"]{font-weight:800;color:#fff;border-bottom:2px solid #b5d4ec}
+.intro-page{width:min(1010px,calc(100% - 32px));margin:0 auto;padding-bottom:48px}
+.intro-breadcrumb{max-width:860px;margin:22px auto;color:#586b80;font-size:.83rem}
+.intro-breadcrumb a{color:#405e7b}
+.intro-hero,.intro-article,.intro-toc{max-width:860px;margin-left:auto;margin-right:auto}
+.intro-hero{
+  background:#fff;border:1px solid var(--line);border-radius:20px;
+  padding:clamp(28px,5.8vw,58px);
+  box-shadow:0 10px 38px rgba(24,44,66,.045);
+  border-top:5px solid var(--accent);
+}
+.intro-kicker{display:inline-block;color:var(--accent);font-size:.77rem;font-weight:800;letter-spacing:.075em;margin-bottom:15px}
+.intro-hero h1{font-size:clamp(1.72rem,3.7vw,2.6rem);line-height:1.45;letter-spacing:.005em;margin:0;font-weight:760;color:#152840}
+.intro-hero .intro-lead{font-size:clamp(.96rem,1.7vw,1.11rem);color:#4b6074;margin:16px 0 0;line-height:1.9}
+.intro-meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px 15px;margin-top:22px;font-size:.83rem;color:#607286}
+.intro-meta span+span::before{content:"•";margin-right:15px;color:#a3b1bf}
+.intro-toc{
+  background:#f9fbfd;border:1px solid var(--line);border-radius:16px;
+  padding:21px clamp(20px,4vw,30px);margin-top:18px;margin-bottom:20px
+}
+.intro-toc h2{font-size:.94rem;letter-spacing:.015em;margin:0 0 8px;color:#2f485f}
+.intro-toc ol{display:grid;grid-template-columns:1fr 1fr;gap:5px 28px;margin:0;padding-left:22px;font-size:.87rem}
+.intro-toc li{padding:3px 0}
+.intro-toc a{text-decoration:none}
+.intro-article{
+  padding:clamp(23px,6vw,62px);background:var(--paper);
+  border:1px solid var(--line);border-radius:20px;box-shadow:0 15px 48px rgba(28,52,82,.045)
+}
+.intro-article h2{scroll-margin-top:20px;font-size:clamp(1.32rem,2.6vw,1.66rem);line-height:1.5;letter-spacing:.002em;color:#1c344d;margin:2.55em 0 .85em;padding-bottom:.42em;border-bottom:1px solid #e1e8f0}
+.intro-article h2:first-child{margin-top:0}
+.intro-article h3{font-size:1.12rem;line-height:1.55;color:#254562;margin:2em 0 .7em}
+.intro-article p{margin:0 0 1.24em;line-height:1.95}
+.intro-article ul,.intro-article ol{padding-left:1.55em;margin:1em 0 1.55em}
+.intro-article li{padding-left:.15em;margin:.45em 0;line-height:1.85}
+.intro-article strong{font-weight:760;color:#183951}
+.intro-article blockquote{background:#f0f6fa;border:1px solid #d9e7f1;border-left:4px solid #376d93;padding:19px 22px;margin:22px 0;border-radius:0 12px 12px 0}
+.intro-article blockquote strong{color:#214967}
+.intro-article details{background:#f8fbfe;border:1px solid #dce5ed;border-radius:12px;padding:17px 19px;margin:18px 0}
+.intro-article details[open]{background:#f5f9fc}
+.intro-article summary{cursor:pointer;color:#204c70}
+.intro-article details p{margin:1em 0 0}
+.intro-article .figure{max-width:100%;margin:30px 0 38px;padding:14px 12px;background:#fff;border:1px solid #e0e7ee;border-radius:12px}
+.intro-article .figure svg{display:block;width:100%;height:auto}
+.intro-article figcaption{font-size:.84rem;line-height:1.65;color:#586a7c;text-align:center;margin:8px 8px 0}
+.intro-article .legend{display:block;margin-bottom:8px;font-weight:650}
+.intro-article mjx-container[display="true"]{display:block;overflow-x:auto;overflow-y:hidden;max-width:100%;padding:.35rem 0;scrollbar-width:thin}
+.intro-article mjx-container{max-width:100%}
+.intro-footer{max-width:860px;margin:22px auto 0;text-align:center;color:#64768a;font-size:.86rem}
+.intro-footer a{font-weight:650}
+@media(max-width:640px){
+  body{font-size:15px}
+  .intro-site-nav{padding:13px 0}
+  .intro-site-nav .links{gap:14px}
+  .intro-page{width:calc(100% - 24px)}
+  .intro-hero,.intro-article{border-radius:13px}
+  .intro-toc ol{grid-template-columns:1fr}
+  .intro-meta span+span::before{margin-right:8px}
+  .intro-article blockquote{padding:13px 14px}
+  .intro-article .figure{padding:6px 3px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+
+.intro-article .meaning{background:#f8fbfd;border:1px solid #dce6f0;border-radius:13px;padding:10px 19px;margin:16px 0}
+.intro-article .meaning h3{margin:5px 0 7px}
+.intro-article .meaning p{margin:0 0 9px}
+.intro-article .result-table{max-width:100%;overflow-x:auto;margin:24px 0}
+
+
+
+
+.intro-article table{width:100%;border-collapse:collapse;display:block;overflow-x:auto;margin:19px 0;font-size:.91rem}
+.intro-article th,.intro-article td{border:1px solid #dce5ef;padding:11px 13px;text-align:left;vertical-align:top}
+.intro-article th{background:#eef4f9;color:#214565}
+.intro-article .chapter-bottom-nav{display:flex;justify-content:space-between;flex-wrap:wrap;gap:15px;padding:17px 19px;border-radius:12px;border:1px solid #dce5ed;background:#f5f9fc;margin:26px 0}
+.intro-article .chapter-bottom-nav a{font-size:.89rem;font-weight:700}
+@media(max-width:640px){.intro-article .chapter-bottom-nav{padding:13px}}
+
+
+.intro-article .reduction-flow{display:flex;gap:15px;align-items:center;justify-content:space-between;background:#f7fafc;border:1px solid #dce6ef;border-radius:15px;padding:21px;margin:24px 0}
+.intro-article .flow-node{min-width:0;padding:19px 15px;border-radius:13px;display:flex;flex-direction:column;gap:2px;background:#fff;border:1px solid #cfdeeb;text-align:center}
+.intro-article .flow-node strong{font-size:1.16rem;color:#1c3954}
+.intro-article .flow-node small{font-size:.77rem;color:#647588}
+.intro-article .flow-node.keep{background:#edf6fb;border-color:#b2d2e5}
+.intro-article .flow-node.hidden{background:#f8f6f4;border-color:#dfd3c9}
+.intro-article .flow-eyebrow{font-size:.7rem;color:#526c83;font-weight:750}
+.intro-article .flow-arrow{font-size:1.45rem;color:#608aa9;font-weight:800}
+.intro-article .flow-split{display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1}
+.intro-article .flow-node.full{flex:0 0 34%}
+.intro-article .result-table{max-width:100%;overflow-x:auto;margin:23px 0}
+.intro-article .result-table table{border-collapse:collapse;width:100%;min-width:450px;font-size:.92rem}
+.intro-article th,.intro-article td{padding:11px 12px;border-bottom:1px solid #dce4ee;text-align:left;vertical-align:top}
+.intro-article th{background:#eff5fa;color:#214968}
+.intro-article .chapter-bottom-nav{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;padding:17px 19px;background:#f5f9fc;border:1px solid #dce5ed;border-radius:12px;margin:24px 0}
+.intro-article .chapter-bottom-nav a{font-size:.87rem;font-weight:700}
+.intro-article .review-links{border:1px solid #dce6ef;border-radius:13px;background:#f8fbfe;padding:12px 22px;margin:20px 0}
+.intro-article .review-links p{margin:.6rem 0;font-size:.94rem}
+@media(max-width:640px){.intro-article .reduction-flow{display:block;padding:15px}.intro-article .flow-split{grid-template-columns:1fr 1fr}.intro-article .flow-arrow{text-align:center}.intro-article .flow-node{padding:13px 8px}.intro-article .flow-node strong{font-size:.96rem}.intro-article .chapter-bottom-nav{padding:13px}}
+</style></head><body>
+<header class="intro-site-header"><div class="intro-site-nav">
+<a href="../../" class="brand">ISHIZAKA Hiroki Website<small>Mathematics · Numerical analysis</small></a>
+<nav class="links" aria-label="サイトナビゲーション"><a href="../../">Home</a><a href="../">Blog</a><a href="../stable-reduction-intro/" aria-current="page">入門シリーズ</a><a href="../../research/">Research</a></nav></div></header>
+<main class="intro-page"><nav class="intro-breadcrumb" aria-label="パンくずリスト"><a href="../../">Home</a> › <a href="../">Blog</a> › <a href="../stable-reduction-intro/">安定縮約入門</a> › 第6回</nav>
+<header class="intro-hero"><div class="intro-kicker"><a href="../stable-reduction-intro/" style="color:inherit;text-decoration:none">STABLE REDUCTION · BEGINNER SERIES · 06 · FINAL</a></div>
+<h1>第6回：変数が100万個あったら？</h1><p class="intro-lead">二変数で見つけた原理を，100万変数の離散化モデルと偏微分方程式へ．計算を軽くするだけでなく，何を保ち，どこまで保証するかを考えます．</p>
+<div class="intro-meta"><span><time datetime="2026-10-10">2026年10月10日</time></span><span>大学初年次〜発展</span><span>入門シリーズ最終回</span></div></header>
+<nav class="intro-toc" aria-label="この記事の目次"><h2>この記事の目次</h2><ol><li><a href="#intro">最終回の問い</a></li>
+<li><a href="#pde">100万個はどこから？</a></li>
+<li><a href="#split">残すものと隠すもの</a></li>
+<li><a href="#block">大きな連立方程式</a></li>
+<li><a href="#memory">100万変数でも記憶が現れる</a></li>
+<li><a href="#speed">正確なのに軽くない理由</a></li>
+<li><a href="#stability">安定性の落とし穴</a></li>
+<li><a href="#errors">三つの誤差</a></li>
+<li><a href="#certificate">保証できる条件</a></li>
+<li><a href="#vision">研究は何を目指す？</a></li>
+<li><a href="#exercise">練習問題</a></li>
+<li><a href="#end">シリーズのまとめ</a></li></ol></nav>
+<article class="intro-article" aria-label="第6回：変数が100万個あったら？"><h2 id="intro">はじめに――二つの変数から100万個へ</h2>
+
+<p>これまで5回にわたり，二つの変数 \(x(t)\) と \(y(t)\) だけを使って，未解像ダイナミクスの安定縮約を学んできました．今回はシリーズの最終回です．</p>
+<p>天気，材料の変形，熱の移動などを計算するとき，数万，数百万の変数を使うことがあります．<strong>もし変数が100万個あったら，そのすべてを計算しなければならないのでしょうか？</strong></p>
+<p>実は，第1〜5回で学んだ「重要な動きを選ぶ」「見えない成分の影響を残す」「誤差を評価する」という考え方は，そのまま大規模な問題を考える出発点になります．</p>
+<blockquote><strong>目標は，方程式を小さくすることだけではありません．予測に必要な情報と安定性を失わずに，小さくすることです．</strong></blockquote>
+<p>後半には少し行列が登場します．行列をまだ習っていない方は「数式の後に書いた意味」だけを追っても，全体像が分かる構成にしました．</p>
+
+<h2 id="pde">1．100万個の変数は，どこから来る？</h2>
+
+<p>たとえば，板の温度を考えてみましょう．板の内部の温度は，場所 \((\xi,\zeta)\) と時刻 \(t\) の両方で変わります．それを \(u(\xi,\zeta,t)\) と書きます．</p>
+<p>熱の拡散を表す代表的な偏微分方程式は，</p>
+\[
+\boxed{
+\frac{\partial u}{\partial t}
+=\kappa\left(
+\frac{\partial^2 u}{\partial \xi^2}
++\frac{\partial^2 u}{\partial \zeta^2}
+\right),\qquad \kappa>0.
+}
+\tag{1}
+\]
+<p>です．これは<strong>熱方程式</strong>と呼ばれます．ここでは，正方形の板の端の温度を0に保つ場合をイメージしてください．</p>
+<p>コンピューターで計算する際，板の内部に縦1000個，横1000個の格子点を置き，各点の温度を一つの未知数にすると，</p>
+\[
+\boxed{1000\times1000=1\,000\,000}
+\]
+<p>個の未知数ができます．</p>
+<p>このように，連続的に変化する温度を有限個の数に置き換えることを<strong>空間離散化</strong>と呼びます．有限差分法や有限要素法などが，そのための方法です．ただし，今の「ちょうど100万個」は格子点を数えた例であり，有限要素法の自由度数が必ず同じになるわけではありません．</p>
+<p>離散化した100万個の温度をまとめて \(U(t)\) と書くと，典型的には</p>
+\[
+\boxed{U'(t)=L_hU(t),\qquad U(t)\in\mathbb R^N,\quad N=10^6}
+\tag{2}
+\]
+<p>という大きな連立微分方程式になります．\(L_h\) は各格子点の温度の影響を表す行列で，近くの格子点同士が結び付いています．ここでは外部からの熱源は省いています．</p>
+<p><strong>偏微分方程式そのものは連続的な空間の問題</strong>ですが，式(2)はそれを格子点で近似した有限次元の問題です．この二つを混同しないことも大切です．</p>
+
+<h2 id="split">2．100万個を，「残す成分」と「省く成分」に分ける</h2>
+
+<p>たとえば，100万個の変数の中から100個の成分で，主要な温度分布の変化を表したいとします．100個だけに減らすので，理想的には計算を軽くできる可能性があります．</p>
+<p>ただし，<strong>最初の100格子点を残せばよい</strong>という意味ではありません．板全体の大まかな温度の形や，ゆっくり変化する模様などを表す100個の組み合わせを選ぶ，という考え方もあります．</p>
+<div class="reduction-flow" role="group" aria-label="大規模状態から保持成分と未解像成分への分割">
+<div class="flow-node full"><span class="flow-eyebrow">離散化された状態</span><strong>100万個の変数</strong><small>\(U(t)\in\mathbb R^{10^6}\)</small></div>
+<div class="flow-arrow" aria-hidden="true">→</div>
+<div class="flow-split">
+<div class="flow-node keep"><span class="flow-eyebrow">残す成分</span><strong>100個</strong><small>\(x(t)\in\mathbb R^{100}\)</small></div>
+<div class="flow-node hidden"><span class="flow-eyebrow">省く成分</span><strong>99万9900個</strong><small>\(y(t)\in\mathbb R^{999900}\)</small></div>
+</div></div>
+<p>新しい座標をうまく選んで，状態を \(x(t)\) と \(y(t)\) の二つのグループに分けたとしましょう．ここで \(x\) は残す変数の集まり，\(y\) は省く変数の集まりです．</p>
+<p>このとき，<strong>省く成分を0と置くことが正しいとは限りません</strong>．第1回で見た落とし穴が，100万変数でも起こり得ます．</p>
+
+<h2 id="block">3．大きな系も，二つのグループの方程式として書ける</h2>
+
+<p>ここからは少し発展です．100万変数の<strong>線形で，係数が時間に依存しない</strong>モデルを考えます．保持する成分の数を \(m\)，省く成分の数を \(k\) とすると，\(m+k=N\) です．</p>
+<p>座標変換で二つのグループに分けた方程式を，</p>
+\[
+\boxed{
+\begin{aligned}
+x'(t)&=Ax(t)+By(t),\\
+y'(t)&=Cx(t)+Dy(t)
+\end{aligned}}
+\tag{3}
+\]
+<p>と書きます．\(x(t)\in\mathbb R^m\)，\(y(t)\in\mathbb R^k\) です．行列のサイズは \(A\in\mathbb R^{m\times m}\)，\(B\in\mathbb R^{m\times k}\)，\(C\in\mathbb R^{k\times m}\)，\(D\in\mathbb R^{k\times k}\) となります．</p>
+<p>式(3)の意味は難しくありません．\(A,D\) はそれぞれのグループ内の動き，\(B,C\) はグループ間の影響を表します．</p>
+<p>たとえば，第1〜5回の二変数モデルは，\(m=k=1\) とした場合の特別な例です．</p>
+\[
+A=D=-1,\qquad B=C=a.
+\]
+<p>つまり，今まで見てきた二変数の計算は，<strong>大きな系を二つの部分に分けたときにも現れる構造</strong>を先取りしていたのです．</p>
+
+<h2 id="memory">4．省く成分を正確に消すと，やはり記憶項が現れる</h2>
+
+<p>第4回では，見えない変数の方程式を先に解き，過去の値を積分する式を得ました．大きな線形系でも同じ考え方が使えます．</p>
+<p>第二式 \(y'=Cx+Dy\) を初期値 \(y(0)=y_0\) とともに解くと，</p>
+\[
+\boxed{
+y(t)=e^{tD}y_0+
+\int_0^t e^{(t-s)D}Cx(s)\,ds
+}
+\tag{4}
+\]
+<p>となります．\(e^{tD}\) は，普通の指数関数 \(e^{at}\) を行列へ拡張したもので，<strong>行列指数関数</strong>と呼びます．今は「\(D\) による時間発展を表すもの」と理解すれば十分です．</p>
+<p>これを第一式に代入すると，</p>
+\[
+\boxed{
+\begin{aligned}
+x'(t)={}&Ax(t)+Be^{tD}y_0\\
+&+\int_0^t Be^{(t-s)D}Cx(s)\,ds.
+\end{aligned}}
+\tag{5}
+\]
+<p>が得られます．省く変数 \(y(t)\) は方程式から消えました．しかし，その代わりに<strong>見えない初期値による項</strong>と<strong>過去の \(x\) を使う記憶積分</strong>が残っています．</p>
+<p>この記憶積分の重みは，</p>
+\[
+\boxed{K(\tau)=Be^{\tau D}C,\qquad \tau\geq0}
+\tag{6}
+\]
+<p>という行列の形をした関数です．これが大きな系の記憶核です．</p>
+<p>第4回とまったく同じく，<strong>式(5)は，初期情報を保持した正確な消去の式</strong>です．省く変数の影響を勝手に0とした近似とは違います．</p>
+<details><summary><strong>少し発展：式(4)の計算を確認する</strong></summary>
+<p>\(x(t)\) を与えられた関数として，\(y'=Dy+Cx\) を考えます．両辺に行列指数関数 \(e^{-tD}\) を左から掛けると，</p>
+\[
+\frac{d}{dt}\bigl(e^{-tD}y(t)\bigr)=e^{-tD}Cx(t)
+\]
+<p>です．時刻0から \(t\) まで積分し，左から \(e^{tD}\) を掛ければ式(4)になります．途中で \(e^{tD}e^{-sD}=e^{(t-s)D}\) を使いました．\(D\) は一定の行列であると仮定しています．</p>
+</details>
+
+<h2 id="speed">5．変数を消しても，なぜ計算が軽くならないの？</h2>
+
+<p>式(5)は \(x\) だけの方程式です．では保持変数が100個なら，必ず100変数だけの軽い計算になるのでしょうか．</p>
+<p>そうとは限りません．記憶項</p>
+\[
+\int_0^t K(t-s)x(s)\,ds
+\tag{7}
+\]
+<p>を正確に扱おうとすると，過去の \(x(s)\) の情報や，\(K(\tau)\) を計算する仕組みが必要になります．特に \(K(\tau)=Be^{\tau D}C\) には，省いた側の大きな行列 \(D\) が含まれています．</p>
+<p>つまり，<strong>計算する変数を減らしたつもりでも，記憶の計算に大きな負担が移る</strong>ことがあり得ます．</p>
+<p>そこで実際の縮約では，さらに工夫をします．たとえば記憶核を少数の指数関数で近似したり，重要な成分を選んで小さな補助変数として表したりする方法があります．ただし，どんな記憶核にも少数の補助変数で高精度に近似できると保証されているわけではありません．</p>
+<p>また，大きな方程式が疎な行列を使って効率よく計算できる場合もあります．したがって，<strong>保持変数の数が少ないことだけで，計算時間が短いとは決まりません</strong>．</p>
+
+<h2 id="stability">6．100万変数でも「安定性を失う縮約」は起こる</h2>
+
+<p>第2回で見た</p>
+\[
+x'=-x+2y,\qquad y'=2x-y
+\tag{8}
+\]
+<p>を思い出してください．\(-x\)，\(-y\) の部分だけを見ると，どちらも減衰しそうです．しかし相互作用を含む系全体には，\(e^t\) で増大する動きがありました．</p>
+<p>つまり，<strong>省く側の変数だけが減衰するという理由では，縮約した系の安全性を証明できません</strong>．グループ間の影響も調べなければなりません．</p>
+<p>さらに意外なことに，元の系が安定でも，単純な射影で作った縮約系が不安定になる場合があります．</p>
+<details><summary><strong>発展：安定な二変数系を一変数にすると，不安定になる反例</strong></summary>
+<p>二変数の行列を</p>
+\[
+M=
+\begin{pmatrix}1&-4\\1&-3\end{pmatrix}
+\tag{9}
+\]
+<p>とします．特性方程式は \((\lambda+1)^2=0\) です．実際，この行列の時間発展は \(e^{tM}=e^{-t}\bigl(I+t(M+I)\bigr)\) と表せるので，すべての解が0へ近づきます．</p>
+<p>ところが第一成分だけを残す直交射影を考えると，縮約した一変数方程式は \(q'(t)=q(t)\) です．その解 \(q(t)=q(0)e^t\) は増大します．</p>
+<p><strong>元の系が安定であっても，縮約後の安定性が自動的に保たれるわけではありません．</strong>この反例は，残す空間と縮約の方法を慎重に選ぶ必要があることを示しています．</p>
+</details>
+<p>では，どんなときに安全に縮約できるのでしょうか．それには，元の方程式のエネルギー構造，保持する空間，記憶項の近似誤差などを，目的に応じて調べる必要があります．単に固有値を少し計算すれば一般の問題がすべて解決するわけではありません．</p>
+
+<h2 id="errors">7．偏微分方程式では，誤差を三段階に分ける</h2>
+
+<p>ここまで，100万変数の離散化モデルを扱いました．しかし本当の出発点は，式(1)のような偏微分方程式です．</p>
+<p>そこで次の四つを区別してみます．</p>
+<ul>
+<li>\(U(t)\)：元の偏微分方程式の解．</li>
+<li>\(U_h(t)\)：空間を離散化して再構成した解．</li>
+<li>\(U_{\mathrm{red}}(t)\)：さらにモデル縮約して再構成した近似解．</li>
+<li>\(U_{\mathrm{comp}}(t)\)：時間離散化や計算機上の近似も含め，最終的に得た解．</li>
+</ul>
+<p>これらを同じ空間，たとえば \(L^2(\Omega)\) の関数として比較できるとします．三角不等式から，</p>
+\[
+\boxed{\begin{aligned}
+\|U(t)-U_{\mathrm{comp}}(t)\|_{L^2(\Omega)}
+\leq{}&
+\|U(t)-U_h(t)\|_{L^2(\Omega)}\\
+&+\|U_h(t)-U_{\mathrm{red}}(t)\|_{L^2(\Omega)}\\
+&+\|U_{\mathrm{red}}(t)-U_{\mathrm{comp}}(t)\|_{L^2(\Omega)}.
+\end{aligned}}
+\tag{10}
+\]
+<p>が必ず成り立ちます．</p>
+<div class="result-table"><table><thead><tr><th>誤差の種類</th><th>何が原因？</th></tr></thead><tbody>
+<tr><td>空間離散化誤差</td><td>連続的な偏微分方程式を有限個の変数にしたこと</td></tr>
+<tr><td>モデル縮約誤差</td><td>離散化した変数の一部を省いたり，記憶を近似したこと</td></tr>
+<tr><td>計算誤差</td><td>時間離散化・方程式の近似解法などで生じたこと</td></tr>
+</tbody></table></div>
+<p>式(10)は誤差分解として常に正しいですが，<strong>右辺の各項を実際に評価しなければ，数値的な保証にはなりません</strong>．離散化の性質や解の正則性，残差評価などを使って，それぞれを調べることになります．</p>
+<p>さらに，知りたいものが温度の平均など一つの数値であれば，解全体の誤差だけでなく<strong>知りたい量の誤差</strong>を直接調べる考え方も重要です．ただし一点での温度などの誤差は，\(L^2(\Omega)\) ノルムの評価だけで自動的に制御できるとは限りません．</p>
+
+<h2 id="certificate">8．小さい残差だけで，近い解だと言えるの？</h2>
+
+<p>第5回では，残差を使って誤差を上から抑えました．同じ考え方を，大きな連立微分方程式へ拡張してみましょう．</p>
+<p>正確な解 \(z(t)\in\mathbb R^N\) が \(z'(t)=Mz(t)\) に従うとします．計算で得た近似を \(\widetilde z(t)\) とし，その残差を</p>
+\[
+\boxed{\rho(t)=\widetilde z'(t)-M\widetilde z(t)}
+\tag{11}
+\]
+<p>とします．ここでも，近似関数は考える時間区間で連続的に微分できると仮定します．</p>
+<p>もし元の行列に，ある \(\alpha>0\) について</p>
+\[
+\boxed{\frac{M+M^\top}{2}\leq-\alpha I}
+\tag{12}
+\]
+<p>という<strong>強い減衰の条件</strong>があれば，初期誤差と残差の評価から</p>
+\[
+\boxed{\begin{aligned}
+\|z(t)-\widetilde z(t)\|_{\mathbb R^N}
+\leq{}&
+e^{-\alpha t}\|z(0)-\widetilde z(0)\|_{\mathbb R^N}\\
+&+\int_0^t e^{-\alpha(t-s)}
+\|\rho(s)\|_{\mathbb R^N}\,ds.
+\end{aligned}}
+\tag{13}
+\]
+<p>を証明できます．</p>
+<p>さらに \(0\leq t\leq T\) で初期誤差が \(\varepsilon_0\) 以下，残差が \(\delta\) 以下だと確認できれば，</p>
+\[
+\boxed{
+\|z(t)-\widetilde z(t)\|_{\mathbb R^N}
+\leq e^{-\alpha t}\varepsilon_0+
+\frac{\delta}{\alpha}(1-e^{-\alpha t}).
+}
+\tag{14}
+\]
+<p>が成り立ちます．</p>
+<details><summary><strong>発展：なぜ式(13)が成り立つのか</strong></summary>
+<p>誤差 \(e=z-\widetilde z\) は \(e'=Me-\rho\) を満たします．式(12)から，任意のベクトル \(w\) に対し \(w^\top Mw\leq-\alpha\|w\|_{\mathbb R^N}^2\) です．よって誤差のエネルギー \(\|e(t)\|_{\mathbb R^N}^2/2\) を微分して評価するか，行列指数関数を使えば，</p>
+\[
+\|e^{tM}w\|_{\mathbb R^N}\leq
+e^{-\alpha t}\|w\|_{\mathbb R^N}
+\]
+<p>となります．これを</p>
+\[
+e(t)=e^{tM}e(0)-\int_0^t e^{(t-s)M}\rho(s)\,ds
+\]
+<p>に代入して三角不等式を使うと，式(13)が得られます．</p>
+</details>
+<p>ただし式(12)は<strong>すべての安定な行列に成り立つわけではありません</strong>．この例は明確な十分条件のもとで得られる保証を示したものです．また，大規模な計算で残差を時間区間全体にわたり厳密に評価できるかどうかも，別に確かめる必要があります．</p>
+<p>ここでは区間演算を使っていません．解析的な不等式と，そのために必要な仮定をはっきり区別することが大切です．</p>
+
+<h2 id="vision">9．未解像ダイナミクスの安定縮約は，何を目指す研究か</h2>
+
+<p>二変数から100万変数まで，共通の問いは次の三つです．</p>
+<ol>
+<li><strong>何を残すか：</strong>どの変数や空間を残せば，予測に大切な動きや安定性を失わないか．</li>
+<li><strong>消したものの影響をどう扱うか：</strong>記憶核・初期情報・補正項として残すのか，それとも条件のもとで小さく近似できるのか．</li>
+<li><strong>どこまで保証するか：</strong>安定性，観測量の誤差，長時間の振る舞いなど，何をどの仮定のもとで評価できるのか．</li>
+</ol>
+<p>これらを一般の偏微分方程式や多尺度システムで解決することは，今回の小さな例よりずっと難しい課題です．記憶が複雑な場合や，系が不安定性を含む場合には，単純な方法が失敗する可能性があります．</p>
+<p><strong>このシリーズは一般理論が完成したと主張するものではありません</strong>．小さな例の中で，安全なモデル縮約に必要な考え方を見つけるための入門です．実際の研究では，適用範囲と必要条件，計算の効率，誤差の評価方法を一つずつ明確にしていく必要があります．</p>
+
+<h2 id="exercise">10．練習問題――100万変数を考える前に</h2>
+
+<ol>
+<li><strong>問題1：</strong>1000×1000個の格子点の温度をすべて未知数とすると，未知数はいくつありますか．そこから100個の成分を残すと，省く成分はいくつですか．</li>
+<li><strong>問題2：</strong>式(3)で \(B=0\) なら，保持した変数 \(x\) の方程式に記憶項は現れますか．また \(C=0\) なら，見えない初期値の影響は必ず消えますか．</li>
+<li><strong>問題3：</strong>式(14)で \(\alpha=1\)，\(\varepsilon_0=0.1\)，\(\delta=0.02\) とします．時刻 \(t=1\) での誤差の上界を求めてください．</li>
+<li><strong>問題4（発展）：</strong>式(8)で初期値 \(x(0)=y(0)=1\) とします．解が増大することを確認し，「\(-x\)，\(-y\) はそれぞれ減衰させる項だから，全体も安定」という説明の間違いを述べてください．</li>
+</ol>
+<details><summary><strong>練習問題の解答と計算過程を見る</strong></summary>
+<p><strong>問題1：</strong>全体は \(1\,000\,000\) 個です．保持100個なら，省く成分は \(999\,900\) 個です．</p>
+<p><strong>問題2：</strong>\(B=0\) なら式(5)の \(By\) に由来する両方の項が消え，記憶項は現れません．\(C=0\) なら記憶項は消えますが，\(Be^{tD}y_0\) という初期値の影響は一般に残ります．</p>
+<p><strong>問題3：</strong>式(14)より \(0.1e^{-1}+0.02(1-e^{-1})=0.02+0.08e^{-1}\approx0.04943\) です．この小数は近似表示で，厳密な上界は左の式です．</p>
+<p><strong>問題4：</strong>\(x(t)=y(t)=e^t\) となり，増大します．結合の効果を無視して \(-x\)，\(-y\) の符号だけで安定性を判断していることが誤りです．</p>
+</details>
+
+<h2 id="end">おわりに――「見えない」を無視せず，数学で扱う</h2>
+
+<p>入門シリーズの6回を振り返りましょう．</p>
+<div class="review-links">
+<p><a href="./unresolved_dynamics_intro_01.html">第1回</a>：見えない変数を無視すると予測が変わる．</p>
+<p><a href="./unresolved_dynamics_intro_02.html">第2回</a>：一つの解が減衰しても，系全体が安定とは限らない．</p>
+<p><a href="./unresolved_dynamics_intro_03.html">第3回</a>：重要な動きを残して縮約し，省いた影響を評価する．</p>
+<p><a href="./unresolved_dynamics_intro_04.html">第4回</a>：正確に変数を消すと，記憶積分が現れることがある．</p>
+<p><a href="./unresolved_dynamics_intro_05.html">第5回</a>：近似誤差を上から抑えるには，残差と仮定の確認が必要．</p>
+<p><strong>第6回</strong>：同じ問題意識が，大規模システムや偏微分方程式へとつながる．</p>
+</div>
+<blockquote><strong>このシリーズの結論：未解像ダイナミクスの安定縮約とは，計算しないものの影響を理解し，必要な情報と信頼性を保ちながらモデルを簡単にするための数学です．</strong></blockquote>
+<p>ここから先は，記憶核の構造，偏微分方程式における安定性，空間・時間離散化と縮約の誤差評価など，専門的な研究につながります．興味のある方は，ブログの専門シリーズもご覧ください．</p>
+<nav class="chapter-bottom-nav" aria-label="入門シリーズ内の移動"><a href="./unresolved_dynamics_intro_05.html">← 第5回：近似の信頼性</a><a href="../stable-reduction-intro/">入門シリーズの目次へ →</a></nav>
+<h3>さらに学びたい方へ</h3>
+<ul>
+<li><a href="./unresolved-memory-01.html">未解像ダイナミクスと履歴依存型発展方程式――専門シリーズ</a></li>
+<li><a href="./unresolved-memory-02.html">未解像状態を消去すると，なぜmemoryが現れるのか</a></li>
+<li><a href="./unresolved-memory-10.html">model-reduction errorをどう分解するか</a></li>
+<li><a href="../../research/#stable-reduction">研究ページ：Stable reduction</a></li>
+</ul></article>
+<footer class="intro-footer"><a href="../stable-reduction-intro/">入門シリーズの目次</a> · <a href="../">ブログ一覧</a><p>© 2026 Hiroki Ishizaka</p></footer>
+</main></body></html>
