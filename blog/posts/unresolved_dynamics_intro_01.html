@@ -1,41 +1,146 @@
 <!doctype html>
-<html lang="ja" class="col1">
+<html lang="ja">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#172a42">
 <title>第1回：見えない変数を無視すると何が起こる？――未解像ダイナミクスへの入口 | Hiroki Ishizaka</title>
-<meta name="description" content="大学1年生向けに，二つの連立微分方程式から，未解像変数の影響，単純な縮約の危険，安定性の意味を指数関数だけで学ぶ入門記事です。">
-<meta name="keywords" content="未解像ダイナミクス,安定縮約,大学1年生,微分方程式,モデル縮約,観測,数値解析">
+<meta name="description" content="大学1年生向け。二つの連立微分方程式から，未解像変数の影響，単純な縮約の危険，安定性の意味を指数関数だけで学びます。">
+<meta name="keywords" content="未解像ダイナミクス,安定縮約,大学1年生,微分方程式,モデル縮約,数値解析">
 <link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_01.html">
-<link rel="stylesheet" href="../../css/modern.css">
-<link rel="stylesheet" href="../../css/blog-post-modern.css">
 <link rel="icon" href="../../favicon.ico">
 <meta property="og:type" content="article">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="第1回：見えない変数を無視すると何が起こる？――未解像ダイナミクスへの入口">
-<meta property="og:description" content="大学1年生向けに，二つの連立微分方程式から，未解像変数の影響，単純な縮約の危険，安定性の意味を指数関数だけで学ぶ入門記事です。">
+<meta property="og:description" content="大学1年生向けに、見えない変数が未来予測と安定性に与える影響を解説します。">
 <meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_01.html">
 <meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"第1回：見えない変数を無視すると何が起こる？――未解像ダイナミクスへの入口","description":"大学1年生から学ぶ未解像ダイナミクスの安定縮約・第1回","url":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_01.html","datePublished":"2026-10-10","dateModified":"2026-10-10","author":{"@type":"Person","name":"Hiroki Ishizaka"},"inLanguage":"ja"}</script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
-.intro-article{line-height:1.9}.intro-article p,.intro-article li{line-height:1.9}.intro-article h2{margin-top:2rem}.intro-article blockquote{border-left:4px solid #68788a;padding:12px 18px;margin:1.3rem 0;background:#f5f8fb}.intro-article details{border:1px solid #d6dfe9;border-radius:10px;padding:1rem;margin:1rem 0}.intro-article summary{cursor:pointer}.intro-article mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;padding:.5rem 0}.intro-article .figure{margin:22px auto;max-width:780px}.intro-article .figure svg{max-width:100%;height:auto;display:block}.intro-article figcaption{font-size:.88rem;color:#596579;text-align:center}.intro-article .legend{display:block;margin-bottom:5px;font-weight:bold}
+:root{
+  color-scheme:light;
+  --page:#f3f6fa;--paper:#fff;--ink:#1d2a3b;--muted:#53677b;
+  --line:#dce4ee;--accent:#225e88;--accent-dark:#164668;--soft:#f3f7fb;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  margin:0;min-height:100vh;color:var(--ink);
+  background:linear-gradient(180deg,#edf2f8 0,#f3f6fa 420px,#f3f6fa 100%);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,system-ui,sans-serif;
+  font-size:16px;line-height:1.85;overflow-wrap:anywhere;
+}
+a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+a:hover{color:var(--accent-dark)}
+a:focus-visible,summary:focus-visible{outline:3px solid #98c5e2;outline-offset:4px}
+.intro-site-header{background:#172a42;color:#fff;border-bottom:1px solid #253b56}
+.intro-site-nav{width:min(1060px,calc(100% - 36px));min-height:78px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:12px 0}
+.intro-site-nav .brand{color:#fff;text-decoration:none;font-size:1.02rem;font-weight:750;letter-spacing:.018em;line-height:1.4}
+.intro-site-nav .brand small{display:block;font-size:.69rem;font-weight:450;letter-spacing:.07em;color:#c4d2e1}
+.intro-site-nav .links{display:flex;gap:22px;flex-wrap:wrap;font-size:.91rem}
+.intro-site-nav .links a{color:#d9e6f3;text-decoration:none}
+.intro-site-nav .links a[aria-current="page"]{font-weight:800;color:#fff;border-bottom:2px solid #b5d4ec}
+.intro-page{width:min(1010px,calc(100% - 32px));margin:0 auto;padding-bottom:48px}
+.intro-breadcrumb{max-width:860px;margin:22px auto;color:#586b80;font-size:.83rem}
+.intro-breadcrumb a{color:#405e7b}
+.intro-hero,.intro-article,.intro-toc{max-width:860px;margin-left:auto;margin-right:auto}
+.intro-hero{
+  background:#fff;border:1px solid var(--line);border-radius:20px;
+  padding:clamp(28px,5.8vw,58px);
+  box-shadow:0 10px 38px rgba(24,44,66,.045);
+  border-top:5px solid var(--accent);
+}
+.intro-kicker{display:inline-block;color:var(--accent);font-size:.77rem;font-weight:800;letter-spacing:.075em;margin-bottom:15px}
+.intro-hero h1{font-size:clamp(1.72rem,3.7vw,2.6rem);line-height:1.45;letter-spacing:.005em;margin:0;font-weight:760;color:#152840}
+.intro-hero .intro-lead{font-size:clamp(.96rem,1.7vw,1.11rem);color:#4b6074;margin:16px 0 0;line-height:1.9}
+.intro-meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px 15px;margin-top:22px;font-size:.83rem;color:#607286}
+.intro-meta span+span::before{content:"•";margin-right:15px;color:#a3b1bf}
+.intro-toc{
+  background:#f9fbfd;border:1px solid var(--line);border-radius:16px;
+  padding:21px clamp(20px,4vw,30px);margin-top:18px;margin-bottom:20px
+}
+.intro-toc h2{font-size:.94rem;letter-spacing:.015em;margin:0 0 8px;color:#2f485f}
+.intro-toc ol{display:grid;grid-template-columns:1fr 1fr;gap:5px 28px;margin:0;padding-left:22px;font-size:.87rem}
+.intro-toc li{padding:3px 0}
+.intro-toc a{text-decoration:none}
+.intro-article{
+  padding:clamp(23px,6vw,62px);background:var(--paper);
+  border:1px solid var(--line);border-radius:20px;box-shadow:0 15px 48px rgba(28,52,82,.045)
+}
+.intro-article h2{scroll-margin-top:20px;font-size:clamp(1.32rem,2.6vw,1.66rem);line-height:1.5;letter-spacing:.002em;color:#1c344d;margin:2.55em 0 .85em;padding-bottom:.42em;border-bottom:1px solid #e1e8f0}
+.intro-article h2:first-child{margin-top:0}
+.intro-article h3{font-size:1.12rem;line-height:1.55;color:#254562;margin:2em 0 .7em}
+.intro-article p{margin:0 0 1.24em;line-height:1.95}
+.intro-article ul,.intro-article ol{padding-left:1.55em;margin:1em 0 1.55em}
+.intro-article li{padding-left:.15em;margin:.45em 0;line-height:1.85}
+.intro-article strong{font-weight:760;color:#183951}
+.intro-article blockquote{background:#f0f6fa;border:1px solid #d9e7f1;border-left:4px solid #376d93;padding:19px 22px;margin:22px 0;border-radius:0 12px 12px 0}
+.intro-article blockquote strong{color:#214967}
+.intro-article details{background:#f8fbfe;border:1px solid #dce5ed;border-radius:12px;padding:17px 19px;margin:18px 0}
+.intro-article details[open]{background:#f5f9fc}
+.intro-article summary{cursor:pointer;color:#204c70}
+.intro-article details p{margin:1em 0 0}
+.intro-article .figure{max-width:100%;margin:30px 0 38px;padding:14px 12px;background:#fff;border:1px solid #e0e7ee;border-radius:12px}
+.intro-article .figure svg{display:block;width:100%;height:auto}
+.intro-article figcaption{font-size:.84rem;line-height:1.65;color:#586a7c;text-align:center;margin:8px 8px 0}
+.intro-article .legend{display:block;margin-bottom:8px;font-weight:650}
+.intro-article mjx-container[display="true"]{display:block;overflow-x:auto;overflow-y:hidden;max-width:100%;padding:.35rem 0;scrollbar-width:thin}
+.intro-article mjx-container{max-width:100%}
+.intro-footer{max-width:860px;margin:22px auto 0;text-align:center;color:#64768a;font-size:.86rem}
+.intro-footer a{font-weight:650}
+@media(max-width:640px){
+  body{font-size:15px}
+  .intro-site-nav{padding:13px 0}
+  .intro-site-nav .links{gap:14px}
+  .intro-page{width:calc(100% - 24px)}
+  .intro-hero,.intro-article{border-radius:13px}
+  .intro-toc ol{grid-template-columns:1fr}
+  .intro-meta span+span::before{margin-right:8px}
+  .intro-article blockquote{padding:13px 14px}
+  .intro-article .figure{padding:6px 3px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style>
 </head>
-<body class="page">
-<header id="top" class="site-header"><div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div><nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div><ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul></div></nav></header>
-<div class="main-body"><div class="main-body-in"><nav class="breadcrumbs"><ol class="breadcrumbs-in"><li class="bcl-first"><a href="../../">ISHIZAKA Hiroki Website TOP</a></li><li><a href="../">Blog</a></li><li class="bcl-last">未解像ダイナミクス入門 第1回</li></ol></nav>
-<main><div class="main-conts"><article class="section-wrap"><div class="section-in intro-article">
-<h1 class="section-title">第1回：見えない変数を無視すると何が起こる？――未解像ダイナミクスへの入口</h1>
-<p><strong>シリーズ：大学1年生から学ぶ未解像ダイナミクスの安定縮約</strong><br><time datetime="2026-10-10">2026年10月10日</time></p>
-
-<h2>はじめに――見えないものは，存在しないものとしてよいのか？</h2>
+<body>
+<header class="intro-site-header">
+  <div class="intro-site-nav">
+    <a href="../../" class="brand">ISHIZAKA Hiroki Website<small>Mathematics · Numerical analysis</small></a>
+    <nav class="links" aria-label="サイトナビゲーション">
+      <a href="../../">Home</a>
+      <a href="../" aria-current="page">Blog</a>
+      <a href="../../research/">Research</a>
+    </nav>
+  </div>
+</header>
+<main class="intro-page">
+<nav class="intro-breadcrumb" aria-label="パンくずリスト"><a href="../../">Home</a> › <a href="../">Blog</a> › 未解像ダイナミクス入門・第1回</nav>
+<header class="intro-hero">
+<div class="intro-kicker">STABLE REDUCTION · BEGINNER SERIES · 01</div>
+<h1>第1回：見えない変数を無視すると何が起こる？――未解像ダイナミクスへの入口</h1>
+<p class="intro-lead">見えないものを無視しても，未来は正しく予測できるのでしょうか。微分と指数関数だけで，モデル縮約の最初の落とし穴を考えます。</p>
+<div class="intro-meta"><span><time datetime="2026-10-10">2026年10月10日</time></span><span>大学1年生向け</span><span>連立微分方程式</span></div>
+</header>
+<nav class="intro-toc" aria-label="この記事の目次">
+<h2>この記事の目次</h2><ol><li><a href="#intro">はじめに</a></li>
+<li><a href="#model">二つの変数からなる問題</a></li>
+<li><a href="#initial">同じ値から異なる未来</a></li>
+<li><a href="#solution">足し算と引き算で解く</a></li>
+<li><a href="#naive">見えない変数を0にすると</a></li>
+<li><a href="#stability">安定性とは何か</a></li>
+<li><a href="#reduction">安定縮約への入口</a></li>
+<li><a href="#exercises">練習問題</a></li>
+<li><a href="#conclusion">まとめ</a></li></ol>
+</nav>
+<article class="intro-article" aria-label="第1回：見えない変数を無視すると何が起こる？――未解像ダイナミクスへの入口">
+<h2 id="intro">はじめに――見えないものは，存在しないものとしてよいのか？</h2>
 <p>ある装置の状態を，時間とともに変わる一つの数値 \(x(t)\) で観測しているとします。ところが，装置の内部には，直接観測していない別の状態 \(y(t)\) もあります。</p>
 <p>\(x(t)\) だけを知っていれば，その後の \(x(t)\) を正しく予測できるのでしょうか。もし \(y(t)\) が見えないなら，思い切って \(y(t)=0\) と置いてもよいのでしょうか。</p>
 <p>今回考えるのは，まさにこの問題です。使う数学は，<strong>微分，指数関数，二つの式の足し算・引き算</strong>だけです。行列や固有値を知らなくても読み進められます。</p>
 <blockquote><strong>観測していない変数を無視してよいとは限りません。</strong>見えない変数の影響で，予測が「減衰する」から「増加する」へ逆転することさえあります。</blockquote>
 
-<h2>1．二つの変数からなる小さな問題</h2>
+<h2 id="model">1．二つの変数からなる小さな問題</h2>
 <p>次の連立微分方程式を考えます。</p>
 \[
 \begin{aligned}
@@ -54,7 +159,7 @@ y'(t)&=2x(t)-y(t).
 <p>この式は二つの信号が相互作用する<strong>説明用の数学モデル</strong>です。特定の装置の物理法則をそのまま表すものではありません。</p>
 <p>例えば \(x(0)=1\) は「時刻0に観測した値が1」という意味です。では，\(x(0)\) が同じでも，見えない \(y(0)\) が違えばどうなるでしょうか。</p>
 
-<h2>2．最初に見える値が同じでも，未来は同じとは限らない</h2>
+<h2 id="initial">2．最初に見える値が同じでも，未来は同じとは限らない</h2>
 <p>次の二つの初期条件を比較します。</p>
 <p><strong>ケースA：</strong>\(x(0)=1,\ y(0)=1\)</p>
 <p><strong>ケースB：</strong>\(x(0)=1,\ y(0)=-1\)</p>
@@ -70,7 +175,7 @@ x'(0)=-1+2\times(-1)=-3.
 \]
 <p><strong>最初に見える値は同じでも，最初の変化の向きは反対</strong>です。ケースAは増加し始め，ケースBは減少し始めます。ただし，これだけではその後の動きまでは分かりません。次に方程式を最後まで解いてみます。</p>
 
-<h2>3．足し算と引き算だけで解いてみる</h2>
+<h2 id="solution">3．足し算と引き算だけで解いてみる</h2>
 <p>二つの式をそのまま解く代わりに，</p>
 \[
 s(t)=x(t)+y(t),\qquad d(t)=x(t)-y(t)
@@ -133,7 +238,7 @@ s(t)=s(0)e^t,\qquad d(t)=d(0)e^{-3t}
 
 <figure class="figure"><svg role="img" aria-labelledby="plot-title plot-desc" viewBox="0 0 780 355" xmlns="http://www.w3.org/2000/svg"><title id="plot-title">同じ x(0)=1 でも異なる未来</title><desc id="plot-desc">y(0)=1ならx=e^tで増加、y(0)=-1ならx=e^{-3t}で減衰、y=0とした近似はx=e^{-t}で減衰する。</desc><line x1="65" y1="290" x2="735" y2="290" stroke="#d8e1ea"/><text x="55" y="295" text-anchor="end" font-size="13" fill="#435368">0</text><line x1="65" y1="256.25" x2="735" y2="256.25" stroke="#d8e1ea"/><text x="55" y="261.25" text-anchor="end" font-size="13" fill="#435368">1</text><line x1="65" y1="222.5" x2="735" y2="222.5" stroke="#d8e1ea"/><text x="55" y="227.5" text-anchor="end" font-size="13" fill="#435368">2</text><line x1="65" y1="155" x2="735" y2="155" stroke="#d8e1ea"/><text x="55" y="160" text-anchor="end" font-size="13" fill="#435368">4</text><line x1="65" y1="87.5" x2="735" y2="87.5" stroke="#d8e1ea"/><text x="55" y="92.5" text-anchor="end" font-size="13" fill="#435368">6</text><line x1="65" y1="20" x2="735" y2="20" stroke="#d8e1ea"/><text x="55" y="25" text-anchor="end" font-size="13" fill="#435368">8</text><text x="65" y="314" text-anchor="middle" font-size="13" fill="#435368">0</text><text x="232.5" y="314" text-anchor="middle" font-size="13" fill="#435368">0.5</text><text x="400" y="314" text-anchor="middle" font-size="13" fill="#435368">1</text><text x="567.5" y="314" text-anchor="middle" font-size="13" fill="#435368">1.5</text><text x="735" y="314" text-anchor="middle" font-size="13" fill="#435368">2</text><path d="M65.00 256.25 L71.70 255.57 L78.40 254.87 L85.10 254.16 L91.80 253.44 L98.50 252.70 L105.20 251.95 L111.90 251.18 L118.60 250.39 L125.30 249.59 L132.00 248.78 L138.70 247.94 L145.40 247.10 L152.10 246.23 L158.80 245.34 L165.50 244.44 L172.20 243.52 L178.90 242.58 L185.60 241.63 L192.30 240.65 L199.00 239.65 L205.70 238.63 L212.40 237.60 L219.10 236.54 L225.80 235.46 L232.50 234.36 L239.20 233.23 L245.90 232.08 L252.60 230.91 L259.30 229.72 L266.00 228.50 L272.70 227.26 L279.40 225.99 L286.10 224.70 L292.80 223.38 L299.50 222.04 L306.20 220.66 L312.90 219.26 L319.60 217.83 L326.30 216.38 L333.00 214.89 L339.70 213.37 L346.40 211.82 L353.10 210.24 L359.80 208.63 L366.50 206.99 L373.20 205.31 L379.90 203.60 L386.60 201.86 L393.30 200.07 L400.00 198.26 L406.70 196.40 L413.40 194.51 L420.10 192.58 L426.80 190.62 L433.50 188.61 L440.20 186.56 L446.90 184.47 L453.60 182.34 L460.30 180.16 L467.00 177.95 L473.70 175.68 L480.40 173.37 L487.10 171.02 L493.80 168.61 L500.50 166.16 L507.20 163.66 L513.90 161.11 L520.60 158.50 L527.30 155.85 L534.00 153.14 L540.70 150.37 L547.40 147.55 L554.10 144.67 L560.80 141.74 L567.50 138.74 L574.20 135.69 L580.90 132.57 L587.60 129.39 L594.30 126.15 L601.00 122.84 L607.70 119.46 L614.40 116.01 L621.10 112.50 L627.80 108.91 L634.50 105.25 L641.20 101.52 L647.90 97.71 L654.60 93.83 L661.30 89.87 L668.00 85.82 L674.70 81.70 L681.40 77.49 L688.10 73.20 L694.80 68.82 L701.50 64.35 L708.20 59.79 L714.90 55.14 L721.60 50.40 L728.30 45.56 L735.00 40.62" fill="none" stroke="#d36b37" stroke-width="3"/><path d="M65.00 256.25 L71.70 258.22 L78.40 260.07 L85.10 261.81 L91.80 263.45 L98.50 265.00 L105.20 266.45 L111.90 267.82 L118.60 269.12 L125.30 270.33 L132.00 271.48 L138.70 272.56 L145.40 273.57 L152.10 274.53 L158.80 275.43 L165.50 276.28 L172.20 277.08 L178.90 277.83 L185.60 278.54 L192.30 279.21 L199.00 279.83 L205.70 280.43 L212.40 280.98 L219.10 281.51 L225.80 282.00 L232.50 282.47 L239.20 282.91 L245.90 283.32 L252.60 283.71 L259.30 284.08 L266.00 284.42 L272.70 284.75 L279.40 285.05 L286.10 285.34 L292.80 285.61 L299.50 285.87 L306.20 286.11 L312.90 286.33 L319.60 286.55 L326.30 286.75 L333.00 286.94 L339.70 287.12 L346.40 287.28 L353.10 287.44 L359.80 287.59 L366.50 287.73 L373.20 287.86 L379.90 287.99 L386.60 288.11 L393.30 288.22 L400.00 288.32 L406.70 288.42 L413.40 288.51 L420.10 288.60 L426.80 288.68 L433.50 288.76 L440.20 288.83 L446.90 288.90 L453.60 288.96 L460.30 289.02 L467.00 289.08 L473.70 289.13 L480.40 289.18 L487.10 289.23 L493.80 289.27 L500.50 289.32 L507.20 289.36 L513.90 289.39 L520.60 289.43 L527.30 289.46 L534.00 289.49 L540.70 289.52 L547.40 289.55 L554.10 289.58 L560.80 289.60 L567.50 289.63 L574.20 289.65 L580.90 289.67 L587.60 289.69 L594.30 289.71 L601.00 289.72 L607.70 289.74 L614.40 289.75 L621.10 289.77 L627.80 289.78 L634.50 289.79 L641.20 289.81 L647.90 289.82 L654.60 289.83 L661.30 289.84 L668.00 289.85 L674.70 289.86 L681.40 289.86 L688.10 289.87 L694.80 289.88 L701.50 289.89 L708.20 289.89 L714.90 289.90 L721.60 289.91 L728.30 289.91 L735.00 289.92" fill="none" stroke="#24739e" stroke-width="3"/><path d="M65.00 256.25 L71.70 256.92 L78.40 257.57 L85.10 258.22 L91.80 258.84 L98.50 259.46 L105.20 260.07 L111.90 260.66 L118.60 261.24 L125.30 261.81 L132.00 262.37 L138.70 262.91 L145.40 263.45 L152.10 263.98 L158.80 264.49 L165.50 265.00 L172.20 265.49 L178.90 265.98 L185.60 266.45 L192.30 266.92 L199.00 267.38 L205.70 267.82 L212.40 268.26 L219.10 268.69 L225.80 269.12 L232.50 269.53 L239.20 269.93 L245.90 270.33 L252.60 270.72 L259.30 271.10 L266.00 271.48 L272.70 271.84 L279.40 272.20 L286.10 272.56 L292.80 272.90 L299.50 273.24 L306.20 273.57 L312.90 273.90 L319.60 274.22 L326.30 274.53 L333.00 274.84 L339.70 275.14 L346.40 275.43 L353.10 275.72 L359.80 276.00 L366.50 276.28 L373.20 276.55 L379.90 276.82 L386.60 277.08 L393.30 277.33 L400.00 277.58 L406.70 277.83 L413.40 278.07 L420.10 278.31 L426.80 278.54 L433.50 278.77 L440.20 278.99 L446.90 279.21 L453.60 279.42 L460.30 279.63 L467.00 279.83 L473.70 280.04 L480.40 280.23 L487.10 280.43 L493.80 280.62 L500.50 280.80 L507.20 280.98 L513.90 281.16 L520.60 281.34 L527.30 281.51 L534.00 281.68 L540.70 281.84 L547.40 282.00 L554.10 282.16 L560.80 282.32 L567.50 282.47 L574.20 282.62 L580.90 282.76 L587.60 282.91 L594.30 283.05 L601.00 283.19 L607.70 283.32 L614.40 283.45 L621.10 283.58 L627.80 283.71 L634.50 283.83 L641.20 283.96 L647.90 284.08 L654.60 284.19 L661.30 284.31 L668.00 284.42 L674.70 284.53 L681.40 284.64 L688.10 284.75 L694.80 284.85 L701.50 284.95 L708.20 285.05 L714.90 285.15 L721.60 285.25 L728.30 285.34 L735.00 285.43" fill="none" stroke="#607060" stroke-width="3" stroke-dasharray="9 5"/><text x="400" y="347" text-anchor="middle" fill="#34435c" font-size="14">時間 t</text><text x="17" y="130" fill="#34435c" font-size="14" transform="rotate(-90,17,130)">x(t)</text></svg><figcaption><span class="legend"><span style="color:#d36b37">━━ ケースA：eᵗ</span>　<span style="color:#24739e">━━ ケースB：e⁻³ᵗ</span>　<span style="color:#607060">┄ 単純な縮約：e⁻ᵗ</span></span>同じ観測初期値 x(0)=1 でも，未観測の y(0) によって未来が大きく変わる。</figcaption></figure>
 
-<h2>4．見えない変数を無理に0と置くと？</h2>
+<h2 id="naive">4．見えない変数を無理に0と置くと？</h2>
 <p>「\(y(t)\) は観測できないのだから，第一式の \(y(t)\) を0に置いてしまおう」と考えるかもしれません。</p>
 <p>そうすると，\(x\) だけの方程式</p>
 \[
@@ -157,7 +262,7 @@ x_{\mathrm{naive}}(0)=1
 <p>ここで一つ，数学的に重要な注意があります。<strong>\(y=0\) と置くことは，元の二つの方程式を正確に解いたことではありません。</strong>実際，第二式に \(y=0\) を代入すると，\(y'=0\) であるためには \(2x=0\) が必要です。したがって，\(x\ne0\) のまま \(y=0\) がずっと続くことは，元の系ではできません。</p>
 <p>つまり式(7)は，元の系から正確に導いた結果ではなく，<strong>根拠を確かめずに作った近似モデル</strong>なのです。</p>
 
-<h2>5．一つの解が減衰しても，システム全体が安定とは限らない</h2>
+<h2 id="stability">5．一つの解が減衰しても，システム全体が安定とは限らない</h2>
 <p>ケースBでは \(x(t)=e^{-3t}\) でした。では，このシステムは「安定」と呼んでよいのでしょうか。</p>
 <p>答えは，<strong>システム全体については安定ではありません</strong>。</p>
 <p>ここではまず，どのような初期値から出発しても値が時間とともに0に向かう，という性質を考えます。ケースBは確かにその性質を持ちますが，ケースAは \(e^t\) に従って増加します。したがって，すべての初期値で減衰するわけではありません。</p>
@@ -172,13 +277,13 @@ x(t)=y(t)=\varepsilon e^t
 <p>です。最初の値をどれほど小さくしても，十分時間が経てば大きくなるため，零解は安定ではありません。</p>
 <p>このように，<strong>特定の初期値でうまくいったこと</strong>と，<strong>モデルとしてどの初期値でも安心して使えること</strong>は区別しなければなりません。</p>
 
-<h2>6．未解像ダイナミクスと安定縮約とは？</h2>
+<h2 id="reduction">6．未解像ダイナミクスと安定縮約とは？</h2>
 <p>今回の \(y(t)\) のように，観測や計算の対象から外れている変数が時間とともに変化することを，ここでは「未解像ダイナミクス」と呼びます。</p>
 <p>大きなシステムでは変数が二つどころか，数万，数百万，あるいはそれ以上になることがあります。すべてを追いかける代わりに，重要な変数だけの小さなモデルを作れれば便利です。このように扱う状態の数を減らすことを，<strong>モデル縮約</strong>といいます。</p>
 <p>しかし今回分かったように，単に見えない変数を0に置く方法では，未来の予測も安定性の判断も間違えることがあります。それでは，何を残して，何を消せばよいのでしょうか。</p>
 <p>これを数学的に調べ，必要な安定性や誤差の性質を保つ条件を考えることが，<strong>未解像ダイナミクスの安定縮約</strong>という研究の入口です。今回の二変数の計算そのものは古典的な微分方程式の例です。一般の複雑なシステムについて，どの条件で安全な縮約ができるかを示すことが研究課題になります。</p>
 
-<h2>7．練習問題――自分の手で確かめよう</h2>
+<h2 id="exercises">7．練習問題――自分の手で確かめよう</h2>
 <p><strong>問題1（最初の変化）</strong><br>\(x(0)=1\)，\(y(0)=0\) とします。\(x'(0)\) と \(y'(0)\) を求めてください。</p>
 <p><strong>問題2（見えない状態からの影響）</strong><br>\(x(0)=0\)，\(y(0)=1\) とします。\(x'(0)\) を求めてください。最初に観測値が0なら，その後もずっと0といえるでしょうか。</p>
 <p><strong>問題3（少し発展）</strong><br>\(x(0)=1\)，\(y(0)=0\) のとき，式(3)，(4)を使って \(x(t)\) を求めてください。初めは減少するのに，十分時間が経つと増加することも確認してみましょう。</p>
@@ -188,7 +293,7 @@ x(t)=y(t)=\varepsilon e^t
 <p><strong>問題3：</strong>\(s(0)=d(0)=1\) なので，\(x(t)=(e^t+e^{-3t})/2\) です。\(x'(0)=-1\) ですが，長い時間が経つと \(e^t\) の項が支配的になり，\(x(t)\) は増加します。</p>
 </details>
 
-<h2>おわりに――「見えない」と「影響しない」は違う</h2>
+<h2 id="conclusion">おわりに――「見えない」と「影響しない」は違う</h2>
 <p>今回の小さな問題から，三つのことを学びました。</p>
 <ol>
 <li>同じ観測初期値 \(x(0)\) でも，見えない \(y(0)\) が異なれば，未来は変わり得ます。</li>
@@ -204,7 +309,8 @@ x(t)=y(t)=\varepsilon e^t
 <li><a href="../../research/#stable-reduction">研究ページ：Stable reduction</a></li>
 </ul>
 <p><a href="../">← Blog一覧へ戻る</a></p>
-
-</div></article></div></main></div></div>
-<footer class="site-footer"><div class="site-footer-in"><p>© 2026 ISHIZAKA Hiroki Website</p></div></footer>
-</body></html>
+</article>
+<footer class="intro-footer"><a href="../">← ブログ一覧へ戻る</a><p>© 2026 Hiroki Ishizaka</p></footer>
+</main>
+</body>
+</html>
