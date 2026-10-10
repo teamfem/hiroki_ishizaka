@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#172a42"><title>第4回：見えない変数は過去を覚えている | Hiroki Ishizaka</title>
+<meta name="description" content="大学1年生から学ぶ未解像ダイナミクスの安定縮約・第4回。見えない変数を正確に消去すると記憶積分が現れる。積分因子から丁寧に導出。">
+<meta name="keywords" content="未解像ダイナミクス,安定縮約,記憶項,memory kernel,状態消去,連立微分方程式,入門">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_04.html"><link rel="up" href="../stable-reduction-intro/"><link rel="prev" href="./unresolved_dynamics_intro_03.html"><link rel="icon" href="../../favicon.ico">
+<meta property="og:type" content="article"><meta property="og:locale" content="ja_JP"><meta property="og:title" content="第4回：見えない変数は過去を覚えている"><meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_04.html">
+<meta property="og:description" content="連立微分方程式から，記憶積分が生まれる理由を一歩ずつ説明します。">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"第4回：見えない変数は過去を覚えている","description":"大学1年生から学ぶ未解像ダイナミクスの安定縮約・第4回","url":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_04.html","datePublished":"2026-10-10","dateModified":"2026-10-10","author":{"@type":"Person","name":"Hiroki Ishizaka"},"inLanguage":"ja"}</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --page:#f3f6fa;--paper:#fff;--ink:#1d2a3b;--muted:#53677b;
+  --line:#dce4ee;--accent:#225e88;--accent-dark:#164668;--soft:#f3f7fb;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  margin:0;min-height:100vh;color:var(--ink);
+  background:linear-gradient(180deg,#edf2f8 0,#f3f6fa 420px,#f3f6fa 100%);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,system-ui,sans-serif;
+  font-size:16px;line-height:1.85;overflow-wrap:anywhere;
+}
+a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+a:hover{color:var(--accent-dark)}
+a:focus-visible,summary:focus-visible{outline:3px solid #98c5e2;outline-offset:4px}
+.intro-site-header{background:#172a42;color:#fff;border-bottom:1px solid #253b56}
+.intro-site-nav{width:min(1060px,calc(100% - 36px));min-height:78px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:12px 0}
+.intro-site-nav .brand{color:#fff;text-decoration:none;font-size:1.02rem;font-weight:750;letter-spacing:.018em;line-height:1.4}
+.intro-site-nav .brand small{display:block;font-size:.69rem;font-weight:450;letter-spacing:.07em;color:#c4d2e1}
+.intro-site-nav .links{display:flex;gap:22px;flex-wrap:wrap;font-size:.91rem}
+.intro-site-nav .links a{color:#d9e6f3;text-decoration:none}
+.intro-site-nav .links a[aria-current="page"]{font-weight:800;color:#fff;border-bottom:2px solid #b5d4ec}
+.intro-page{width:min(1010px,calc(100% - 32px));margin:0 auto;padding-bottom:48px}
+.intro-breadcrumb{max-width:860px;margin:22px auto;color:#586b80;font-size:.83rem}
+.intro-breadcrumb a{color:#405e7b}
+.intro-hero,.intro-article,.intro-toc{max-width:860px;margin-left:auto;margin-right:auto}
+.intro-hero{
+  background:#fff;border:1px solid var(--line);border-radius:20px;
+  padding:clamp(28px,5.8vw,58px);
+  box-shadow:0 10px 38px rgba(24,44,66,.045);
+  border-top:5px solid var(--accent);
+}
+.intro-kicker{display:inline-block;color:var(--accent);font-size:.77rem;font-weight:800;letter-spacing:.075em;margin-bottom:15px}
+.intro-hero h1{font-size:clamp(1.72rem,3.7vw,2.6rem);line-height:1.45;letter-spacing:.005em;margin:0;font-weight:760;color:#152840}
+.intro-hero .intro-lead{font-size:clamp(.96rem,1.7vw,1.11rem);color:#4b6074;margin:16px 0 0;line-height:1.9}
+.intro-meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px 15px;margin-top:22px;font-size:.83rem;color:#607286}
+.intro-meta span+span::before{content:"•";margin-right:15px;color:#a3b1bf}
+.intro-toc{
+  background:#f9fbfd;border:1px solid var(--line);border-radius:16px;
+  padding:21px clamp(20px,4vw,30px);margin-top:18px;margin-bottom:20px
+}
+.intro-toc h2{font-size:.94rem;letter-spacing:.015em;margin:0 0 8px;color:#2f485f}
+.intro-toc ol{display:grid;grid-template-columns:1fr 1fr;gap:5px 28px;margin:0;padding-left:22px;font-size:.87rem}
+.intro-toc li{padding:3px 0}
+.intro-toc a{text-decoration:none}
+.intro-article{
+  padding:clamp(23px,6vw,62px);background:var(--paper);
+  border:1px solid var(--line);border-radius:20px;box-shadow:0 15px 48px rgba(28,52,82,.045)
+}
+.intro-article h2{scroll-margin-top:20px;font-size:clamp(1.32rem,2.6vw,1.66rem);line-height:1.5;letter-spacing:.002em;color:#1c344d;margin:2.55em 0 .85em;padding-bottom:.42em;border-bottom:1px solid #e1e8f0}
+.intro-article h2:first-child{margin-top:0}
+.intro-article h3{font-size:1.12rem;line-height:1.55;color:#254562;margin:2em 0 .7em}
+.intro-article p{margin:0 0 1.24em;line-height:1.95}
+.intro-article ul,.intro-article ol{padding-left:1.55em;margin:1em 0 1.55em}
+.intro-article li{padding-left:.15em;margin:.45em 0;line-height:1.85}
+.intro-article strong{font-weight:760;color:#183951}
+.intro-article blockquote{background:#f0f6fa;border:1px solid #d9e7f1;border-left:4px solid #376d93;padding:19px 22px;margin:22px 0;border-radius:0 12px 12px 0}
+.intro-article blockquote strong{color:#214967}
+.intro-article details{background:#f8fbfe;border:1px solid #dce5ed;border-radius:12px;padding:17px 19px;margin:18px 0}
+.intro-article details[open]{background:#f5f9fc}
+.intro-article summary{cursor:pointer;color:#204c70}
+.intro-article details p{margin:1em 0 0}
+.intro-article .figure{max-width:100%;margin:30px 0 38px;padding:14px 12px;background:#fff;border:1px solid #e0e7ee;border-radius:12px}
+.intro-article .figure svg{display:block;width:100%;height:auto}
+.intro-article figcaption{font-size:.84rem;line-height:1.65;color:#586a7c;text-align:center;margin:8px 8px 0}
+.intro-article .legend{display:block;margin-bottom:8px;font-weight:650}
+.intro-article mjx-container[display="true"]{display:block;overflow-x:auto;overflow-y:hidden;max-width:100%;padding:.35rem 0;scrollbar-width:thin}
+.intro-article mjx-container{max-width:100%}
+.intro-footer{max-width:860px;margin:22px auto 0;text-align:center;color:#64768a;font-size:.86rem}
+.intro-footer a{font-weight:650}
+@media(max-width:640px){
+  body{font-size:15px}
+  .intro-site-nav{padding:13px 0}
+  .intro-site-nav .links{gap:14px}
+  .intro-page{width:calc(100% - 24px)}
+  .intro-hero,.intro-article{border-radius:13px}
+  .intro-toc ol{grid-template-columns:1fr}
+  .intro-meta span+span::before{margin-right:8px}
+  .intro-article blockquote{padding:13px 14px}
+  .intro-article .figure{padding:6px 3px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+
+.intro-article .meaning{background:#f8fbfd;border:1px solid #dce6f0;border-radius:13px;padding:10px 19px;margin:16px 0}
+.intro-article .meaning h3{margin:5px 0 7px}
+.intro-article .meaning p{margin:0 0 9px}
+.intro-article .result-table{max-width:100%;overflow-x:auto;margin:24px 0}
+
+
+.intro-article .chapter-bottom-nav{display:flex;flex-wrap:wrap;justify-content:space-between;gap:15px;padding:17px 20px;background:#f5f9fc;border:1px solid #dce5ed;border-radius:12px;margin:25px 0}.intro-article .chapter-bottom-nav a{font-weight:700;font-size:.89rem}
+.intro-article .note{padding:15px;background:#f6fafc;border:1px solid #dde6ee;border-radius:12px}
+@media(max-width:640px){.intro-article .chapter-bottom-nav{padding:13px}}
+</style>
+</head><body>
+<header class="intro-site-header"><div class="intro-site-nav">
+<a href="../../" class="brand">ISHIZAKA Hiroki Website<small>Mathematics · Numerical analysis</small></a>
+<nav class="links" aria-label="サイトナビゲーション"><a href="../../">Home</a><a href="../">Blog</a><a href="../stable-reduction-intro/" aria-current="page">入門シリーズ</a><a href="../../research/">Research</a></nav></div></header>
+<main class="intro-page">
+<nav class="intro-breadcrumb" aria-label="パンくずリスト"><a href="../../">Home</a> › <a href="../">Blog</a> › <a href="../stable-reduction-intro/">安定縮約入門</a> › 第4回</nav>
+<header class="intro-hero"><div class="intro-kicker"><a href="../stable-reduction-intro/" style="color:inherit;text-decoration:none">STABLE REDUCTION · BEGINNER SERIES · 04</a></div>
+<h1>第4回：見えない変数は過去を覚えている</h1><p class="intro-lead">消した変数の影響は，どこへ行くのでしょうか。見えない状態を正確に消去すると，過去の情報が現れます。</p>
+<div class="intro-meta"><span><time datetime="2026-10-10">2026年10月10日</time></span><span>大学1年生向け</span><span>指数関数と積分</span></div></header>
+<nav class="intro-toc" aria-label="この記事の目次"><h2>この記事の目次</h2><ol><li><a href="#intro">はじめに</a></li>
+<li><a href="#model">二つの変数</a></li>
+<li><a href="#integrating-factor">指数関数を掛ける理由</a></li>
+<li><a href="#memory">記憶項が現れる</a></li>
+<li><a href="#meaning">積分の意味</a></li>
+<li><a href="#initial">隠れた初期値</a></li>
+<li><a href="#example">具体例と検算</a></li>
+<li><a href="#is-exact">正確な消去と縮約の違い</a></li>
+<li><a href="#extra">少し発展：二階の方程式</a></li>
+<li><a href="#exercises">練習問題</a></li>
+<li><a href="#end">まとめと次回</a></li></ol></nav>
+<article class="intro-article" aria-label="第4回：見えない変数は過去を覚えている"><h2 id="intro">はじめに――消したはずの変数が，なぜ戻ってくる？</h2>
+
+<p>第3回では，平均 \(u=(x+y)/2\) を残し，差の半分 \(v=(x-y)/2\) を省く縮約モデルを作りました。安定性の分類を保てる一方，省いた成分による誤差が生じました。</p>
+<p>今回は別の方法を考えます。<strong>見えない変数の影響を捨てずに，式から正確に消去</strong>してみましょう。</p>
+<p>すると不思議なことが起こります。見えない変数 \(y(t)\) が式から姿を消しても，その影響は，観測している \(x\) の<strong>過去の値を使う積分</strong>として残ります。</p>
+<blockquote><strong>見えない変数を消去すると，過去の情報が必要になることがあります。</strong></blockquote>
+<p>今回使うのは，微分，指数関数，定積分の基本です。特に積分の部分は，途中の計算を一つずつ確認します。</p>
+
+<h2 id="model">1．出発点は，これまでと同じ連立方程式</h2>
+
+<p>観測できる変数を \(x(t)\)，直接観測しない変数を \(y(t)\) として，</p>
+\[
+\boxed{\begin{aligned}
+x'(t)&=-x(t)+ay(t),\\
+y'(t)&=ax(t)-y(t)
+\end{aligned}}\qquad (a\geq0)
+\tag{1}
+\]
+<p>を考えます。初期値は \(x(0)=x_0\)，\(y(0)=y_0\) とします。</p>
+<p>目標は，<strong>\(y(t)\) を未知関数として使わず，\(x(t)\) だけの方程式を書くこと</strong>です。単に \(y=0\) と置くこととは違います。</p>
+<p>大切なのは，第二式を先に解き，その結果を第一式に代入することです。</p>
+
+<h2 id="integrating-factor">2．見えない (y(t)) を先に解いてみる</h2>
+
+<p>式(1)の第二式だけを取り出すと，</p>
+\[
+y'(t)+y(t)=ax(t)
+\tag{2}
+\]
+<p>です。右辺の \(x(t)\) はまだ分からなくても構いません。ここでは \(x(t)\) を与えられた時間変化だと思って，\(y\) を解きます。</p>
+<p>この式の左辺を一度に微分できる形にしたいので，両辺に指数関数 \(e^t\) を掛けます。</p>
+\[
+e^ty'(t)+e^ty(t)=ae^tx(t).
+\]
+<p>積の微分公式</p>
+\[
+\frac{d}{dt}\bigl(e^ty(t)\bigr)
+=e^ty(t)+e^ty'(t)
+\]
+<p>を使うと，</p>
+\[
+\boxed{\frac{d}{dt}\bigl(e^ty(t)\bigr)=ae^tx(t)}
+\tag{3}
+\]
+<p>という簡単な形になりました。</p>
+<p>式(3)を時刻0から \(t\) まで積分します。微分を積分すれば両端の値の差になるので，</p>
+\[
+e^ty(t)-y(0)=a\int_0^t e^s x(s)\,ds
+\]
+<p>です。\(y(0)=y_0\) を代入して両辺に \(e^{-t}\) を掛けると，</p>
+\[
+\begin{aligned}
+y(t)
+&=e^{-t}y_0+a e^{-t}\int_0^t e^s x(s)\,ds\\
+&=\boxed{e^{-t}y_0
++a\int_0^t e^{-(t-s)}x(s)\,ds.}
+\end{aligned}
+\tag{4}
+\]
+<p>最後の等号では \(e^{-t}e^s=e^{-(t-s)}\) を使いました。</p>
+<p>これで \(y(t)\) を，<strong>初めの \(y_0\)</strong>と<strong>それまでの \(x(s)\)</strong>から表せました。</p>
+
+<h2 id="memory">3．代入すると，過去の (x) が現れる</h2>
+
+<p>いよいよ式(4)を \(x'=-x+ay\) に代入します。</p>
+\[
+\begin{aligned}
+x'(t)
+&=-x(t)+a\left(
+e^{-t}y_0+a\int_0^t e^{-(t-s)}x(s)\,ds
+\right)\\
+&=-x(t)+ae^{-t}y_0
++a^2\int_0^t e^{-(t-s)}x(s)\,ds.
+\end{aligned}
+\]
+<p>したがって，</p>
+\[
+\boxed{
+x'(t)=-x(t)+ae^{-t}y_0
++a^2\int_0^t e^{-(t-s)}x(s)\,ds
+}
+\tag{5}
+\]
+<p>を得ました。これは<strong>元の二変数モデルから導かれた，\(x\) だけの正確な方程式</strong>です。</p>
+<p>三つの項には，それぞれ役割があります。</p>
+<ol>
+<li><strong>\(-x(t)\)：</strong>いまの観測値だけで決まる作用。</li>
+<li><strong>\(ae^{-t}y_0\)：</strong>見えない変数の初期値が残す影響。</li>
+<li><strong>\(a^2\int_0^t e^{-(t-s)}x(s)\,ds\)：</strong>過去の観測値が現在の変化に与える影響。</li>
+</ol>
+<p>最後の積分を<strong>記憶項（memory term）</strong>と呼びます。この例では</p>
+\[
+\boxed{K(\tau)=a^2 e^{-\tau}\qquad(\tau\geq0)}
+\tag{6}
+\]
+<p>という関数が，過去の情報の重みを決めています。これを<strong>記憶核（memory kernel）</strong>と呼びます。</p>
+<p>なお，式(5)は単に \(x_0\) だけを与えれば解ける方程式ではありません。<strong>\(y_0\) の値も必要</strong>です。見えない変数を正確に消去しても，初期情報が自動的に消えるわけではないのです。</p>
+
+<h2 id="meaning">4．なぜ過去の値を足し合わせるのか？</h2>
+
+<p>記憶項の積分</p>
+\[
+\int_0^t e^{-(t-s)}x(s)\,ds
+\tag{7}
+\]
+<p>を少し眺めてみましょう。ここで \(s\) は過去の時刻で，\(0\leq s\leq t\) を動きます。\(t\) はいま考えている時刻です。</p>
+<p>高校で習う和を思い出してください。時間を短い間隔 \(\Delta t\) に区切れば，式(7)はおおよそ</p>
+\[
+\sum_{j=0}^{N-1} e^{-(t-s_j)}x(s_j)\,\Delta t
+\tag{8}
+\]
+<p>という足し算で表せます。つまり，<strong>過去の \(x\) を時刻ごとに集め，重みを付けて足す</strong>のです。</p>
+<p>今に近い時刻 \(s\approx t\) では \(e^{-(t-s)}\approx1\)，遠い過去ではこの重みが小さくなります。</p>
+<figure class="figure"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 310" role="img" aria-labelledby="mem-title mem-desc"><title id="mem-title">指数型記憶核の重み</title><desc id="mem-desc">過去から現在までの経過時間が0なら重み1、時間1なら約0.368、時間2なら約0.135、時間3なら約0.050に減る。</desc><line x1="66" x2="748" y1="251" y2="251" stroke="#dce6ee"/><text x="56" y="255" text-anchor="end" font-size="13" fill="#526879">0</text><line x1="66" x2="748" y1="193.5" y2="193.5" stroke="#dce6ee"/><text x="56" y="197.5" text-anchor="end" font-size="13" fill="#526879">0.25</text><line x1="66" x2="748" y1="136" y2="136" stroke="#dce6ee"/><text x="56" y="140" text-anchor="end" font-size="13" fill="#526879">0.5</text><line x1="66" x2="748" y1="78.5" y2="78.5" stroke="#dce6ee"/><text x="56" y="82.5" text-anchor="end" font-size="13" fill="#526879">0.75</text><line x1="66" x2="748" y1="21" y2="21" stroke="#dce6ee"/><text x="56" y="25" text-anchor="end" font-size="13" fill="#526879">1</text><text x="66" y="274" text-anchor="middle" font-size="12" fill="#526879">0</text><text x="179.66666666666666" y="274" text-anchor="middle" font-size="12" fill="#526879">0.5</text><text x="293.3333333333333" y="274" text-anchor="middle" font-size="12" fill="#526879">1</text><text x="407" y="274" text-anchor="middle" font-size="12" fill="#526879">1.5</text><text x="520.6666666666666" y="274" text-anchor="middle" font-size="12" fill="#526879">2</text><text x="634.3333333333334" y="274" text-anchor="middle" font-size="12" fill="#526879">2.5</text><text x="748" y="274" text-anchor="middle" font-size="12" fill="#526879">3</text><path d="M66.00 21.00 L69.79 24.80 L73.58 28.54 L77.37 32.22 L81.16 35.83 L84.94 39.39 L88.73 42.89 L92.52 46.33 L96.31 49.71 L100.10 53.04 L103.89 56.31 L107.68 59.53 L111.47 62.69 L115.26 65.80 L119.04 68.87 L122.83 71.88 L126.62 74.84 L130.41 77.75 L134.20 80.61 L137.99 83.43 L141.78 86.20 L145.57 88.92 L149.36 91.60 L153.14 94.24 L156.93 96.83 L160.72 99.37 L164.51 101.88 L168.30 104.35 L172.09 106.77 L175.88 109.15 L179.67 111.50 L183.46 113.80 L187.24 116.07 L191.03 118.30 L194.82 120.49 L198.61 122.65 L202.40 124.77 L206.19 126.86 L209.98 128.91 L213.77 130.93 L217.56 132.91 L221.34 134.87 L225.13 136.79 L228.92 138.67 L232.71 140.53 L236.50 142.36 L240.29 144.15 L244.08 145.92 L247.87 147.65 L251.66 149.36 L255.44 151.04 L259.23 152.69 L263.02 154.32 L266.81 155.92 L270.60 157.49 L274.39 159.03 L278.18 160.55 L281.97 162.05 L285.76 163.52 L289.54 164.97 L293.33 166.39 L297.12 167.79 L300.91 169.16 L304.70 170.51 L308.49 171.84 L312.28 173.15 L316.07 174.44 L319.86 175.71 L323.64 176.95 L327.43 178.17 L331.22 179.38 L335.01 180.56 L338.80 181.73 L342.59 182.87 L346.38 184.00 L350.17 185.10 L353.96 186.19 L357.74 187.26 L361.53 188.32 L365.32 189.35 L369.11 190.37 L372.90 191.37 L376.69 192.36 L380.48 193.33 L384.27 194.28 L388.06 195.22 L391.84 196.14 L395.63 197.05 L399.42 197.94 L403.21 198.82 L407.00 199.68 L410.79 200.53 L414.58 201.36 L418.37 202.18 L422.16 202.99 L425.94 203.78 L429.73 204.56 L433.52 205.33 L437.31 206.09 L441.10 206.83 L444.89 207.56 L448.68 208.28 L452.47 208.98 L456.26 209.68 L460.04 210.36 L463.83 211.03 L467.62 211.69 L471.41 212.34 L475.20 212.98 L478.99 213.61 L482.78 214.23 L486.57 214.84 L490.36 215.43 L494.14 216.02 L497.93 216.60 L501.72 217.17 L505.51 217.73 L509.30 218.28 L513.09 218.82 L516.88 219.35 L520.67 219.87 L524.46 220.39 L528.24 220.89 L532.03 221.39 L535.82 221.88 L539.61 222.36 L543.40 222.84 L547.19 223.30 L550.98 223.76 L554.77 224.21 L558.56 224.65 L562.34 225.09 L566.13 225.52 L569.92 225.94 L573.71 226.35 L577.50 226.76 L581.29 227.16 L585.08 227.55 L588.87 227.94 L592.66 228.32 L596.44 228.70 L600.23 229.07 L604.02 229.43 L607.81 229.78 L611.60 230.13 L615.39 230.48 L619.18 230.82 L622.97 231.15 L626.76 231.48 L630.54 231.80 L634.33 232.12 L638.12 232.43 L641.91 232.74 L645.70 233.04 L649.49 233.34 L653.28 233.63 L657.07 233.92 L660.86 234.20 L664.64 234.48 L668.43 234.75 L672.22 235.02 L676.01 235.28 L679.80 235.54 L683.59 235.80 L687.38 236.05 L691.17 236.30 L694.96 236.54 L698.74 236.78 L702.53 237.01 L706.32 237.24 L710.11 237.47 L713.90 237.70 L717.69 237.92 L721.48 238.13 L725.27 238.34 L729.06 238.55 L732.84 238.76 L736.63 238.96 L740.42 239.16 L744.21 239.36 L748.00 239.55" fill="none" stroke="#246b9c" stroke-width="3.5"/><text x="407" y="305" fill="#42586c" font-size="13" text-anchor="middle">現在から過去へさかのぼる時間 τ</text></svg><figcaption>この例の記憶の重みは (e^{-	au}) です。直近の値ほど大きく，遠い過去ほど小さく反映されます（ただし0には直ちになりません）。</figcaption></figure>
+<p>たとえば「2だけ昔」の値に掛かる重みは \(e^{-2}\approx0.135\)，「1だけ昔」なら \(e^{-1}\approx0.368\) です。近い過去ほど強く反映されます。</p>
+<p><strong>注意：</strong>過去の重みが正でも，\(x(s)\) 自体が正とは限りません。記憶積分がいつも正になるわけではありません。また，過去のすべての値がまったく同じ重さで寄与するのでもありません。</p>
+
+<h2 id="initial">5．過去だけでなく，見えない初期値も残る</h2>
+
+<p>式(5)には積分以外に \(ae^{-t}y_0\) という項もあります。これは積分を始める時刻に，見えない変数 \(y\) が持っていた情報です。</p>
+<p>実際，\(t=0\) では積分区間の長さが0なので記憶積分は0です。したがって式(5)は</p>
+\[
+\boxed{x'(0)=-x_0+ay_0}
+\tag{9}
+\]
+<p>を与えます。これは元の第一式と完全に一致します。</p>
+<p>たとえば \(a=2,\ x_0=1\) という同じ観測初期値であっても，</p>
+<ul>
+<li>\(y_0=1\) なら \(x'(0)=1\) で，実際 \(x(t)=e^t\) と増大します。</li>
+<li>\(y_0=-1\) なら \(x'(0)=-3\) で，実際 \(x(t)=e^{-3t}\) と減衰します。</li>
+</ul>
+<p>したがって，<strong>\(x_0\) が同じでも，\(y_0\) が違うと未来は異なります。</strong>正確な状態消去では，この情報を \(ae^{-t}y_0\) という項として保持しているのです。</p>
+<p>\(y_0=0\) を仮定すればこの項は消えます。しかしその場合でも，\(a>0\) なら記憶積分まで自動的に消えるわけではありません。</p>
+
+<h2 id="example">6．本当に正しいか，具体例で確かめよう</h2>
+
+<p>第1回と同じ \(a=2\) を考え，今度は \(x_0=1,\ y_0=0\) とします。元の二変数モデルを和と差で解けば，</p>
+\[
+\boxed{\begin{aligned}
+x(t)&=\frac{e^t+e^{-3t}}{2},\\
+y(t)&=\frac{e^t-e^{-3t}}{2}
+\end{aligned}}
+\tag{10}
+\]
+<p>です。このとき式(5)は，\(y_0=0\) なので，</p>
+\[
+\boxed{x'(t)=-x(t)+4\int_0^t e^{-(t-s)}x(s)\,ds}
+\tag{11}
+\]
+<p>となります。</p>
+<p>式(10)の \(x(s)\) を積分に代入すると，</p>
+\[
+\begin{aligned}
+\int_0^t e^{-(t-s)}x(s)\,ds
+&=\frac{e^{-t}}2\int_0^t(e^{2s}+e^{-2s})\,ds\\
+&=\frac{e^t-e^{-3t}}4.
+\end{aligned}
+\tag{12}
+\]
+<p>従って式(11)の右辺は</p>
+\[
+\begin{aligned}
+-x(t)+4\int_0^t e^{-(t-s)}x(s)\,ds
+&=-\frac{e^t+e^{-3t}}2+e^t-e^{-3t}\\
+&=\frac{e^t-3e^{-3t}}2\\
+&=x'(t)
+\end{aligned}
+\]
+<p>となり，<strong>元の方程式から求めた解と完全に一致</strong>しました。</p>
+<p>これに対して \(y=0\) と単純に置けば \(x_{\mathrm{naive}}(t)=e^{-t}\) となります。実際の解は長時間ではおよそ \(e^t/2\) に従って増大するので，予測は大きく異なります。</p>
+<p>なお \(x'(0)=-1\) なので，この例の本当の \(x(t)\) も最初は減少します。あとから増加に転じることが，単純な短時間の観測だけでは分からない面白さです。</p>
+
+<h2 id="is-exact">7．正確に消せたのに，計算が軽くなったとは限らない</h2>
+
+<p>式(5)には \(y(t)\) がありません。では，二変数が一変数になって計算も必ず簡単になるのでしょうか。</p>
+<p>そうとは限りません。式(5)を計算するには，過去の \(x(s)\) を使った積分が必要です。<strong>見えない変数の計算を，履歴の計算に置き換えた</strong>のです。</p>
+<p>実際，記憶積分を新しい変数</p>
+\[
+m(t)=\int_0^t e^{-(t-s)}x(s)\,ds
+\tag{13}
+\]
+<p>で表すと，積分を微分することで</p>
+\[
+\boxed{m'(t)=-m(t)+x(t),\qquad m(0)=0}
+\tag{14}
+\]
+<p>を得ます。そして式(5)は</p>
+\[
+\boxed{x'(t)=-x(t)+ae^{-t}y_0+a^2m(t)}
+\tag{15}
+\]
+<p>です。これを式(14)と同時に解けば，また二つの方程式になりました。</p>
+<p>元の \(y\) は \(y(t)=e^{-t}y_0+am(t)\) で復元できます。よってこの置き換えは<strong>正確な表現の変更</strong>であり，必ずしも計算量を削減する近似縮約ではありません。</p>
+<p>第3回の縮約は \(v\) の影響を近似的に省いたので誤差が生じました。今回は \(y\) の影響を記憶項と初期値項に移しただけなので，<strong>消去そのものによる近似誤差はありません</strong>。</p>
+
+<h2 id="extra">8．積分の代わりに，微分を一回増やす方法もある</h2>
+
+<p>実はこの例では，別の方法でも \(y\) を消せます。第一式 \(x'=-x+ay\) をもう一回微分すると，</p>
+\[
+x''=-x'+ay'.
+\]
+<p>第二式 \(y'=ax-y\) を代入して，\(ay=x'+x\) を使うと，</p>
+\[
+\begin{aligned}
+x''&=-x'+a(ax-y)\\
+&=-x'+a^2x-(x'+x)
+\end{aligned}
+\]
+<p>です。つまり，</p>
+\[
+\boxed{x''(t)+2x'(t)+(1-a^2)x(t)=0}
+\tag{16}
+\]
+<p>を得ます。ただし初期値として，\(x(0)=x_0\) に加えて</p>
+\[
+\boxed{x'(0)=-x_0+ay_0}
+\tag{17}
+\]
+<p>を指定する必要があります。</p>
+<p>ここでも \(y(t)\) は式から消えましたが，未知数 \(x\) について<strong>二階の微分方程式</strong>になりました。つまり，見えない変数に関係する情報が「記憶の積分」として現れる場合もあれば，「必要な初期条件が増える」という形で現れる場合もあるのです。</p>
+<p>式(16)は \(a=0\) の場合にも元の系の解なら満たしますが，その逆を初期条件(17)なしに言うことはできません。初期条件を含めて対応を調べることが重要です。</p>
+
+<h2 id="exercises">9．練習問題――記憶の意味を確かめよう</h2>
+
+<p><strong>問題1：</strong> \(y'(t)+y(t)=0,\ y(0)=3\) を解いてください。</p>
+<p><strong>問題2：</strong> \(a=1,\ y_0=0\) のとき，式(5)を \(x\) だけで書いてください。記憶積分は残りますか。</p>
+<p><strong>問題3：</strong> \(a=2,\ x_0=1,\ y_0=1\) とします。式(5)で \(x'(0)\) を計算し，元の方程式と一致することを確認してください。</p>
+<p><strong>問題4（発展）：</strong> \(x(t)\equiv1\) を式(13)に代入して \(m(t)\) を求め，式(14)を満たすことを確かめてください。</p>
+<details><summary><strong>練習問題の解答と計算過程を見る</strong></summary>
+<p><strong>問題1：</strong> \(y(t)=3e^{-t}\) です。</p>
+<p><strong>問題2：</strong> \(x'(t)=-x(t)+\int_0^t e^{-(t-s)}x(s)\,ds\) となり，記憶積分は残ります。</p>
+<p><strong>問題3：</strong> \(x'(0)=-1+2=1\) です。元の式 \(x'(0)=-x_0+2y_0\) に一致します。</p>
+<p><strong>問題4：</strong> \(m(t)=\int_0^t e^{-(t-s)}\,ds=1-e^{-t}\) です。従って \(m'(t)=e^{-t}=1-m(t)\)，\(m(0)=0\) です。</p>
+</details>
+
+<h2 id="end">おわりに――見えない情報はどこへ行った？</h2>
+
+<p>今回の二変数モデルでは，未解像変数 \(y\) を正確に消去すると，観測変数 \(x\) の方程式に<strong>過去の \(x\) を積分する記憶項</strong>が現れました。</p>
+<p>そのとき，見えない初期値 \(y_0\) の影響も，別の項として残りました。したがって，<strong>正確な消去は情報を勝手に捨てる操作ではありません。</strong></p>
+<p>さらに，正確に消去しても計算が必ず軽くなるとは限らないことも分かりました。「正確な消去」「近似的な縮約」「誤差の保証」を区別することが，この研究の基本になります。</p>
+<blockquote><strong>今回の一言：見えない変数を消すと，その影響は過去の記憶として戻ってくることがある。</strong></blockquote>
+<p>第5回「近似した答えはどこまで信用できる？」では，計算しやすさと予測の信頼性を両立するために，誤差をどう評価するかを考えます。</p>
+<nav class="chapter-bottom-nav" aria-label="入門シリーズの記事間の移動"><a href="./unresolved_dynamics_intro_03.html">← 第3回：何を残す？</a><a href="../stable-reduction-intro/">シリーズ目次へ戻る →</a></nav>
+<h3>関連する専門記事</h3>
+<ul><li><a href="./unresolved-memory-02.html">未解像状態を消去すると，なぜmemoryが現れるのか</a></li><li><a href="../../research/#stable-reduction">研究ページ：Stable reduction</a></li></ul></article>
+<footer class="intro-footer"><a href="../stable-reduction-intro/">入門シリーズの目次</a> · <a href="../">ブログ一覧</a><p>© 2026 Hiroki Ishizaka</p></footer>
+</main></body></html>
