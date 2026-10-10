@@ -48,7 +48,7 @@
       "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-05.html",
       "inLanguage": "ja",
       "datePublished": "2026-08-02",
-      "dateModified": "2026-08-17",
+      "dateModified": "2026-10-11",
       "articleSection": "Memory, delay and stable reduction",
       "genre": "Research note",
       "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
@@ -507,6 +507,7 @@ causal Fourier transform
 \tag{19}
 \]
 です．
+\(\nu(\{0\})>0\) のときは定数kernel成分があり，全時間のFourier transformには原点周波数の分布的寄与が生じます．この場合，式 (18) を \(\omega=0\) で機械的に代入してはいけません．後述のPlancherel表示 (20) は \(k\in L^1(0,\infty)\) に限定します．
 </p>
 <p>
 symbolには次の性質があります．
@@ -514,7 +515,7 @@ symbolには次の性質があります．
 <ul>
   <li>\(m\) は偶関数である．</li>
   <li>\(|\omega|\) に関して非増加である．</li>
-  <li>\(\displaystyle m(0)=\|k\|_{L^1(0,\infty)}\in(0,\infty]\)．</li>
+  <li>\(k\in L^1(0,\infty)\) なら \(\displaystyle m(0)=\|k\|_{L^1(0,\infty)}\)．非可積分kernelではゼロ周波数の定義に注意が必要です．</li>
   <li>任意の局所可積分completely monotone kernelについて
       \(\displaystyle m(\omega)\to0\) as \(|\omega|\to\infty\)．</li>
 </ul>
@@ -799,7 +800,7 @@ symbolの高周波減衰を定量化するため，
 \[
   M_1:=\int_{[0,\infty)}\lambda\,d\nu(\lambda)
 \]
-が有限なら，
+が有限かつ正，すなわち \(0<M_1<\infty\) なら，
 \[
   m(\omega)\sim M_1|\omega|^{-2},
   \qquad
