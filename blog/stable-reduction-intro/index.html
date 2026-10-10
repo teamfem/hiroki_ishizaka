@@ -3,14 +3,14 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#172a42">
 <title>大学1年生から学ぶ 未解像ダイナミクスの安定縮約 | Hiroki Ishizaka</title>
-<meta name="description" content="未解像ダイナミクスと安定縮約を大学1年生向けに学ぶ全6回の入門シリーズ。公開済み第1〜3回と今後の予定の一覧。">
+<meta name="description" content="未解像ダイナミクスと安定縮約を大学1年生向けに学ぶ全6回の入門シリーズ。公開済み第1〜4回と今後の予定の一覧。">
 <link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/stable-reduction-intro/"><link rel="icon" href="../../favicon.ico">
 <meta property="og:type" content="website"><meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="大学1年生から学ぶ 未解像ダイナミクスの安定縮約">
 <meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/stable-reduction-intro/">
 <meta property="og:description" content="見えない変数を消しても大丈夫？ 微分と指数関数から学ぶ全6回の入門シリーズ。">
 <meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"CollectionPage","name":"大学1年生から学ぶ 未解像ダイナミクスの安定縮約","url":"https://teamfem.github.io/hiroki_ishizaka/blog/stable-reduction-intro/","inLanguage":"ja","hasPart":[{"@type":"BlogPosting","name":"第1回：見えない変数を無視すると何が起こる？","url":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_01.html"},{"@type":"BlogPosting","name":"第2回：安定な方程式と不安定な方程式","url":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_02.html"},{"@type":"BlogPosting","name":"第3回：何を残し，何を消せばよいのか？","url":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_03.html"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"CollectionPage","name":"大学1年生から学ぶ 未解像ダイナミクスの安定縮約","url":"https://teamfem.github.io/hiroki_ishizaka/blog/stable-reduction-intro/","inLanguage":"ja","hasPart":[{"@type":"BlogPosting","name":"第1回：見えない変数を無視すると何が起こる？","url":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_01.html"},{"@type":"BlogPosting","name":"第2回：安定な方程式と不安定な方程式","url":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_02.html"},{"@type":"BlogPosting","name":"第3回：何を残し，何を消せばよいのか？","url":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_03.html"},{"@type":"BlogPosting","name":"第4回：見えない変数は過去を覚えている","url":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_04.html"}]}</script>
 <style>
 :root{color-scheme:light;--bg:#f3f6fa;--ink:#1d2a3b;--muted:#54687d;--line:#dce4ee;--accent:#225e88}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-height:100vh;color:var(--ink);background:linear-gradient(180deg,#edf2f8 0,#f3f6fa 420px,#f3f6fa 100%);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,system-ui,sans-serif;line-height:1.85;overflow-wrap:anywhere}
@@ -45,12 +45,12 @@ footer{text-align:center;margin:27px auto;color:#64768a;font-size:.86rem}footer 
 <main class="main"><nav class="crumb" aria-label="パンくずリスト"><a href="../../">Home</a> › <a href="../">Blog</a> › 入門シリーズ</nav>
 <section class="hero"><div class="kicker">STABLE REDUCTION · BEGINNER SERIES</div><h1>大学1年生から学ぶ<br>未解像ダイナミクスの安定縮約</h1>
 <p>見えないものを無視しても，未来を正しく予測できるのでしょうか。二つの変数から始めて，「何を残すべきか」「縮約した結果をどこまで信用できるか」を少しずつ考えます。</p>
-<div class="meta"><span>全6回の構成</span><span>公開済み 3回</span><span>微分・指数関数から</span></div></section>
+<div class="meta"><span>全6回の構成</span><span>公開済み 4回</span><span>微分・指数関数から</span></div></section>
 <section class="overview"><h2>このシリーズで学ぶこと</h2><p>観測できない変数は，存在しない変数とは違います。連立微分方程式を手で解き，見えない状態が予測と安定性に及ぼす影響を確かめます。</p><p>前半は高校数学と大学初年次の微積分を中心に進みます。後半は記憶（memory）や誤差評価を導入し，大規模な微分方程式とのつながりを説明します。</p></section>
 <h2 class="chapter-heading">記事一覧</h2><section class="chapters" aria-label="入門シリーズ全6回"><a class="chapter ready" href="../posts/unresolved_dynamics_intro_01.html"><span class="number">01</span><div class="chapter-body"><span class="state">公開済み・記事を読む</span><h3>第1回：見えない変数を無視すると何が起こる？</h3><p>同じ観測値でも，未観測の初期値が異なれば未来が変わります。二つの微分方程式を手で解きます。</p><span class="topic">学ぶ内容：微分・指数関数</span></div><span class="arrow" aria-hidden="true">→</span></a>
 <a class="chapter ready" href="../posts/unresolved_dynamics_intro_02.html"><span class="number">02</span><div class="chapter-body"><span class="state">公開済み・記事を読む</span><h3>第2回：安定な方程式と不安定な方程式</h3><p>一つの解が減衰することと，系全体が安定であることの違いを整理します。</p><span class="topic">学ぶ内容：指数関数・初期値</span></div><span class="arrow" aria-hidden="true">→</span></a>
 <a class="chapter ready" href="../posts/unresolved_dynamics_intro_03.html"><span class="number">03</span><div class="chapter-body"><span class="state">公開済み・記事を読む</span><h3>第3回：何を残し，何を消せばよいのか？</h3><p>和と差の変数変換から，残す成分を選び，縮約誤差と初期情報の問題まで調べます。</p><span class="topic">学ぶ内容：変数変換・誤差評価</span></div><span class="arrow" aria-hidden="true">→</span></a>
-<div class="chapter planned"><span class="number">04</span><div class="chapter-body"><span class="state">公開予定</span><h3>第4回：見えない変数は過去を覚えている</h3><p>未観測変数を正確に消去すると，過去を表す積分が現れることを確かめます。</p><span class="topic">学ぶ内容：積分・指数関数</span></div><span class="arrow" aria-hidden="true">—</span></div>
+<a class="chapter ready" href="../posts/unresolved_dynamics_intro_04.html"><span class="number">04</span><div class="chapter-body"><span class="state">公開済み・記事を読む</span><h3>第4回：見えない変数は過去を覚えている</h3><p>未観測変数を正確に消去し，記憶積分と未観測初期値の影響を求めます。</p><span class="topic">学ぶ内容：積分・指数関数</span></div><span class="arrow" aria-hidden="true">→</span></a>
 <div class="chapter planned"><span class="number">05</span><div class="chapter-body"><span class="state">公開予定</span><h3>第5回：近似した答えはどこまで信用できる？</h3><p>縮約したモデルの誤差を式で評価し，保証するとはどういうことかを学びます。</p><span class="topic">学ぶ内容：絶対値・不等式</span></div><span class="arrow" aria-hidden="true">—</span></div>
 <div class="chapter planned"><span class="number">06</span><div class="chapter-body"><span class="state">公開予定</span><h3>第6回：変数が100万個あったら？</h3><p>大規模システムや偏微分方程式へと，どのように考え方がつながるかを見渡します。</p><span class="topic">学ぶ内容：まとめ・発展</span></div><span class="arrow" aria-hidden="true">—</span></div></section>
 <section class="bridge"><h2>より専門的に学びたい方へ</h2><p>この入門シリーズとは別に，研究者向けの「未解像ダイナミクスと履歴依存型発展方程式」連載を公開しています。memory kernel，measure-valued delay，安定性，時間離散化などを扱います。</p><p><a href="../posts/unresolved-memory-01.html">専門シリーズの全体像を読む →</a></p></section>
