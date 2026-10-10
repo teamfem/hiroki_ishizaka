@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#172a42"><title>第5回：近似した答えはどこまで信用できる？ | Hiroki Ishizaka</title>
+<meta name="description" content="未解像ダイナミクスの安定縮約入門・第5回。近似誤差を省略誤差，初期値誤差，残差に分けて評価し，保証の条件を学ぶ。">
+<meta name="keywords" content="未解像ダイナミクス,安定縮約,誤差評価,残差,モデル縮約,数値解析,初期値誤差">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_05.html"><link rel="up" href="../stable-reduction-intro/"><link rel="prev" href="./unresolved_dynamics_intro_04.html"><link rel="icon" href="../../favicon.ico">
+<meta property="og:type" content="article"><meta property="og:locale" content="ja_JP"><meta property="og:title" content="第5回：近似した答えはどこまで信用できる？"><meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_05.html">
+<meta property="og:description" content="近似した結果の信頼性を，数学的な誤差上界と条件から考える。">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"第5回：近似した答えはどこまで信用できる？","description":"大学1年生から学ぶ未解像ダイナミクスの安定縮約・第5回","url":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_05.html","datePublished":"2026-10-10","dateModified":"2026-10-10","author":{"@type":"Person","name":"Hiroki Ishizaka"},"inLanguage":"ja"}</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --page:#f3f6fa;--paper:#fff;--ink:#1d2a3b;--muted:#53677b;
+  --line:#dce4ee;--accent:#225e88;--accent-dark:#164668;--soft:#f3f7fb;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  margin:0;min-height:100vh;color:var(--ink);
+  background:linear-gradient(180deg,#edf2f8 0,#f3f6fa 420px,#f3f6fa 100%);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,system-ui,sans-serif;
+  font-size:16px;line-height:1.85;overflow-wrap:anywhere;
+}
+a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+a:hover{color:var(--accent-dark)}
+a:focus-visible,summary:focus-visible{outline:3px solid #98c5e2;outline-offset:4px}
+.intro-site-header{background:#172a42;color:#fff;border-bottom:1px solid #253b56}
+.intro-site-nav{width:min(1060px,calc(100% - 36px));min-height:78px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:12px 0}
+.intro-site-nav .brand{color:#fff;text-decoration:none;font-size:1.02rem;font-weight:750;letter-spacing:.018em;line-height:1.4}
+.intro-site-nav .brand small{display:block;font-size:.69rem;font-weight:450;letter-spacing:.07em;color:#c4d2e1}
+.intro-site-nav .links{display:flex;gap:22px;flex-wrap:wrap;font-size:.91rem}
+.intro-site-nav .links a{color:#d9e6f3;text-decoration:none}
+.intro-site-nav .links a[aria-current="page"]{font-weight:800;color:#fff;border-bottom:2px solid #b5d4ec}
+.intro-page{width:min(1010px,calc(100% - 32px));margin:0 auto;padding-bottom:48px}
+.intro-breadcrumb{max-width:860px;margin:22px auto;color:#586b80;font-size:.83rem}
+.intro-breadcrumb a{color:#405e7b}
+.intro-hero,.intro-article,.intro-toc{max-width:860px;margin-left:auto;margin-right:auto}
+.intro-hero{
+  background:#fff;border:1px solid var(--line);border-radius:20px;
+  padding:clamp(28px,5.8vw,58px);
+  box-shadow:0 10px 38px rgba(24,44,66,.045);
+  border-top:5px solid var(--accent);
+}
+.intro-kicker{display:inline-block;color:var(--accent);font-size:.77rem;font-weight:800;letter-spacing:.075em;margin-bottom:15px}
+.intro-hero h1{font-size:clamp(1.72rem,3.7vw,2.6rem);line-height:1.45;letter-spacing:.005em;margin:0;font-weight:760;color:#152840}
+.intro-hero .intro-lead{font-size:clamp(.96rem,1.7vw,1.11rem);color:#4b6074;margin:16px 0 0;line-height:1.9}
+.intro-meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px 15px;margin-top:22px;font-size:.83rem;color:#607286}
+.intro-meta span+span::before{content:"•";margin-right:15px;color:#a3b1bf}
+.intro-toc{
+  background:#f9fbfd;border:1px solid var(--line);border-radius:16px;
+  padding:21px clamp(20px,4vw,30px);margin-top:18px;margin-bottom:20px
+}
+.intro-toc h2{font-size:.94rem;letter-spacing:.015em;margin:0 0 8px;color:#2f485f}
+.intro-toc ol{display:grid;grid-template-columns:1fr 1fr;gap:5px 28px;margin:0;padding-left:22px;font-size:.87rem}
+.intro-toc li{padding:3px 0}
+.intro-toc a{text-decoration:none}
+.intro-article{
+  padding:clamp(23px,6vw,62px);background:var(--paper);
+  border:1px solid var(--line);border-radius:20px;box-shadow:0 15px 48px rgba(28,52,82,.045)
+}
+.intro-article h2{scroll-margin-top:20px;font-size:clamp(1.32rem,2.6vw,1.66rem);line-height:1.5;letter-spacing:.002em;color:#1c344d;margin:2.55em 0 .85em;padding-bottom:.42em;border-bottom:1px solid #e1e8f0}
+.intro-article h2:first-child{margin-top:0}
+.intro-article h3{font-size:1.12rem;line-height:1.55;color:#254562;margin:2em 0 .7em}
+.intro-article p{margin:0 0 1.24em;line-height:1.95}
+.intro-article ul,.intro-article ol{padding-left:1.55em;margin:1em 0 1.55em}
+.intro-article li{padding-left:.15em;margin:.45em 0;line-height:1.85}
+.intro-article strong{font-weight:760;color:#183951}
+.intro-article blockquote{background:#f0f6fa;border:1px solid #d9e7f1;border-left:4px solid #376d93;padding:19px 22px;margin:22px 0;border-radius:0 12px 12px 0}
+.intro-article blockquote strong{color:#214967}
+.intro-article details{background:#f8fbfe;border:1px solid #dce5ed;border-radius:12px;padding:17px 19px;margin:18px 0}
+.intro-article details[open]{background:#f5f9fc}
+.intro-article summary{cursor:pointer;color:#204c70}
+.intro-article details p{margin:1em 0 0}
+.intro-article .figure{max-width:100%;margin:30px 0 38px;padding:14px 12px;background:#fff;border:1px solid #e0e7ee;border-radius:12px}
+.intro-article .figure svg{display:block;width:100%;height:auto}
+.intro-article figcaption{font-size:.84rem;line-height:1.65;color:#586a7c;text-align:center;margin:8px 8px 0}
+.intro-article .legend{display:block;margin-bottom:8px;font-weight:650}
+.intro-article mjx-container[display="true"]{display:block;overflow-x:auto;overflow-y:hidden;max-width:100%;padding:.35rem 0;scrollbar-width:thin}
+.intro-article mjx-container{max-width:100%}
+.intro-footer{max-width:860px;margin:22px auto 0;text-align:center;color:#64768a;font-size:.86rem}
+.intro-footer a{font-weight:650}
+@media(max-width:640px){
+  body{font-size:15px}
+  .intro-site-nav{padding:13px 0}
+  .intro-site-nav .links{gap:14px}
+  .intro-page{width:calc(100% - 24px)}
+  .intro-hero,.intro-article{border-radius:13px}
+  .intro-toc ol{grid-template-columns:1fr}
+  .intro-meta span+span::before{margin-right:8px}
+  .intro-article blockquote{padding:13px 14px}
+  .intro-article .figure{padding:6px 3px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+
+.intro-article .meaning{background:#f8fbfd;border:1px solid #dce6f0;border-radius:13px;padding:10px 19px;margin:16px 0}
+.intro-article .meaning h3{margin:5px 0 7px}
+.intro-article .meaning p{margin:0 0 9px}
+.intro-article .result-table{max-width:100%;overflow-x:auto;margin:24px 0}
+
+
+
+
+.intro-article .chapter-bottom-nav{display:flex;justify-content:space-between;flex-wrap:wrap;gap:15px;padding:17px 19px;border-radius:12px;border:1px solid #dce5ed;background:#f5f9fc;margin:26px 0}
+.intro-article .chapter-bottom-nav a{font-size:.89rem;font-weight:700}
+@media(max-width:640px){.intro-article .chapter-bottom-nav{padding:13px}}
+</style></head>
+<body><header class="intro-site-header"><div class="intro-site-nav">
+<a href="../../" class="brand">ISHIZAKA Hiroki Website<small>Mathematics · Numerical analysis</small></a>
+<nav class="links" aria-label="サイトナビゲーション"><a href="../../">Home</a><a href="../">Blog</a><a href="../stable-reduction-intro/" aria-current="page">入門シリーズ</a><a href="../../research/">Research</a></nav></div></header>
+<main class="intro-page"><nav class="intro-breadcrumb" aria-label="パンくずリスト"><a href="../../">Home</a> › <a href="../">Blog</a> › <a href="../stable-reduction-intro/">安定縮約入門</a> › 第5回</nav>
+<header class="intro-hero"><div class="intro-kicker"><a href="../stable-reduction-intro/" style="color:inherit;text-decoration:none">STABLE REDUCTION · BEGINNER SERIES · 05</a></div>
+<h1>第5回：近似した答えはどこまで信用できる？</h1><p class="intro-lead">省いた成分，初期値の不確かさ，残差。三つの原因を分けて，近似誤差を上から抑えます。</p>
+<div class="intro-meta"><span><time datetime="2026-10-10">2026年10月10日</time></span><span>大学1年生向け</span><span>誤差の不等式と残差</span></div></header>
+<nav class="intro-toc" aria-label="この記事の目次"><h2>この記事の目次</h2><ol><li><a href="#intro">はじめに</a></li>
+<li><a href="#review">もとのモデル</a></li>
+<li><a href="#sources">誤差の原因</a></li>
+<li><a href="#identity">誤差を計算する</a></li>
+<li><a href="#estimate">上から抑える</a></li>
+<li><a href="#data">観測できない初期値</a></li>
+<li><a href="#example">数字とグラフで確かめる</a></li>
+<li><a href="#stability">不安定な系では？</a></li>
+<li><a href="#caveats">「保証」の条件</a></li>
+<li><a href="#exercises">練習問題</a></li>
+<li><a href="#end">まとめと次回</a></li></ol></nav>
+<article class="intro-article" aria-label="第5回：近似した答えはどこまで信用できる？"><h2 id="intro">はじめに――答えがもっともらしくても，正しいとは限らない</h2>
+
+<p>第3回では，二つの変数を一つに減らすモデルを作りました。第4回では，見えない変数を<strong>正確に消去</strong>すると，過去の値を使う記憶積分が現れることを学びました。</p>
+<p>では，計算しやすい<strong>近似モデル</strong>を使うとき，出てきた答えをどこまで信用してよいのでしょうか。</p>
+<blockquote><strong>「元の答えと近そうだ」と言うだけでなく，どのくらい離れ得るかを数学的に示したい。</strong></blockquote>
+<p>今回は，元の方程式が持つ三つの情報――省いた成分，見えない初期値，方程式を満たし切れていない程度――を区別し，一つの誤差評価式にまとめます。</p>
+<p>途中で積分が出ますが，第4回と同じ指数関数の掛け算を使うだけです。行列や専門的な数値解析の知識は必要ありません。</p>
+
+<h2 id="review">1．第3回の一変数縮約を思い出そう</h2>
+
+<p>今回も，結合の強さ \(a\geq0\) を持つ二変数系</p>
+\[
+\boxed{\begin{aligned}
+x'(t)&=-x(t)+ay(t),\\
+y'(t)&=ax(t)-y(t)
+\end{aligned}}
+\tag{1}
+\]
+<p>を考えます。初期値は \(x(0)=x_0,\ y(0)=y_0\) とします。</p>
+<p>平均と差の半分を</p>
+\[
+u(t)=\frac{x(t)+y(t)}{2},\qquad
+v(t)=\frac{x(t)-y(t)}{2}
+\tag{2}
+\]
+<p>とすると，</p>
+\[
+u'(t)=(a-1)u(t),\qquad
+v'(t)=-(a+1)v(t)
+\tag{3}
+\]
+<p>でした。したがって正確な観測値は</p>
+\[
+\boxed{x(t)=u_0e^{(a-1)t}+v_0e^{-(a+1)t}}
+\tag{4}
+\]
+<p>です。ただし，</p>
+\[
+u_0=\frac{x_0+y_0}{2},\qquad v_0=\frac{x_0-y_0}{2}
+\]
+<p>です。</p>
+<p>第3回では \(v\) を省き，\(u\) を使って観測値 \(x\) を近似しました。今回は，計算した近似値を一般に \(q(t)\) と書きます。\(q(t)\) が厳密に方程式を解いていなくてもよい，という点が新しいところです。</p>
+
+<h2 id="sources">2．近似のずれには，少なくとも三つの原因がある</h2>
+
+<p>元の観測値 \(x(t)\) と近似値 \(q(t)\) を比べましょう。主な誤差の原因は，次の三つです。</p>
+<ol>
+<li><strong>省略誤差：</strong>差の半分 \(v(t)\) を計算しないために生じるずれ。</li>
+<li><strong>初期値誤差：</strong>見えない \(y_0\) が分からず，残す \(u\) の最初の値を正確に決められないことによるずれ。</li>
+<li><strong>残差：</strong>計算した \(q(t)\) が，残した方程式 \(u'=(a-1)u\) を完全には満たさないことによるずれ。</li>
+</ol>
+<p>ここで三番目の残差（residual）を，</p>
+\[
+\boxed{r(t)=q'(t)-(a-1)q(t)}
+\tag{5}
+\]
+<p>で定義します。もし \(q\) が方程式を厳密に満たすなら，\(r(t)=0\) です。</p>
+<p>残差は<strong>元の真の解を知らなくても，近似値 \(q\) と方程式から計算できる量</strong>です。ただし，実際の計算機で残差を厳密に評価するには，別途数値誤差への注意が必要です。</p>
+
+<h2 id="identity">3．残差から誤差を表す等式を導こう</h2>
+
+<p>本当の平均 \(u(t)\) と近似値 \(q(t)\) の差を</p>
+\[
+e(t)=u(t)-q(t)
+\]
+<p>と置きます。式(3)と(5)から，</p>
+\[
+\begin{aligned}
+e'(t)
+&=u'(t)-q'(t)\\
+&=(a-1)u(t)-\bigl((a-1)q(t)+r(t)\bigr)\\
+&=(a-1)e(t)-r(t).
+\end{aligned}
+\tag{6}
+\]
+<p>ここで \(\alpha=a-1\) と書き，両辺に \(e^{-\alpha t}\) を掛けます。積の微分公式から，</p>
+\[
+\frac{d}{dt}\bigl(e^{-\alpha t}e(t)\bigr)
+=-e^{-\alpha t}r(t)
+\tag{7}
+\]
+<p>となります。時刻0から \(t\) まで積分すると，</p>
+\[
+\boxed{
+u(t)-q(t)
+=e^{\alpha t}(u_0-q(0))
+-\int_0^t e^{\alpha(t-s)}r(s)\,ds.
+}
+\tag{8}
+\]
+<p>さらに \(x(t)=u(t)+v(t)\) と式(4)を使えば，</p>
+\[
+\boxed{\begin{aligned}
+x(t)-q(t)
+={}&v_0 e^{-(a+1)t}
++e^{(a-1)t}(u_0-q(0))\\
+&-\int_0^t e^{(a-1)(t-s)}r(s)\,ds.
+\end{aligned}}
+\tag{9}
+\]
+<p>これが今回の出発点となる<strong>正確な誤差恒等式</strong>です。ここまでは大小関係ではなく，等号が成り立っています。</p>
+
+<h2 id="estimate">4．絶対値を取れば「これ以上はずれない」が分かる</h2>
+
+<p>三つの数の和について，絶対値はそれぞれの絶対値の和を超えないことを使います。積分の中の指数関数は正なので，式(9)から，</p>
+\[
+\boxed{\begin{aligned}
+|x(t)-q(t)|\leq{}&
+|v_0|e^{-(a+1)t}\\
+&+|u_0-q(0)|e^{(a-1)t}\\
+&+\int_0^t e^{(a-1)(t-s)}|r(s)|\,ds.
+\end{aligned}}
+\tag{10}
+\]
+<p>という不等式が得られます。</p>
+<p>右辺が0.1以下であると証明できれば，左辺，つまり真の観測値と近似値の差も0.1以下です。これが<strong>誤差の上界</strong>です。</p>
+<p>注意したいのは，式(10)がどんなに正しくても，右辺に入る初期値や残差について分からないことがあれば，ただちに数値的な上界を得られるわけではない，という点です。</p>
+<p>また，不等式は近似のずれが右辺より<strong>小さいことを保証</strong>するものです。実際の誤差が常に上界と同じになる，という意味ではありません。</p>
+
+<h2 id="data">5．(y_0) が分からなくても評価できる条件</h2>
+
+<p>観測した \(x_0\) に対して，見えない初期値 \(y_0\) の推定値 \(\widehat y_0\) を持っているとします。そして，推定のずれについて</p>
+\[
+\boxed{|y_0-\widehat y_0|\leq\eta}
+\tag{11}
+\]
+<p>と分かっているとしましょう。\(\eta\geq0\) は<strong>事前に正当化された誤差の上限</strong>です。単に「これくらいだろう」と予想して置く数字ではありません。</p>
+<p>縮約の初期値を \(q(0)=(x_0+\widehat y_0)/2\) と選ぶと，</p>
+\[
+|u_0-q(0)|=\frac{|y_0-\widehat y_0|}{2}
+\leq\frac{\eta}{2}
+\tag{12}
+\]
+<p>です。また三角不等式から，</p>
+\[
+|v_0|=\frac{|x_0-y_0|}{2}
+\leq\frac{|x_0-\widehat y_0|+\eta}{2}.
+\tag{13}
+\]
+<p>最後に，考える時間区間 \(0\leq t\leq T\) で</p>
+\[
+\boxed{|r(t)|\leq\delta}
+\tag{14}
+\]
+<p>という上限 \(\delta\geq0\) が正しく得られているとします。</p>
+<p>式(10)に代入すれば，真の \(y_0\) を知らなくても次の評価ができます。</p>
+\[
+\boxed{\begin{aligned}
+|x(t)-q(t)|\leq B(t):={}&
+\frac{|x_0-\widehat y_0|+\eta}{2}e^{-(a+1)t}\\
+&+\frac{\eta}{2}e^{(a-1)t}
++\delta\,\Phi_a(t),
+\qquad 0\leq t\leq T,
+\end{aligned}}
+\tag{15}
+\]
+<p>ここで \(\Phi_a(t)\) は，</p>
+\[
+\boxed{\Phi_a(t)=
+\begin{cases}
+\dfrac{e^{(a-1)t}-1}{a-1},&a\neq1,\\[6pt]
+t,&a=1
+\end{cases}}
+\tag{16}
+\]
+<p>です。\(a<1\) の場合も式(16)は正の値になります。分子も分母も負になるからです。</p>
+<p><strong>式(15)は，仮定(11)と(14)，元のモデル(1)が正しいという条件の下で，時刻 \(0\leq t\leq T\) に対して成り立つ数学的な上界です。</strong>これらの仮定が正当化できない場合には，保証とは呼べません。</p>
+
+<h2 id="example">6．誤差の上界を実際に計算してみよう</h2>
+
+<p>具体例として，</p>
+\[
+a=\frac12,\quad x_0=1,\quad
+\widehat y_0=0,\quad
+\eta=0.2,\quad \delta=0.01
+\tag{17}
+\]
+<p>とします。これは説明用の仮定であり，\(|y_0-\widehat y_0|\leq0.2\) および \(|r(t)|\leq0.01\) を満たす状況を考えています。</p>
+<p>式(15)から，</p>
+\[
+\boxed{
+B(t)=0.6e^{-3t/2}
++0.1e^{-t/2}
++0.02(1-e^{-t/2}).
+}
+\tag{18}
+\]
+<p>したがって，時刻 \(t=2\) では</p>
+\[
+\begin{aligned}
+B(2)&=0.6e^{-3}+0.1e^{-1}+0.02(1-e^{-1})\\
+&\approx 0.0793.
+\end{aligned}
+\]
+<p>つまり，<strong>式(17)の誤差上限が正しく満たされているなら，時刻2での予測のずれは約0.0793以下</strong>と分かります。四捨五入した0.0793を厳密な上界として使うのではなく，厳密な上界は上の \(B(2)\) の式です。</p>
+<p>グラフでは一つの具体的な真の初期値 \(y_0=0.1\) と，残差が常に \(r(t)=0.01\) となる近似</p>
+\[
+q(t)=\frac12e^{-t/2}+0.02(1-e^{-t/2})
+\tag{19}
+\]
+<p>を用意し，実際の誤差と上界を比べました。</p>
+<figure class="figure">
+ <svg role="img" aria-labelledby="err-title err-desc" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 365">
+ <title id="err-title">近似の実際の誤差と数学的な上界の比較</title>
+ <desc id="err-desc">a=0.5、x0=1、真のy0=0.1、推定値yhat0=0、eta=0.2、残差r=0.01の例。実際の誤差は常に計算された上界以下である。</desc>
+ <line x1="64" y1="280.00" x2="754" y2="280.00" stroke="#e1e9f0"/><text x="52" y="284.00" text-anchor="end" font-size="12" fill="#536b7f">0.0</text><line x1="64" y1="246.05" x2="754" y2="246.05" stroke="#e1e9f0"/><text x="52" y="250.05" text-anchor="end" font-size="12" fill="#536b7f">0.1</text><line x1="64" y1="212.11" x2="754" y2="212.11" stroke="#e1e9f0"/><text x="52" y="216.11" text-anchor="end" font-size="12" fill="#536b7f">0.2</text><line x1="64" y1="178.16" x2="754" y2="178.16" stroke="#e1e9f0"/><text x="52" y="182.16" text-anchor="end" font-size="12" fill="#536b7f">0.3</text><line x1="64" y1="144.21" x2="754" y2="144.21" stroke="#e1e9f0"/><text x="52" y="148.21" text-anchor="end" font-size="12" fill="#536b7f">0.4</text><line x1="64" y1="110.26" x2="754" y2="110.26" stroke="#e1e9f0"/><text x="52" y="114.26" text-anchor="end" font-size="12" fill="#536b7f">0.5</text><line x1="64" y1="76.32" x2="754" y2="76.32" stroke="#e1e9f0"/><text x="52" y="80.32" text-anchor="end" font-size="12" fill="#536b7f">0.6</text><line x1="64" y1="42.37" x2="754" y2="42.37" stroke="#e1e9f0"/><text x="52" y="46.37" text-anchor="end" font-size="12" fill="#536b7f">0.7</text><text x="64.00" y="304" text-anchor="middle" font-size="12" fill="#536b7f">0</text><text x="179.00" y="304" text-anchor="middle" font-size="12" fill="#536b7f">0.5</text><text x="294.00" y="304" text-anchor="middle" font-size="12" fill="#536b7f">1</text><text x="409.00" y="304" text-anchor="middle" font-size="12" fill="#536b7f">1.5</text><text x="524.00" y="304" text-anchor="middle" font-size="12" fill="#536b7f">2</text><text x="639.00" y="304" text-anchor="middle" font-size="12" fill="#536b7f">2.5</text><text x="754.00" y="304" text-anchor="middle" font-size="12" fill="#536b7f">3</text><path fill="none" stroke="#245d83" stroke-width="3.2"  d="M64.00 42.37 L68.60 48.66 L73.20 54.77 L77.80 60.70 L82.40 66.47 L87.00 72.06 L91.60 77.50 L96.20 82.79 L100.80 87.92 L105.40 92.90 L110.00 97.74 L114.60 102.45 L119.20 107.02 L123.80 111.46 L128.40 115.77 L133.00 119.96 L137.60 124.03 L142.20 127.99 L146.80 131.83 L151.40 135.56 L156.00 139.19 L160.60 142.72 L165.20 146.14 L169.80 149.47 L174.40 152.70 L179.00 155.85 L183.60 158.90 L188.20 161.87 L192.80 164.75 L197.40 167.56 L202.00 170.28 L206.60 172.93 L211.20 175.50 L215.80 178.00 L220.40 180.43 L225.00 182.80 L229.60 185.09 L234.20 187.33 L238.80 189.50 L243.40 191.61 L248.00 193.66 L252.60 195.65 L257.20 197.59 L261.80 199.48 L266.40 201.31 L271.00 203.09 L275.60 204.82 L280.20 206.51 L284.80 208.15 L289.40 209.74 L294.00 211.29 L298.60 212.80 L303.20 214.26 L307.80 215.69 L312.40 217.08 L317.00 218.42 L321.60 219.74 L326.20 221.01 L330.80 222.25 L335.40 223.46 L340.00 224.64 L344.60 225.78 L349.20 226.89 L353.80 227.98 L358.40 229.03 L363.00 230.05 L367.60 231.05 L372.20 232.02 L376.80 232.97 L381.40 233.89 L386.00 234.78 L390.60 235.65 L395.20 236.50 L399.80 237.33 L404.40 238.13 L409.00 238.91 L413.60 239.68 L418.20 240.42 L422.80 241.14 L427.40 241.84 L432.00 242.53 L436.60 243.20 L441.20 243.85 L445.80 244.48 L450.40 245.10 L455.00 245.70 L459.60 246.28 L464.20 246.85 L468.80 247.41 L473.40 247.95 L478.00 248.48 L482.60 248.99 L487.20 249.50 L491.80 249.98 L496.40 250.46 L501.00 250.93 L505.60 251.38 L510.20 251.82 L514.80 252.25 L519.40 252.67 L524.00 253.08 L528.60 253.48 L533.20 253.87 L537.80 254.25 L542.40 254.62 L547.00 254.98 L551.60 255.33 L556.20 255.68 L560.80 256.01 L565.40 256.34 L570.00 256.66 L574.60 256.97 L579.20 257.27 L583.80 257.57 L588.40 257.86 L593.00 258.15 L597.60 258.42 L602.20 258.69 L606.80 258.96 L611.40 259.21 L616.00 259.47 L620.60 259.71 L625.20 259.95 L629.80 260.19 L634.40 260.42 L639.00 260.64 L643.60 260.86 L648.20 261.07 L652.80 261.28 L657.40 261.49 L662.00 261.69 L666.60 261.88 L671.20 262.07 L675.80 262.26 L680.40 262.44 L685.00 262.62 L689.60 262.80 L694.20 262.97 L698.80 263.13 L703.40 263.30 L708.00 263.46 L712.60 263.62 L717.20 263.77 L721.80 263.92 L726.40 264.07 L731.00 264.21 L735.60 264.35 L740.20 264.49 L744.80 264.63 L749.40 264.76 L754.00 264.89" /><path fill="none" stroke="#b36440" stroke-width="3.2" stroke-dasharray="7 5" d="M64.00 110.26 L68.60 115.01 L73.20 119.63 L77.80 124.11 L82.40 128.47 L87.00 132.70 L91.60 136.81 L96.20 140.81 L100.80 144.69 L105.40 148.46 L110.00 152.12 L114.60 155.68 L119.20 159.13 L123.80 162.49 L128.40 165.76 L133.00 168.93 L137.60 172.01 L142.20 175.01 L146.80 177.92 L151.40 180.75 L156.00 183.50 L160.60 186.17 L165.20 188.76 L169.80 191.29 L174.40 193.74 L179.00 196.12 L183.60 198.44 L188.20 200.69 L192.80 202.88 L197.40 205.01 L202.00 207.08 L206.60 209.09 L211.20 211.04 L215.80 212.94 L220.40 214.79 L225.00 216.59 L229.60 218.33 L234.20 220.03 L238.80 221.68 L243.40 223.29 L248.00 224.85 L252.60 226.37 L257.20 227.84 L261.80 229.28 L266.40 230.68 L271.00 232.04 L275.60 233.36 L280.20 234.64 L284.80 235.89 L289.40 237.11 L294.00 238.29 L298.60 239.44 L303.20 240.56 L307.80 241.65 L312.40 242.71 L317.00 243.74 L321.60 244.74 L326.20 245.72 L330.80 246.67 L335.40 247.60 L340.00 248.50 L344.60 249.37 L349.20 250.23 L353.80 251.06 L358.40 251.86 L363.00 252.65 L367.60 253.42 L372.20 254.16 L376.80 254.89 L381.40 255.59 L386.00 256.28 L390.60 256.95 L395.20 257.61 L399.80 258.24 L404.40 258.86 L409.00 259.46 L413.60 260.05 L418.20 260.62 L422.80 261.18 L427.40 261.72 L432.00 262.25 L436.60 262.77 L441.20 263.27 L445.80 263.76 L450.40 264.24 L455.00 264.70 L459.60 265.16 L464.20 265.60 L468.80 266.03 L473.40 266.45 L478.00 266.86 L482.60 267.26 L487.20 267.65 L491.80 268.03 L496.40 268.40 L501.00 268.76 L505.60 269.12 L510.20 269.46 L514.80 269.79 L519.40 270.12 L524.00 270.44 L528.60 270.75 L533.20 271.06 L537.80 271.35 L542.40 271.64 L547.00 271.93 L551.60 272.20 L556.20 272.47 L560.80 272.74 L565.40 272.99 L570.00 273.25 L574.60 273.49 L579.20 273.73 L583.80 273.96 L588.40 274.19 L593.00 274.42 L597.60 274.63 L602.20 274.85 L606.80 275.06 L611.40 275.26 L616.00 275.46 L620.60 275.65 L625.20 275.84 L629.80 276.03 L634.40 276.21 L639.00 276.39 L643.60 276.56 L648.20 276.73 L652.80 276.90 L657.40 277.06 L662.00 277.22 L666.60 277.38 L671.20 277.53 L675.80 277.68 L680.40 277.82 L685.00 277.97 L689.60 278.11 L694.20 278.24 L698.80 278.38 L703.40 278.51 L708.00 278.64 L712.60 278.76 L717.20 278.89 L721.80 279.01 L726.40 279.13 L731.00 279.24 L735.60 279.36 L740.20 279.47 L744.80 279.58 L749.40 279.69 L754.00 279.79" />
+ <text x="409" y="348" text-anchor="middle" font-size="14" fill="#43556c">時間 t</text>
+ </svg>
+ <figcaption><span class="legend"><span style="color:#245d83">━━ 数学的な誤差上界 (B(t))</span>　<span style="color:#b36440">┄ 実際の誤差 (|x(t)-q(t)|)</span></span>説明用に真の (y_0=0.1) を設定した例です。現実の未知初期値を知っているという意味ではありません。</figcaption>
+ </figure>
+<p>この例の時刻2での実際の誤差は約0.0282です。上界はその値より大きく，すべての時刻で実際の誤差を覆っています。<strong>上界を求めることと，実際の誤差を知ることは違う</strong>のです。</p>
+
+<h2 id="stability">7．不安定な成分があれば，小さな誤差も増大する</h2>
+
+<p>式(15)の第二項と第三項には，\(e^{(a-1)t}\) が現れています。</p>
+<p><strong>\(0\leq a<1\)：</strong> \(e^{(a-1)t}\) は減衰します。また，\(\Phi_a(t)=(1-e^{-(1-a)t})/(1-a)\leq1/(1-a)\) なので，残差の上限が一定なら，残差による誤差は \(\delta/(1-a)\) 以下に抑えられます。</p>
+<p><strong>\(a=1\)：</strong> 初期値誤差はそのまま残り，残差項は \(\delta t\) になります。小さな残差でも長時間では蓄積する可能性があります。</p>
+<p><strong>\(a>1\)：</strong> 初期値誤差が増幅し，残差による上界も指数的に大きくなり得ます。特に長時間の予測には注意が必要です。</p>
+<p>つまり，<strong>同じ残差の大きさでも，元の方程式の安定性によって，真の誤差への影響が大きく変わります。</strong></p>
+<p>これが，単に計算を速くするだけでなく，安定性を考えたモデル縮約を研究する理由の一つです。</p>
+
+<h2 id="caveats">8．数学的な保証と，計算機による確認を区別する</h2>
+
+<p>ここで，保証という言葉を慎重に使いましょう。式(15)は数学的に正しい不等式です。しかし，具体的な計算結果に対して「誤差がこれ以下」と主張するには，使用した条件を確かめなければなりません。</p>
+<ol>
+<li><strong>モデルの条件：</strong> 本当の対象が式(1)に従うと仮定できるか。モデル化の誤差は式(15)には含まれていません。</li>
+<li><strong>初期情報：</strong> \(|y_0-\widehat y_0|\leq\eta\) の根拠はあるか。根拠がなければ \(\eta\) を保証付きの上限とは呼べません。</li>
+<li><strong>残差の条件：</strong> \(|r(t)|\leq\delta\) を時間区間全体で示したか。少数の時刻で値を計算しただけでは不十分です。</li>
+<li><strong>数値計算の条件：</strong> 端数処理や浮動小数点の丸め誤差を，必要な精度に応じて扱ったか。数学的な不等式そのものと，表示された小数値の厳密性は別です。</li>
+</ol>
+<p>この連載では区間演算を用いません。それでも，<strong>解析的に証明した不等式と，その成立に必要な前提条件を明確にする</strong>ことには意味があります。数値結果について無条件の厳密性を主張しないことが大切です。</p>
+<p>第4回の記憶積分は<strong>影響を捨てない正確な消去</strong>でした。今回の近似は影響を省いているので，誤差を別途見積もる必要があります。</p>
+
+<h2 id="exercises">9．練習問題――誤差評価を自分で使ってみよう</h2>
+
+<p><strong>問題1：</strong> \(a=\frac12\)，\(q(t)=e^{-t/2}\) のとき，式(5)で定義した残差 \(r(t)\) を求めてください。</p>
+<p><strong>問題2：</strong> \(a=1\)，\(|r(t)|\leq0.01\)，\(|u_0-q(0)|\leq0.1\)，\(|v_0|\leq0.2\) とします。\(t=3\) での誤差の上界を求めてください。</p>
+<p><strong>問題3：</strong> \(a=\frac12\)，\(|r(t)|\leq0.02\) のとき，残差による誤差の寄与がすべての \(t\geq0\) で0.04以下であることを示してください。ただし，残差の上限がすべての時刻で成立すると仮定します。</p>
+<p><strong>問題4（発展）：</strong> \(a=2\)，\(r(t)=0\)，\(v_0=0\)，\(u_0-q(0)=0.01\) とします。時刻 \(t\) における誤差を求め，\(t\to\infty\) でどうなるか考えてください。</p>
+<details><summary><strong>練習問題の解答・計算過程を見る</strong></summary>
+<p><strong>問題1：</strong> \(q'(t)=-\tfrac12e^{-t/2}\)，\((a-1)q(t)=-\tfrac12e^{-t/2}\) なので \(r(t)=0\) です。</p>
+<p><strong>問題2：</strong> \(a=1\) なら式(10)から \(|x(3)-q(3)|\leq0.2e^{-6}+0.1+0.01\times3\approx0.1305\) です。</p>
+<p><strong>問題3：</strong> 残差の項は \(0.02\Phi_{1/2}(t)=0.04(1-e^{-t/2})\leq0.04\) です。</p>
+<p><strong>問題4：</strong> 誤差恒等式(9)から \(x(t)-q(t)=0.01e^t\) です。最初は小さくても時間とともに増大します。</p>
+</details>
+
+<h2 id="end">おわりに――「信用できる」の意味を明確にする</h2>
+
+<p>今回の中心は，次の三つでした。</p>
+<ol>
+<li>近似の誤差を，省いた成分・初期値の不確かさ・残差の寄与に分けました。</li>
+<li>残差の上限と初期情報の上限が分かれば，時間に依存する誤差の上界を作れます。</li>
+<li>その上界が信頼できるかどうかは，モデル・初期値・残差に関する仮定が正しく確認されているかにかかっています。</li>
+</ol>
+<blockquote><strong>今回の一言：「保証」とは，結論だけでなく，その結論が成立する条件も示すこと。</strong></blockquote>
+<p>第6回「変数が100万個あったら？」では，二変数から出発した考え方を，大規模な微分方程式や偏微分方程式につなげます。これまでの5回が，安定縮約の研究にどう結び付くのかを見渡します。</p>
+<nav class="chapter-bottom-nav" aria-label="シリーズの記事間の移動"><a href="./unresolved_dynamics_intro_04.html">← 第4回：記憶が現れる理由</a><a href="../stable-reduction-intro/">シリーズ目次へ戻る →</a></nav>
+<h3>専門的な話題への入口</h3><ul><li><a href="./unresolved-memory-10.html">model-reduction errorをどう分解するか</a></li><li><a href="../../research/#stable-reduction">研究ページ：Stable reduction</a></li></ul></article>
+<footer class="intro-footer"><a href="../stable-reduction-intro/">入門シリーズの目次</a> · <a href="../">ブログ一覧</a><p>© 2026 Hiroki Ishizaka</p></footer></main></body></html>
