@@ -1,0 +1,308 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#172a42">
+<title>第3回：何を残し，何を消せばよいのか？ | Hiroki Ishizaka</title>
+<meta name="description" content="大学1年生から学ぶ未解像ダイナミクスの安定縮約・第3回。何を残し何を消すかを変数変換と誤差式で解説。">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_03.html"><link rel="up" href="../stable-reduction-intro/"><link rel="prev" href="./unresolved_dynamics_intro_02.html"><link rel="icon" href="../../favicon.ico">
+<meta property="og:type" content="article"><meta property="og:title" content="第3回：何を残し，何を消せばよいのか？"><meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_03.html"><meta property="og:locale" content="ja_JP"><meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"第3回：何を残し，何を消せばよいのか？","url":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_03.html","datePublished":"2026-10-10","dateModified":"2026-10-10","author":{"@type":"Person","name":"Hiroki Ishizaka"},"inLanguage":"ja"}</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --page:#f3f6fa;--paper:#fff;--ink:#1d2a3b;--muted:#53677b;
+  --line:#dce4ee;--accent:#225e88;--accent-dark:#164668;--soft:#f3f7fb;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  margin:0;min-height:100vh;color:var(--ink);
+  background:linear-gradient(180deg,#edf2f8 0,#f3f6fa 420px,#f3f6fa 100%);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,system-ui,sans-serif;
+  font-size:16px;line-height:1.85;overflow-wrap:anywhere;
+}
+a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+a:hover{color:var(--accent-dark)}
+a:focus-visible,summary:focus-visible{outline:3px solid #98c5e2;outline-offset:4px}
+.intro-site-header{background:#172a42;color:#fff;border-bottom:1px solid #253b56}
+.intro-site-nav{width:min(1060px,calc(100% - 36px));min-height:78px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:12px 0}
+.intro-site-nav .brand{color:#fff;text-decoration:none;font-size:1.02rem;font-weight:750;letter-spacing:.018em;line-height:1.4}
+.intro-site-nav .brand small{display:block;font-size:.69rem;font-weight:450;letter-spacing:.07em;color:#c4d2e1}
+.intro-site-nav .links{display:flex;gap:22px;flex-wrap:wrap;font-size:.91rem}
+.intro-site-nav .links a{color:#d9e6f3;text-decoration:none}
+.intro-site-nav .links a[aria-current="page"]{font-weight:800;color:#fff;border-bottom:2px solid #b5d4ec}
+.intro-page{width:min(1010px,calc(100% - 32px));margin:0 auto;padding-bottom:48px}
+.intro-breadcrumb{max-width:860px;margin:22px auto;color:#586b80;font-size:.83rem}
+.intro-breadcrumb a{color:#405e7b}
+.intro-hero,.intro-article,.intro-toc{max-width:860px;margin-left:auto;margin-right:auto}
+.intro-hero{
+  background:#fff;border:1px solid var(--line);border-radius:20px;
+  padding:clamp(28px,5.8vw,58px);
+  box-shadow:0 10px 38px rgba(24,44,66,.045);
+  border-top:5px solid var(--accent);
+}
+.intro-kicker{display:inline-block;color:var(--accent);font-size:.77rem;font-weight:800;letter-spacing:.075em;margin-bottom:15px}
+.intro-hero h1{font-size:clamp(1.72rem,3.7vw,2.6rem);line-height:1.45;letter-spacing:.005em;margin:0;font-weight:760;color:#152840}
+.intro-hero .intro-lead{font-size:clamp(.96rem,1.7vw,1.11rem);color:#4b6074;margin:16px 0 0;line-height:1.9}
+.intro-meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px 15px;margin-top:22px;font-size:.83rem;color:#607286}
+.intro-meta span+span::before{content:"•";margin-right:15px;color:#a3b1bf}
+.intro-toc{
+  background:#f9fbfd;border:1px solid var(--line);border-radius:16px;
+  padding:21px clamp(20px,4vw,30px);margin-top:18px;margin-bottom:20px
+}
+.intro-toc h2{font-size:.94rem;letter-spacing:.015em;margin:0 0 8px;color:#2f485f}
+.intro-toc ol{display:grid;grid-template-columns:1fr 1fr;gap:5px 28px;margin:0;padding-left:22px;font-size:.87rem}
+.intro-toc li{padding:3px 0}
+.intro-toc a{text-decoration:none}
+.intro-article{
+  padding:clamp(23px,6vw,62px);background:var(--paper);
+  border:1px solid var(--line);border-radius:20px;box-shadow:0 15px 48px rgba(28,52,82,.045)
+}
+.intro-article h2{scroll-margin-top:20px;font-size:clamp(1.32rem,2.6vw,1.66rem);line-height:1.5;letter-spacing:.002em;color:#1c344d;margin:2.55em 0 .85em;padding-bottom:.42em;border-bottom:1px solid #e1e8f0}
+.intro-article h2:first-child{margin-top:0}
+.intro-article h3{font-size:1.12rem;line-height:1.55;color:#254562;margin:2em 0 .7em}
+.intro-article p{margin:0 0 1.24em;line-height:1.95}
+.intro-article ul,.intro-article ol{padding-left:1.55em;margin:1em 0 1.55em}
+.intro-article li{padding-left:.15em;margin:.45em 0;line-height:1.85}
+.intro-article strong{font-weight:760;color:#183951}
+.intro-article blockquote{background:#f0f6fa;border:1px solid #d9e7f1;border-left:4px solid #376d93;padding:19px 22px;margin:22px 0;border-radius:0 12px 12px 0}
+.intro-article blockquote strong{color:#214967}
+.intro-article details{background:#f8fbfe;border:1px solid #dce5ed;border-radius:12px;padding:17px 19px;margin:18px 0}
+.intro-article details[open]{background:#f5f9fc}
+.intro-article summary{cursor:pointer;color:#204c70}
+.intro-article details p{margin:1em 0 0}
+.intro-article .figure{max-width:100%;margin:30px 0 38px;padding:14px 12px;background:#fff;border:1px solid #e0e7ee;border-radius:12px}
+.intro-article .figure svg{display:block;width:100%;height:auto}
+.intro-article figcaption{font-size:.84rem;line-height:1.65;color:#586a7c;text-align:center;margin:8px 8px 0}
+.intro-article .legend{display:block;margin-bottom:8px;font-weight:650}
+.intro-article mjx-container[display="true"]{display:block;overflow-x:auto;overflow-y:hidden;max-width:100%;padding:.35rem 0;scrollbar-width:thin}
+.intro-article mjx-container{max-width:100%}
+.intro-footer{max-width:860px;margin:22px auto 0;text-align:center;color:#64768a;font-size:.86rem}
+.intro-footer a{font-weight:650}
+@media(max-width:640px){
+  body{font-size:15px}
+  .intro-site-nav{padding:13px 0}
+  .intro-site-nav .links{gap:14px}
+  .intro-page{width:calc(100% - 24px)}
+  .intro-hero,.intro-article{border-radius:13px}
+  .intro-toc ol{grid-template-columns:1fr}
+  .intro-meta span+span::before{margin-right:8px}
+  .intro-article blockquote{padding:13px 14px}
+  .intro-article .figure{padding:6px 3px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+
+.intro-article .meaning{background:#f8fbfd;border:1px solid #dce6f0;border-radius:13px;padding:10px 19px;margin:16px 0}
+.intro-article .meaning h3{margin:5px 0 7px}
+.intro-article .meaning p{margin:0 0 9px}
+.intro-article .result-table{max-width:100%;overflow-x:auto;margin:24px 0}
+.intro-article table{width:100%;border-collapse:collapse;min-width:440px;font-size:.94rem}
+.intro-article th,.intro-article td{border-bottom:1px solid #dce4ee;text-align:left;padding:13px 11px;vertical-align:top}
+.intro-article th{background:#eef4f8;color:#254866}
+.intro-article .chapter-bottom-nav{display:flex;flex-wrap:wrap;gap:13px;justify-content:space-between;background:#f6f9fc;border:1px solid #dce5ed;border-radius:12px;padding:17px 21px;margin:26px 0}
+.intro-article .chapter-bottom-nav a{font-size:.88rem;font-weight:700}
+@media(max-width:640px){.intro-article .meaning{padding:9px 14px}.intro-article .chapter-bottom-nav{padding:14px}}
+
+
+.intro-article table{border-collapse:collapse;width:100%;margin:24px 0;font-size:.94rem}.intro-article th,.intro-article td{padding:12px;border-bottom:1px solid #dde6ef;text-align:left}.intro-article th{background:#f0f5fa;color:#22445d}.intro-article .chapter-bottom-nav{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;padding:18px;background:#f5f9fc;border:1px solid #dce5ed;border-radius:12px;margin:24px 0}
+</style>
+</head><body>
+<header class="intro-site-header"><div class="intro-site-nav"><a href="../../" class="brand">ISHIZAKA Hiroki Website<small>Mathematics · Numerical analysis</small></a><nav class="links" aria-label="サイトナビゲーション"><a href="../../">Home</a><a href="../">Blog</a><a href="../stable-reduction-intro/" aria-current="page">入門シリーズ</a><a href="../../research/">Research</a></nav></div></header>
+<main class="intro-page"><nav class="intro-breadcrumb" aria-label="パンくずリスト"><a href="../../">Home</a> › <a href="../">Blog</a> › <a href="../stable-reduction-intro/">安定縮約入門</a> › 第3回</nav>
+<header class="intro-hero"><div class="intro-kicker"><a href="../stable-reduction-intro/" style="color:inherit;text-decoration:none">STABLE REDUCTION · BEGINNER SERIES · 03</a></div><h1>第3回：何を残し，何を消せばよいのか？</h1><p class="intro-lead">見えるものを残すのではなく，安定性を決める動きを残す。縮約の誤差と初期値の問題まで調べます。</p><div class="intro-meta"><span><time datetime="2026-10-10">2026年10月10日</time></span><span>大学1年生向け</span><span>変数変換と誤差</span></div></header>
+<nav class="intro-toc" aria-label="この記事の目次"><h2>この記事の目次</h2><ol><li><a href="#intro">はじめに</a></li><li><a href="#model">元のモデル</a></li><li><a href="#change">和と差の変換</a></li><li><a href="#choose">何を残すか</a></li><li><a href="#reduced">一変数のモデル</a></li><li><a href="#error">縮約の誤差</a></li><li><a href="#example">具体的な比較</a></li><li><a href="#initial">隠れた初期値</a></li><li><a href="#limits">言えること・言えないこと</a></li><li><a href="#exercise">練習問題</a></li><li><a href="#end">まとめ</a></li></ol></nav>
+<article class="intro-article" aria-label="第3回：何を残し，何を消せばよいのか？">
+<h2 id="intro">はじめに――変数を減らすとき，何を残す？</h2>
+<p>第1回では，観測していない変数を0と置くと予測が間違うことを学びました。第2回では，一つの解が減衰してもシステム全体が安定とは限らないことを確認しました。</p>
+<p>では，本当に計算する変数を減らすときは，何を残せばよいのでしょうか。今回は，<strong>安定性を決める動きを残し，省いた動きによる誤差を調べる</strong>ことを目標にします。</p>
+<blockquote><strong>「観測できる変数」と「残すべき変数」は，必ずしも同じではありません。</strong></blockquote>
+<p>使う数学は連立方程式，微分と指数関数です。途中の計算も省略せずに進みましょう。</p>
+
+<h2 id="model">1．元の二変数モデル</h2>
+<p>観測できる変数を \(x(t)\)，直接観測しない変数を \(y(t)\) として，</p>
+\[
+\boxed{\begin{aligned}
+x'(t)&=-x(t)+ay(t),\\
+y'(t)&=ax(t)-y(t)
+\end{aligned}}\qquad(a\geq0)
+\tag{1}
+\]
+<p>を考えます。初期値は \(x(0)=x_0,\ y(0)=y_0\) とします。第2回では \(a=1\) を境に系全体の安定性が変わることが分かりました。</p>
+<p>しかし，元の \(x\) だけを残し，\(y=0\) と置くと \(x'=-x\) になります。この近似では，\(a\) の値を変えても安定性の判定が変わらず，大切な情報を失ってしまいます。</p>
+
+<h2 id="change">2．平均と差の半分に変えてみる</h2>
+<p>新しい変数を</p>
+\[
+\boxed{u(t)=\frac{x(t)+y(t)}2,\qquad v(t)=\frac{x(t)-y(t)}2}
+\tag{2}
+\]
+<p>で定めます。この変数変換は元に戻せます。実際，式(2)を足し引きすると，</p>
+\[
+\boxed{x(t)=u(t)+v(t),\qquad y(t)=u(t)-v(t)}
+\tag{3}
+\]
+<p>です。</p>
+<p>今度は式(1)を足して，</p>
+\[
+\begin{aligned}
+u'(t)&=\frac{x'(t)+y'(t)}2\\
+&=\frac{-x+ay+ax-y}{2}\\
+&=(a-1)u(t)
+\end{aligned}
+\]
+<p>を得ます。反対に，第一式から第二式を引くと，</p>
+\[
+\begin{aligned}
+v'(t)&=\frac{x'(t)-y'(t)}2\\
+&=\frac{-x+ay-ax+y}{2}\\
+&=-(a+1)v(t)
+\end{aligned}
+\]
+<p>となります。つまり，</p>
+\[
+\boxed{
+u'(t)=(a-1)u(t),\qquad
+v'(t)=-(a+1)v(t).
+}
+\tag{4}
+\]
+<p><strong>二つの変数が互いに影響しない方程式になりました。</strong>これならそれぞれを別々に調べられます。</p>
+
+<h2 id="choose">3．どちらの変数を残すべきか？</h2>
+<p>式(4)の解は，</p>
+\[
+\begin{aligned}
+u(t)&=u_0e^{(a-1)t},&
+u_0&=\frac{x_0+y_0}2,\\
+v(t)&=v_0e^{-(a+1)t},&
+v_0&=\frac{x_0-y_0}2.
+\end{aligned}
+\tag{5}
+\]
+<p>\(a\geq0\) なので \(v(t)\) は必ず指数的に減衰します。一方，\(u(t)\) は \(a<1\) では減衰，\(a=1\) では一定，\(a>1\) では増大し得ます。</p>
+<table>
+<thead><tr><th>条件</th><th>\(u\) の動き</th><th>\(v\) の動き</th></tr></thead>
+<tbody>
+<tr><td>\(0\leq a<1\)</td><td>減衰</td><td>減衰</td></tr>
+<tr><td>\(a=1\)</td><td>一定</td><td>減衰</td></tr>
+<tr><td>\(a>1\)</td><td>増大することがある</td><td>減衰</td></tr>
+</tbody></table>
+<p>安定性の境界 \(a=1\) を決めるのは \(u\) です。長い時間の重要な動きと安定性の分類を残す，という目的なら，<strong>\(u\) を残して \(v\) を省く</strong>のが自然です。</p>
+<p>ただし，この段階で「最初から誤差が小さい」と分かったわけではありません。その確認はこれからです。</p>
+
+<h2 id="reduced">4．二つの方程式を一つに減らす</h2>
+<p>省く \(v\) を計算せず，\(u\) の方程式だけを解くモデルを作ります。</p>
+\[
+\boxed{u_{\mathrm{red}}'(t)=(a-1)u_{\mathrm{red}}(t),
+\qquad u_{\mathrm{red}}(0)=u_0.}
+\tag{6}
+\]
+<p>解は \(u_{\mathrm{red}}(t)=u_0e^{(a-1)t}\) です。元の観測値 \(x\) を予測するには，式(3)で省いた \(v\) を0と考え，</p>
+\[
+\boxed{x_{\mathrm{red}}(t)=u_{\mathrm{red}}(t)}
+\tag{7}
+\]
+<p>と近似します。状態全体なら，\((x_{\mathrm{red}},y_{\mathrm{red}})^\top=(u_{\mathrm{red}},u_{\mathrm{red}})^\top\) と復元します。</p>
+<p>この一変数モデルでは，\(a<1\) なら指数安定，\(a=1\) なら安定だが漸近安定ではなく，\(a>1\) なら不安定です。<strong>元の二変数モデルと安定性の分類が一致しました。</strong></p>
+<p>ただし，これはあくまで<strong>変数変換した後の \(v\) を省く近似</strong>です。観測変数 \(x\) の方程式から \(y\) の影響を正確に消したわけではありません。</p>
+
+<h2 id="error">5．捨てた変数の影響は，どれくらい大きい？</h2>
+<p>元の観測値は \(x=u+v\)，縮約した観測値は \(x_{\mathrm{red}}=u\) です。そこで，両者を引くと，</p>
+\[
+x(t)-x_{\mathrm{red}}(t)=v_0e^{-(a+1)t}.
+\]
+<p>絶対値を取れば，</p>
+\[
+\boxed{|x(t)-x_{\mathrm{red}}(t)|
+=\frac{|x_0-y_0|}{2}e^{-(a+1)t}.}
+\tag{8}
+\]
+<p>これが縮約誤差の<strong>厳密な式</strong>です。\(t\geq0\) のどの時刻でも正しく，数値シミュレーションだけに依存しません。</p>
+<p>また，状態全体の誤差も計算できます。\((x-x_{\mathrm{red}},y-y_{\mathrm{red}})^\top=(v,-v)^\top\) ですから，</p>
+\[
+\boxed{
+\left\|(x(t)-x_{\mathrm{red}}(t),y(t)-y_{\mathrm{red}}(t))^\top\right\|_{\mathbb R^2}
+=\frac{|x_0-y_0|}{\sqrt2}e^{-(a+1)t}.
+}
+\tag{9}
+\]
+<p>時間が経てばこの誤差は減ります。しかし \(t=0\) での誤差は \(|x_0-y_0|/2\) です。初期値が大きく違うと，最初の予測はあまり正確ではありません。</p>
+<blockquote><strong>安定性を保つことと，最初から近似が正確であることは別です。</strong></blockquote>
+
+<h2 id="example">6．具体例：増大する動きを残せるか</h2>
+<p>\(a=\frac32,\ x_0=1,\ y_0=0\) として比べてみましょう。このとき \(u_0=v_0=\frac12\) なので，元の観測値は</p>
+\[
+\boxed{x(t)=\frac12e^{t/2}+\frac12e^{-5t/2}.}
+\tag{10}
+\]
+<p>今回の縮約モデルは</p>
+\[
+\boxed{x_{\mathrm{red}}(t)=\frac12e^{t/2},}
+\tag{11}
+\]
+<p>見えない \(y\) を単純に0と置くモデルは</p>
+\[
+\boxed{x_{\mathrm{naive}}(t)=e^{-t}}
+\tag{12}
+\]
+<p>です。</p>
+<figure class="figure"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 325" role="img" aria-labelledby="plot-title plot-desc"><title id="plot-title">二つの縮約方法と元の観測値の比較</title><desc id="plot-desc">a=1.5、x0=1、y0=0。元の解は長時間増大し、平均を残す縮約はその増大を保持。観測できない変数を単純に0とする方法は減衰を予測する。</desc><line x1="50" y1="277" x2="740" y2="277" stroke="#e5edf3"/><text x="40" y="281" fill="#526579" text-anchor="end" font-size="12">0</text><line x1="50" y1="225" x2="740" y2="225" stroke="#e5edf3"/><text x="40" y="229" fill="#526579" text-anchor="end" font-size="12">0.5</text><line x1="50" y1="173" x2="740" y2="173" stroke="#e5edf3"/><text x="40" y="177" fill="#526579" text-anchor="end" font-size="12">1</text><line x1="50" y1="121" x2="740" y2="121" stroke="#e5edf3"/><text x="40" y="125" fill="#526579" text-anchor="end" font-size="12">1.5</text><line x1="50" y1="69" x2="740" y2="69" stroke="#e5edf3"/><text x="40" y="73" fill="#526579" text-anchor="end" font-size="12">2</text><line x1="50" y1="17" x2="740" y2="17" stroke="#e5edf3"/><text x="40" y="21" fill="#526579" text-anchor="end" font-size="12">2.5</text><text x="50" y="297" fill="#526579" text-anchor="middle" font-size="12">0</text><text x="165" y="297" fill="#526579" text-anchor="middle" font-size="12">0.5</text><text x="280" y="297" fill="#526579" text-anchor="middle" font-size="12">1</text><text x="395" y="297" fill="#526579" text-anchor="middle" font-size="12">1.5</text><text x="510" y="297" fill="#526579" text-anchor="middle" font-size="12">2</text><text x="625" y="297" fill="#526579" text-anchor="middle" font-size="12">2.5</text><text x="740" y="297" fill="#526579" text-anchor="middle" font-size="12">3</text><path d="M50.0 173.0 L54.6 175.0 L59.2 176.9 L63.8 178.7 L68.4 180.3 L73.0 181.8 L77.6 183.3 L82.2 184.6 L86.8 185.8 L91.4 186.9 L96.0 188.0 L100.6 189.0 L105.2 189.8 L109.8 190.6 L114.4 191.4 L119.0 192.0 L123.6 192.6 L128.2 193.1 L132.8 193.6 L137.4 194.0 L142.0 194.4 L146.6 194.7 L151.2 194.9 L155.8 195.1 L160.4 195.2 L165.0 195.3 L169.6 195.4 L174.2 195.4 L178.8 195.4 L183.4 195.3 L188.0 195.2 L192.6 195.1 L197.2 194.9 L201.8 194.7 L206.4 194.4 L211.0 194.2 L215.6 193.9 L220.2 193.5 L224.8 193.2 L229.4 192.8 L234.0 192.4 L238.6 192.0 L243.2 191.5 L247.8 191.0 L252.4 190.5 L257.0 190.0 L261.6 189.4 L266.2 188.8 L270.8 188.2 L275.4 187.6 L280.0 187.0 L284.6 186.3 L289.2 185.7 L293.8 185.0 L298.4 184.3 L303.0 183.5 L307.6 182.8 L312.2 182.0 L316.8 181.3 L321.4 180.5 L326.0 179.7 L330.6 178.8 L335.2 178.0 L339.8 177.1 L344.4 176.3 L349.0 175.4 L353.6 174.5 L358.2 173.6 L362.8 172.6 L367.4 171.7 L372.0 170.7 L376.6 169.7 L381.2 168.7 L385.8 167.7 L390.4 166.7 L395.0 165.7 L399.6 164.6 L404.2 163.6 L408.8 162.5 L413.4 161.4 L418.0 160.3 L422.6 159.2 L427.2 158.1 L431.8 156.9 L436.4 155.8 L441.0 154.6 L445.6 153.4 L450.2 152.2 L454.8 151.0 L459.4 149.8 L464.0 148.5 L468.6 147.3 L473.2 146.0 L477.8 144.7 L482.4 143.4 L487.0 142.1 L491.6 140.8 L496.2 139.4 L500.8 138.1 L505.4 136.7 L510.0 135.3 L514.6 133.9 L519.2 132.5 L523.8 131.0 L528.4 129.6 L533.0 128.1 L537.6 126.6 L542.2 125.2 L546.8 123.6 L551.4 122.1 L556.0 120.6 L560.6 119.0 L565.2 117.4 L569.8 115.8 L574.4 114.2 L579.0 112.6 L583.6 111.0 L588.2 109.3 L592.8 107.6 L597.4 105.9 L602.0 104.2 L606.6 102.5 L611.2 100.7 L615.8 99.0 L620.4 97.2 L625.0 95.4 L629.6 93.6 L634.2 91.7 L638.8 89.9 L643.4 88.0 L648.0 86.1 L652.6 84.2 L657.2 82.3 L661.8 80.3 L666.4 78.3 L671.0 76.4 L675.6 74.3 L680.2 72.3 L684.8 70.3 L689.4 68.2 L694.0 66.1 L698.6 64.0 L703.2 61.8 L707.8 59.7 L712.4 57.5 L717.0 55.3 L721.6 53.1 L726.2 50.8 L730.8 48.5 L735.4 46.2 L740.0 43.9" stroke="#ab603c" stroke-width="3" fill="none" /><path d="M50.0 225.0 L54.6 224.5 L59.2 223.9 L63.8 223.4 L68.4 222.9 L73.0 222.3 L77.6 221.8 L82.2 221.2 L86.8 220.7 L91.4 220.1 L96.0 219.5 L100.6 219.0 L105.2 218.4 L109.8 217.8 L114.4 217.2 L119.0 216.6 L123.6 216.0 L128.2 215.4 L132.8 214.7 L137.4 214.1 L142.0 213.5 L146.6 212.8 L151.2 212.2 L155.8 211.6 L160.4 210.9 L165.0 210.2 L169.6 209.6 L174.2 208.9 L178.8 208.2 L183.4 207.5 L188.0 206.8 L192.6 206.1 L197.2 205.4 L201.8 204.7 L206.4 203.9 L211.0 203.2 L215.6 202.5 L220.2 201.7 L224.8 201.0 L229.4 200.2 L234.0 199.4 L238.6 198.6 L243.2 197.9 L247.8 197.1 L252.4 196.3 L257.0 195.4 L261.6 194.6 L266.2 193.8 L270.8 193.0 L275.4 192.1 L280.0 191.3 L284.6 190.4 L289.2 189.5 L293.8 188.7 L298.4 187.8 L303.0 186.9 L307.6 186.0 L312.2 185.1 L316.8 184.1 L321.4 183.2 L326.0 182.2 L330.6 181.3 L335.2 180.3 L339.8 179.4 L344.4 178.4 L349.0 177.4 L353.6 176.4 L358.2 175.4 L362.8 174.4 L367.4 173.3 L372.0 172.3 L376.6 171.2 L381.2 170.2 L385.8 169.1 L390.4 168.0 L395.0 166.9 L399.6 165.8 L404.2 164.7 L408.8 163.6 L413.4 162.4 L418.0 161.3 L422.6 160.1 L427.2 158.9 L431.8 157.7 L436.4 156.5 L441.0 155.3 L445.6 154.1 L450.2 152.9 L454.8 151.6 L459.4 150.4 L464.0 149.1 L468.6 147.8 L473.2 146.5 L477.8 145.2 L482.4 143.9 L487.0 142.5 L491.6 141.2 L496.2 139.8 L500.8 138.4 L505.4 137.1 L510.0 135.6 L514.6 134.2 L519.2 132.8 L523.8 131.3 L528.4 129.9 L533.0 128.4 L537.6 126.9 L542.2 125.4 L546.8 123.9 L551.4 122.3 L556.0 120.8 L560.6 119.2 L565.2 117.6 L569.8 116.0 L574.4 114.4 L579.0 112.8 L583.6 111.1 L588.2 109.5 L592.8 107.8 L597.4 106.1 L602.0 104.4 L606.6 102.6 L611.2 100.9 L615.8 99.1 L620.4 97.3 L625.0 95.5 L629.6 93.7 L634.2 91.8 L638.8 90.0 L643.4 88.1 L648.0 86.2 L652.6 84.3 L657.2 82.3 L661.8 80.4 L666.4 78.4 L671.0 76.4 L675.6 74.4 L680.2 72.4 L684.8 70.3 L689.4 68.2 L694.0 66.1 L698.6 64.0 L703.2 61.9 L707.8 59.7 L712.4 57.5 L717.0 55.3 L721.6 53.1 L726.2 50.8 L730.8 48.6 L735.4 46.3 L740.0 44.0" stroke="#24759b" stroke-width="3" fill="none" /><path d="M50.0 173.0 L54.6 175.1 L59.2 177.1 L63.8 179.1 L68.4 181.0 L73.0 182.9 L77.6 184.8 L82.2 186.6 L86.8 188.4 L91.4 190.1 L96.0 191.9 L100.6 193.5 L105.2 195.2 L109.8 196.8 L114.4 198.4 L119.0 200.0 L123.6 201.5 L128.2 203.0 L132.8 204.4 L137.4 205.9 L142.0 207.3 L146.6 208.7 L151.2 210.0 L155.8 211.3 L160.4 212.6 L165.0 213.9 L169.6 215.2 L174.2 216.4 L178.8 217.6 L183.4 218.8 L188.0 219.9 L192.6 221.1 L197.2 222.2 L201.8 223.2 L206.4 224.3 L211.0 225.4 L215.6 226.4 L220.2 227.4 L224.8 228.4 L229.4 229.3 L234.0 230.3 L238.6 231.2 L243.2 232.1 L247.8 233.0 L252.4 233.9 L257.0 234.7 L261.6 235.6 L266.2 236.4 L270.8 237.2 L275.4 238.0 L280.0 238.7 L284.6 239.5 L289.2 240.2 L293.8 241.0 L298.4 241.7 L303.0 242.4 L307.6 243.1 L312.2 243.7 L316.8 244.4 L321.4 245.0 L326.0 245.7 L330.6 246.3 L335.2 246.9 L339.8 247.5 L344.4 248.1 L349.0 248.7 L353.6 249.2 L358.2 249.8 L362.8 250.3 L367.4 250.8 L372.0 251.4 L376.6 251.9 L381.2 252.4 L385.8 252.8 L390.4 253.3 L395.0 253.8 L399.6 254.3 L404.2 254.7 L408.8 255.1 L413.4 255.6 L418.0 256.0 L422.6 256.4 L427.2 256.8 L431.8 257.2 L436.4 257.6 L441.0 258.0 L445.6 258.4 L450.2 258.7 L454.8 259.1 L459.4 259.5 L464.0 259.8 L468.6 260.1 L473.2 260.5 L477.8 260.8 L482.4 261.1 L487.0 261.4 L491.6 261.8 L496.2 262.1 L500.8 262.4 L505.4 262.6 L510.0 262.9 L514.6 263.2 L519.2 263.5 L523.8 263.7 L528.4 264.0 L533.0 264.3 L537.6 264.5 L542.2 264.8 L546.8 265.0 L551.4 265.2 L556.0 265.5 L560.6 265.7 L565.2 265.9 L569.8 266.1 L574.4 266.4 L579.0 266.6 L583.6 266.8 L588.2 267.0 L592.8 267.2 L597.4 267.4 L602.0 267.6 L606.6 267.8 L611.2 267.9 L615.8 268.1 L620.4 268.3 L625.0 268.5 L629.6 268.6 L634.2 268.8 L638.8 269.0 L643.4 269.1 L648.0 269.3 L652.6 269.4 L657.2 269.6 L661.8 269.7 L666.4 269.9 L671.0 270.0 L675.6 270.1 L680.2 270.3 L684.8 270.4 L689.4 270.5 L694.0 270.7 L698.6 270.8 L703.2 270.9 L707.8 271.0 L712.4 271.2 L717.0 271.3 L721.6 271.4 L726.2 271.5 L730.8 271.6 L735.4 271.7 L740.0 271.8" stroke="#68778b" stroke-width="3" fill="none" stroke-dasharray="7 5"/><text x="395" y="317" fill="#526579" text-anchor="middle" font-size="13">時間 t</text></svg><figcaption><span class="legend"><span style="color:#ab603c">━━ 元の解</span>　<span style="color:#24759b">━━ 平均を残す縮約</span>　<span style="color:#68778b">┄ 単純な無視</span></span>元の解は (x(t)=rac12(e^{t/2}+e^{-5t/2}))。初期時刻では縮約誤差が0.5あります。</figcaption></figure>
+<p>元の観測値は長い時間では増大し，今回の縮約モデルもその増大を捉えます。しかし単純な \(y=0\) のモデルは減衰すると予測してしまいます。</p>
+<p>今回の縮約モデルの誤差は，</p>
+\[
+\boxed{|x(t)-x_{\mathrm{red}}(t)|=\frac12e^{-5t/2}}
+\tag{13}
+\]
+<p>です。したがって長い時間ではよい近似になりますが，<strong>初期時刻には \(x(0)=1\) と \(x_{\mathrm{red}}(0)=1/2\) のずれがある</strong>点を忘れてはいけません。</p>
+
+<h2 id="initial">7．隠れた初期値が分からなければ，どうなる？</h2>
+<p>ここで重要な問題が残っています。今回の縮約モデルを動かすには，</p>
+\[
+\boxed{u_0=\frac{x_0+y_0}{2}}
+\tag{14}
+\]
+<p>が必要です。しかし，\(y_0\) はそもそも見えない変数の初期値でした。もし \(x_0\) しか分からなければ，\(u_0\) を正確には決められません。</p>
+<p>例えば同じ \(x_0=1\) でも，\(y_0=1\) なら \(u_0=1\)，\(y_0=-1\) なら \(u_0=0\) になります。</p>
+<p>そこで \(y_0\) の推定値を \(\widehat y_0\) とし，\(\widehat u_0=(x_0+\widehat y_0)/2\) から一変数モデルを始めてみます。この予測を \(\widehat x_{\mathrm{red}}(t)=\widehat u_0e^{(a-1)t}\) とすると，</p>
+\[
+\boxed{\begin{aligned}
+x(t)-\widehat x_{\mathrm{red}}(t)
+={}&\frac{y_0-\widehat y_0}{2}e^{(a-1)t}\\
+&+\frac{x_0-y_0}{2}e^{-(a+1)t}.
+\end{aligned}}
+\tag{15}
+\]
+<p>右辺の第一項は<strong>初期値を推定した誤差</strong>，第二項は<strong>変数 \(v\) を省いた誤差</strong>です。特に \(a>1\) では，第一項は時間とともに増大し得ます。</p>
+<p><strong>安定性の分類を保つ縮約が作れたことと，観測データだけで信頼できる予測ができることは，同じではありません。</strong></p>
+
+<h2 id="limits">8．このモデルで言えること，言えないこと</h2>
+<ul>
+<li><strong>言えること：</strong> この対称な二変数モデルでは \(u\) と \(v\) が完全に分離し，\(u\) だけで元の系の安定性の分類が分かります。</li>
+<li><strong>言えること：</strong> 省いた成分による誤差を，すべての時刻に対する式で評価できます。</li>
+<li><strong>言えないこと：</strong> 一般の大きな系でも，同じような簡単な変数変換が必ず見つかるわけではありません。</li>
+<li><strong>言えないこと：</strong> \(x_0\) だけが観測されている場合に，縮約後の初期値が自動的に分かるわけではありません。</li>
+</ul>
+<p>さらに \(a=0\) では \(u\) も \(v\) も同じ速さ \(e^{-t}\) で減衰します。したがって「\(v\) だけが特に速いから省いてよい」という時間尺度の違いは，この場合にはありません。</p>
+
+<h2 id="exercise">9．練習問題</h2>
+<p><strong>問題1：</strong> \(a=\frac12,\ x_0=y_0=1\) のとき \(u_0,v_0\) と縮約誤差を求めてください。</p>
+<p><strong>問題2：</strong> \(a=\frac12,\ x_0=1,\ y_0=0\) のとき \(x(t)\) と \(x_{\mathrm{red}}(t)\) を求めてください。</p>
+<p><strong>問題3：</strong> \(a=1,\ x_0=2,\ y_0=0\) のとき \(x(t)\) の極限を求め，縮約モデルと比較してください。</p>
+<p><strong>問題4（発展）：</strong> \(a=\frac32,\ x_0=1,\ y_0=0\) のとき，隠れた初期値を \(\widehat y_0=0.2\) と誤って推定した場合の誤差を求めてください。</p>
+<details><summary><strong>練習問題の解答と計算過程を見る</strong></summary>
+<p><strong>問題1：</strong> \(u_0=1,\ v_0=0\) なので，元の値 \(x=e^{-t/2}\) と縮約値は完全に一致し，誤差0です。</p>
+<p><strong>問題2：</strong> \(u_0=v_0=\frac12\) より，\(x(t)=\frac12e^{-t/2}+\frac12e^{-3t/2}\)，\(x_{\mathrm{red}}(t)=\frac12e^{-t/2}\) です。誤差は \(\frac12e^{-3t/2}\) です。</p>
+<p><strong>問題3：</strong> \(u_0=v_0=1\) より，\(x(t)=1+e^{-2t}\) なので，極限は1です。縮約モデルは最初から1です。</p>
+<p><strong>問題4：</strong> 式(15)から \(x(t)-\widehat x_{\mathrm{red}}(t)=-0.1e^{t/2}+0.5e^{-5t/2}\) です。消した成分の誤差は減衰しますが，初期値を推定した誤差は増大します。</p>
+</details>
+
+<h2 id="end">おわりに――縮約は「何を保つか」から考える</h2>
+<p>今回の例では，観測していない \(y\) を単純に消すのではなく，平均 \(u=(x+y)/2\) と差の半分 \(v=(x-y)/2\) に変えることで，安定性の分類を保つ一変数モデルを作れました。</p>
+<p>しかし，モデルの誤差が小さいか，未知の初期値をどのように扱うかは，別途確認が必要です。</p>
+<blockquote><strong>今回の一言：何を消すかを決める前に，何を保ちたいかを考える。</strong></blockquote>
+<p>第4回「見えない変数は過去を覚えている」では，近似として捨てるのではなく，見えない変数の影響を残したまま正確に消去することを考えます。そのとき，過去の値を使う記憶（memory）が自然に現れます。</p>
+<nav class="chapter-bottom-nav" aria-label="シリーズの記事間の移動"><a href="./unresolved_dynamics_intro_02.html">← 第2回へ戻る</a><a href="../stable-reduction-intro/">シリーズ目次へ →</a></nav>
+</article>
+<footer class="intro-footer"><a href="../stable-reduction-intro/">入門シリーズの目次</a> · <a href="../">ブログ一覧</a><p>© 2026 Hiroki Ishizaka</p></footer>
+</main></body></html>
