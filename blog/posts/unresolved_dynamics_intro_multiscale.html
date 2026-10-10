@@ -1,0 +1,349 @@
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#172a42"><title>特別編：マルチスケール法と未解像ダイナミクス――微細構造を消すと何が残るのか？ | Hiroki Ishizaka</title>
+<meta name="description" content="未解像ダイナミクスの安定縮約・入門特別編．マルチスケール法，記憶核，初期層，有効方程式と近似誤差を大学初年次向けに解説します．">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_multiscale.html"><link rel="up" href="../stable-reduction-intro/"><link rel="prev" href="./unresolved_dynamics_intro_06.html"><link rel="icon" href="../../favicon.ico">
+<meta property="og:type" content="article"><meta property="og:locale" content="ja_JP"><meta property="og:title" content="特別編：マルチスケール法と未解像ダイナミクス――微細構造を消すと何が残るのか？"><meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_multiscale.html">
+<meta property="og:description" content="時間尺度の分離から，記憶と有効方程式の数学的な関係を学びます．">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"特別編：マルチスケール法と未解像ダイナミクス――微細構造を消すと何が残るのか？","url":"https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_multiscale.html","datePublished":"2026-10-10","dateModified":"2026-10-10","author":{"@type":"Person","name":"Hiroki Ishizaka"},"inLanguage":"ja"}</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --page:#f3f6fa;--paper:#fff;--ink:#1d2a3b;--muted:#53677b;
+  --line:#dce4ee;--accent:#225e88;--accent-dark:#164668;--soft:#f3f7fb;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  margin:0;min-height:100vh;color:var(--ink);
+  background:linear-gradient(180deg,#edf2f8 0,#f3f6fa 420px,#f3f6fa 100%);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,system-ui,sans-serif;
+  font-size:16px;line-height:1.85;overflow-wrap:anywhere;
+}
+a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+a:hover{color:var(--accent-dark)}
+a:focus-visible,summary:focus-visible{outline:3px solid #98c5e2;outline-offset:4px}
+.intro-site-header{background:#172a42;color:#fff;border-bottom:1px solid #253b56}
+.intro-site-nav{width:min(1060px,calc(100% - 36px));min-height:78px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:12px 0}
+.intro-site-nav .brand{color:#fff;text-decoration:none;font-size:1.02rem;font-weight:750;letter-spacing:.018em;line-height:1.4}
+.intro-site-nav .brand small{display:block;font-size:.69rem;font-weight:450;letter-spacing:.07em;color:#c4d2e1}
+.intro-site-nav .links{display:flex;gap:22px;flex-wrap:wrap;font-size:.91rem}
+.intro-site-nav .links a{color:#d9e6f3;text-decoration:none}
+.intro-site-nav .links a[aria-current="page"]{font-weight:800;color:#fff;border-bottom:2px solid #b5d4ec}
+.intro-page{width:min(1010px,calc(100% - 32px));margin:0 auto;padding-bottom:48px}
+.intro-breadcrumb{max-width:860px;margin:22px auto;color:#586b80;font-size:.83rem}
+.intro-breadcrumb a{color:#405e7b}
+.intro-hero,.intro-article,.intro-toc{max-width:860px;margin-left:auto;margin-right:auto}
+.intro-hero{
+  background:#fff;border:1px solid var(--line);border-radius:20px;
+  padding:clamp(28px,5.8vw,58px);
+  box-shadow:0 10px 38px rgba(24,44,66,.045);
+  border-top:5px solid var(--accent);
+}
+.intro-kicker{display:inline-block;color:var(--accent);font-size:.77rem;font-weight:800;letter-spacing:.075em;margin-bottom:15px}
+.intro-hero h1{font-size:clamp(1.72rem,3.7vw,2.6rem);line-height:1.45;letter-spacing:.005em;margin:0;font-weight:760;color:#152840}
+.intro-hero .intro-lead{font-size:clamp(.96rem,1.7vw,1.11rem);color:#4b6074;margin:16px 0 0;line-height:1.9}
+.intro-meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px 15px;margin-top:22px;font-size:.83rem;color:#607286}
+.intro-meta span+span::before{content:"•";margin-right:15px;color:#a3b1bf}
+.intro-toc{
+  background:#f9fbfd;border:1px solid var(--line);border-radius:16px;
+  padding:21px clamp(20px,4vw,30px);margin-top:18px;margin-bottom:20px
+}
+.intro-toc h2{font-size:.94rem;letter-spacing:.015em;margin:0 0 8px;color:#2f485f}
+.intro-toc ol{display:grid;grid-template-columns:1fr 1fr;gap:5px 28px;margin:0;padding-left:22px;font-size:.87rem}
+.intro-toc li{padding:3px 0}
+.intro-toc a{text-decoration:none}
+.intro-article{
+  padding:clamp(23px,6vw,62px);background:var(--paper);
+  border:1px solid var(--line);border-radius:20px;box-shadow:0 15px 48px rgba(28,52,82,.045)
+}
+.intro-article h2{scroll-margin-top:20px;font-size:clamp(1.32rem,2.6vw,1.66rem);line-height:1.5;letter-spacing:.002em;color:#1c344d;margin:2.55em 0 .85em;padding-bottom:.42em;border-bottom:1px solid #e1e8f0}
+.intro-article h2:first-child{margin-top:0}
+.intro-article h3{font-size:1.12rem;line-height:1.55;color:#254562;margin:2em 0 .7em}
+.intro-article p{margin:0 0 1.24em;line-height:1.95}
+.intro-article ul,.intro-article ol{padding-left:1.55em;margin:1em 0 1.55em}
+.intro-article li{padding-left:.15em;margin:.45em 0;line-height:1.85}
+.intro-article strong{font-weight:760;color:#183951}
+.intro-article blockquote{background:#f0f6fa;border:1px solid #d9e7f1;border-left:4px solid #376d93;padding:19px 22px;margin:22px 0;border-radius:0 12px 12px 0}
+.intro-article blockquote strong{color:#214967}
+.intro-article details{background:#f8fbfe;border:1px solid #dce5ed;border-radius:12px;padding:17px 19px;margin:18px 0}
+.intro-article details[open]{background:#f5f9fc}
+.intro-article summary{cursor:pointer;color:#204c70}
+.intro-article details p{margin:1em 0 0}
+.intro-article .figure{max-width:100%;margin:30px 0 38px;padding:14px 12px;background:#fff;border:1px solid #e0e7ee;border-radius:12px}
+.intro-article .figure svg{display:block;width:100%;height:auto}
+.intro-article figcaption{font-size:.84rem;line-height:1.65;color:#586a7c;text-align:center;margin:8px 8px 0}
+.intro-article .legend{display:block;margin-bottom:8px;font-weight:650}
+.intro-article mjx-container[display="true"]{display:block;overflow-x:auto;overflow-y:hidden;max-width:100%;padding:.35rem 0;scrollbar-width:thin}
+.intro-article mjx-container{max-width:100%}
+.intro-footer{max-width:860px;margin:22px auto 0;text-align:center;color:#64768a;font-size:.86rem}
+.intro-footer a{font-weight:650}
+@media(max-width:640px){
+  body{font-size:15px}
+  .intro-site-nav{padding:13px 0}
+  .intro-site-nav .links{gap:14px}
+  .intro-page{width:calc(100% - 24px)}
+  .intro-hero,.intro-article{border-radius:13px}
+  .intro-toc ol{grid-template-columns:1fr}
+  .intro-meta span+span::before{margin-right:8px}
+  .intro-article blockquote{padding:13px 14px}
+  .intro-article .figure{padding:6px 3px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+
+.intro-article .meaning{background:#f8fbfd;border:1px solid #dce6f0;border-radius:13px;padding:10px 19px;margin:16px 0}
+.intro-article .meaning h3{margin:5px 0 7px}
+.intro-article .meaning p{margin:0 0 9px}
+.intro-article .result-table{max-width:100%;overflow-x:auto;margin:24px 0}
+
+
+
+
+.intro-article table{width:100%;border-collapse:collapse;display:block;overflow-x:auto;margin:19px 0;font-size:.91rem}
+.intro-article th,.intro-article td{border:1px solid #dce5ef;padding:11px 13px;text-align:left;vertical-align:top}
+.intro-article th{background:#eef4f9;color:#214565}
+.intro-article .chapter-bottom-nav{display:flex;justify-content:space-between;flex-wrap:wrap;gap:15px;padding:17px 19px;border-radius:12px;border:1px solid #dce5ed;background:#f5f9fc;margin:26px 0}
+.intro-article .chapter-bottom-nav a{font-size:.89rem;font-weight:700}
+@media(max-width:640px){.intro-article .chapter-bottom-nav{padding:13px}}
+
+
+.intro-article .reduction-flow{display:flex;gap:15px;align-items:center;justify-content:space-between;background:#f7fafc;border:1px solid #dce6ef;border-radius:15px;padding:21px;margin:24px 0}
+.intro-article .flow-node{min-width:0;padding:19px 15px;border-radius:13px;display:flex;flex-direction:column;gap:2px;background:#fff;border:1px solid #cfdeeb;text-align:center}
+.intro-article .flow-node strong{font-size:1.16rem;color:#1c3954}
+.intro-article .flow-node small{font-size:.77rem;color:#647588}
+.intro-article .flow-node.keep{background:#edf6fb;border-color:#b2d2e5}
+.intro-article .flow-node.hidden{background:#f8f6f4;border-color:#dfd3c9}
+.intro-article .flow-eyebrow{font-size:.7rem;color:#526c83;font-weight:750}
+.intro-article .flow-arrow{font-size:1.45rem;color:#608aa9;font-weight:800}
+.intro-article .flow-split{display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1}
+.intro-article .flow-node.full{flex:0 0 34%}
+.intro-article .result-table{max-width:100%;overflow-x:auto;margin:23px 0}
+.intro-article .result-table table{border-collapse:collapse;width:100%;min-width:450px;font-size:.92rem}
+.intro-article th,.intro-article td{padding:11px 12px;border-bottom:1px solid #dce4ee;text-align:left;vertical-align:top}
+.intro-article th{background:#eff5fa;color:#214968}
+.intro-article .chapter-bottom-nav{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;padding:17px 19px;background:#f5f9fc;border:1px solid #dce5ed;border-radius:12px;margin:24px 0}
+.intro-article .chapter-bottom-nav a{font-size:.87rem;font-weight:700}
+.intro-article .review-links{border:1px solid #dce6ef;border-radius:13px;background:#f8fbfe;padding:12px 22px;margin:20px 0}
+.intro-article .review-links p{margin:.6rem 0;font-size:.94rem}
+@media(max-width:640px){.intro-article .reduction-flow{display:block;padding:15px}.intro-article .flow-split{grid-template-columns:1fr 1fr}.intro-article .flow-arrow{text-align:center}.intro-article .flow-node{padding:13px 8px}.intro-article .flow-node strong{font-size:.96rem}.intro-article .chapter-bottom-nav{padding:13px}}
+
+
+.intro-article .result-table{max-width:100%;overflow-x:auto;margin:22px 0}
+.intro-article table{width:100%;min-width:420px;border-collapse:collapse;font-size:.93rem}
+.intro-article th,.intro-article td{text-align:left;padding:11px 12px;border-bottom:1px solid #dce4ee;vertical-align:top}
+.intro-article th{background:#f1f6fa;color:#244b68}
+.intro-article .chapter-bottom-nav{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;background:#f6f9fc;border:1px solid #dce4ee;border-radius:12px;padding:17px 18px;margin:25px 0}
+</style></head><body>
+<header class="intro-site-header"><div class="intro-site-nav"><a href="../../" class="brand">ISHIZAKA Hiroki Website<small>Mathematics · Numerical analysis</small></a><nav class="links" aria-label="サイトナビゲーション"><a href="../../">Home</a><a href="../">Blog</a><a href="../stable-reduction-intro/" aria-current="page">入門シリーズ</a><a href="../../research/">Research</a></nav></div></header>
+<main class="intro-page"><nav class="intro-breadcrumb" aria-label="パンくずリスト"><a href="../../">Home</a> › <a href="../">Blog</a> › <a href="../stable-reduction-intro/">安定縮約入門</a> › 特別編</nav>
+<header class="intro-hero"><div class="intro-kicker"><a href="../stable-reduction-intro/" style="color:inherit;text-decoration:none">STABLE REDUCTION · BEGINNER SERIES · SPECIAL</a></div>
+<h1>特別編：マルチスケール法と未解像ダイナミクス――微細構造を消すと何が残るのか？</h1><p class="intro-lead">見えない速い変数を消すと記憶が現れる．その記憶をいつ局所的な式に近似できるかを確かめます．</p>
+<div class="intro-meta"><span><time datetime="2026-10-10">2026年10月10日</time></span><span>大学初年次〜発展</span><span>全6回の後に読む特別編</span></div></header>
+<nav class="intro-toc" aria-label="この記事の目次"><h2>この記事の目次</h2><ol><li><a href="#intro">はじめに</a></li><li><a href="#model">二つの時間尺度</a></li><li><a href="#eliminate">正確な状態消去</a></li><li><a href="#kernel">記憶核の集中</a></li><li><a href="#effective">局所的な有効方程式</a></li><li><a href="#proof">有限時間の誤差評価</a></li><li><a href="#layer">初期層</a></li><li><a href="#example">具体例</a></li><li><a href="#related">マルチスケール法との関係</a></li><li><a href="#exercises">練習問題</a></li><li><a href="#end">まとめ</a></li></ol></nav>
+<article class="intro-article" aria-label="特別編：マルチスケール法と未解像ダイナミクス――微細構造を消すと何が残るのか？">
+<h2 id="intro">はじめに――微細な動きを消してもよいのか？</h2>
+<p>入門シリーズ第1〜6回では，見えない変数の影響，安定性，近似縮約，記憶項と誤差を学びました．今回は，速く変わる微細な成分とゆっくり変わる大きな成分が共存する<strong>マルチスケール問題</strong>につなぎます．</p>
+<blockquote><strong>微細な動きを消したとき，その影響はどこへ行くのでしょうか．</strong></blockquote>
+<p>正確に消去すると記憶が現れることがあります．さらに時間尺度が十分に分離すると，その記憶を局所的な項に置き換えて近似できる場合があります．今回は，その条件と限界を一つの微分方程式から調べます．</p>
+
+
+<h2 id="model">1．遅い変数と速い変数</h2>
+<p>大きな物体の平均温度と，内部にある微細な温度差を想像してみましょう．前者はゆっくり変わり，後者は短い時間で緩和することがあります．</p>
+<p>次の二変数モデルを考えます．</p>
+\[
+\boxed{\begin{aligned}
+x'(t)&=-\alpha x(t)+\beta y(t),\\
+\varepsilon y'(t)&=\gamma x(t)-y(t),
+\end{aligned}\qquad\varepsilon>0}
+\tag{1}
+\]
+<p>\(\alpha,\beta,\gamma\) は時間に依存しない実数とし，\(x(0)=x_0,\ y(0)=y_0\) です．\(0<\varepsilon\ll1\) は速い緩和の<strong>時間尺度</strong>を表します．ただし，\(y\) は \(\beta y\) を通じて \(x\) に影響するため，速いからといって無視してよいとは限りません．</p>
+
+
+<h2 id="eliminate">2．速い変数を正確に消すと，記憶が残る</h2>
+<p>第二式を \(y'+\varepsilon^{-1}y=\gamma\varepsilon^{-1}x\) と書き，積分因子 \(e^{t/\varepsilon}\) を掛けます．積の微分を時刻0から積分して，</p>
+\[
+\boxed{
+y(t)=e^{-t/\varepsilon}y_0+
+\frac{\gamma}{\varepsilon}
+\int_0^t e^{-(t-s)/\varepsilon}x(s)\,ds
+}
+\tag{2}
+\]
+<p>を得ます．これを第一式に代入すると，</p>
+\[
+\boxed{\begin{aligned}
+x'(t)={}&-\alpha x(t)+\beta e^{-t/\varepsilon}y_0\\
+&+\frac{\beta\gamma}{\varepsilon}
+\int_0^t e^{-(t-s)/\varepsilon}x(s)\,ds.
+\end{aligned}}
+\tag{3}
+\]
+<p>です．これは<strong>近似ではなく正確な変形</strong>です．見えない初期値の影響も残っています．このときの記憶核は</p>
+\[
+\boxed{
+K_\varepsilon(\tau)=
+\frac{\beta\gamma}{\varepsilon}e^{-\tau/\varepsilon},
+\qquad \tau\geq0.
+}
+\tag{4}
+\]
+<p>です．</p>
+
+
+<h2 id="kernel">3．速い緩和があると，記憶は短くなる</h2>
+<p>重み \(g_\varepsilon(\tau)=\varepsilon^{-1}e^{-\tau/\varepsilon}\) は，常に正で，</p>
+\[
+\boxed{\int_0^\infty g_\varepsilon(\tau)\,d\tau=1}
+\tag{5}
+\]
+<p>を満たします．\(\varepsilon\) が小さくなると，時間差 \(\tau=0\) の近くに強く集中します．</p>
+<figure class="figure"><svg viewBox="0 0 780 316" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="kernel-title kernel-desc"><title id="kernel-title">時間尺度を変えた指数型記憶核</title><desc id="kernel-desc">eps0.1の曲線は時刻差0の付近で背が高く急激に減衰する．eps0.5では幅広く減衰する</desc><line x1="60" y1="250" x2="742" y2="250" stroke="#e3eaf1"/><text x="51" y="254" text-anchor="end" font-size="12" fill="#617487">0</text><line x1="60" y1="208.1818181818182" x2="742" y2="208.1818181818182" stroke="#e3eaf1"/><text x="51" y="212.1818181818182" text-anchor="end" font-size="12" fill="#617487">2</text><line x1="60" y1="166.36363636363637" x2="742" y2="166.36363636363637" stroke="#e3eaf1"/><text x="51" y="170.36363636363637" text-anchor="end" font-size="12" fill="#617487">4</text><line x1="60" y1="124.54545454545456" x2="742" y2="124.54545454545456" stroke="#e3eaf1"/><text x="51" y="128.54545454545456" text-anchor="end" font-size="12" fill="#617487">6</text><line x1="60" y1="82.72727272727272" x2="742" y2="82.72727272727272" stroke="#e3eaf1"/><text x="51" y="86.72727272727272" text-anchor="end" font-size="12" fill="#617487">8</text><line x1="60" y1="40.90909090909091" x2="742" y2="40.90909090909091" stroke="#e3eaf1"/><text x="51" y="44.90909090909091" text-anchor="end" font-size="12" fill="#617487">10</text><text x="60" y="272" text-anchor="middle" font-size="12" fill="#617487">0</text><text x="173.66666666666669" y="272" text-anchor="middle" font-size="12" fill="#617487">0.2</text><text x="287.33333333333337" y="272" text-anchor="middle" font-size="12" fill="#617487">0.4</text><text x="401" y="272" text-anchor="middle" font-size="12" fill="#617487">0.6</text><text x="514.6666666666667" y="272" text-anchor="middle" font-size="12" fill="#617487">0.8</text><text x="628.3333333333334" y="272" text-anchor="middle" font-size="12" fill="#617487">1</text><text x="742" y="272" text-anchor="middle" font-size="12" fill="#617487">1.2</text><path stroke="#2b769c" stroke-width="3.5" fill="none"  d="M60.0 208.2 L63.8 208.7 L67.6 209.3 L71.4 209.8 L75.2 210.4 L78.9 210.9 L82.7 211.4 L86.5 211.9 L90.3 212.4 L94.1 212.9 L97.9 213.4 L101.7 213.9 L105.5 214.4 L109.3 214.8 L113.0 215.3 L116.8 215.8 L120.6 216.2 L124.4 216.7 L128.2 217.1 L132.0 217.5 L135.8 218.0 L139.6 218.4 L143.4 218.8 L147.1 219.2 L150.9 219.6 L154.7 220.0 L158.5 220.4 L162.3 220.8 L166.1 221.2 L169.9 221.6 L173.7 222.0 L177.5 222.3 L181.2 222.7 L185.0 223.1 L188.8 223.4 L192.6 223.8 L196.4 224.1 L200.2 224.5 L204.0 224.8 L207.8 225.1 L211.6 225.5 L215.3 225.8 L219.1 226.1 L222.9 226.4 L226.7 226.7 L230.5 227.0 L234.3 227.4 L238.1 227.7 L241.9 227.9 L245.7 228.2 L249.4 228.5 L253.2 228.8 L257.0 229.1 L260.8 229.4 L264.6 229.6 L268.4 229.9 L272.2 230.2 L276.0 230.4 L279.8 230.7 L283.5 231.0 L287.3 231.2 L291.1 231.5 L294.9 231.7 L298.7 231.9 L302.5 232.2 L306.3 232.4 L310.1 232.7 L313.9 232.9 L317.6 233.1 L321.4 233.3 L325.2 233.6 L329.0 233.8 L332.8 234.0 L336.6 234.2 L340.4 234.4 L344.2 234.6 L348.0 234.8 L351.7 235.0 L355.5 235.2 L359.3 235.4 L363.1 235.6 L366.9 235.8 L370.7 236.0 L374.5 236.2 L378.3 236.4 L382.1 236.5 L385.8 236.7 L389.6 236.9 L393.4 237.1 L397.2 237.2 L401.0 237.4 L404.8 237.6 L408.6 237.7 L412.4 237.9 L416.2 238.1 L419.9 238.2 L423.7 238.4 L427.5 238.5 L431.3 238.7 L435.1 238.8 L438.9 239.0 L442.7 239.1 L446.5 239.3 L450.3 239.4 L454.0 239.5 L457.8 239.7 L461.6 239.8 L465.4 240.0 L469.2 240.1 L473.0 240.2 L476.8 240.4 L480.6 240.5 L484.4 240.6 L488.1 240.7 L491.9 240.9 L495.7 241.0 L499.5 241.1 L503.3 241.2 L507.1 241.3 L510.9 241.4 L514.7 241.6 L518.5 241.7 L522.2 241.8 L526.0 241.9 L529.8 242.0 L533.6 242.1 L537.4 242.2 L541.2 242.3 L545.0 242.4 L548.8 242.5 L552.6 242.6 L556.3 242.7 L560.1 242.8 L563.9 242.9 L567.7 243.0 L571.5 243.1 L575.3 243.2 L579.1 243.3 L582.9 243.4 L586.7 243.4 L590.4 243.5 L594.2 243.6 L598.0 243.7 L601.8 243.8 L605.6 243.9 L609.4 244.0 L613.2 244.0 L617.0 244.1 L620.8 244.2 L624.5 244.3 L628.3 244.3 L632.1 244.4 L635.9 244.5 L639.7 244.6 L643.5 244.6 L647.3 244.7 L651.1 244.8 L654.9 244.8 L658.6 244.9 L662.4 245.0 L666.2 245.0 L670.0 245.1 L673.8 245.2 L677.6 245.2 L681.4 245.3 L685.2 245.4 L689.0 245.4 L692.7 245.5 L696.5 245.5 L700.3 245.6 L704.1 245.7 L707.9 245.7 L711.7 245.8 L715.5 245.8 L719.3 245.9 L723.1 245.9 L726.8 246.0 L730.6 246.1 L734.4 246.1 L738.2 246.2 L742.0 246.2" /><path stroke="#b26841" stroke-width="3.5" fill="none" stroke-dasharray="8 5" d="M60.0 40.9 L63.8 54.4 L67.6 67.0 L71.4 78.8 L75.2 89.9 L78.9 100.2 L82.7 109.8 L86.5 118.9 L90.3 127.3 L94.1 135.2 L97.9 142.6 L101.7 149.6 L105.5 156.0 L109.3 162.1 L113.0 167.8 L116.8 173.1 L120.6 178.0 L124.4 182.7 L128.2 187.0 L132.0 191.1 L135.8 194.9 L139.6 198.4 L143.4 201.8 L147.1 204.9 L150.9 207.8 L154.7 210.5 L158.5 213.1 L162.3 215.4 L166.1 217.7 L169.9 219.8 L173.7 221.7 L177.5 223.5 L181.2 225.2 L185.0 226.8 L188.8 228.3 L192.6 229.7 L196.4 231.0 L200.2 232.3 L204.0 233.4 L207.8 234.5 L211.6 235.5 L215.3 236.4 L219.1 237.3 L222.9 238.1 L226.7 238.9 L230.5 239.6 L234.3 240.3 L238.1 240.9 L241.9 241.5 L245.7 242.0 L249.4 242.5 L253.2 243.0 L257.0 243.5 L260.8 243.9 L264.6 244.3 L268.4 244.7 L272.2 245.0 L276.0 245.3 L279.8 245.6 L283.5 245.9 L287.3 246.2 L291.1 246.4 L294.9 246.6 L298.7 246.9 L302.5 247.1 L306.3 247.3 L310.1 247.4 L313.9 247.6 L317.6 247.8 L321.4 247.9 L325.2 248.0 L329.0 248.2 L332.8 248.3 L336.6 248.4 L340.4 248.5 L344.2 248.6 L348.0 248.7 L351.7 248.8 L355.5 248.8 L359.3 248.9 L363.1 249.0 L366.9 249.1 L370.7 249.1 L374.5 249.2 L378.3 249.2 L382.1 249.3 L385.8 249.3 L389.6 249.4 L393.4 249.4 L397.2 249.4 L401.0 249.5 L404.8 249.5 L408.6 249.5 L412.4 249.6 L416.2 249.6 L419.9 249.6 L423.7 249.7 L427.5 249.7 L431.3 249.7 L435.1 249.7 L438.9 249.7 L442.7 249.8 L446.5 249.8 L450.3 249.8 L454.0 249.8 L457.8 249.8 L461.6 249.8 L465.4 249.8 L469.2 249.8 L473.0 249.9 L476.8 249.9 L480.6 249.9 L484.4 249.9 L488.1 249.9 L491.9 249.9 L495.7 249.9 L499.5 249.9 L503.3 249.9 L507.1 249.9 L510.9 249.9 L514.7 249.9 L518.5 249.9 L522.2 249.9 L526.0 249.9 L529.8 249.9 L533.6 249.9 L537.4 250.0 L541.2 250.0 L545.0 250.0 L548.8 250.0 L552.6 250.0 L556.3 250.0 L560.1 250.0 L563.9 250.0 L567.7 250.0 L571.5 250.0 L575.3 250.0 L579.1 250.0 L582.9 250.0 L586.7 250.0 L590.4 250.0 L594.2 250.0 L598.0 250.0 L601.8 250.0 L605.6 250.0 L609.4 250.0 L613.2 250.0 L617.0 250.0 L620.8 250.0 L624.5 250.0 L628.3 250.0 L632.1 250.0 L635.9 250.0 L639.7 250.0 L643.5 250.0 L647.3 250.0 L651.1 250.0 L654.9 250.0 L658.6 250.0 L662.4 250.0 L666.2 250.0 L670.0 250.0 L673.8 250.0 L677.6 250.0 L681.4 250.0 L685.2 250.0 L689.0 250.0 L692.7 250.0 L696.5 250.0 L700.3 250.0 L704.1 250.0 L707.9 250.0 L711.7 250.0 L715.5 250.0 L719.3 250.0 L723.1 250.0 L726.8 250.0 L730.6 250.0 L734.4 250.0 L738.2 250.0 L742.0 250.0" /><text x="401" y="309" text-anchor="middle" font-size="13" fill="#506678">時間差 τ</text></svg><figcaption><span class="legend"><span style="color:#2b769c">━━ ε = 0.5</span>　<span style="color:#b26841">┄ ε = 0.1</span></span>小さい (arepsilon) ほど直近の過去に集中します．ただし各曲線の下の面積は1です．</figcaption></figure>
+<p>固定した \(t>0\) で，\(x\) が連続なら，</p>
+\[
+\boxed{
+\frac1\varepsilon\int_0^t
+e^{-(t-s)/\varepsilon}x(s)\,ds
+\longrightarrow x(t)\quad(\varepsilon\to0)
+}
+\tag{6}
+\]
+<p>となります．記憶積分が，いまの値に近づくのです．しかし \(t=0\) では左辺は常に0なので，<strong>時刻0を含めて同じ収束を主張してはいけません</strong>．</p>
+
+
+<h2 id="effective">4．記憶を持たない有効方程式へ</h2>
+<p>十分小さな \(\varepsilon\) に対して，式(2)から \(y(t)\approx\gamma x(t)\) を期待できます．第一式へ代入すると，</p>
+\[
+\boxed{
+X'(t)=\lambda X(t),\qquad
+\lambda=-\alpha+\beta\gamma,\qquad X(0)=x_0,
+}
+\tag{7}
+\]
+<p>という<strong>一変数の有効方程式</strong>になります．その解は \(X(t)=x_0e^{\lambda t}\) です．</p>
+<p>式(3)は正確な状態消去ですが，式(7)は<strong>近似的な縮約</strong>です．だからこそ，どの程度近いかを別に証明する必要があります．</p>
+
+
+<h2 id="proof">5．近似誤差は本当に小さくなるのか？</h2>
+<p>速い変数とその近似の差を \(w(t)=y(t)-\gamma x(t)\)，\(w_0=y_0-\gamma x_0\) と置きます．元の方程式から，</p>
+\[
+\varepsilon w'(t)=-w(t)-\varepsilon\gamma x'(t)
+\]
+<p>です．これを解けば，</p>
+\[
+\boxed{
+w(t)=e^{-t/\varepsilon}w_0
+-\gamma\int_0^t e^{-(t-s)/\varepsilon}x'(s)\,ds.
+}
+\tag{8}
+\]
+<p>一方，\(x'=\lambda x+\beta w\) なので，\(X\) との差を積分で表すと，</p>
+\[
+\boxed{x(t)-X(t)=
+\beta\int_0^t e^{\lambda(t-s)}w(s)\,ds.}
+\tag{9}
+\]
+<p>です．固定した有限時間区間 \(0\leq t\leq T\) で \(|x'(t)|\leq M_T\) とすると，</p>
+\[
+\int_0^T |w(t)|\,dt\leq
+\varepsilon|w_0|+\varepsilon|\gamma|T M_T
+\]
+<p>となります．したがって，</p>
+\[
+\boxed{\begin{aligned}
+|x(t)-X(t)|\leq{}&
+\varepsilon|\beta|e^{\max\{\lambda,0\}T}\\
+&\times\bigl(|y_0-\gamma x_0|+|\gamma|TM_T\bigr),
+\quad0\leq t\leq T.
+\end{aligned}}
+\tag{10}
+\]
+<p>です．\(M_T\) を \(\varepsilon\) に依存しない値に選べれば，固定時間区間での誤差は \(O(\varepsilon)\)，つまり定数倍の \(\varepsilon\) 以下です．</p>
+<details><summary><strong>発展：\(M_T\) を独立に選べることの証明</strong></summary>
+<p>式(2)から \(m(t)=\sup_{0\leq s\leq t}|x(s)|\) と置くと，\(|y(t)|\leq|y_0|+|\gamma|m(t)\) です．第一式を積分して，</p>
+\[
+m(t)\leq |x_0|+|\beta|T|y_0|
++(|\alpha|+|\beta\gamma|)\int_0^t m(s)\,ds
+\]
+<p>を得ます．この不等式を用いると，</p>
+\[
+m(t)\leq X_T:=(|x_0|+|\beta|T|y_0|)
+e^{(|\alpha|+|\beta\gamma|)T}.
+\]
+<p>したがって \(M_T=(|\alpha|+|\beta\gamma|)X_T+|\beta||y_0|\) と選べます．これは固定した \(x_0,y_0,\alpha,\beta,\gamma,T\) に対して \(\varepsilon\) に依存しません．</p>
+</details>
+<p><strong>この証明は有限時間の結果</strong>です．長時間の一様な近似を主張するには，さらに安定性などの仮定が必要です．</p>
+
+
+<h2 id="layer">6．時刻0に残る「初期層」</h2>
+<p>式(8)の \(e^{-t/\varepsilon}w_0\) は，初期状態 \(y_0\neq\gamma x_0\) のずれを短時間で減衰させます．この速い変化を<strong>初期層</strong>と呼びます．</p>
+<p>保持した \(x\) の近似誤差は小さくなりますが，\(y\) を \(\gamma X\) で近似する場合，</p>
+\[
+|y(0)-\gamma X(0)|=|y_0-\gamma x_0|
+\tag{11}
+\]
+<p>です．初期値が釣り合っていなければ，\(y\) の誤差まで時刻0から一様に小さくなるとは限りません．</p>
+
+
+<h2 id="example">7．具体例――安定性はどう変わる？</h2>
+<p>\(\alpha=2,\ \beta=\gamma=1\) なら，有効方程式は \(X'=-X\) で，\(X(t)=x_0e^{-t}\) です．元の二変数系の \(x\) は，</p>
+\[
+\boxed{
+\varepsilon x''+(1+2\varepsilon)x'+x=0,
+\quad x'(0)=-2x_0+y_0
+}
+\tag{12}
+\]
+<p>を満たします．\(\varepsilon\) が小さいほど，適切に固定した初期値での \(x\) の解は \(X\) に近づきます．</p>
+<p>ただし，すべての係数で安定性が保たれるわけではありません．元の二変数系の固有値を決める式は，</p>
+\[
+\boxed{
+\varepsilon r^2+(1+\alpha\varepsilon)r+
+(\alpha-\beta\gamma)=0.
+}
+\tag{13}
+\]
+<p>です．\(\alpha>0,\ \beta,\gamma\geq0\) の場合，\(\alpha>\beta\gamma\) なら元の系も有効モデルも指数安定，等号なら安定だが漸近安定ではなく，\(\alpha<\beta\gamma\) なら不安定です．</p>
+<p>例えば \(\alpha=1,\ \beta=1,\ \gamma=2\) なら実際には不安定です．しかし \(y=0\) と単純に置いた近似 \(x'=-x\) は安定と予測します．<strong>速い変数をただ0と置くのは危険</strong>です．</p>
+
+
+<h2 id="related">8．均質化法，MsFEM，HMMとは何が違う？</h2>
+<p>今回の \(\varepsilon\) は<strong>時間尺度</strong>でした．一方，微細な材料構造の<strong>空間尺度</strong>を \(\delta\) とする問題もあります．例として，</p>
+\[
+\frac{\partial u_\delta}{\partial t}
+-\nabla\cdot(a(\xi/\delta)\nabla u_\delta)=0
+\tag{14}
+\]
+<p>があります．</p>
+<div class="result-table"><table><thead><tr><th>考え方</th><th>主な目的</th></tr></thead><tbody>
+<tr><td>均質化法</td><td>微細係数から有効係数を導く</td></tr>
+<tr><td>MsFEM</td><td>微細構造を粗い計算基底に反映する</td></tr>
+<tr><td>HMM</td><td>巨視的計算に必要な情報を微視的計算から得る</td></tr>
+<tr><td>未解像ダイナミクスの安定縮約</td><td>省いた成分の影響や安定性，近似誤差を調べる</td></tr>
+</tbody></table></div>
+<p>これらは組み合わせられる可能性があります．ただし，<strong>空間の微細構造から必ず時間的な記憶が現れるわけではありません</strong>．例えば通常の周期係数の熱方程式では，局所的な有効熱方程式が得られる典型例があります．</p>
+
+
+<h2 id="exercises">9．練習問題</h2>
+<ol><li><strong>問題1：</strong>\(\varepsilon y'=-y,\ y(0)=2\) を解いてください．</li>
+<li><strong>問題2：</strong>\(\alpha=3,\ \beta=1,\ \gamma=2\) なら有効方程式は何ですか．</li>
+<li><strong>問題3：</strong>\(\alpha=1,\ \beta=\gamma=1,\ \varepsilon=0.2\) で元の系の安定性を判定してください．</li>
+<li><strong>問題4（発展）：</strong>\(x(t)\equiv1\) の場合に式(6)の左辺を計算してください．</li></ol>
+<details><summary><strong>練習問題の解答と計算過程を見る</strong></summary>
+<p><strong>問題1：</strong>\(y(t)=2e^{-t/\varepsilon}\) です．</p>
+<p><strong>問題2：</strong>\(\lambda=-3+2=-1\) より \(X'=-X\) です．</p>
+<p><strong>問題3：</strong>式(13)は \(0.2r^2+1.2r=0\) なので，固有値は0と \(-6\) です．安定ですが漸近安定ではありません．</p>
+<p><strong>問題4：</strong>\(\varepsilon^{-1}\int_0^t e^{-(t-s)/\varepsilon}\,ds=1-e^{-t/\varepsilon}\) で，固定した \(t>0\) では1に近づきます．</p>
+</details>
+
+
+<h2 id="end">おわりに――微細構造を消すと何が残るのか</h2>
+<p>今回の模型から，<strong>正確な消去は記憶と初期値項を残す</strong>こと，<strong>時間尺度の分離が局所的な有効方程式を生む場合がある</strong>こと，<strong>有限時間の近似誤差と長時間の安定性を区別する</strong>ことを学びました．</p>
+<p>二変数の例の数学は既知の基本事項です．研究として重要なのは，より複雑な偏微分方程式や異方性を含む問題で，<strong>どの縮約が安定性を保ち，どの条件で誤差を評価できるか</strong>を明確にすることです．</p>
+<blockquote><strong>微細な動きを計算しないことと，その影響を無視してよいことは違います．</strong></blockquote>
+<nav class="chapter-bottom-nav" aria-label="入門シリーズへの移動"><a href="./unresolved_dynamics_intro_06.html">← 第6回：変数が100万個あったら？</a><a href="../stable-reduction-intro/">入門シリーズの目次へ →</a></nav>
+<h3>関連する読み物</h3><ul><li><a href="./unresolved_dynamics_intro_04.html">第4回：見えない変数は過去を覚えている</a></li><li><a href="./unresolved_dynamics_intro_05.html">第5回：近似した答えはどこまで信用できる？</a></li><li><a href="./unresolved-memory-01.html">専門シリーズ：未解像ダイナミクスと履歴依存型発展方程式</a></li><li><a href="../../research/#stable-reduction">研究ページ：Stable reduction</a></li></ul></article>
+<footer class="intro-footer"><a href="../stable-reduction-intro/">入門シリーズの目次</a> · <a href="../">ブログ一覧</a><p>© 2026 Hiroki Ishizaka</p></footer></main></body></html>
