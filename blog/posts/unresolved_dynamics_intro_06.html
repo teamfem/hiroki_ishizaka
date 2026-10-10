@@ -4,7 +4,8 @@
 <title>第6回：変数が100万個あったら？――偏微分方程式への入口 | Hiroki Ishizaka</title>
 <meta name="description" content="未解像ダイナミクスの安定縮約入門・最終第6回．100万変数の離散化モデルから，記憶核，安定性，誤差評価へ進み，偏微分方程式とのつながりを説明します．">
 <meta name="keywords" content="未解像ダイナミクス,安定縮約,100万変数,偏微分方程式,熱方程式,記憶核,モデル縮約,誤差評価">
-<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_06.html"><link rel="up" href="../stable-reduction-intro/"><link rel="prev" href="./unresolved_dynamics_intro_05.html"><link rel="icon" href="../../favicon.ico">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_06.html"><link rel="up" href="../stable-reduction-intro/"><link rel="prev" href="./unresolved_dynamics_intro_05.html">
+<link rel="next" href="./unresolved_dynamics_intro_multiscale.html"><link rel="icon" href="../../favicon.ico">
 <meta property="og:type" content="article"><meta property="og:locale" content="ja_JP"><meta property="og:title" content="第6回：変数が100万個あったら？"><meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved_dynamics_intro_06.html">
 <meta property="og:description" content="二変数で学んだ縮約理論は，100万変数や偏微分方程式にどうつながる？">
 <meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
@@ -415,7 +416,8 @@ e(t)=e^{tM}e(0)-\int_0^t e^{(t-s)M}\rho(s)\,ds
 </div>
 <blockquote><strong>このシリーズの結論：未解像ダイナミクスの安定縮約とは，計算しないものの影響を理解し，必要な情報と信頼性を保ちながらモデルを簡単にするための数学です．</strong></blockquote>
 <p>ここから先は，記憶核の構造，偏微分方程式における安定性，空間・時間離散化と縮約の誤差評価など，専門的な研究につながります．興味のある方は，ブログの専門シリーズもご覧ください．</p>
-<nav class="chapter-bottom-nav" aria-label="入門シリーズ内の移動"><a href="./unresolved_dynamics_intro_05.html">← 第5回：近似の信頼性</a><a href="../stable-reduction-intro/">入門シリーズの目次へ →</a></nav>
+<nav class="chapter-bottom-nav" aria-label="入門シリーズ内の移動"><a href="./unresolved_dynamics_intro_05.html">← 第5回：近似の信頼性</a><a href="./unresolved_dynamics_intro_multiscale.html" rel="next">特別編：マルチスケール法へ →</a>
+<a href="../stable-reduction-intro/">入門シリーズの目次へ →</a></nav>
 <h3>さらに学びたい方へ</h3>
 <ul>
 <li><a href="./unresolved-memory-01.html">未解像ダイナミクスと履歴依存型発展方程式――専門シリーズ</a></li>
