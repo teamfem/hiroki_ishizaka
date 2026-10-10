@@ -12,6 +12,15 @@
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
 .blog-tabs{display:flex;flex-wrap:wrap;gap:9px;margin-top:25px}.blog-tabs a{padding:9px 13px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:.8rem;font-weight:760}
+
+/* First-viewport gateway for the undergraduate stable-reduction series. */
+.blog-beginner-gateway{margin:25px 0 4px;display:block;width:min(740px,100%);padding:17px 22px;border-radius:17px;border:1px solid #b5cbdc;background:#fff;color:#163c59;text-decoration:none;box-shadow:0 10px 26px rgba(20,32,51,.09);transition:background .18s,border-color .18s,transform .18s}
+.blog-beginner-gateway:hover{color:#133c5c;background:#f5faff;border-color:#739bbd;transform:translateY(-1px)}
+.blog-beginner-gateway:focus-visible{outline:3px solid #2a759f;outline-offset:4px}
+.blog-beginner-gateway .beginner-eyebrow{display:block;margin-bottom:5px;font-size:.76rem;font-weight:840;letter-spacing:.05em;color:#346d96}
+.blog-beginner-gateway .beginner-title{display:block;font-weight:830;font-size:clamp(1rem,1.6vw,1.24rem);line-height:1.45}
+.blog-beginner-gateway .beginner-desc{display:block;color:#52677d;font-size:.85rem;margin-top:6px}
+.blog-tabs .intro-tab-link{background:#ebf3fa;border-color:#bad3e5;color:#184a6d;font-weight:840}
 .blog-intro{display:grid;grid-template-columns:1.25fr .75fr;gap:14px}.blog-note,.blog-stat{background:#fff;border:1px solid var(--line);border-radius:20px;padding:23px}.blog-note p,.blog-stat p{margin:0;color:var(--muted);font-size:.91rem}.blog-stat strong{display:block;font-size:2.3rem;letter-spacing:-.05em;color:var(--ink);margin-bottom:5px}.blog-stat span{font-size:.76rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
 .series-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.series-card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px;display:flex;flex-direction:column;min-height:230px}.series-card.feature{background:linear-gradient(135deg,#17243a,#30324d);border:0}.series-card.feature h3{color:#fff}.series-card.feature p{color:#d7deea}.series-card .series-meta{font-size:.7rem;font-weight:850;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}.series-card.feature .series-meta{color:#c7b9ed}.series-card h3{font-size:1.1rem;line-height:1.38;margin:8px 0 10px;letter-spacing:-.02em}.series-card p{font-size:.87rem;color:var(--muted);margin:0 0 16px}.series-card .go{margin-top:auto;font-size:.8rem;font-weight:800;color:var(--accent)}.series-card.feature .go{color:#d2e0ef}
 .series-block{background:#fff;border:1px solid var(--line);border-radius:22px;padding:24px;margin-bottom:15px;scroll-margin-top:90px}.series-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start}.series-head h3{font-size:1.24rem;line-height:1.35;margin:6px 0 8px}.series-head p{font-size:.89rem;color:var(--muted);max-width:750px;margin:0}.count{flex:0 0 auto;padding:7px 10px;border-radius:999px;background:var(--soft);font-size:.7rem;font-weight:850;color:#52657b}.series-block.memory .count{background:var(--soft2)}
@@ -103,7 +112,20 @@
 <body>
 <header class="topbar"><div class="shell nav"><a class="brand" href="../">Hiroki Ishizaka<small>Numerical Analysis · PDEs · FEM</small></a><nav class="navlinks" aria-label="Primary navigation"><a href="../research/">Research</a><a href="../publications/">Publications</a><a href="../fem/">Visions</a><a href="../suppl/">Supplementary</a><a href="../blog/" aria-current="page">Blog</a><a href="../geo/">Geometry</a><a href="../links/">Links</a><a href="../contact/">Contact</a></nav></div></header>
 <main>
-<section class="page-hero"><div class="shell"><div class="eyebrow"><span class="dot"></span>Research Notes</div><h1>Ideas, calculations,<br>counterexamples and open questions.</h1><p>The Blog sits between formal publications and long-term Research Visions. It records mathematical background, minimal models, numerical experiments, implementation details and the questions that appear before a theorem becomes a paper.</p><div class="blog-tabs"><a href="#chatgpt-fem">ChatGPT FEM</a><a href="#fem-architecture">FEM architecture</a><a href="#start-here">FEM start</a><a href="#stable-reduction-intro">入門：安定縮約</a><a href="#memory-start">Memory research</a><a href="#curved-start">Exact-curved FEM</a><a href="#core">Core series</a><a href="#paradoxes">Paradoxes</a><a href="#applications">Applications</a><a href="#foundations">Foundations</a><a href="#exploratory">Exploratory</a></div></div></section>
+<section class="page-hero"><div class="shell"><div class="eyebrow"><span class="dot"></span>Research Notes</div><h1>Ideas, calculations,<br>counterexamples and open questions.</h1><p>The Blog sits between formal publications and long-term Research Visions. It records mathematical background, minimal models, numerical experiments, implementation details and the questions that appear before a theorem becomes a paper.</p>
+<a class="blog-beginner-gateway" href="./stable-reduction-intro/" aria-label="大学1年生から学ぶ未解像ダイナミクスの安定縮約の入門シリーズ目次へ">
+<span class="beginner-eyebrow">BEGINNER SERIES · 大学1年生向け</span>
+<span class="beginner-title">未解像ダイナミクスの安定縮約 入門シリーズ　→</span>
+<span class="beginner-desc">微分と指数関数から始める全6回構成｜第1回公開中・第2〜6回は予定</span>
+</a><div class="blog-tabs"><a href="#chatgpt-fem">ChatGPT FEM</a><a href="#fem-architecture">FEM architecture</a><a href="#start-here">FEM start</a><a href="./stable-reduction-intro/" class="intro-tab-link">入門シリーズ：未解像ダイナミクス</a><a href="#memory-start">Memory research</a><a href="#curved-start">Exact-curved FEM</a><a href="#core">Core series</a><a href="#paradoxes">Paradoxes</a><a href="#applications">Applications</a><a href="#foundations">Foundations</a><a href="#exploratory">Exploratory</a></div></div></section>
+<section id="stable-reduction-intro" class="section"><div class="shell">
+<div class="section-head"><div><div class="kicker">Beginner series · Stable reduction</div><h2>大学1年生から学ぶ未解像ダイナミクスの安定縮約</h2></div>
+<p>連立微分方程式と指数関数から始める入門シリーズ。公開済みの記事と今後の構成を，独立した目次ページにまとめました。</p></div>
+<div class="entry-grid">
+<a class="entry-card feature" href="./stable-reduction-intro/"><span class="entry-label">シリーズ目次 · 全6回の構成</span><h3>入門シリーズの全体を見る</h3><p>公開済みの第1回と第2〜6回の予定を一覧で確認。初めて読む方はここから。</p></a>
+<a class="entry-card" href="./posts/unresolved_dynamics_intro_01.html"><span class="entry-label">第1回 · 公開済み</span><h3>見えない変数を無視すると何が起こる？</h3><p>同じ観測値でも未来が違う理由を，微分と指数関数だけで解き明かす。</p></a>
+</div></div></section>
+
 <section class="section"><div class="shell"><div class="blog-intro"><article class="blog-note"><div class="kicker">How to read the Blog</div><h2>Research in motion.</h2><p>Publications records completed and active manuscripts. Research Visions maps the longer programme. Supplementary Visions gives learning routes. The Blog is where background, trial calculations, implementation and research bottlenecks are developed in public.</p></article><aside class="blog-stat"><span>Published notes</span><strong>50+</strong><p>Across anisotropic FEM, memory and unresolved dynamics, exact-curved geometry, PINNs, computational FEM and classical numerical-analysis questions.</p></aside></div></div></section>
 
 <!-- pages-refresh-post-10 -->
@@ -210,14 +232,7 @@
 <a class="entry-card" href="./posts/anisotropic-geometry-07.html"><span class="entry-label">Layer-adapted mesh</span><h3>Shishkin meshは正則か，準正則か</h3><p>Read Shishkin geometry through anisotropy, transition points and semi-regularity.</p></a>
 <a class="entry-card" href="./posts/paradoxes-pitfalls-01.html"><span class="entry-label">Geometric approximation</span><h3>領域が収束しても解は正しく収束しない ――バブシュカ・パラドックス</h3><p>A geometric paradox explaining why convergence of domains need not imply convergence of solutions.</p></a>
 </div></div></section>
-<section id="stable-reduction-intro" class="section"><div class="shell">
-<div class="section-head"><div><div class="kicker">Beginner series · Stable reduction</div><h2>大学1年生から学ぶ未解像ダイナミクスの安定縮約</h2></div>
-<p>連立微分方程式と指数関数から始める入門シリーズ。公開済みの記事と今後の構成を，独立した目次ページにまとめました。</p></div>
-<div class="entry-grid">
-<a class="entry-card feature" href="./stable-reduction-intro/"><span class="entry-label">シリーズ目次 · 全6回の構成</span><h3>入門シリーズの全体を見る</h3><p>公開済みの第1回と第2〜6回の予定を一覧で確認。初めて読む方はここから。</p></a>
-<a class="entry-card" href="./posts/unresolved_dynamics_intro_01.html"><span class="entry-label">第1回 · 公開済み</span><h3>見えない変数を無視すると何が起こる？</h3><p>同じ観測値でも未来が違う理由を，微分と指数関数だけで解き明かす。</p></a>
-</div></div></section>
-<section id="memory-start" class="section"><div class="shell"><div class="section-head"><div><div class="kicker">Advanced · Memory and unresolved dynamics</div><h2>Memory and unresolved dynamics — research notes.</h2></div><p>Begin with an undergraduate-level example of hidden dynamics, then follow exact elimination, measure-valued delay, energy structure, convolution quadrature and the model-reduction error budget.</p></div><div class="entry-grid">
+<section id="memory-start" class="section"><div class="shell"><div class="section-head"><div><div class="kicker">Advanced · Memory and unresolved dynamics</div><h2>Memory and unresolved dynamics — research notes.</h2></div><p>Explore the specialist theory: exact elimination of hidden states, measure-valued delay, energy structure, convolution quadrature and the model-reduction error budget.</p></div><div class="entry-grid">
 <a class="entry-card feature" href="./posts/unresolved-memory-01.html"><span class="entry-label">Overview</span><h3>未解像ダイナミクスと履歴依存型発展方程式</h3><p>The full route from hidden states and memory kernels to stability, discretisation and certification.</p></a>
 <a class="entry-card feature" href="./posts/unresolved-memory-02.html"><span class="entry-label">Exact elimination</span><h3>未解像状態を消去すると，なぜmemoryが現れるのか</h3><p>Derive the memory kernel and dynamic Schur complement directly from an enlarged local-in-time system.</p></a>
 <a class="entry-card" href="./posts/unresolved-memory-03.html"><span class="entry-label">Delay law</span><h3>measure-valued delayで分布遅延・原子遅延・混合遅延を統一する</h3><p>Use finite Borel measures to treat distributed, atomic and mixed delays in one framework.</p></a>
