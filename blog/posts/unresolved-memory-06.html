@@ -48,7 +48,7 @@
       "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-06.html",
       "inLanguage": "ja",
       "datePublished": "2026-08-02",
-      "dateModified": "2026-08-17",
+      "dateModified": "2026-10-11",
       "articleSection": "Memory, delay and stable reduction",
       "genre": "Research note",
       "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
@@ -530,7 +530,7 @@ normは
 \tag{22}
 \]
 \(\mathcal G_\nu(0,T)\) は
-\(C([0,T];\mathcal W)\) の閉部分空間なのでBanach空間です．
+\(C([0,T];\mathcal W)\) の閉部分空間なのでBanach空間です．ここで \(\mathcal Ru\) はまず \(\nu\)-weighted \(H\)-値空間で定義し，\(\mathcal G_\nu\) にはその値が追加的に \(\mathcal K\) に入る軌道だけを含めています．\(u\in C([0,T];H)\) だけから \(\mathcal Ru\in\mathcal K\) を断定することはできません．
 </p>
 <div style="padding: 12px; margin: 14px 0; border: 5px double #333333;">
 <b>用語上の注意</b><br>
@@ -1144,6 +1144,15 @@ resolventは
   O(\varepsilon).
 \tag{56}
 \]
+式 (56) には，\(a_v\) が \(V\) 上で有界であることと，\(a_1\) のcoercivity，\(0<M_0<\infty\) が必要です．実際，\((I-\mathcal A_\varepsilon)X=F\) の内部変数を消去すると，物理成分には
+\[
+  I+A_0+\varepsilon A_v+b_1A_1,
+  \qquad
+  b_1:=\int_{[0,\infty)}\frac{1}{1+\lambda}\,d\nu(\lambda)>0
+\]
+が現れます．\(b_1a_1\) のcoercivityによる一様resolvent estimateと，二つのresolvent方程式の差から (56) を得る，という追加の議論が必要です．単に散逸性 (34) だけから (56) が出るわけではありません．
+</p>
+<p>
 このnorm-resolvent convergenceから
 \[
   S_\varepsilon(t)X
