@@ -48,7 +48,7 @@
       "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-01.html",
       "inLanguage": "ja",
       "datePublished": "2026-07-25",
-      "dateModified": "2026-08-17",
+      "dateModified": "2026-10-11",
       "articleSection": "Memory, delay and stable reduction",
       "genre": "Research note",
       "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
@@ -411,13 +411,13 @@ positive type \(\nRightarrow\) memoryだけで瞬時エネルギーを周波数�
 <p>
 目標は概念的に
 \[
-  \|y_{\mathrm{full}}-U_{h,k,N}\|
+  \|y_{\mathrm{full}}-U_{h,k,N}\|_{\mathfrak X}
   \le C\bigl(
   E_{\mathrm{model}}+E_{\mathrm{kernel}}
   +E_{\mathrm{space}}+E_{\mathrm{time}}
   \bigr)
 \]
-という評価です．さらに，\(C\) が瞬時coercivity parameter，空間メッシュ幅，
+という評価です．ここでは全ての比較対象を同じ空間 \(\mathfrak X\) に再構成したうえで差を取るものとします．さらに，\(C\) が瞬時coercivity parameter，空間メッシュ幅，
 時間刻み，原子数，緩和スペクトルのquadratureへ不必要に依存しないことが重要です．
 </p>
 </article>
@@ -449,15 +449,16 @@ positive type \(\nRightarrow\) memoryだけで瞬時エネルギーを周波数�
 <article class="news-item">
 <ol>
   <li><b>第1回：</b>研究全体の誤差構造と，delay・Volterra memory・internal variablesの位置付け．</li>
-  <li><b>第2回：</b>未解像状態の厳密消去からmemory kernelが現れる仕組み．</li>
-  <li><b>第3回：</b>measure-valued delayによる分布遅延・原子遅延・混合遅延の統一．</li>
-  <li><b>第4回：</b>positive-type memory，memory symbol，coercivity gap，critical horizon．</li>
-  <li><b>第5回：</b>instantaneous coercivityが消えるときのmemory graph space．</li>
-  <li><b>第6回：</b>kernel stability，Wasserstein型評価，finite-atomic approximation．</li>
-  <li><b>第7回：</b>内部変数表示とcross-term cancellation．</li>
-  <li><b>第8回：</b>BDFとconvolution quadratureによる時間離散化．</li>
-  <li><b>第9回：</b>model-reduction error，kernel error，state-discretisation errorの分離．</li>
-  <li><b>第10回：</b>誤差指標に応じて潜在状態を追加するmodel adaptivity．</li>
+  <li><b>第2回：</b>未解像状態の厳密消去とdynamic Schur complement．</li>
+  <li><b>第3回：</b>measure-valued delayによる分布・原子・混合遅延の統一．</li>
+  <li><b>第4回：</b>指数重みによる有限時間well-posedness．</li>
+  <li><b>第5回：</b>positive-type memory，coercivity gap，critical horizon．</li>
+  <li><b>第6回：</b>退化した瞬時拡散とmemory graph space．</li>
+  <li><b>第7回：</b>kernel stability，Wasserstein評価，finite-atomic approximation．</li>
+  <li><b>第8回：</b>離散内部変数とBDF1・BDF2のenergy cancellation．</li>
+  <li><b>第9回：</b>BDF convolution quadratureとstarting correction．</li>
+  <li><b>第10回：</b>model errorとspace-time・algebraic errorの分解．</li>
+  <li><b>第11回：</b>誤差に応じたdelay atom・Prony mode・meshの適応化．</li>
 </ol>
 </article>
 </div>
