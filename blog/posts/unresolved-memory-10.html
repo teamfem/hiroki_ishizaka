@@ -48,7 +48,7 @@
       "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-10.html",
       "inLanguage": "ja",
       "datePublished": "2026-08-03",
-      "dateModified": "2026-08-17",
+      "dateModified": "2026-10-11",
       "articleSection": "Memory, delay and stable reduction",
       "genre": "Research note",
       "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
@@ -328,7 +328,7 @@ full modelからreduced equationを作る段階にも独立したerrorがあり�
 <div class="news">
 <article class="news-item">
 <p>
-共通のnorm \(\|\cdot\|_{\mathfrak X}\) を選びます．
+まず，物理変数について全中間解を共通の比較空間 \(\mathfrak X\) に再構成し，norm \(\|\cdot\|_{\mathfrak X}\) を選びます．時間格子上の値も，必要な時間再構成を施してから比較します．
 式 (1) の中間解を用いると，恒等的に
 \[
 \begin{aligned}
@@ -436,7 +436,7 @@ full modelからreduced equationを作る段階にも独立したerrorがあり�
   C([0,T];\mathcal W)
 \tag{7}
 \]
-というmemory graph normを使います．
+というmemory graph normを使うことがあります．ただし式 (3) は物理変数 \(PX,u^{\mathrm{red}},\dots\) の差なので，そのまま \(C([0,T];\mathcal W)\) で測ることはできません．graph normを使うなら，全中間モデルの内部変数を共通のextended memory state spaceへliftまたは再構成し，その全状態の差でtelescoping decompositionを作る必要があります．異なるkernelでstate space自体が変わる場合には，共通の埋込みまたは比較写像も必要です．この構成がない段階では，物理変数の共通norm（例えば \(C([0,T];H)\)）で式 (4) を読むべきです．
 </p>
 <div style="padding:12px; margin:14px 0; border:2px solid #666666;">
 <b>注意</b><br>
