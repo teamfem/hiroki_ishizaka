@@ -48,7 +48,7 @@
       "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/unresolved-memory-09.html",
       "inLanguage": "ja",
       "datePublished": "2026-08-03",
-      "dateModified": "2026-08-17",
+      "dateModified": "2026-10-11",
       "articleSection": "Memory, delay and stable reduction",
       "genre": "Research note",
       "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png",
@@ -517,9 +517,10 @@ CQ generating functionは
 \]
 </p>
 <p>
-式 (13) と式 (16) は同じです．
-従って，一つの指数kernelに対するBDF-CQは，
-一つのrelaxation ODEを同じBDFで離散化したものと完全に一致します．
+式 (13) と式 (16) は同じです．ただし，生成関数の式 (16) では，負の添字の内部状態を0とし，\(n=0\) を含む離散列を同じBDF relationで定める開始規約を用いています．したがって，一つの指数kernelに対するBDF-CQは，<strong>開始規約が整合する場合</strong>に，relaxation ODEのBDF realisationと一致します．
+</p>
+<p>
+開始時刻の扱いは単なる細部ではありません．例えば \(\Delta t=1\)，\(\lambda=1\)，\(v^0=0,\ v^1=1\) とすると，内部変数を \(\zeta^0=0\) からBDF1で開始した値は \(\zeta^1=1/2\) です．一方，無補正BDF2-CQの初回の値は \(\omega_0v^1=(3/2+1)^{-1}=2/5\) です．したがってBDF1 startとBDF2-CQを無条件に同一視してはいけません．
 </p>
 </article>
 </div>
@@ -568,7 +569,7 @@ CQ generating functionは
 </p>
 <p>
 直接convolutionを計算するとhistory lengthとともにcostが増えますが，
-finite Prony realisationでは各stepで \(L\) 個のlocal stateを更新すればよく，
+開始規約が整合したfinite Prony realisationでは各stepで \(L\) 個のlocal stateを更新すればよく，
 \(N\) stepsに対して基本costは \(O(LN)\) です．
 </p>
 </article>
@@ -646,7 +647,7 @@ completely monotone kernelは
 <p>
 implementationではCQ weightsを使い，
 energy proofではhidden internal variablesを使うことができます．
-これは近似的な解釈ではなく，有限 \(M_0\) のもとでのexact identityです．
+これは有限 \(M_0\) と互換な開始規約のもとでのexact identityです．start-up correctionや異なる初回stepを加えた場合は，対応する補正項を別に含める必要があります．
 </p>
 </article>
 </div>
@@ -656,8 +657,7 @@ energy proofではhidden internal variablesを使うことができます．
 <article class="news-item">
 <p>
 BDF-CQ自体は高次BDFからも形式的に構成できます．
-しかし，unconditionalなgraph-energy identityを得るには，
-time-stepping methodのA-stability，等価にG-stabilityが必要です．
+しかし，本連載で用いる無条件のgraph-energy恒等式は，BDF1・BDF2の具体的なG-stability恒等式に基づいています．両法はA-stableでもありますが，一般のCQにおいてA-stabilityだけから同じgraph-energy恒等式が自動的に得られると主張しているわけではありません．
 </p>
 <p>
 BDF familyでA-stableなのはorders 1 and 2だけです．
@@ -667,7 +667,7 @@ BDF familyでA-stableなのはorders 1 and 2だけです．
   q\in\{1,2\}
 \]
 という制限は，単なる計算上の選択ではなく，
-unconditional graph-energy lawをもつBDF法のcharacterisationです．
+ここで使うBDF1・BDF2の無条件energy解析を選ぶ根拠です．
 </p>
 <table style="width:100%; border-collapse:collapse; margin:14px 0;">
   <tr>
@@ -1076,8 +1076,7 @@ causal operator全体を離散化するoperational calculusです．
   \right)
 \]
 <p>
-completely monotone kernelでは，この離散operatorは
-BDFで更新されたhidden internal variablesの連続的重ね合わせと正確に一致します．
+completely monotone kernelでは，互換な開始規約を用いる限り，この離散operatorはBDFで更新されたhidden internal variablesの連続的重ね合わせと一致します．
 このidentityが，第8回のcross-term cancellationと離散graph-energy lawの根拠です．
 </p>
 <p>
