@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="未解像ダイナミクスとマルチスケール問題を例に，AIによる大規模計算・反例探索と，人間による解釈・数学的予想・証明を往復する研究方法を考える．">
+<meta name="keywords" content="AI4Math,AI4Science,未解像ダイナミクス,マルチスケール,記憶核,Mori-Zwanzig,縮約,数値解析,数値実験,数学研究,反例,誤差保証">
+<title>AI時代の数学研究――高次元の探索をAIに任せ，人間は何を考えるのか | Hiroki Ishizaka</title>
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai4math-human-guided-discovery.html">
+<link rel="icon" href="../../favicon.ico">
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<script>
+window.MathJax = {tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:true},options:{skipHtmlTags:['script','noscript','style','textarea','pre','code']}};
+</script>
+<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
+<meta property="og:type" content="article">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:site_name" content="Hiroki Ishizaka">
+<meta property="og:title" content="AI時代の数学研究――高次元の探索をAIに任せ，人間は何を考えるのか">
+<meta property="og:description" content="AIによる探索と，人間による数学的判断を組み合わせ，数値的な発見を数学的保証へ発展させる研究方法．">
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai4math-human-guided-discovery.html">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<meta property="article:published_time" content="2026-10-24">
+<meta property="article:modified_time" content="2026-10-24">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AI時代の数学研究――高次元の探索をAIに任せ，人間は何を考えるのか">
+<meta name="twitter:description" content="AIによる大規模探索と，人間による数学的解釈・定理化の往復．">
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai4math-human-guided-discovery.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai4math-human-guided-discovery.html",
+      "headline": "AI時代の数学研究――高次元の探索をAIに任せ，人間は何を考えるのか",
+      "description": "未解像ダイナミクスとマルチスケール問題を例に，AIによる大規模計算・反例探索と，人間による解釈・数学的予想・証明を往復する研究方法を考える．",
+      "author": {
+        "@id": "https://teamfem.github.io/hiroki_ishizaka/#person"
+      },
+      "publisher": {
+        "@id": "https://teamfem.github.io/hiroki_ishizaka/#person"
+      },
+      "isPartOf": {
+        "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"
+      },
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai4math-human-guided-discovery.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-10-24",
+      "dateModified": "2026-10-24",
+      "articleSection": "AI4Math and research methodology",
+      "genre": "Research reflection",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}</script>
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Education &amp; Learning</a></li><li><a href="../">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul></div></nav>
+</header>
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in"><li class="bcl-first"><a href="../../">ISHIZAKA Hiroki Website TOP</a></li><li><a href="../">Blog</a></li><li class="bcl-last">AI4Math：数学研究の方法</li></ol></nav>
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+<h1 class="section-title">AI時代の数学研究――高次元の探索をAIに任せ，人間は何を考えるのか</h1>
+<p><b>AI4Math · Research methodology</b><br><time datetime="2026-10-24">24th October 2026</time></p>
+<h2>はじめに――AIに証明を尋ねるだけではない</h2>
+<div class="news"><article class="news-item">
+<p>最近，AIを数学研究にどのように利用すればよいのかを考えています．AIに「この命題を証明して」と依頼する方法もありますが，それだけがAI4Mathではありません．むしろ私が試したいのは，<b>高次元の計算や多数の数値実験をAIに支援させ，結果を人間が読み取り，次の数学的解析の方向を指示する</b>という研究の進め方です．</p>
+<p>未解像ダイナミクスやマルチスケール問題では，観測できる変数よりも，観測・計算しきれない変数の方がはるかに多いことがあります．人間が少数の例だけを手で計算しても，現象の全体像が見えない場合があります．しかし，計算するモデル，調べるパラメータ，評価する量を明示できれば，AIに計算コードの作成や実験の反復を支援させられます．</p>
+<p>ここで私が目指したいのは「AIがたくさんの数字を出した」という段階ではありません．その数字からどのような数学的構造を読み取れるか，どの仮定が必要か，どのような定理を立てるべきかを考えるところに研究の中心を置きたいと思っています．</p>
+</article></div>
+<h2>1．AIの進歩に合わせて，研究方法も変える</h2>
+<div class="news"><article class="news-item">
+<p>Anthropicの研究者Jascha Sohl-Dicksteinは，MITでの講演 <i>Advice for a (Young) Investigator in the First and Last Days of the Anthropocene</i>（2025年8月15日収録）で，AIの能力向上を考慮して研究課題を選ぶこと，そして計算資源や知能の規模が大きくなったときに，研究の価値や有効性も高まる方向を考えることを勧めています［1］．</p>
+<p>この講演を，私は「すぐAIに置き換えられる研究は無意味だ」という単純な話として受け取りたくありません．研究の目的に応じて，AIを使うことでこれまで扱えなかった構造を調べられるような実験・解析の仕組みを作る．その仕組み自体が，AIの進歩とともに強くなることには大きな意味があると思います．</p>
+<p>もっとも，AIの能力の伸びを示す指標は慎重に解釈する必要があります．例えばMETRの「task-completion time horizon」は，人間の専門家が要する作業時間を基準にAIの成功確率を推定する指標であり，AIがその時間だけ連続して自律的に作業したことを意味しません［2］．また，将来の計算量やAGI到来時期の予測は，確定した事実ではありません．</p>
+</article></div>
+<h2>2．人間とAIを往復させる研究サイクル</h2>
+<div class="news"><article class="news-item">
+<p>私が考えている研究の流れは，次のようなものです．</p>
+<ol>
+<li><b>人間が問題を設定する．</b> 方程式，解空間，観測量，境界条件，保存則などを明示し，どの数学的性質を知りたいかを決める．</li>
+<li><b>AIが計算計画と実装を支援する．</b> 基準問題，パラメータ範囲，数値スキーム，誤差の測り方を具体化する．</li>
+<li><b>計算プログラムで数値実験を行う．</b> 次元，時間スケール，初期値，係数，空間・時間の解像度を変える．</li>
+<li><b>AIがデータの整理と反例探索を支援する．</b> 観察された規則性，破綻する領域，説明できない外れ値を洗い出す．</li>
+<li><b>人間が数学的に解釈する．</b> どの現象が本質的かを判断し，予想や定理の候補，最小限の仮定を定式化する．</li>
+<li><b>人間とAIで検証し，次の実験へ戻る．</b> 独立の検算，証明の監査，反例の追加，必要に応じた形式的検証を行う．</li>
+</ol>
+<p>重要なのは，<b>AIに「データを作って」と頼むだけでは，数値実験にはならない</b>という点です．データは，定義した方程式と数値スキームを実際に実行して得なければなりません．計算コードの実行記録やパラメータを残し，基準解との比較，保存則，収束試験などによって検証する必要があります．</p>
+<p>AIが候補を示しても，その中から何を研究課題として採用するか，どういう主定理に進むかは，研究者が主体的に判断します．</p>
+</article></div>
+<h2>3．未解像ダイナミクスでの最初の実験</h2>
+<div class="news"><article class="news-item">
+<p>具体的な出発点として，解像変数 \(x(t)\in\mathbb R^m\) と未解像変数 \(y(t)\in\mathbb R^N\) からなる線形系を考えます．</p>
+\[
+\dot x(t)=Ax(t)+By(t),\qquad
+\dot y(t)=Cx(t)+Dy(t).
+\]
+<p>ここで，行列 \(A,B,C,D\) はそれぞれ適合するサイズを持つとします．第二式を解くと，</p>
+\[
+y(t)=e^{tD}y(0)+\int_0^t e^{(t-s)D}Cx(s)\,\mathrm ds
+\]
+<p>となるため，第一式は厳密に</p>
+\[
+\boxed{
+\dot x(t)=Ax(t)+\int_0^t K(t-s)x(s)\,\mathrm ds+r(t),
+}
+\]
+\[
+K(t)=Be^{tD}C,\qquad r(t)=Be^{tD}y(0)
+\]
+<p>と書けます．この例では，未解像変数の影響が消えてしまったわけではなく，記憶核 \(K\) と初期値に由来する項 \(r\) として残ります．記憶を伴う最適予測については，Chorin–Hald–Kupfermanの研究も参照できます［3］．</p>
+<p>ここでAIを用いて，未解像次元 \(N\)，行列 \(D\) の非正規性，速い・遅い時間スケールの比，結合行列 \(B,C\)，初期値の与え方を変えた実験を計画します．単に解を比較するだけでなく，記憶核の減衰，過渡増幅，縮約誤差，保存・散逸構造がどの条件で保たれるかを調べたいと思います．</p>
+<p>例えば，数値実験で未解像次元を増やしても縮約誤差が大きくならないように見えたとしても，その観察だけでは次元一様評価は証明できません．何を固定したときの一様性なのか，どのノルムで評価するのか，時間区間や初期値にどのように依存するのかを定めて，初めて数学的な問題になります．</p>
+<p>目標の一例は，適切に定めた縮約解 \(x_{\mathrm{red}}\) に対して，</p>
+\[
+\sup_{0\le t\le T}\|x(t)-x_{\mathrm{red}}(t)\|_X\le \mathcal E_T
+\]
+<p>という誤差評価を得て，その右辺がどの仮定の下で未解像次元や時間スケールに一様となるかを明らかにすることです．これは研究目標の例であって，現時点で得られた一般定理ではありません．</p>
+</article></div>
+<h2>4．数値実験から数学解析へ進むための条件</h2>
+<div class="news"><article class="news-item">
+<p>ここで有限要素法の考え方も重要になります．大規模シミュレーションで観察された現象には，少なくともモデルそのものの性質，離散化誤差，計算アルゴリズムの誤差が混在しています．データを数学に戻すためには，これらを区別しなければなりません．</p>
+<p>実験前に何を比較するかを決め，既知解や基準問題で実装を検査する．次に空間メッシュや時間刻みを変えて収束を調べる．さらに，縮約による誤差と離散化による誤差を可能な範囲で切り分ける．その上で，AIが見つけた規則性を反例で試し，数式へ戻すことになります．</p>
+<p>未解像変数が非常に多い場合，大きな行列をそのまま保持して計算すること自体が現実的でないこともあります．作用素の構造を利用した行列フリーの計算，代表的なサブクラスでの検査，適応的なパラメータ探索など，計算規模に応じた設計が必要です．</p>
+<p><b>数値的発見と数学的保証を混同しないこと</b>が，この研究方法の基礎になると考えています．</p>
+</article></div>
+<h2>5．書くことを手放さない</h2>
+<div class="news"><article class="news-item">
+<p>AIに計算の実装や文章の校正を手伝ってもらうことと，数学的な考えを自分の中で組み立てることは両立します．しかし，文章をすべて自動生成させ，研究者自身が議論を組み立てなくなれば，どこまで分かっていて，どこから分かっていないのかを考える機会まで失いかねません．</p>
+<p>私にとって，論文を書くことは，既に得られた答えを整った文章にする作業だけではありません．仮定を書き下し，証明が何を使っているのか確認し，結果が示していないことも明らかにする作業です．書いてみて初めて，研究上の穴に気付くこともあります．</p>
+<p>Pavel Etingofは，AIを数学研究に積極的に用いながらも，利用した数学的内容を自分で理解し，検証し，説明できることを重視しています［4］．これは，新しい研究方法を考える上でも外せない原則だと思います．</p>
+<p>AIは今後，計算だけでなく予想や証明の発見においてもさらに重要になるでしょう．だからといって，人間とAIの役割を固定する必要はありません．それでも，何を確かめ，なぜ重要なのか，何が数学的に保証されたのかを判断し説明する責任は，研究者が引き受けなければならないと思います．</p>
+</article></div>
+<h2>おわりに――計算による発見を，数学的保証へ</h2>
+<div class="news"><article class="news-item">
+<p>今後のAI4Mathでは，AIが多数の実験を支援し，人間がその結果を読み，次の数学的問題を立てるという循環を試していきたいと考えています．とりわけ，未解像ダイナミクスとマルチスケール問題は，この方法の可能性と限界を検討する対象になり得ます．</p>
+<p>AIの計算能力が増したときに，単に実験の数が増えるだけではなく，より深い構造や鋭い反例を調べられるような方法にしたい．そこから主張を定式化し，証明と保証へ進む．それが私の考える，AIと数値解析を結び付けた数学研究の一つの方向です．</p>
+<p><b>AIが探索を広げ，人間が数学的な意味を問い直す．その往復から，新しい数学が生まれるかを確かめたいと思っています．</b></p>
+</article></div>
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>J. Sohl-Dickstein, <i>Advice for a (Young) Investigator in the First and Last Days of the Anthropocene</i>, MIT Center for Brains, Minds &amp; Machines, lecture recorded 15 August 2025. <a href="https://cbmm.mit.edu/video/advice-young-investigator-first-and-last-days-anthropocene" target="_blank" rel="noopener noreferrer">講演と書き起こし</a>．</li>
+<li>METR, <i>Task-Completion Time Horizons of Frontier AI Models</i>, updated 8 September 2026. <a href="https://metr.org/time-horizons/" target="_blank" rel="noopener noreferrer">測定方法と注意事項</a>．</li>
+<li>A. J. Chorin, O. H. Hald and R. Kupferman, ‘Optimal prediction with memory’, <i>Physica D</i> <b>166</b> (2002), 239–257. <a href="https://doi.org/10.1016/S0167-2789(02)00446-3" target="_blank" rel="noopener noreferrer">DOI</a>．</li>
+<li>P. Etingof, <i>Use of AI in Mathematical Research: A Guide for Young Mathematicians</i>, MIT Department of Mathematics, May 2026, updated 14 September 2026. <a href="https://math.mit.edu/~etingof/aiuse.pdf" target="_blank" rel="noopener noreferrer">原文PDF</a>．</li>
+<li><a href="../../research/#ai4math">Research — AI4Math</a>．</li>
+<li><a href="../../suppl/">Education &amp; Learning</a>；<a href="./ai-mathematics-education.html">AI時代に数学を学ぶということ</a>．</li>
+<li><a href="./chatgpt-fem-12.html">有限要素法では，なぜ数学的誤差解析が必要なのか</a>．</li>
+<li><a href="./ai-human-mathematics-01.html">AIの前に，人間の数学を考える</a>．</li>
+</ol>
+</article></div>
+<p><a href="../">← Blog一覧へ戻る</a></p>
+</div></article></div></main></div></div>
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img src="../../images/common/page-top_off.png" alt="ページの先頭へ" width="80" height="80"></a></p>
+<script src="../../js/utility.js"></script>
+<script src="../../js/modern-ui.js"></script>
+</body></html>
