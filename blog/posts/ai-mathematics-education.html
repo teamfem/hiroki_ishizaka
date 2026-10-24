@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI時代に数学を学ぶということ――答えを得ることから，問いを立てることへ | Hiroki Ishizaka</title>
+<meta name="description" content="AIを使うか否かではなく，何を自分で確かめ，どのように問いを立てるか．Etingofの論考を手掛かりに，線形代数・有限要素法・数学研究をつなぐ教育方針を考える．">
+<meta name="keywords" content="数学教育,AI,生成AI,数学研究,証明,線形代数,FEM,有限要素法,学習,検証,問いを立てる,Etingof">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai-mathematics-education.html">
+<link rel="icon" href="../../favicon.ico">
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<script id="site-structured-data" type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BlogPosting",
+      "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai-mathematics-education.html#article",
+      "url": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai-mathematics-education.html",
+      "headline": "AI時代に数学を学ぶということ――答えを得ることから，問いを立てることへ",
+      "description": "AIを使うか否かではなく，何を自分で確かめ，どのように問いを立てるか．Etingofの論考を手掛かりに，線形代数・有限要素法・数学研究をつなぐ教育方針を考える．",
+      "author": {
+        "@id": "https://teamfem.github.io/hiroki_ishizaka/#person"
+      },
+      "publisher": {
+        "@id": "https://teamfem.github.io/hiroki_ishizaka/#person"
+      },
+      "isPartOf": {
+        "@id": "https://teamfem.github.io/hiroki_ishizaka/blog/#blog"
+      },
+      "mainEntityOfPage": "https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai-mathematics-education.html",
+      "inLanguage": "ja",
+      "datePublished": "2026-10-24",
+      "dateModified": "2026-10-24",
+      "articleSection": "Mathematics education and AI",
+      "genre": "Education note",
+      "image": "https://teamfem.github.io/hiroki_ishizaka/og-card.png"
+    }
+  ]
+}</script>
+<meta property="og:type" content="article">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:site_name" content="Hiroki Ishizaka">
+<meta property="og:title" content="AI時代に数学を学ぶということ――答えを得ることから，問いを立てることへ | Hiroki Ishizaka">
+<meta property="og:description" content="AIを使うか否かではなく，何を自分で確かめ，どのように問いを立てるか．Etingofの論考を手掛かりに，線形代数・有限要素法・数学研究をつなぐ教育方針を考える．">
+<meta property="og:url" content="https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai-mathematics-education.html">
+<meta property="og:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+<meta property="article:published_time" content="2026-10-24">
+<meta property="article:modified_time" content="2026-10-24">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AI時代に数学を学ぶということ――答えを得ることから，問いを立てることへ">
+<meta name="twitter:description" content="AIを使うか否かではなく，何を自分で確かめ，どのように問いを立てるか．Etingofの論考を手掛かりに，線形代数・有限要素法・数学研究をつなぐ教育方針を考える．">
+<meta name="twitter:image" content="https://teamfem.github.io/hiroki_ishizaka/og-card.png">
+</head>
+<body class="page">
+<header class="site-header" id="top">
+<div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><div class="global-nav-panel"><span class="btn-global-nav icon-gn-menu">メニュー</span></div>
+<ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Education &amp; Learning</a></li><li><a href="../../blog/">Blog</a></li><li><a href="../../geo/">Geometry</a></li><li><a href="../../links/">Links</a></li><li><a href="../../contact/">Contact</a></li></ul>
+</div></nav>
+</header>
+<div class="main-body"><div class="main-body-in">
+<nav class="breadcrumbs"><ol class="breadcrumbs-in"><li class="bcl-first"><a href="../../">ISHIZAKA Hiroki Website TOP</a></li><li><a href="../">Blog</a></li><li class="bcl-last">AI時代の数学教育</li></ol></nav>
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+<h1 class="section-title">AI時代に数学を学ぶということ――答えを得ることから，問いを立てることへ</h1>
+<p><b>Education &amp; Learning · AI and mathematics</b><br><time datetime="2026-10-24">24th October 2026</time></p>
+
+<h2>はじめに――AIが答える時代に，何を学ぶのか</h2>
+<div class="news"><article class="news-item">
+<p>生成AIを使えば，数学の定義や定理を説明してもらうことも，計算や証明の方針を尋ねることもできます．プログラムを書いてもらい，これまで手間のかかっていた数値実験に取り組むこともできるようになりました．私は，この変化を数学教育にとって前向きなものだと考えています．</p>
+<p>しかし，<b>答えが手に入ることと，その答えを自分が理解していることは違います</b>．AIが計算を終えたからといって，学習者自身が考える必要がなくなるわけではありません．</p>
+<p>MITの数学者Pavel Etingofは，<i>Use of AI in Mathematical Research: A Guide for Young Mathematicians</i>（2026年5月，9月追補）で，数学をより深く知るためにAIを活用し，同時にAIとの議論の数学的内容を自分で理解し，検証し，説明できるようにすべきだと述べています［1］．私はこの基本姿勢に共感します．そして教育では，そこからさらに，<b>学生自身が新しい問いを見つけられるようになること</b>を重視したいと思っています．</p>
+</article></div>
+
+<h2>1．定義から始め，条件を変えてみる</h2>
+<div class="news"><article class="news-item">
+<p>数学を学ぶ目的は，公式を覚えて素早く正解を出すことだけではありません．私は，まず定義に戻り，簡単な例を考え，実際に計算し，条件を少し変えてみることを大切にしています．必要なら反例を探し，最後に「なぜその結果になるのか」を自分の言葉で説明する．</p>
+<p>例えば，線形代数で行列の積を学んだら，二つの行列の積を計算して終わりにするのではなく，掛ける順序を交換したらどうなるかを調べてみます．小さな行列なら手計算でも確かめられます．交換できない例が見つかったら，次は「どのような条件なら交換できるのか」という問いが生まれます．</p>
+<p>このように，<b>再現する → 少し変える → 疑問を持つ → 自分の問題を作る</b>という流れを，学習から研究へつながる基本的な過程と考えています．</p>
+</article></div>
+
+<h2>2．AIを使うかどうかより，どこを自分で考えるか</h2>
+<div class="news"><article class="news-item">
+<p>AIの利用を全面的に認めるか，全面的に禁止するかという二択だけでは，教育の目的を十分に考えられません．初めて習う定理の証明，関連文献の探索，数値計算のプログラムのデバッグは，それぞれ異なる学習活動です．</p>
+<p>基礎的な証明を学ぶときには，まず自分の手で考え，AIにはヒントや自分の議論への反論を求める使い方が考えられます．一方，研究用プログラムを作るときには，AIに実装を支援してもらい，数学的な仕様との一致を自分で検証することが有効です．</p>
+<p>授業や研究の目的に応じて，学生と教員が「何にAIを使うか」「どこは自分で考えるか」「どのように確かめるか」を一緒に決めていく．その判断を学ぶことも，数学教育の一部だと思っています．</p>
+</article></div>
+
+<h2>3．動いたコードは，正しさの証明ではない</h2>
+<div class="news"><article class="news-item">
+<p>私の<a href="./chatgpt-fem-12.html">有限要素法のブログ連載（第12回）</a>では，「プログラムが動くこと」と「正しい近似が得られること」を区別しています．例えば，有限要素法でJacobianの変換を誤って実装しても，いくつかの簡単なテストを通過する場合があります．しかし，メッシュを細かくしたときに期待する収束が得られないことがあります．</p>
+<p>そのとき必要なのは，AIが間違ったと非難することではなく，どの数式に基づいてコードが作られ，どのテストで何が保証され，どの条件で破綻するのかを調べることです．</p>
+<p>数学的誤差解析は，計算結果が出た後の飾りではありません．何を測り，何をもって正しい近似と判断するかを考えるために必要です．学生にとっても，<b>自分で確かめるための道具として数学を学ぶ</b>経験になると思っています．</p>
+</article></div>
+
+<h2>4．間違いを直すことも学習である</h2>
+<div class="news"><article class="news-item">
+<p>間違いから学べることは多くあります．証明の途中で使った仮定が本当に必要なのか，計算がうまくいかない理由は何か，反例によって何が否定されたのか．そこを考えるうちに，最初は気付かなかった定理の意味が見えることがあります．</p>
+<p>AIが提案した証明についても，複数のモデルが賛成したから正しいと決めるのではなく，仮定や論理のつながりを確認する必要があります．Leanなどの形式的検証が役立つ場合もありますが，形式化した命題が本来の主張を正しく表しているかは別途確かめなければなりません［1］．</p>
+<p>私は，うまくいった計算だけでなく，失敗した試みや反例，途中で捨てた考えも残しておきたいと思っています．何を試し，どこで考えが変わったかという履歴が，次の問いを見つける手掛かりになるからです．</p>
+</article></div>
+
+<h2>5．答えを得ることから，問いを立てることへ</h2>
+<div class="news"><article class="news-item">
+<p>数学を学ぶ過程と研究する過程は，どこかで突然切り替わるものではないと思います．既知の計算を再現し，条件を変え，結果を比較し，なぜそうなるのかを考えるうちに，自分の問題が生まれます．</p>
+<p>AIはその各段階を支援できます．例をたくさん調べたり，数値実験の準備をしたり，文献を探したり，予想の弱点を見つけたりできます．その分，これまで難しかった問いに学生が早く到達できる可能性もあります．</p>
+<p>だから私は，AIを使わないこと自体を教育目標にはしたくありません．同時に，AIを使って大量の答えを集めることだけを学習の進歩とも考えません．</p>
+<p><b>自分で確かめ，自分の言葉で説明し，そこから新しい問いを立てられるようになること</b>．AI時代であっても，私が数学教育で目指したいのは，そのような学び方です．</p>
+</article></div>
+
+<h2>参考文献・関連ページ</h2>
+<div class="news"><article class="news-item">
+<ol>
+<li>P. Etingof, <i>Use of AI in Mathematical Research: A Guide for Young Mathematicians</i>, Department of Mathematics, MIT, May 2026, updated 14 September 2026. <a href="https://math.mit.edu/~etingof/aiuse.pdf" target="_blank" rel="noopener noreferrer">原文PDF</a>．</li>
+<li><a href="../../suppl/">Education &amp; Learning</a> — 学習地図と教育方針．</li>
+<li><a href="./chatgpt-fem-12.html">第12回：有限要素法では，なぜ数学的誤差解析が必要なのか</a>．</li>
+<li><a href="./ai-human-mathematics-01.html">AIの前に，人間の数学を考える</a> — 研究文化，引用，査読，研究者の役割についての別記事．</li>
+</ol>
+</article></div>
+<p><a href="../">← Blog一覧へ戻る</a></p>
+</div></article></div></main>
+</div></div>
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+<p class="page-top"><a href="#top"><img src="../../images/common/page-top_off.png" width="80" height="80" alt="ページの先頭へ"></a></p>
+<script src="../../js/utility.js"></script>
+<script src="../../js/modern-ui.js"></script>
+</body>
+</html>
