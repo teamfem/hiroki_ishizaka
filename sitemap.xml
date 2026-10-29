@@ -28,7 +28,7 @@
 
   <url>
     <loc>https://teamfem.github.io/hiroki_ishizaka/blog/</loc>
-    <lastmod>2026-08-29</lastmod>
+    <lastmod>2026-10-29</lastmod>
   </url>
 
   <url>
@@ -585,5 +585,9 @@
   <url>
     <loc>https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai-human-mathematics-01.html</loc>
     <lastmod>2026-09-26</lastmod>
+  </url>
+  <url>
+    <loc>https://teamfem.github.io/hiroki_ishizaka/blog/posts/ai4math-langlands-lab-2026.html</loc>
+    <lastmod>2026-10-29</lastmod>
   </url>
 </urlset>
