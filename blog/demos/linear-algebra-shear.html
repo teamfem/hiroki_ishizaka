@@ -3,103 +3,112 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>線形代数実験室：固有値と対角化可能性 | Hiroki Ishizaka</title>
-<meta name="description" content="A(t)=[[1,t],[0,1]]を操作して固有値・固有空間・対角化可能性の違いを学ぶ教材">
+<title>線形代数実験室：予想・観察・証明 | Hiroki Ishizaka</title>
+<meta name="description" content="A(t)=[[1,t],[0,1]]の固有空間と対角化可能性を予想し、基底とその像を観察して、定義から証明する教材ver3。">
+<link rel="icon" href="../../favicon.ico">
 <style>
 :root{font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;color:#1d2732;background:#f5f7fa}
-*{box-sizing:border-box}body{margin:0}.page{max-width:980px;margin:auto;padding:26px 20px 55px}
-h1{font-size:clamp(1.5rem,3vw,2.05rem);line-height:1.4;margin:8px 0}h2{font-size:1.15rem}
-p{line-height:1.85}.small{color:#536678;font-size:.88rem}.card{background:white;border:1px solid #d9e2eb;border-radius:15px;padding:20px;margin-top:20px;box-shadow:0 3px 12px #1824340b}
-.range{display:flex;justify-content:space-between;align-items:center;gap:12px}.range label{font-weight:650}input[type=range]{width:100%;accent-color:#1c6c9c;margin:15px 0}
-.math{font-family:Georgia,serif;font-size:1.2rem;text-align:center}.result{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.result>div{background:#f5f8fb;border-radius:10px;padding:12px}.result b{display:block;margin-top:6px}
-.figure{display:grid;grid-template-columns:1fr 1fr;gap:14px}.figure>div{text-align:center}.figure svg{width:100%;max-height:330px;background:white;border:1px solid #dfe6ec;border-radius:12px}.legend{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:8px}
-.sample{display:inline-block;width:18px;border-top:3px solid;vertical-align:middle;margin-right:4px}.inputline{border-color:#8e9aa6}.outputline{border-color:#237bb2}
-.summary{border-left:4px solid #2879ae;background:#f2f8fc;padding:13px 17px;border-radius:5px;line-height:1.75}
-a{color:#145d8d}button{font:inherit;background:#fff;color:#205c80;border:1px solid #bacdda;border-radius:8px;padding:7px 12px;cursor:pointer}button:hover{background:#eef7fd}button:focus-visible,input:focus-visible{outline:3px solid #2b79b1;outline-offset:3px}
-@media(max-width:650px){.figure{grid-template-columns:1fr}.result{grid-template-columns:1fr}}
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0}.page{max-width:980px;margin:auto;padding:26px 20px 55px}
+h1{font-size:clamp(1.5rem,3vw,2.05rem);line-height:1.4;margin:8px 0}h2{font-size:1.2rem;line-height:1.5;margin:0 0 14px}h3{font-size:1.05rem;line-height:1.5}
+p,li{line-height:1.85}.small{color:#536678;font-size:.88rem}.card{min-width:0;background:#fff;border:1px solid #d9e2eb;border-radius:15px;padding:20px;margin-top:20px;box-shadow:0 3px 12px #1824340b}
+.steps{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0;padding:0;list-style:none;counter-reset:journey}.steps li{counter-increment:journey;border:1px solid #cbdbe7;background:#fff;border-radius:999px;padding:6px 14px;font-size:.9rem;font-weight:650}.steps li:before{content:counter(journey) "．";color:#17648f}
+.range{display:flex;justify-content:space-between;align-items:center;gap:12px}.range label{font-weight:650}input[type=range]{width:100%;accent-color:#1c6c9c;margin:15px 0}.math{font-family:Georgia,serif;font-size:1.2rem;text-align:center;overflow-wrap:anywhere}.given{padding:10px 0}.prediction-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:20px 0}fieldset{min-width:0;margin:0;border:1px solid #ccdbe6;border-radius:10px;padding:12px}legend{font-weight:700;padding:0 6px;font-size:.95rem}.choice{display:flex;gap:9px;align-items:center;min-height:44px;line-height:1.5;cursor:pointer}.choice input{accent-color:#1c6c9c;width:18px;height:18px;flex-shrink:0}.actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.status{margin:14px 0 0;min-height:1.8em;color:#36566e}.error{color:#a12c21;font-weight:650}
+.result{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}.result>div{background:#f5f8fb;border-radius:10px;padding:12px}.result b{display:block;margin-top:6px}.feedback{border-left:4px solid #2879ae;background:#f2f8fc;padding:13px 17px;border-radius:5px;line-height:1.75}
+.figure{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.figure>div{min-width:0;text-align:center}.figure svg{display:block;width:100%;height:auto;aspect-ratio:1;max-width:360px;margin:auto;background:#fff;border:1px solid #dfe6ec;border-radius:12px}.legend{display:flex;gap:10px 20px;flex-wrap:wrap;justify-content:center;margin:14px 0}.sample{display:inline-block;width:24px;border-top:3px solid;vertical-align:middle;margin-right:5px}.basis-one{border-color:#a44b17}.basis-two{border-color:#146a9e}.image-line{border-top-style:dashed}.eigenspace-sample{border-color:#75449c;border-top-width:6px}.vector-label{paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}
+.proof-intro{color:#36566e}.proof-steps{list-style:none;padding:0;margin:18px 0}.proof-step{border-top:1px solid #dfe6ec;padding-top:8px;margin-top:18px}.formula{font-family:Georgia,"Times New Roman",serif;font-size:1.08rem;max-width:100%;overflow-x:auto;white-space:nowrap;padding:12px;background:#f5f8fb;border-radius:8px}.case{border-left:3px solid #bccedc;padding-left:14px}.summary{border-left:4px solid #7b4594;background:#f8f3fb;padding:13px 17px;border-radius:5px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+a{color:#145d8d}button{font:inherit;background:#fff;color:#205c80;border:1px solid #bacdda;border-radius:8px;min-height:44px;padding:9px 14px;cursor:pointer}button:hover{background:#eef7fd}button.primary{background:#1d628e;color:#fff;border-color:#1d628e;font-weight:700}button.primary:hover{background:#164c70}button:disabled{opacity:.6;cursor:default}button:focus-visible,input:focus-visible,a:focus-visible,.formula:focus-visible{outline:3px solid #2b79b1;outline-offset:3px}h2[tabindex="-1"]:focus{outline:2px solid #2b79b1;outline-offset:5px}
+@media(max-width:650px){.figure,.result,.prediction-fields{grid-template-columns:1fr}.actions{align-items:stretch;flex-direction:column}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style>
 <script src="./linear-algebra-shear.js" defer></script>
-<script defer>
-'use strict';
-document.addEventListener('DOMContentLoaded',function(){
-  // With viewBox ±168, the square's image has at least 0.5 units of margin
-  // for every slider value: -2 <= x + t*y <= 3 and 0 <= y <= 1.
-  const ns='http://www.w3.org/2000/svg', S=48;
-  const slider=document.getElementById('parameter');
-  const output=document.getElementById('t-value');
-  const matrix=document.getElementById('matrix');
-  const dim=document.getElementById('dimension');
-  const verdict=document.getElementById('verdict');
-  function element(name,attrs,parent){
-    const v=document.createElementNS(ns,name);
-    for(const k in attrs) v.setAttribute(k,String(attrs[k]));
-    parent.appendChild(v);return v;
-  }
-  function point(t,x,y){
-    const a=ShearMath.apply(t,[x,y]);
-    return [S*a[0],-S*a[1]];
-  }
-  function line(svg,t,x1,y1,x2,y2,color,width,opacity,dash){
-    const a=point(t,x1,y1),b=point(t,x2,y2);
-    element('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:color,'stroke-width':width,'stroke-opacity':opacity,'stroke-dasharray':dash||''},svg);
-  }
-  function draw(svg,t){
-    svg.replaceChildren();
-    for(let k=-3;k<=3;k++){
-      line(svg,0,k,-3,k,3,'#a9b6c3',.7,.45,'3 4');
-      line(svg,0,-3,k,3,k,'#a9b6c3',.7,.45,'3 4');
-      line(svg,t,k,-3,k,3,'#2675a8',1,.6,'');
-      line(svg,t,-3,k,3,k,'#2675a8',1,.6,'');
-    }
-    line(svg,0,-3,0,3,0,'#5a6470',1.2,.8,'');
-    line(svg,0,0,-3,0,3,'#5a6470',1.2,.8,'');
-    const square=[[0,0],[1,0],[1,1],[0,1]].map(function(p){return point(t,p[0],p[1]).join(',');}).join(' ');
-    element('polygon',{points:square,fill:'#88bee2','fill-opacity':.55,stroke:'#186a9e','stroke-width':2},svg);
-    line(svg,t,0,0,1,0,'#bb5f29',3,1,'');
-    line(svg,t,0,0,0,1,'#2675a8',3,1,'');
-    element('circle',{cx:0,cy:0,r:3.5,fill:'#24364a'},svg);
-  }
-  function update(){
-    const t=Number(slider.value),d=ShearMath.eigenspaceDimensionAtOne(t);
-    output.value=t.toFixed(1);output.textContent=t.toFixed(1);
-    matrix.textContent='A('+t.toFixed(1)+') = [[1, '+t.toFixed(1)+'], [0, 1]]';
-    dim.textContent=String(d);
-    verdict.textContent=(d===2?'可能':'不可能');
-    verdict.style.color=d===2?'#167447':'#b84f24';
-    draw(document.getElementById('diagram-in'),0);
-    draw(document.getElementById('diagram-out'),t);
-  }
-  slider.addEventListener('input',update);
-  document.getElementById('reset').addEventListener('click',function(){slider.value='0';update();});
-  update();
-});
-</script>
 </head>
-<body><main class="page">
-<p class="small">Mathematical Concept Laboratory · Linear Algebra 01 · ver2</p>
+<body>
+<main class="page" id="main-content">
+<p class="small">Mathematical Concept Laboratory · Linear Algebra 01 · ver3</p>
 <h1>固有値が同じでも、対角化できるとは限らない</h1>
-<p>パラメータ <i>t</i> を動かして、固有値・固有空間の次元・対角化可能性を比べてください。最初に、<i>t</i> が0になったときの結果を予想しましょう。</p>
-<section class="card" aria-label="行列の実験">
-<div class="math" id="matrix">A(t) = [[1, t], [0, 1]]</div>
+<p>まず自分の予想を決め、次に図を観察し、最後に定義から確かめましょう。予想を間違えても大丈夫です。「なぜそうなるのか」を説明することが目標です。</p>
+<ol class="steps" aria-label="学習の流れ"><li>予想する</li><li>観察する</li><li>証明する</li></ol>
+<noscript><p class="feedback">予想と観察にはJavaScriptを有効にしてください。<a href="../posts/codex-math-01.html">解説記事</a>でも数学的な背景を読めます。</p></noscript>
+
+<section class="card" aria-labelledby="prediction-title">
+<h2 id="prediction-title">1．パラメータを選び、予想する</h2>
+<p class="small given">与えられた条件：固有値はいつも1で、代数的重複度は2です。パラメータの範囲は −2 ≤ t ≤ 2 です。</p>
+<div class="math" id="matrix">A(1.0) = [[1, 1.0], [0, 1]]</div>
 <div class="range"><label for="parameter">パラメータ t</label><output id="t-value" for="parameter">1.0</output></div>
-<input id="parameter" type="range" min="-2" max="2" step="0.1" value="1" aria-label="行列のパラメータ t">
-<button type="button" id="reset">t = 0 に戻す</button>
-<div class="figure">
-<div><h2>元の格子・単位正方形</h2><svg id="diagram-in" viewBox="-168 -168 336 336" role="img" aria-label="恒等写像による格子と単位正方形"></svg></div>
-<div><h2>写像 A(t) による像</h2><svg id="diagram-out" viewBox="-168 -168 336 336" role="img" aria-label="せん断変形後の格子と正方形の像"></svg></div>
+<input id="parameter" type="range" min="-2" max="2" step="0.1" value="1" aria-describedby="parameter-help">
+<p class="small" id="parameter-help">矢印キーで0.1ずつ変更できます。tを変えると、予想・結果・証明の進行が初期状態に戻ります。</p>
+<button type="button" id="reset">t = 0 に戻して予想をやり直す</button>
+<form id="prediction-form" aria-describedby="prediction-help">
+<p id="prediction-help">このtに対する予想を2つ選んでください。確定するまで観察図・正解・証明は表示しません。</p>
+<div class="prediction-fields">
+<fieldset><legend>固有値1の固有空間の次元は？</legend>
+<label class="choice"><input type="radio" name="dimension" value="1" required>1次元</label>
+<label class="choice"><input type="radio" name="dimension" value="2" required>2次元</label>
+</fieldset>
+<fieldset><legend>この行列は対角化できる？</legend>
+<label class="choice"><input type="radio" name="diagonalizable" value="yes" required>対角化できる</label>
+<label class="choice"><input type="radio" name="diagonalizable" value="no" required>対角化できない</label>
+</fieldset>
 </div>
-<div class="legend small"><span><i class="sample inputline"></i>元の格子（破線）</span><span><i class="sample outputline"></i>変換後の格子（青）</span></div>
-<div class="result" aria-live="polite">
+<p id="prediction-error" class="error" role="alert"></p>
+<div class="actions"><button id="confirm-prediction" class="primary" type="submit">予想を確定して観察する</button></div>
+</form>
+<p id="activity-status" class="status" role="status" aria-live="polite" aria-atomic="true">パラメータを選んでから、2つの予想を確定してください。</p>
+</section>
+
+<section class="card" id="observation" hidden aria-labelledby="observation-title">
+<h2 id="observation-title" tabindex="-1">2．図と結果を観察する</h2>
+<p id="prediction-feedback" class="feedback"></p>
+<div class="result">
 <div>固有値（代数的重複度）<b>1（2）</b></div>
-<div>固有空間の次元<b id="dimension">1</b></div>
-<div>対角化<b id="verdict">不可能</b></div>
+<div>固有空間の次元<b id="dimension"></b></div>
+<div>対角化<b id="verdict"></b></div>
 </div>
-<p class="small">この教材は特定の行列族の厳密な式を使います。一般の固有値計算を行うアプリではありません。</p>
+<div class="figure">
+<div><h3>元の基底と単位正方形</h3>
+<svg id="diagram-in" viewBox="-168 -168 336 336" role="img" aria-labelledby="diagram-in-title diagram-in-desc" aria-describedby="diagram-description"><title id="diagram-in-title">元の基底ベクトルと単位正方形</title><desc id="diagram-in-desc">実線の矢印でe₁とe₂を区別します。</desc></svg></div>
+<div><h3>写像 A(t) による像と固有空間</h3>
+<svg id="diagram-out" viewBox="-168 -168 336 336" role="img" aria-labelledby="diagram-out-title diagram-out-desc" aria-describedby="diagram-description"><title id="diagram-out-title">基底の像と固有空間</title><desc id="diagram-out-desc">破線の矢印で基底の像を、紫色で固有空間を示します。</desc></svg></div>
+</div>
+<div class="legend small" role="group" aria-label="図の凡例">
+<span><i class="sample basis-one" aria-hidden="true"></i>e₁（実線）</span><span><i class="sample basis-two" aria-hidden="true"></i>e₂（実線）</span>
+<span><i class="sample basis-one image-line" aria-hidden="true"></i>A(t)e₁（破線）</span><span><i class="sample basis-two image-line" aria-hidden="true"></i>A(t)e₂（破線）</span>
+<span><i class="sample eigenspace-sample" aria-hidden="true"></i>固有空間（紫）</span>
+</div>
+<p id="eigenspace-description"></p>
+<p id="diagram-description" class="small"></p>
+<p class="small">左右の図は同じ縮尺です。矢印が重なる場合も、数学的な位置をずらしていません。固有空間は零ベクトルを含みますが、固有ベクトルと呼ぶのは非零ベクトルだけです。</p>
+<p class="feedback">ここまでで得られるのは、このパラメータでの観察です。図や有限個の計算結果だけで、全てのtについて証明したことにはなりません。</p>
 </section>
-<section class="card"><h2>なぜこのようになるのか</h2>
-<p>特性多項式は (λ−1)² で、全ての t に対して固有値は1です。一方、A(t)−I = [[0,t],[0,0]] なので、t≠0 で固有空間は第1座標軸（1次元）、t=0 では空間全体（2次元）です。</p>
-<div class="summary"><b>結論：</b>固有値の集合だけでは対角化可能性は決まりません。一次独立な固有ベクトルが何本とれるかを調べる必要があります。</div>
-<h2>演習</h2><ol><li>特性多項式を計算してください。</li><li>t≠0 の固有空間を求めてください。</li><li>det A(t) が t に依存しないことを示してください。</li><li>対角化可能性を行列の相似変換の定義から説明してください。</li></ol>
+
+<section class="card" id="proof" hidden aria-labelledby="proof-title">
+<h2 id="proof-title">3．定義から証明する</h2>
+<p class="proof-intro">次のボタンで一段ずつ読み進めてください。観察した図とは別に、固有空間の定義から全ての場合を導きます。</p>
+<button id="proof-next" type="button">証明の次の段階を読む</button>
+<p id="proof-progress" class="status" role="status" aria-live="polite" aria-atomic="true">まだ証明を開いていません（全3段階）。</p>
+<ol class="proof-steps">
+<li class="proof-step" data-step="1" hidden>
+<h3>段階1：固有空間の条件を方程式にする</h3>
+<p>固有値1の固有空間は、(A(t)−I)v = 0 を満たすベクトル全体です。v = (x,y)<sup>T</sup> とおくと、</p>
+<p class="formula" role="math" tabindex="0" aria-label="A(t) 引く I とベクトル x,y の積は、ベクトル t y,0 に等しい">(A(t) − I)(x,y)<sup>T</sup> = (ty,0)<sup>T</sup></p>
+<p>したがって、解くべき条件は <b>ty = 0</b> です。</p>
+</li>
+<li class="proof-step" data-step="2" hidden>
+<h3>段階2：tが零かどうかで場合分けする</h3>
+<div class="case"><p><b>t ≠ 0 の場合：</b>ty = 0 から y = 0。xは自由なので、固有空間は span{(1,0)<sup>T</sup>}、つまり第1座標軸全体です。次元は1です。</p></div>
+<div class="case"><p><b>t = 0 の場合：</b>ty = 0 は全てのx,yで成り立ちます。固有空間は ℝ²、つまり全平面で、次元は2です。</p></div>
+<p>この場合分けは、特定のスライダー値での数値実験ではなく、任意の実数tに対する議論です。</p>
+</li>
+<li class="proof-step" data-step="3" hidden>
+<h3>段階3：固有空間の次元から対角化を判断する</h3>
+<p>2次元の空間で対角化するには、一次独立な固有ベクトルが2本必要です。この行列の固有値は1だけなので、t ≠ 0 では1本しか取れず、対角化できません。t = 0 なら A(0) = I で、e₁とe₂を固有ベクトルに取れます。</p>
+<p class="summary"><b>結論：</b>A(t)が対角化可能であることと、t = 0 は同値です。固有値の集合だけでは対角化可能性は決まりません。</p>
+<h3>自分の言葉で説明してみよう</h3>
+<ol><li>予想と結果が違った場合、どの条件を見落としていましたか。</li><li>特性多項式 (λ−1)² を計算してください。</li><li>図から気づいたことと、方程式から証明できたことを分けて説明してください。</li><li>det A(t) がtに依存しないことを示し、面積の観察と結び付けてください。</li><li>対角化可能性を相似変換の定義からも説明してください。</li></ol>
+</li>
+</ol>
+</section>
 <p class="small"><a href="../posts/codex-math-01.html">第1回：解説記事に戻る</a> ／ <a href="../">ブログ一覧</a></p>
-</section>
-</main></body></html>
+</main>
+</body>
+</html>
