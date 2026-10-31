@@ -7,7 +7,10 @@
     return [[1, t], [0, 1]];
   }
   function apply(t, point) {
-    if (!Array.isArray(point) || point.length !== 2 || !point.every(Number.isFinite)) {
+    if (!Array.isArray(point) || point.length !== 2 ||
+        !Object.prototype.hasOwnProperty.call(point, 0) ||
+        !Object.prototype.hasOwnProperty.call(point, 1) ||
+        !Number.isFinite(point[0]) || !Number.isFinite(point[1])) {
       throw new TypeError('point must be a finite 2-vector');
     }
     const A = matrix(t);
