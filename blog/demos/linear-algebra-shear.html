@@ -22,7 +22,9 @@ a{color:#145d8d}button{font:inherit;background:#fff;color:#205c80;border:1px sol
 <script defer>
 'use strict';
 document.addEventListener('DOMContentLoaded',function(){
-  const ns='http://www.w3.org/2000/svg', S=52;
+  // With viewBox ±168, the square's image has at least 0.5 units of margin
+  // for every slider value: -2 <= x + t*y <= 3 and 0 <= y <= 1.
+  const ns='http://www.w3.org/2000/svg', S=48;
   const slider=document.getElementById('parameter');
   const output=document.getElementById('t-value');
   const matrix=document.getElementById('matrix');
@@ -74,7 +76,7 @@ document.addEventListener('DOMContentLoaded',function(){
 </script>
 </head>
 <body><main class="page">
-<p class="small">Mathematical Concept Laboratory · Linear Algebra 01</p>
+<p class="small">Mathematical Concept Laboratory · Linear Algebra 01 · ver2</p>
 <h1>固有値が同じでも、対角化できるとは限らない</h1>
 <p>パラメータ <i>t</i> を動かして、固有値・固有空間の次元・対角化可能性を比べてください。最初に、<i>t</i> が0になったときの結果を予想しましょう。</p>
 <section class="card" aria-label="行列の実験">
@@ -83,8 +85,8 @@ document.addEventListener('DOMContentLoaded',function(){
 <input id="parameter" type="range" min="-2" max="2" step="0.1" value="1" aria-label="行列のパラメータ t">
 <button type="button" id="reset">t = 0 に戻す</button>
 <div class="figure">
-<div><h2>元の格子・単位正方形</h2><svg id="diagram-in" viewBox="-150 -150 300 300" role="img" aria-label="恒等写像による格子と単位正方形"></svg></div>
-<div><h2>写像 A(t) による像</h2><svg id="diagram-out" viewBox="-150 -150 300 300" role="img" aria-label="せん断変形後の格子と正方形の像"></svg></div>
+<div><h2>元の格子・単位正方形</h2><svg id="diagram-in" viewBox="-168 -168 336 336" role="img" aria-label="恒等写像による格子と単位正方形"></svg></div>
+<div><h2>写像 A(t) による像</h2><svg id="diagram-out" viewBox="-168 -168 336 336" role="img" aria-label="せん断変形後の格子と正方形の像"></svg></div>
 </div>
 <div class="legend small"><span><i class="sample inputline"></i>元の格子（破線）</span><span><i class="sample outputline"></i>変換後の格子（青）</span></div>
 <div class="result" aria-live="polite">

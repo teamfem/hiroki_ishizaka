@@ -22,7 +22,8 @@
 .article-body .lesson-demo:hover{background:#164c70;color:#fff!important}
 .article-body .lesson-table{display:block;max-width:100%;overflow-x:auto}
 .article-body .lesson-code{white-space:pre;overflow-x:auto}
-.article-body mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden}
+/* MathJax adds an inline min-width for equation numbers; keep scrolling local. */
+.article-body mjx-container[display="true"]{min-width:0!important;max-width:100%;overflow-x:auto;overflow-y:hidden}
 </style>
 </head>
 <body class="modern-blog-post" id="top">
@@ -43,7 +44,7 @@
 <section class="article-hero">
 <div class="shell">
 <nav class="crumbs" aria-label="Breadcrumb"><a href="../../">Home</a><span>／</span><a href="../">Blog</a><span>／</span><span>Codexで作る大学数学教材</span></nav>
-<div class="article-series">Mathematics Education with Codex · 第1回</div>
+<div class="article-series">Mathematics Education with Codex · 第1回 · ver2</div>
 <h1>Codexで大学数学教材を作る — 数式から実装・検証まで</h1>
 <div class="article-meta"><span><b>線形代数</b> · 数学教育とAI</span><time datetime="2026-10-31">31st October 2026</time></div>
 </div>
@@ -115,8 +116,8 @@ codex</pre>
 <h2 id="section-8">7．テストを実行して、数学的に監査する</h2>
 <p>スライダーが動くことだけをテストしても、数学的正しさは分かりません。別ファイル <code>tests/shear-math.test.js</code> に、標準基底の像、行列式、固有空間の次元、逆せん断との合成などを確認するテストを用意します。</p>
 <pre class="lesson-code">node --test tests/shear-math.test.js</pre>
-<p>今回の配布用コードについては、6件のテストが通過することを確認しました。もっとも、これらは指定した行列族に関する有限個の実装テストであり、任意の行列について数学的証明を自動的に与えるものではありません。</p>
-<p>実装後はブラウザ上で \(t=-2,-1,0,1,2\) の表示を確認します。数値演算では近似誤差が生じ得るため、任意の実数に対して \(t=0\) かどうかを判定する一般的方法と混同しないことにも注意が必要です。この教材では、スライダーが取り得る有限個の値について定義された問題を扱います。</p>
+<p>ver2の配布用コードについては、既存の6件に入力検証と全41値の数学的性質を確認する回帰テスト5件を追加し、計11件が通過することを確認しました。もっとも、これらは指定した行列族に関する有限個の実装テストであり、任意の行列について数学的証明を自動的に与えるものではありません。</p>
+<p>実装後はブラウザ上で \(t=-2,-1,0,1,2\) の表示を確認します。ver2では、スライダーで選べる全41値で図形の余白と判定を確認し、幅320・375・768・1440pxで記事と教材の表示を確認しました。数値演算では近似誤差が生じ得るため、任意の実数に対して \(t=0\) かどうかを判定する一般的方法と混同しないことにも注意が必要です。この教材では、スライダーが取り得る有限個の値について定義された問題を扱います。</p>
 <h2 id="section-9">8．ローカルで確認し、ブログへ配置する</h2>
 <p>ローカルではPythonの簡易HTTPサーバーを利用できます。リポジトリのルートで次のコマンドを実行します。</p>
 <pre class="lesson-code">python3 -m http.server 8000</pre>
