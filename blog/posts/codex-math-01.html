@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="col1" lang="ja">
+<html lang="ja">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,19 +18,43 @@
 .lesson-caption{font-size:.86rem;color:#465e75}
 .lesson-table{border-collapse:collapse;width:100%;margin:16px 0}.lesson-table th,.lesson-table td{border:1px solid #c9d5df;padding:10px;text-align:left;vertical-align:top}
 .lesson-demo{display:inline-block;background:#1d628e;color:white!important;border-radius:8px;text-decoration:none;padding:11px 18px;margin:8px 0 12px;font-weight:700}
+.article-body .lesson-demo{display:inline-flex;color:#fff!important;background:#1d628e;border:1px solid #1d628e;text-decoration:none;border-radius:10px;padding:12px 18px;font-weight:700;align-items:center;justify-content:center}
+.article-body .lesson-demo:hover{background:#164c70;color:#fff!important}
+.article-body .lesson-table{display:block;max-width:100%;overflow-x:auto}
+.article-body .lesson-code{white-space:pre;overflow-x:auto}
+.article-body mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden}
 </style>
 </head>
-<body class="page"><header class="site-header" id="top"><div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
-<nav class="global-nav"><div class="global-nav-in"><ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../">Blog</a></li><li><a href="../../geo/">Geometry</a></li></ul></div></nav></header>
-<div class="main-body"><div class="main-body-in"><nav class="breadcrumbs"><a href="../../">Home</a> / <a href="../">Blog</a> / Codexで作る大学数学教材</nav>
-<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
-<h1 class="section-title">第1回：Codexで大学数学教材を作る — 数式から実装・検証まで</h1>
-<p><strong>Codexで作る大学数学教材 · 第1回</strong><br><time datetime="2026-10-31">31st October 2026</time></p>
-<h2>Introduction：数学を動かすだけで十分だろうか</h2>
+<body class="modern-blog-post" id="top">
+<header class="topbar">
+<div class="shell nav">
+<a class="brand" href="../../">Hiroki Ishizaka<small>Numerical Analysis · PDEs · FEM</small></a>
+<nav class="navlinks" aria-label="Primary navigation">
+<a href="../../research/">Research</a>
+<a href="../../publications/">Publications</a>
+<a href="../../fem/">Visions</a>
+<a href="../../suppl/">Education &amp; Learning</a>
+<a href="../" aria-current="page">Blog</a>
+<a href="../../geo/">Geometry</a>
+<a href="../../links/">Links</a>
+<a href="../../contact/">Contact</a>
+</nav></div></header>
+<main id="main-content">
+<section class="article-hero">
+<div class="shell">
+<nav class="crumbs" aria-label="Breadcrumb"><a href="../../">Home</a><span>／</span><a href="../">Blog</a><span>／</span><span>Codexで作る大学数学教材</span></nav>
+<div class="article-series">Mathematics Education with Codex · 第1回</div>
+<h1>Codexで大学数学教材を作る — 数式から実装・検証まで</h1>
+<div class="article-meta"><span><b>線形代数</b> · 数学教育とAI</span><time datetime="2026-10-31">31st October 2026</time></div>
+</div>
+</section>
+<div class="article-layout">
+<article class="article-body">
+<h2 id="section-1">Introduction：数学を動かすだけで十分だろうか</h2>
 <p>AIにプログラムを書かせれば、数学の可視化教材を作ることは以前より容易になりました。しかし、図形が滑らかに動くことと、表示される数学が正しいことは別です。さらに、学生が画面を眺めているだけでは、定義を理解したことにも、命題を証明できるようになったことにもなりません。</p>
 <p>この連載では、Codexを使って大学数学の教材を実際に作り、その制作過程を記録します。線形代数、微分積分、位相空間論、関数解析へと対象を広げる予定です。最初に、行列の固有値と対角化可能性を区別する小さな教材を作ってみます。</p>
 <div class="lesson-callout"><b>本連載の基本方針</b><p>「予想する → 操作する → 反例を調べる → 証明する」の順序を大切にします。数学的な主張と、数値実験で観察された現象を混同しません。</p></div>
-<h2>1．数学的な問いを先に決める</h2>
+<h2 id="section-2">1．数学的な問いを先に決める</h2>
 <p>パラメータ \(t\in\mathbb R\) に依存する行列</p>
 \[A(t)=\begin{pmatrix}1&amp;t\\0&amp;1\end{pmatrix}\tag{1}\]
 <p>を考えます。特性多項式は</p>
@@ -40,10 +64,10 @@
 <p>したがって、\(t\ne0\) では固有空間は \(\operatorname{span}\{(1,0)^{\top}\}\) に一致し、その次元は1です。一方、\(t=0\) では \(A(0)=I\) なので固有空間の次元は2です。従って</p>
 \[A(t)\text{ が対角化可能}\quad\Longleftrightarrow\quad t=0.\tag{4}\]
 <p>この性質を、単位正方形と格子の変形によって観察できるようにします。ただし、図による観察が式(4)の証明に置き換わるわけではありません。</p>
-<h2>2．完成した最小教材を触ってみる</h2>
+<h2 id="section-3">2．完成した最小教材を触ってみる</h2>
 <p><a class="lesson-demo" href="../demos/linear-algebra-shear.html">線形代数の実験室を開く</a></p>
 <p>スライダーで \(t\) を変更すると、行列の作用によって格子がせん断変形します。同時に、固有値、固有空間の次元、対角化可能性を表示します。\(t=0\) で何が変わるか、操作する前に予想してみてください。</p>
-<h2>3．作業用フォルダを用意する</h2>
+<h2 id="section-4">3．作業用フォルダを用意する</h2>
 <p>このホームページはGitHub Pagesで公開され、ブログ記事は <code>blog/posts/</code> にあるHTMLファイルで管理されています。既存のサイト構成を大きく変更しないために、実験教材は <code>blog/demos/</code> に置きます。</p>
 <pre class="lesson-code">blog/
   posts/
@@ -55,14 +79,14 @@
 tests/
   shear-math.test.js</pre>
 <p>静的HTML、CSS、JavaScriptだけで構成すれば、サーバー側にPythonなどを用意する必要はありません。GitHub Pagesの静的ファイル公開の仕組みに合わせるため、初回は外部JavaScriptライブラリにも依存させません。</p>
-<h2>4．Codexを起動する</h2>
+<h2 id="section-5">4．Codexを起動する</h2>
 <p>Codex CLIの導入は、OpenAIの公式手順に従います［1］。インストール後、作業用リポジトリに移動して <code>codex</code> を実行し、必要に応じてChatGPTでサインインします。既存のホームページを誤って変更しないよう、Gitで作業ブランチを用意し、最初は新しい教材ファイルだけを扱わせます。</p>
 <pre class="lesson-code">git clone https://github.com/teamfem/hiroki_ishizaka.git
 cd hiroki_ishizaka
 git switch -c codex-math-education
 codex</pre>
 <p class="lesson-caption">既にローカルにリポジトリがある場合は、その作業コピーを利用できます。上記は説明用のコマンドであり、既存の変更がある場合はブランチの状態を先に確認してください。</p>
-<h2>5．最初の指示文を書く</h2>
+<h2 id="section-6">5．最初の指示文を書く</h2>
 <p>Codexに「線形代数の教材を作ってください」とだけ伝えると、どこまで実装するか、何を正しいと判定するかが曖昧になります。そこで、数学的な要件を先に指定します。</p>
 <pre class="lesson-code">A(t)=[[1,t],[0,1]] の線形代数教材を作ってください。
 1. t は -2 から 2 まで 0.1 刻みで操作する。
@@ -75,7 +99,7 @@ codex</pre>
 8. ブログ本体の既存ファイルは変更しない。
 9. 実装後にテスト結果と残る制限を報告する。</pre>
 <p>これは使用できる指示文の一例です。ここに掲載した教材がこの指示文だけから自動生成された、という意味ではありません。どの数式に依拠し、どの機能を実装したかを再現可能な形で示すことが目的です。</p>
-<h2>6．プログラムのどの部分が数学に対応するか</h2>
+<h2 id="section-7">6．プログラムのどの部分が数学に対応するか</h2>
 <p>行列を扱う計算部分を独立した <code>linear-algebra-shear.js</code> に分離します。例えば、線形写像を次のように実装します。</p>
 <pre class="lesson-code">function apply(t, point) {
   const [x, y] = point;
@@ -88,17 +112,17 @@ codex</pre>
 <tr><td>\(\det A(t)=1\)</td><td>行列式がすべてのテスト値で1になる</td></tr>
 <tr><td>\(\dim\ker(A(t)-I)=1,2\)</td><td>\(t=0\) と \(t\ne0\) の分岐を調べる</td></tr>
 </tbody></table>
-<h2>7．テストを実行して、数学的に監査する</h2>
+<h2 id="section-8">7．テストを実行して、数学的に監査する</h2>
 <p>スライダーが動くことだけをテストしても、数学的正しさは分かりません。別ファイル <code>tests/shear-math.test.js</code> に、標準基底の像、行列式、固有空間の次元、逆せん断との合成などを確認するテストを用意します。</p>
 <pre class="lesson-code">node --test tests/shear-math.test.js</pre>
 <p>今回の配布用コードについては、6件のテストが通過することを確認しました。もっとも、これらは指定した行列族に関する有限個の実装テストであり、任意の行列について数学的証明を自動的に与えるものではありません。</p>
 <p>実装後はブラウザ上で \(t=-2,-1,0,1,2\) の表示を確認します。数値演算では近似誤差が生じ得るため、任意の実数に対して \(t=0\) かどうかを判定する一般的方法と混同しないことにも注意が必要です。この教材では、スライダーが取り得る有限個の値について定義された問題を扱います。</p>
-<h2>8．ローカルで確認し、ブログへ配置する</h2>
+<h2 id="section-9">8．ローカルで確認し、ブログへ配置する</h2>
 <p>ローカルではPythonの簡易HTTPサーバーを利用できます。リポジトリのルートで次のコマンドを実行します。</p>
 <pre class="lesson-code">python3 -m http.server 8000</pre>
 <p>ブラウザで <code>http://localhost:8000/blog/demos/linear-algebra-shear.html</code> を開き、図が表示されることを確認します。記事の方は <code>http://localhost:8000/blog/posts/codex-math-01.html</code> です。</p>
 <p>確認が終わったら、記事と教材へのリンクを <code>blog/index.html</code> に追加します。サイトの公開操作は、数学的・文章上の確認が終わってから行います。GitHub Pagesの公開設定は既存リポジトリの設定に依存するため、公開元ブランチやActionsの状態は実際の設定を確かめてください［3］。</p>
-<h2>9．授業では何を学生に問うか</h2>
+<h2 id="section-10">9．授業では何を学生に問うか</h2>
 <p>教材を最初から自由に操作させるのではなく、以下の順序を考えています。</p>
 <ol>
 <li>全ての \(t\) で固有値が同じことを先に計算する。</li>
@@ -108,10 +132,10 @@ codex</pre>
 <li>さらに「固有値が全て実数なら対角化できるか」という命題を検討する。</li>
 </ol>
 <p>ここでは答えを速く得ることより、誤った予想を自分で修正できることを重視します。講義中に数分間の個人予想とペア討論を入れる使い方も考えられますが、教育効果は実際の授業で確かめる必要があります。</p>
-<h2>10．次に考えたいこと</h2>
+<h2 id="section-11">10．次に考えたいこと</h2>
 <p>第2回以降は、対角化可能性から直交射影、最小二乗法、特異値分解へ進みたいと思います。その後、微分積分では各点収束と一様収束、位相空間論では分離公理と連続写像、関数解析では強作用素収束と作用素ノルム収束を扱う予定です。</p>
 <p>共通する問いは、数学的な定義を実際に操作できるようにすると、何が見え、何が逆に見えなくなるか、ということです。有限次元の実験だけでは無限次元の定理を証明できません。この限界も含めて教材にしたいと思います。</p>
-<h2>参考文献・資料</h2>
+<h2 id="section-12">参考文献・資料</h2>
 <ol>
 <li>OpenAI, <a href="https://learn.chatgpt.com/docs/codex/cli">Codex CLI — Quickstart and documentation</a>（2026年10月31日閲覧）.</li>
 <li>OpenAI, <a href="https://learn.chatgpt.com/docs/agent-configuration/agents-md">Custom instructions with AGENTS.md</a>（2026年10月31日閲覧）.</li>
@@ -119,7 +143,34 @@ codex</pre>
 <li>S. Axler, <i>Linear Algebra Done Right</i>, 4th ed., Springer, 2023, <a href="https://doi.org/10.1007/978-3-031-41026-0">doi:10.1007/978-3-031-41026-0</a>.</li>
 </ol>
 <p><a href="../">ブログ一覧へ戻る</a> ／ <a href="../demos/linear-algebra-shear.html">動作する教材を見る</a></p>
-</div></article></div></main></div></div>
-<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+</article>
+<aside class="article-side" aria-label="記事内ナビゲーション">
+<nav class="toc" aria-label="目次">
+<div class="toc-title">Contents · この記事の目次</div>
+<a href="#section-1">Introduction：数学を動かすだけで十分だろうか</a>
+<a href="#section-2">1．数学的な問いを先に決める</a>
+<a href="#section-3">2．完成した最小教材を触ってみる</a>
+<a href="#section-4">3．作業用フォルダを用意する</a>
+<a href="#section-5">4．Codexを起動する</a>
+<a href="#section-6">5．最初の指示文を書く</a>
+<a href="#section-7">6．プログラムのどの部分が数学に対応するか</a>
+<a href="#section-8">7．テストを実行して、数学的に監査する</a>
+<a href="#section-9">8．ローカルで確認し、ブログへ配置する</a>
+<a href="#section-10">9．授業では何を学生に問うか</a>
+<a href="#section-11">10．次に考えたいこと</a>
+<a href="#section-12">参考文献・資料</a>
+</nav>
+<div class="series-nav"><b>Codexで作る大学数学教材</b><a href="../demos/linear-algebra-shear.html">操作できる線形代数教材</a><a href="../#codex-math-education">シリーズ一覧へ戻る</a></div>
+</aside>
+</div>
+<nav class="article-footer-nav" aria-label="関連記事">
+<div class="navbox">
+<a href="../#codex-math-education"><span>Series</span>Codexで作る大学数学教材 · 目次へ</a>
+<a href="../demos/linear-algebra-shear.html"><span>Interactive demo</span>固有値と対角化可能性を操作する</a>
+</div>
+</nav>
+</main>
+<footer class="footer"><div class="shell footer-inner"><span>© 2026 Hiroki Ishizaka</span><span>Research Notes · Numerical Analysis</span></div></footer>
+<script src="../../js/modern-ui.js"></script>
 </body>
 </html>
