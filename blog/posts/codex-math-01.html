@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html class="col1" lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第1回：Codexで大学数学教材を作る — 数式から実装・検証まで | Hiroki Ishizaka</title>
+<meta name="description" content="Codexを使った大学数学教材の作り方を、行列A(t)の例で数学的定義、プロンプト、静的Web教材、テスト、授業利用まで解説する。">
+<meta name="keywords" content="Codex,数学教育,線形代数,対角化,固有空間,数学的監査,GitHub Pages,教材開発">
+<link rel="icon" href="../../favicon.ico">
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/codex-math-01.html">
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]}};</script>
+<script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+.lesson-callout{padding:14px 18px;border:1px solid #b7cfe2;border-left:4px solid #2879ae;background:#f5f9fc;border-radius:7px;margin:18px 0}
+.lesson-code{padding:14px 16px;background:#172334;color:#f2f6fb;border-radius:9px;overflow:auto;white-space:pre;font-size:.85rem;line-height:1.6}
+.lesson-caption{font-size:.86rem;color:#465e75}
+.lesson-table{border-collapse:collapse;width:100%;margin:16px 0}.lesson-table th,.lesson-table td{border:1px solid #c9d5df;padding:10px;text-align:left;vertical-align:top}
+.lesson-demo{display:inline-block;background:#1d628e;color:white!important;border-radius:8px;text-decoration:none;padding:11px 18px;margin:8px 0 12px;font-weight:700}
+</style>
+</head>
+<body class="page"><header class="site-header" id="top"><div class="site-header-in"><div class="site-header-conts"><p class="site-title"><a href="../../">ISHIZAKA Hiroki Website</a></p></div></div>
+<nav class="global-nav"><div class="global-nav-in"><ul id="menu"><li><a href="../../research/">Research</a></li><li><a href="../../publications/">Publications</a></li><li><a href="../../fem/">Visions</a></li><li><a href="../../suppl/">Supplementary</a></li><li><a href="../">Blog</a></li><li><a href="../../geo/">Geometry</a></li></ul></div></nav></header>
+<div class="main-body"><div class="main-body-in"><nav class="breadcrumbs"><a href="../../">Home</a> / <a href="../">Blog</a> / Codexで作る大学数学教材</nav>
+<main><div class="main-conts"><article class="section-wrap"><div class="section-in">
+<h1 class="section-title">第1回：Codexで大学数学教材を作る — 数式から実装・検証まで</h1>
+<p><strong>Codexで作る大学数学教材 · 第1回</strong><br><time datetime="2026-10-31">31st October 2026</time></p>
+<h2>Introduction：数学を動かすだけで十分だろうか</h2>
+<p>AIにプログラムを書かせれば、数学の可視化教材を作ることは以前より容易になりました。しかし、図形が滑らかに動くことと、表示される数学が正しいことは別です。さらに、学生が画面を眺めているだけでは、定義を理解したことにも、命題を証明できるようになったことにもなりません。</p>
+<p>この連載では、Codexを使って大学数学の教材を実際に作り、その制作過程を記録します。線形代数、微分積分、位相空間論、関数解析へと対象を広げる予定です。最初に、行列の固有値と対角化可能性を区別する小さな教材を作ってみます。</p>
+<div class="lesson-callout"><b>本連載の基本方針</b><p>「予想する → 操作する → 反例を調べる → 証明する」の順序を大切にします。数学的な主張と、数値実験で観察された現象を混同しません。</p></div>
+<h2>1．数学的な問いを先に決める</h2>
+<p>パラメータ \(t\in\mathbb R\) に依存する行列</p>
+\[A(t)=\begin{pmatrix}1&amp;t\\0&amp;1\end{pmatrix}\tag{1}\]
+<p>を考えます。特性多項式は</p>
+\[\det(\lambda I-A(t))=(\lambda-1)^2\tag{2}\]
+<p>であり、\(t\) に関係なく固有値は \(1\) だけです。しかし、対角化可能性は \(t\) に依存します。</p>
+\[A(t)-I=\begin{pmatrix}0&amp;t\\0&amp;0\end{pmatrix}.\tag{3}\]
+<p>したがって、\(t\ne0\) では固有空間は \(\operatorname{span}\{(1,0)^{\top}\}\) に一致し、その次元は1です。一方、\(t=0\) では \(A(0)=I\) なので固有空間の次元は2です。従って</p>
+\[A(t)\text{ が対角化可能}\quad\Longleftrightarrow\quad t=0.\tag{4}\]
+<p>この性質を、単位正方形と格子の変形によって観察できるようにします。ただし、図による観察が式(4)の証明に置き換わるわけではありません。</p>
+<h2>2．完成した最小教材を触ってみる</h2>
+<p><a class="lesson-demo" href="../demos/linear-algebra-shear.html">線形代数の実験室を開く</a></p>
+<p>スライダーで \(t\) を変更すると、行列の作用によって格子がせん断変形します。同時に、固有値、固有空間の次元、対角化可能性を表示します。\(t=0\) で何が変わるか、操作する前に予想してみてください。</p>
+<h2>3．作業用フォルダを用意する</h2>
+<p>このホームページはGitHub Pagesで公開され、ブログ記事は <code>blog/posts/</code> にあるHTMLファイルで管理されています。既存のサイト構成を大きく変更しないために、実験教材は <code>blog/demos/</code> に置きます。</p>
+<pre class="lesson-code">blog/
+  posts/
+    codex-math-01.html
+  demos/
+    AGENTS.md
+    linear-algebra-shear.html
+    linear-algebra-shear.js
+tests/
+  shear-math.test.js</pre>
+<p>静的HTML、CSS、JavaScriptだけで構成すれば、サーバー側にPythonなどを用意する必要はありません。GitHub Pagesの静的ファイル公開の仕組みに合わせるため、初回は外部JavaScriptライブラリにも依存させません。</p>
+<h2>4．Codexを起動する</h2>
+<p>Codex CLIの導入は、OpenAIの公式手順に従います［1］。インストール後、作業用リポジトリに移動して <code>codex</code> を実行し、必要に応じてChatGPTでサインインします。既存のホームページを誤って変更しないよう、Gitで作業ブランチを用意し、最初は新しい教材ファイルだけを扱わせます。</p>
+<pre class="lesson-code">git clone https://github.com/teamfem/hiroki_ishizaka.git
+cd hiroki_ishizaka
+git switch -c codex-math-education
+codex</pre>
+<p class="lesson-caption">既にローカルにリポジトリがある場合は、その作業コピーを利用できます。上記は説明用のコマンドであり、既存の変更がある場合はブランチの状態を先に確認してください。</p>
+<h2>5．最初の指示文を書く</h2>
+<p>Codexに「線形代数の教材を作ってください」とだけ伝えると、どこまで実装するか、何を正しいと判定するかが曖昧になります。そこで、数学的な要件を先に指定します。</p>
+<pre class="lesson-code">A(t)=[[1,t],[0,1]] の線形代数教材を作ってください。
+1. t は -2 から 2 まで 0.1 刻みで操作する。
+2. 単位正方形とその線形写像による像を表示する。
+3. 固有値は常に 1（代数的重複度2）とする。
+4. 固有空間の次元は t=0 なら2、t≠0なら1とする。
+5. その結果から対角化可能性を表示する。
+6. HTML/CSS/JavaScriptだけで動くようにする。
+7. 数学的性質の独立テストを作る。
+8. ブログ本体の既存ファイルは変更しない。
+9. 実装後にテスト結果と残る制限を報告する。</pre>
+<p>これは使用できる指示文の一例です。ここに掲載した教材がこの指示文だけから自動生成された、という意味ではありません。どの数式に依拠し、どの機能を実装したかを再現可能な形で示すことが目的です。</p>
+<h2>6．プログラムのどの部分が数学に対応するか</h2>
+<p>行列を扱う計算部分を独立した <code>linear-algebra-shear.js</code> に分離します。例えば、線形写像を次のように実装します。</p>
+<pre class="lesson-code">function apply(t, point) {
+  const [x, y] = point;
+  return [x + t * y, y];
+}</pre>
+<p>この部分は式(1)の \(A(t)(x,y)^{\top}=(x+ty,y)^{\top}\) と直接対応します。図の描画は別の処理にし、数学的計算と見た目の処理を混ぜないようにします。</p>
+<table class="lesson-table"><thead><tr><th>数学</th><th>プログラムでの確認</th></tr></thead><tbody>
+<tr><td>\(A(t)e_1=e_1\)</td><td><code>apply(t,[1,0])</code> が <code>[1,0]</code> を返す</td></tr>
+<tr><td>\(A(t)e_2=(t,1)^{\top}\)</td><td><code>apply(t,[0,1])</code> が <code>[t,1]</code> を返す</td></tr>
+<tr><td>\(\det A(t)=1\)</td><td>行列式がすべてのテスト値で1になる</td></tr>
+<tr><td>\(\dim\ker(A(t)-I)=1,2\)</td><td>\(t=0\) と \(t\ne0\) の分岐を調べる</td></tr>
+</tbody></table>
+<h2>7．テストを実行して、数学的に監査する</h2>
+<p>スライダーが動くことだけをテストしても、数学的正しさは分かりません。別ファイル <code>tests/shear-math.test.js</code> に、標準基底の像、行列式、固有空間の次元、逆せん断との合成などを確認するテストを用意します。</p>
+<pre class="lesson-code">node --test tests/shear-math.test.js</pre>
+<p>今回の配布用コードについては、6件のテストが通過することを確認しました。もっとも、これらは指定した行列族に関する有限個の実装テストであり、任意の行列について数学的証明を自動的に与えるものではありません。</p>
+<p>実装後はブラウザ上で \(t=-2,-1,0,1,2\) の表示を確認します。数値演算では近似誤差が生じ得るため、任意の実数に対して \(t=0\) かどうかを判定する一般的方法と混同しないことにも注意が必要です。この教材では、スライダーが取り得る有限個の値について定義された問題を扱います。</p>
+<h2>8．ローカルで確認し、ブログへ配置する</h2>
+<p>ローカルではPythonの簡易HTTPサーバーを利用できます。リポジトリのルートで次のコマンドを実行します。</p>
+<pre class="lesson-code">python3 -m http.server 8000</pre>
+<p>ブラウザで <code>http://localhost:8000/blog/demos/linear-algebra-shear.html</code> を開き、図が表示されることを確認します。記事の方は <code>http://localhost:8000/blog/posts/codex-math-01.html</code> です。</p>
+<p>確認が終わったら、記事と教材へのリンクを <code>blog/index.html</code> に追加します。サイトの公開操作は、数学的・文章上の確認が終わってから行います。GitHub Pagesの公開設定は既存リポジトリの設定に依存するため、公開元ブランチやActionsの状態は実際の設定を確かめてください［3］。</p>
+<h2>9．授業では何を学生に問うか</h2>
+<p>教材を最初から自由に操作させるのではなく、以下の順序を考えています。</p>
+<ol>
+<li>全ての \(t\) で固有値が同じことを先に計算する。</li>
+<li>対角化可能性も同じだろうか、と予想する。</li>
+<li>教材で \(t\) を動かし、固有空間の次元を観察する。</li>
+<li>式(3)から固有空間を求め、観察を証明する。</li>
+<li>さらに「固有値が全て実数なら対角化できるか」という命題を検討する。</li>
+</ol>
+<p>ここでは答えを速く得ることより、誤った予想を自分で修正できることを重視します。講義中に数分間の個人予想とペア討論を入れる使い方も考えられますが、教育効果は実際の授業で確かめる必要があります。</p>
+<h2>10．次に考えたいこと</h2>
+<p>第2回以降は、対角化可能性から直交射影、最小二乗法、特異値分解へ進みたいと思います。その後、微分積分では各点収束と一様収束、位相空間論では分離公理と連続写像、関数解析では強作用素収束と作用素ノルム収束を扱う予定です。</p>
+<p>共通する問いは、数学的な定義を実際に操作できるようにすると、何が見え、何が逆に見えなくなるか、ということです。有限次元の実験だけでは無限次元の定理を証明できません。この限界も含めて教材にしたいと思います。</p>
+<h2>参考文献・資料</h2>
+<ol>
+<li>OpenAI, <a href="https://learn.chatgpt.com/docs/codex/cli">Codex CLI — Quickstart and documentation</a>（2026年10月31日閲覧）.</li>
+<li>OpenAI, <a href="https://learn.chatgpt.com/docs/agent-configuration/agents-md">Custom instructions with AGENTS.md</a>（2026年10月31日閲覧）.</li>
+<li>GitHub Docs, <a href="https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site">Creating a GitHub Pages site</a>（2026年10月31日閲覧）.</li>
+<li>S. Axler, <i>Linear Algebra Done Right</i>, 4th ed., Springer, 2023, <a href="https://doi.org/10.1007/978-3-031-41026-0">doi:10.1007/978-3-031-41026-0</a>.</li>
+</ol>
+<p><a href="../">ブログ一覧へ戻る</a> ／ <a href="../demos/linear-algebra-shear.html">動作する教材を見る</a></p>
+</div></article></div></main></div></div>
+<footer class="site-footer"><div class="copyright"><p><small>© 2026 ISHIZAKA Hiroki Website</small></p></div></footer>
+</body>
+</html>
