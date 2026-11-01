@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第3回教材：区間演算の依存性とWrapping effect | Hiroki Ishizaka</title>
+<meta name="description" content="区間演算の依存性問題とWrapping effectを、真の値域と区間の過大評価を比較して学ぶ数学教材。">
+<link rel="icon" href="../../favicon.ico">
+<style>
+:root{font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;color:#172c3d;background:#f5f7fa}
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0}.page{max-width:960px;margin:auto;padding:24px 18px 56px}
+h1{font-size:clamp(1.45rem,3vw,2rem);line-height:1.42}h2{font-size:1.18rem}h3{font-size:1.04rem}p,li{line-height:1.85}
+.card{min-width:0;background:#fff;border:1px solid #d4e1eb;border-radius:16px;padding:clamp(14px,3vw,24px);margin-top:18px}
+.small{font-size:.86rem;color:#425d71}.alert{padding:13px 17px;border-left:4px solid #b56b24;background:#fff6e8;border-radius:6px;line-height:1.75}
+.steps{display:flex;gap:9px;list-style:none;flex-wrap:wrap;padding:0}.steps li{padding:6px 12px;border-radius:999px;background:#e6f2f9;color:#174e70;font-weight:650}
+input[type=range]{display:block;width:100%;min-height:38px;accent-color:#176c9d}label{font-weight:650}
+fieldset{min-width:0;border:1px solid #cbdce8;border-radius:10px;margin:15px 0;padding:12px}
+fieldset legend{font-weight:700;padding:0 6px}
+.choice{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer}
+.choice input{width:18px;height:18px;accent-color:#176c9d}
+button{font:inherit;min-height:44px;padding:9px 15px;background:#176c9d;color:#fff;border:0;border-radius:8px;cursor:pointer}
+button.secondary{background:#e7eef5;color:#194969}button:disabled{opacity:.55}
+button:focus-visible,input:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #3685be;outline-offset:3px}
+h3[tabindex="-1"]:focus{outline:2px solid #3685be;outline-offset:4px}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.stats>div{background:#f0f5fa;padding:14px;border-radius:10px}
+.stats strong{display:block;font-size:1.3rem;margin-top:5px;font-variant-numeric:tabular-nums}
+svg{display:block;width:min(100%,520px);height:auto;background:#fff;border:1px solid #dce6ef;border-radius:12px;margin:14px auto}
+#dependency-svg{aspect-ratio:600/140}#wrapping-svg{width:min(100%,390px);aspect-ratio:1}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.85rem}
+.blue{color:#176d9a}.orange{color:#b66b22}
+.formula{padding:12px;background:#f2f6fa;border-radius:8px;overflow-x:auto;white-space:nowrap;font-family:Georgia,serif}
+details{padding:10px 0;border-top:1px solid #d9e4ed}summary{cursor:pointer;font-weight:700;padding:7px 0}
+@media(max-width:400px){.stats{grid-template-columns:1fr}}
+</style>
+<script src="./interval-arithmetic.js" defer></script>
+</head>
+<body><main class="page">
+<p class="small">Mathematics Education with Codex · 第3回</p>
+<h1>区間演算：正しい包含が、なぜ大きくなるのか</h1>
+<p>区間演算は、正しい値を含む区間を計算する考え方です。しかし、区間が大き過ぎることもあります。依存性問題とWrapping effectを実際に確かめます。</p>
+<ol class="steps"><li>予想する</li><li>観察する</li><li>証明する</li></ol>
+<p class="alert"><strong>数学上の注意：</strong>この教材は実数集合に対する区間操作と幾何学的な囲い直しの概念図です。JavaScriptの通常の浮動小数点演算を使用して描画しており、外向き丸めを備えた精度保証付き区間演算ライブラリではありません。表示された小数値を厳密な数値保証に用いないでください。</p>
+<noscript><p class="alert">操作にはJavaScriptが必要です。<a href="../posts/codex-math-03.html">解説記事</a>では証明を読めます。</p></noscript>
+<section class="card" aria-labelledby="dependency-section">
+<h2 id="dependency-section">1．依存性問題：x−x は本当に広がるか</h2>
+<p>集合 \(X=[0,r]\) を考えます。同じ \(x\in X\) を2回使う関数 \(f(x)=x-x\) の値域は \(\{0\}\) ですが、独立した区間として \(X-X\) を計算するとどうなるでしょうか。</p>
+<label for="r">区間の上端 r：<output id="r-output" for="r">1.00</output></label>
+<input id="r" type="range" min="0" max="2" step="0.25" value="1">
+<form id="dependency-form">
+<fieldset><legend>区間式 X−X の値域を予想する</legend>
+<label class="choice"><input type="radio" name="dependency-prediction" value="zero" required>常に {0} だけになる</label>
+<label class="choice"><input type="radio" name="dependency-prediction" value="wide" required>r&gt;0 なら幅のある区間になる</label>
+</fieldset>
+<button type="submit" id="dep-confirm">予想を確定して比較する</button>
+</form>
+<p id="dep-status" class="small" role="status" aria-live="polite">予想を選んでください。</p>
+<div id="dependency-answer" hidden>
+<h3 id="dependency-title" tabindex="-1">観察：同じ変数と独立した変数の違い</h3>
+<p id="dep-prediction" role="status"></p>
+<div class="stats"><div>区間式 X−X <strong id="dep-interval"></strong></div><div>区間式の幅 <strong id="dep-width"></strong></div></div>
+<svg id="dependency-svg" viewBox="0 0 600 140" role="img" aria-labelledby="dep-figure-title dep-figure-desc">
+<title id="dep-figure-title">真の値域と区間式の比較</title><desc id="dep-figure-desc">橙色の区間と、青い点で真の値域を表示します。</desc></svg>
+<div class="legend"><span class="orange">区間式 X−X（橙）</span><span class="blue">同じ変数 f(x)=x−x の真の値域（青）</span></div>
+<details><summary>証明1：区間の引き算の定義</summary>
+<p>二つの区間 \(X=[0,r]\) と \(Y=[0,r]\) を独立に動く変数として計算すると、\(X-Y=[0-r,r-0]=[-r,r]\) です。</p></details>
+<details><summary>証明2：同じ変数の場合</summary>
+<p>\(f(x)=x-x=0\) は任意の \(x\in X\) で成り立つため、関数の真の値域は常に \(\{0\}\) です。区間式は値を含みますが、一般に鋭くありません。</p></details>
+</div></section>
+<section class="card" aria-labelledby="wrapping-section">
+<h2 id="wrapping-section">2．Wrapping effect：回転しただけで箱が膨らむ</h2>
+<p>初期集合 \(B_0=[-1,1]^2\) を45度ずつ回転させます。青が<strong>初期正方形をそのまま回転した集合</strong>、橙が<strong>各回転後に軸平行な箱へ囲い直した集合</strong>です。</p>
+<label for="n">45度回転と囲い直しの回数：<output id="n-output" for="n">2</output></label>
+<input id="n" type="range" min="0" max="4" step="1" value="2">
+<form id="wrapping-form">
+<fieldset><legend>橙色の包含矩形の面積はどう変わると予想しますか</legend>
+<label class="choice"><input type="radio" name="wrapping-prediction" value="same" required>初期面積4のまま</label>
+<label class="choice"><input type="radio" name="wrapping-prediction" value="increase" required>囲い直す度に大きくなる（回数0の場合を除く）</label>
+</fieldset>
+<button type="submit" id="wrap-confirm">予想を確定して図を見る</button>
+</form>
+<p id="wrap-status" class="small" role="status" aria-live="polite">予想を選んでください。</p>
+<div id="wrapping-answer" hidden>
+<h3 id="wrapping-title" tabindex="-1">観察：同じ面積の集合と大きくなる箱</h3>
+<p id="wrap-prediction" role="status"></p>
+<div class="stats"><div>真の集合の面積<strong>4</strong></div><div>区間ボックスの面積<strong id="wrap-area"></strong></div></div>
+<p>区間ボックスと真の集合の面積比：<strong id="wrap-ratio"></strong> 倍</p>
+<svg id="wrapping-svg" viewBox="-170 -170 340 340" role="img" aria-labelledby="wrap-figure-title wrap-figure-desc">
+<title id="wrap-figure-title">回転した正方形と包含区間ボックス</title><desc id="wrap-figure-desc">真の回転正方形と、各回に囲い直した大きい区間ボックスを比較します。</desc></svg>
+<div class="legend"><span class="blue">真の回転正方形（青）</span><span class="orange">繰返し囲い直した箱（橙の破線）</span></div>
+<details><summary>証明1：回転は面積を保存する</summary>
+<p>45度回転行列 \(R\) は \(\det R=1\) なので、\(R^nB_0\) の面積は全ての \(n\) で4です。</p></details>
+<details><summary>証明2：区間ボックスの漸化式</summary>
+<p>軸平行な箱 \(B_n=[-h_n,h_n]^2\) を45度回転すると、各座標の最大絶対値は \(\sqrt{2}h_n\) です。したがって \(h_{n+1}=\sqrt{2}h_n\)、\(h_0=1\)。</p></details>
+<details><summary>証明3：面積比を求める</summary>
+<p>\(h_n=2^{n/2}\)、\(\operatorname{area}(B_n)=4h_n^2=4\cdot2^n\)。真の集合との面積比は \(2^n\) です。これは丸め誤差ではなく、集合を軸平行な区間ボックスに置き換える際の幾何学的情報損失によるものです。</p></details>
+</div></section>
+<section class="card"><button type="button" id="reset" class="secondary">両方の実験を最初から</button>
+<h2>さらに考えてみよう</h2>
+<ol><li>同じ変数 \(x\) を追跡できれば、\(X-X\) の結果はどのように変わるでしょうか。</li><li>回転した集合を平行四辺形として保持すれば、面積はどうなるでしょうか。</li><li>数学的に正しい包含と、コンピューターで保証された包含には何が必要でしょうか。</li></ol>
+<p class="small"><a href="../posts/codex-math-03.html">第3回の解説記事</a> ／ <a href="../demos/linear-algebra-projection.html">第2回の教材</a> ／ <a href="../">ブログ一覧</a></p></section>
+</main></body></html>

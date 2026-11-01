@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第2回教材：直交射影と最小二乗法 | Hiroki Ishizaka</title>
+<meta name="description" content="直交射影を予想・観察・証明する。残差の直交性と最小二乗法の正規方程式を操作できる教材。">
+<link rel="icon" href="../../favicon.ico">
+<style>
+:root{font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;color:#172c3d;background:#f5f7fa}
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0}.page{max-width:960px;margin:auto;padding:24px 18px 56px}
+h1{font-size:clamp(1.45rem,3vw,2.05rem);line-height:1.4}h2{font-size:1.2rem}h3{font-size:1rem}p,li{line-height:1.8}
+.card{min-width:0;background:#fff;border:1px solid #d4e1eb;border-radius:16px;padding:clamp(14px,3vw,24px);margin-top:18px}
+.small{font-size:.86rem;color:#425d71}.steps{display:flex;gap:9px;flex-wrap:wrap;list-style:none;padding:0}
+.steps li{padding:7px 12px;border-radius:999px;background:#e6f2f9;color:#174e70;font-weight:650}
+label{display:block;font-weight:650}.controls{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+input[type=range]{width:100%;accent-color:#176c9d;min-height:38px}output{font-variant-numeric:tabular-nums}
+button{font:inherit;min-height:44px;padding:9px 15px;background:#176c9d;color:#fff;border:0;border-radius:8px;cursor:pointer;margin-top:10px}
+button.secondary{background:#e7eef5;color:#194969}button:disabled{opacity:.55;cursor:default}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #3685be;outline-offset:3px}
+#observation-title:focus{outline:2px solid #3685be;outline-offset:4px}
+.data{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.data>div{background:#f0f5fa;border-radius:10px;padding:13px;font-size:.86rem;min-width:0}
+.data b{display:block;font-size:1.15rem;margin-top:5px;font-variant-numeric:tabular-nums}
+svg{display:block;width:min(100%,480px);height:auto;aspect-ratio:1;background:#fff;border:1px solid #dce6ef;border-radius:12px;margin:16px auto}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.88rem}.legend span:before{content:"";display:inline-block;width:20px;border-top:3px solid currentColor;margin-right:6px;vertical-align:middle}
+.green{color:#1a845d}.orange{color:#a9651c}.blue{color:#326f9c}
+.formula{padding:12px;background:#f2f6fa;border-radius:8px;overflow-x:auto;white-space:nowrap;font-family:Georgia,serif}
+.proof-step{border-top:1px solid #dce6ef;padding-top:8px;margin-top:16px}
+.notice{border-left:4px solid #2e779f;background:#f0f7fb;padding:12px 16px;border-radius:6px}
+@media(max-width:650px){.controls,.data{grid-template-columns:1fr 1fr}}
+@media(max-width:410px){.controls,.data{grid-template-columns:1fr}}
+</style>
+<script src="./linear-algebra-projection.js" defer></script>
+</head>
+<body><main class="page">
+<p class="small">Mathematics Education with Codex · 第2回</p>
+<h1>直交射影と最小二乗法：最も近い点はどこか</h1>
+<p>固定ベクトル <strong>b=(2,1)</strong> を直線上の点で近似します。どの係数が最も誤差を小さくするか、まず予想してください。</p>
+<ol class="steps"><li>1．予想する</li><li>2．観察する</li><li>3．証明する</li></ol>
+<noscript><p class="notice">操作にはJavaScriptが必要です。<a href="../posts/codex-math-02.html">解説記事</a>でも数学を確認できます。</p></noscript>
+<section class="card" aria-labelledby="prediction-title">
+<h2 id="prediction-title">1．直線と候補点を選んで予想する</h2>
+<p>方向ベクトル a(t)=(1,t)、直線 L(t)={αa(t): α∈ℝ} とします。A(t)を2行1列の行列とみなせば、これは ||A(t)α−b||² の最小化問題です。</p>
+<div class="controls">
+<div><label for="t">直線の傾き t：<output id="t-output" for="t">1.0</output></label><input type="range" id="t" min="-2" max="2" step="0.1" value="1" aria-describedby="control-help"></div>
+<form id="prediction-form">
+<label for="guess">予想する係数 α：<output id="guess-output" for="guess">0.0</output></label>
+<input type="range" id="guess" min="-1" max="3" step="0.1" value="0">
+<button id="confirm" type="submit">予想を確定して図を見る</button>
+</form>
+</div>
+<p class="small" id="control-help">tを変えると予想・観察・証明が初期化されます。予想は0.1刻みの近似値です。最適係数は必ずしも0.1刻みとは限りません。</p>
+<button type="button" id="reset" class="secondary">t=1に戻してやり直す</button>
+<p id="status" class="small" role="status" aria-live="polite">まず係数を予想してください。</p>
+</section>
+<section class="card" id="observation" hidden aria-labelledby="observation-title">
+<h2 id="observation-title" tabindex="-1">2．候補点と直交射影を比べる</h2>
+<div class="data">
+<div>最適係数 α* <b id="optimal"></b></div>
+<div>候補の二乗誤差 <b id="cost-guess"></b></div>
+<div>最小二乗誤差 <b id="cost-best"></b></div>
+<div>残差とaの内積 <b id="orthogonality"></b></div>
+</div>
+<svg id="drawing" viewBox="-180 -180 360 360" role="img" aria-labelledby="figure-title figure-desc">
+<title id="figure-title">直交射影と候補点の比較</title>
+<desc id="figure-desc">予想確定後に直線、ベクトルb、候補点、最小二乗の射影点、残差の線分を描きます。</desc>
+</svg>
+<div class="legend"><span class="blue">近似する直線 L(t)</span><span class="orange">予想した候補点と残差</span><span class="green">最適な射影点と残差</span></div>
+<p class="small">緑の残差は直線と直交します。表示数値はJavaScriptの浮動小数点計算による近似値です。ごく小さい残差内積は丸め誤差であり、厳密な証明ではありません。</p>
+</section>
+<section class="card" id="proof" hidden aria-labelledby="proof-title">
+<h2 id="proof-title">3．最小になることを証明する</h2>
+<p>「次の段階」で証明を一つずつ開きます。</p>
+<button id="proof-next" type="button">証明の次の段階</button><p id="proof-progress" class="small" role="status" aria-live="polite"></p>
+<ol>
+<li class="proof-step" data-step="1" hidden><h3>段階1：二乗誤差を展開する</h3>
+<p class="formula">F(α) = ||αa(t)−b||² = (α−2)²+(tα−1)²</p>
+<p>方向 a(t)=(1,t) は零ベクトルではないので、Fはαについて狭義凸な二次式です。</p></li>
+<li class="proof-step" data-step="2" hidden><h3>段階2：正規方程式から最適係数を求める</h3>
+<p class="formula">F'(α) = 2((1+t²)α−(2+t)) = 0</p>
+<p class="formula">α* = (2+t)/(1+t²)</p>
+<p>射影 p=α*a(t) の残差 r=b−p について a(t)・r=0 が成立します。</p></li>
+<li class="proof-step" data-step="3" hidden><h3>段階3：ピタゴラスの定理で最小性を証明する</h3>
+<p class="formula">||b−αa||² = ||b−p||² + (α−α*)²||a||²</p>
+<p>右辺の第2項は非負なので、α=α*が一意の最小点です。一般の行列Aについては、残差の直交条件 Aᵀ(b−Aα)=0 が正規方程式 AᵀAα=Aᵀb になります。ただしAの列が一次独立でない場合、係数の一意性には注意が必要です。</p></li>
+</ol>
+</section>
+<section class="card"><h2>考えてみよう</h2>
+<ol><li>t=0.5のとき、bが直線上に乗ることを式で説明してください。</li><li>なぜ残差の直交性だけで最小性が分かるのでしょうか。</li><li>列が従属なAでは、射影点と係数の一意性はどう違いますか。</li></ol>
+<p class="small"><a href="../posts/codex-math-02.html">第2回の解説記事</a> ／ <a href="../">ブログ一覧へ戻る</a> ／ <a href="./linear-algebra-shear.html">第1回の教材</a></p></section>
+</main></body></html>
