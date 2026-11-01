@@ -63,13 +63,13 @@
 \[\det(\lambda I-A(t))=(\lambda-1)^2\tag{2}\]
 <p>であり、\(t\) に関係なく固有値は \(1\) だけです。しかし、対角化可能性は \(t\) に依存します。</p>
 \[A(t)-I=\begin{pmatrix}0&amp;t\\0&amp;0\end{pmatrix}.\tag{3}\]
-<p>したがって、\(t\ne0\) では固有空間は \(\operatorname{span}\{(1,0)^{\top}\}\) に一致し、その次元は1です。一方、\(t=0\) では \(A(0)=I\) なので固有空間の次元は2です。従って</p>
+<p>したがって、\(t\ne0\) では固有空間は \(\operatorname{span}\{(1,0)^{\top}\}\) に一致し、その次元は1です。一方、\(t=0\) では \(A(0)=I\) なので固有空間の次元は2です。2次元の実行列を対角化するには、一次独立な固有ベクトルが2本必要です。従って</p>
 \[A(t)\text{ が対角化可能}\quad\Longleftrightarrow\quad t=0.\tag{4}\]
 <p>この性質を、単位正方形と格子の変形によって観察できるようにします。ただし、図による観察が式(4)の証明に置き換わるわけではありません。</p>
-<h2 id="section-3">2．完成した最小教材を触ってみる</h2>
+<h2 id="section-3">2．完成した教材を触ってみる</h2>
 <p><a class="lesson-demo" href="../demos/linear-algebra-shear.html">線形代数の実験室を開く</a></p>
-<p>スライダーで \(t\) を変更すると、行列の作用によって格子がせん断変形します。同時に、固有値、固有空間の次元、対角化可能性を表示します。\(t=0\) で何が変わるか、操作する前に予想してみてください。</p>
-<p class="lesson-caption">上記は初版・ver2の操作の説明です。現在のver3では、予想を確定してから観察図と正解を表示します。変更の設計と検証は、後半の<a href="#ver3-design">ver3追記</a>で説明します。</p>
+<p>ver3の教材では、まずスライダーで \(t\) を選び、固有空間の次元と対角化可能性を予想して確定します。その後、基底ベクトルとその像、固有空間、正解が表示されます。最後に証明を3段階で読み進めます。特に \(t=0\) で何が変わるか、答えを見る前に考えてみてください。</p>
+<p class="lesson-caption">初版・ver2では操作と同時に結果を表示していました。現在のver3では予想を先に確定する設計に変更しました。詳細は後半の<a href="#ver3-design">ver3追記</a>で説明します。</p>
 <h2 id="section-4">3．作業用フォルダを用意する</h2>
 <p>このホームページはGitHub Pagesで公開され、ブログ記事は <code>blog/posts/</code> にあるHTMLファイルで管理されています。既存のサイト構成を大きく変更しないために、実験教材は <code>blog/demos/</code> に置きます。</p>
 <pre class="lesson-code">blog/
@@ -81,7 +81,7 @@
     linear-algebra-shear.js
 tests/
   shear-math.test.js</pre>
-<p>静的HTML、CSS、JavaScriptだけで構成すれば、サーバー側にPythonなどを用意する必要はありません。GitHub Pagesの静的ファイル公開の仕組みに合わせるため、初回は外部JavaScriptライブラリにも依存させません。</p>
+<p>操作教材は静的HTML、CSS、JavaScriptで構成し、外部JavaScriptライブラリへの依存を避けています。これはGitHub Pagesに制限があるためではなく、実装を追いやすくし、長期的な保守を容易にするためです。なお、解説記事の数式表示にはCDN経由でMathJaxを使用しています。</p>
 <h2 id="section-5">4．Codexを起動する</h2>
 <p>Codex CLIの導入は、OpenAIの公式手順に従います［1］。インストール後、作業用リポジトリに移動して <code>codex</code> を実行し、必要に応じてChatGPTでサインインします。既存のホームページを誤って変更しないよう、Gitで作業ブランチを用意し、最初は新しい教材ファイルだけを扱わせます。</p>
 <pre class="lesson-code">git clone https://github.com/teamfem/hiroki_ishizaka.git
@@ -103,7 +103,7 @@ codex</pre>
 9. 実装後にテスト結果と残る制限を報告する。</pre>
 <p>これは使用できる指示文の一例です。ここに掲載した教材がこの指示文だけから自動生成された、という意味ではありません。どの数式に依拠し、どの機能を実装したかを再現可能な形で示すことが目的です。</p>
 <h2 id="section-7">6．プログラムのどの部分が数学に対応するか</h2>
-<p>行列を扱う計算部分を独立した <code>linear-algebra-shear.js</code> に分離します。例えば、線形写像を次のように実装します。</p>
+<p>行列を扱う計算部分を独立した <code>linear-algebra-shear.js</code> に分離します。例えば、数学的な対応を示すために入力検証を省略した簡略例は次のようになります。配布コードでは有限な数値であることの検証と、行列による積を実装しています。</p>
 <pre class="lesson-code">function apply(t, point) {
   const [x, y] = point;
   return [x + t * y, y];
@@ -190,10 +190,15 @@ codex</pre>
 
 <h2 id="ver3-verification">ver3追記4．数学と学習の操作を別々に検証する</h2>
 <p>ver2までの11件のテストを残し、予想前には結果がないこと、予想後の照合、パラメータ変更とリセットによる初期化、予想前には証明を進められないことを回帰テストに加えます。数学モデルのテストが通っても、学生の画面に前の答えが残る不具合は別に起こり得るためです。</p>
-<pre class="lesson-code">node --test tests/shear-math.test.js
-
-# PlaywrightとChromiumを用意した検証環境でブラウザテストも実行する
-SHEAR_BROWSER_TESTS=1 node --test --test-isolation=none tests/shear-math.test.js</pre>
+<p>以下のコマンドはリポジトリのルートで実行します。通常のテストにはNode.jsだけが必要です。</p>
+<pre class="lesson-code">node --test tests/shear-math.test.js</pre>
+<p>実ブラウザを使う4件のテストには、PlaywrightとChromiumまたはGoogle Chromeが別途必要です。現在のリポジトリには <code>package.json</code> がないため、例えば次のように検証用の依存パッケージをインストールします（公開教材自体には不要です）。</p>
+<pre class="lesson-code">npm install --no-save --no-package-lock playwright</pre>
+<p>ブラウザ実行ファイルは環境変数 <code>SHEAR_CHROMIUM_PATH</code> で指定できます。macOSでGoogle Chromeを使う場合の例は次のとおりです。</p>
+<pre class="lesson-code">SHEAR_CHROMIUM_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" SHEAR_BROWSER_TESTS=1 node --test tests/shear-math.test.js</pre>
+<p>LinuxでChromiumが <code>/usr/bin/chromium</code> にある場合は、次のコマンドで実行できます。</p>
+<pre class="lesson-code">SHEAR_BROWSER_TESTS=1 node --test tests/shear-math.test.js</pre>
+<p>このテストでは単一ファイルを実行するため、テスト分離モードを指定する必要はありません。<code>--test-isolation=none</code> は一部のNode.js 22系では認識されないため、再現用コマンドから外しました。Node.jsのオプションの違いは公式資料［5］を参照してください。</p>
 <p>ブラウザの検証では、未選択のままの送信、予想の確定、結果の表示、変更後の初期化、リセット、ラジオボタンやスライダーのキーボード操作を調べます。全41値では数学モデルとの一致と図形の余白を、幅320・375・768・1440pxではページ全体のはみ出しと数式部分のスクロールを確認します。これらの自動テストは実装の回帰を検出するものであり、実際の学生にとっての分かりやすさまで保証するものではありません。</p>
 <p>ver3では、既存11件、学習状態の8件、実ブラウザの4件、計23件がすべて通過しました。通常実行では数学・状態管理の19件を実行し、ブラウザの4件は上記の環境変数を指定したときに追加します。記事の数式33件は描画エラーがなく、指定の4画面幅で記事と教材に横はみ出しがないこと、予想前・結果表示後・証明表示後の操作を確認しました。</p>
 <p class="lesson-caption">PlaywrightとChromiumは開発時の検証に使います。教材自体は引き続き静的HTML・CSS・JavaScriptで動き、学生のブラウザに検証用のライブラリを読み込ませる必要はありません。</p>
@@ -208,7 +213,8 @@ SHEAR_BROWSER_TESTS=1 node --test --test-isolation=none tests/shear-math.test.js
 <li>OpenAI, <a href="https://learn.chatgpt.com/docs/codex/cli">Codex CLI — Quickstart and documentation</a>（2026年10月31日閲覧）.</li>
 <li>OpenAI, <a href="https://learn.chatgpt.com/docs/agent-configuration/agents-md">Custom instructions with AGENTS.md</a>（2026年10月31日閲覧）.</li>
 <li>GitHub Docs, <a href="https://docs.github.com/en/pages/getting-started-with-github-pages/creating-a-github-pages-site">Creating a GitHub Pages site</a>（2026年10月31日閲覧）.</li>
-<li>S. Axler, <i>Linear Algebra Done Right</i>, 4th ed., Springer, 2023, <a href="https://doi.org/10.1007/978-3-031-41026-0">doi:10.1007/978-3-031-41026-0</a>.</li>
+<li>S. Axler, <i>Linear Algebra Done Right</i>, 4th ed., Springer, 2024, <a href="https://doi.org/10.1007/978-3-031-41026-0">doi:10.1007/978-3-031-41026-0</a>.</li>
+<li>Node.js, <a href="https://nodejs.org/api/cli.html">Command-line API</a>（テスト実行オプションの資料）.</li>
 </ol>
 <p><a href="../">ブログ一覧へ戻る</a> ／ <a href="../demos/linear-algebra-shear.html">動作する教材を見る</a></p>
 </article>
@@ -217,7 +223,7 @@ SHEAR_BROWSER_TESTS=1 node --test --test-isolation=none tests/shear-math.test.js
 <div class="toc-title">Contents · この記事の目次</div>
 <a href="#section-1">Introduction：数学を動かすだけで十分だろうか</a>
 <a href="#section-2">1．数学的な問いを先に決める</a>
-<a href="#section-3">2．完成した最小教材を触ってみる</a>
+<a href="#section-3">2．完成した教材を触ってみる</a>
 <a href="#section-4">3．作業用フォルダを用意する</a>
 <a href="#section-5">4．Codexを起動する</a>
 <a href="#section-6">5．最初の指示文を書く</a>
