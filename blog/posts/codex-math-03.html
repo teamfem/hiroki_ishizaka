@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第3回：区間演算とWrapping effect — Codexで作る大学数学教材 | Hiroki Ishizaka</title>
+<meta name="description" content="区間演算の依存性問題とWrapping effectを、数学的な集合の値域と区間ボックスの違いから導出し、操作教材と検証コードで学ぶ。">
+<meta name="keywords" content="Codex,数学教育,区間演算,依存性問題,Wrapping effect,精度保証付き数値計算,情報損失">
+<link rel="icon" href="../../favicon.ico">
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/codex-math-03.html">
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]}};</script>
+<script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+.lesson-callout{padding:14px 18px;border:1px solid #b7cfe2;border-left:4px solid #2879ae;background:#f5f9fc;border-radius:7px;margin:18px 0}
+.lesson-code{padding:14px 16px;background:#172334;color:#f2f6fb;border-radius:9px;overflow:auto;white-space:pre;font-size:.85rem;line-height:1.6}
+.lesson-caption{font-size:.86rem;color:#465e75}
+.lesson-table{border-collapse:collapse;width:100%;margin:16px 0}.lesson-table th,.lesson-table td{border:1px solid #c9d5df;padding:10px;text-align:left;vertical-align:top}
+.lesson-demo{display:inline-block;background:#1d628e;color:white!important;border-radius:8px;text-decoration:none;padding:11px 18px;margin:8px 0 12px;font-weight:700}
+.article-body .lesson-demo{display:inline-flex;color:#fff!important;background:#1d628e;border:1px solid #1d628e;text-decoration:none;border-radius:10px;padding:12px 18px;font-weight:700;align-items:center;justify-content:center}
+.article-body .lesson-demo:hover{background:#164c70;color:#fff!important}
+.article-body .lesson-table{display:block;max-width:100%;overflow-x:auto}
+.article-body .lesson-code{white-space:pre;overflow-x:auto}
+/* MathJax adds an inline min-width for equation numbers; keep scrolling local. */
+.article-body mjx-container[display="true"]{min-width:0!important;max-width:100%;overflow-x:auto;overflow-y:hidden}
+.modern-blog-post .footer{color:#536678}
+</style>
+</head>
+<body class="modern-blog-post" id="top">
+<header class="topbar">
+<div class="shell nav">
+<a class="brand" href="../../">Hiroki Ishizaka<small>Numerical Analysis · PDEs · FEM</small></a>
+<nav class="navlinks" aria-label="Primary navigation">
+<a href="../../research/">Research</a>
+<a href="../../publications/">Publications</a>
+<a href="../../fem/">Visions</a>
+<a href="../../suppl/">Education &amp; Learning</a>
+<a href="../" aria-current="page">Blog</a>
+<a href="../../geo/">Geometry</a>
+<a href="../../links/">Links</a>
+<a href="../../contact/">Contact</a>
+</nav></div></header>
+<main id="main-content">
+<section class="article-hero">
+<div class="shell">
+<nav class="crumbs" aria-label="Breadcrumb"><a href="../../">Home</a><span>／</span><a href="../">Blog</a><span>／</span><span>Codexで作る大学数学教材</span></nav>
+<div class="article-series">Mathematics Education with Codex · 第3回</div>
+<h1>区間演算とWrapping effect — 正しい包含が広がる理由</h1>
+<div class="article-meta"><span><b>線形代数</b> · 数学教育とAI</span><time datetime="2026-11-02">2nd November 2026</time></div>
+</div>
+</section>
+<div class="article-layout">
+<article class="article-body">
+<h2 id="intro">Introduction：包含していれば、それで十分だろうか</h2>
+<p>第2回では、近似誤差が最小であることを直交性から証明しました。第3回では、誤差を含む範囲を確保する区間演算を考えます。区間演算には、数学的に値を含むという利点があります。しかし、集合の内部の関係や形状を忘れると、区間が過度に大きくなる場合があります。</p>
+<p>そこで、区間式 \(X-X\) の依存性問題と、正方形を回転させると現れるWrapping effectを扱います。いずれも、<strong>正しい包含と鋭い包含は異なる</strong>という問題を示す例です。<a href="#ref-1">［1］</a></p>
+<div class="lesson-callout"><b>この教材の重要な制限</b><p>今回のJavaScriptは、数学的な集合演算と幾何学的な囲い直しを可視化するものです。IEEE 1788に準拠した区間演算や外向き丸めは実装していません。したがって、実数としての包含定理の証明と、実機上の丸め誤差まで保証する精度保証付き計算を区別してください。</p></div>
+<h2 id="dependency">1．区間の引き算と依存性問題</h2>
+<p>閉区間 \(X=[a,b]\)、\(Y=[c,d]\) に対する実数集合としての区間差を</p>
+\[
+X-Y=\{x-y:x\in X,\ y\in Y\}=[a-d,b-c]
+\tag{1}
+\]
+<p>と定義します。ここでは \(x\) と \(y\) を<strong>独立に</strong>選ぶことに注意してください。例えば \(X=[0,1]\) なら</p>
+\[
+X-X=[-1,1].
+\tag{2}
+\]
+<p>一方、同じ変数を二度用いる関数 \(f(x)=x-x\) の真の値域は</p>
+\[
+f(X)=\{x-x:x\in X\}=\{0\}.
+\tag{3}
+\]
+<p>式(2)と式(3)は矛盾しません。前者は区間に属する二つの変数を独立に動かした結果であり、後者は同じ値を二度使うという制約があるからです。区間式は真の値域を含むものの、その依存関係を忘れているため過大評価が生じます。</p>
+<p>教材では \(X=[0,r]\)、\(0\le r\le2\) とし、区間式の結果 \([-r,r]\) と真の値域 \(\{0\}\) を数直線上に表示します。区間式の幅は \(2r\) で、\(r=0\) では両者が一致します。</p>
+<h2 id="dependency-demo">2．予想してから値域を比較する</h2>
+<p><a class="lesson-demo" href="../demos/interval-arithmetic.html">区間演算の対話型教材を開く</a></p>
+<p>最初に区間の大きさを選び、\(X-X\) の結果を予想します。その後、区間式（橙色）と真の関数値域（青色）を別々に表示します。この比較が分かれば、変数を複数回使用する一般の区間式でも、依存関係が問題になると予想できます。<a href="#ref-1">［1］</a></p>
+<h2 id="wrapping">3．Wrapping effectの数学的モデル</h2>
+<p>次に2次元の初期集合 \(B_0=[-1,1]^2\) を考えます。45度回転行列を</p>
+\[
+R=\frac1{\sqrt2}
+\begin{pmatrix}1&amp;-1\\1&amp;1\end{pmatrix},
+\qquad \det R=1
+\tag{4}
+\]
+<p>とおきます。真の集合は \(R^nB_0\) で、面積は回転のたびに保存されるので</p>
+\[
+\operatorname{area}(R^nB_0)=4.
+\tag{5}
+\]
+<p>しかし、各回に集合を軸平行な最小の区間ボックスで囲い直す計算を考えます。\(B_n=[-h_n,h_n]^2\) とし、\(B_{n+1}\) を \(RB_n\) の軸平行な包含矩形とします。</p>
+<p>回転後の第1座標は \((x-y)/\sqrt2\)、第2座標は \((x+y)/\sqrt2\) です。\(x,y\in[-h_n,h_n]\) が独立に動くため、各座標の範囲は \([-\sqrt2h_n,\sqrt2h_n]\) になります。従って、</p>
+\[
+h_{n+1}=\sqrt2h_n,\qquad h_0=1,
+\qquad h_n=2^{n/2}.
+\tag{6}
+\]
+<p>したがって、区間ボックスの面積は</p>
+\[
+\operatorname{area}(B_n)=4h_n^2=4\cdot2^n.
+\tag{7}
+\]
+<p>元の正方形をそのまま回転すれば面積はずっと4のままなのに、囲い直しを繰り返すと \(4,8,16,32,64,\ldots\) と増大します。これは丸め誤差による現象ではなく、<strong>斜めの集合を軸に平行な箱で置き換えると、集合の形に関する情報が失われる</strong>ためです。</p>
+<p>特に、2回回転すると真の集合は90度回転した正方形で、最初の \([-1,1]^2\) と一致します。しかし逐次的な区間囲い直しでは \(B_2=[-2,2]^2\) となり、面積は16です。厳密な集合演算の最後に一度だけ囲う場合と、各段階で囲い直す場合を混同しないようにしましょう。<a href="#ref-1">［1］</a></p>
+<h2 id="implementation">4．Codexに何を実装させるか</h2>
+<p>第1・2回と同様、数学的な式を最初に書き、予想の確定前には観察図を隠す設計にします。操作教材は二つの独立した実験から成り、パラメータを変更すると対応する実験の予想を初期化します。</p>
+<pre class="lesson-code">第3回の数学教材を静的HTML/JavaScriptで実装する。
+実験1：X=[0,r] とし、区間差X-X=[-r,r]と
+        同一変数の関数f(x)=x-xの値域{0}を比較する。
+実験2：[-1,1]^2を45度ずつ回転し、
+        毎回軸平行な区間ボックスへ囲い直す。
+        真の面積は4、逐次ボックス面積は4*2^nである。
+学生の予想を確定してから結果と証明を表示する。
+数学的な理想区間操作と、外向き丸めによる機械上の
+精度保証付き区間演算を混同しない注意書きを入れる。
+独立テストで、包含、面積、状態初期化を検証する。
+既存の第1・2回教材と無関係なコードを変更しない。</pre>
+<p>数学モデル <code>interval-arithmetic.js</code> では、区間差を返す <code>intervalSubtract</code>、依存性を比較する <code>dependency</code>、回転と囲い直しの面積を返す <code>wrapping</code> を分けています。描画の回転には浮動小数点演算を使用しますが、面積の理論値は式(5)と式(7)から与えます。浮動小数点計算だけで保証済み区間を生成したと主張することはありません。</p>
+<h2 id="verification">5．数学的テストとブラウザテスト</h2>
+<p>依存性問題のテストでは、複数の \(r\) に対して \([-r,r]\) と \(\{0\}\) を比較します。Wrapping effectのテストでは、全ての \(n=0,\ldots,4\) で、真の面積4、包含矩形の面積 \(4\cdot2^n\) と包含関係を検査します。予想前の表示抑止やパラメータ変更時の初期化も別途確認します。</p>
+<pre class="lesson-code">node --test tests/interval-arithmetic.test.js</pre>
+<p>ブラウザ操作のテストには、別途PlaywrightとChromiumが必要です。LinuxでChromiumが <code>/usr/bin/chromium</code> にある場合の例を示します。</p>
+<pre class="lesson-code">npm install --no-save --no-package-lock playwright
+INTERVAL_BROWSER_TESTS=1 node --test tests/interval-arithmetic.test.js</pre>
+<p>macOSのGoogle Chromeを使う場合は、以下のように環境変数を指定できます。</p>
+<pre class="lesson-code">INTERVAL_CHROMIUM_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" INTERVAL_BROWSER_TESTS=1 node --test tests/interval-arithmetic.test.js</pre>
+<h2 id="guarantee">6．精度保証付き数値計算との違い</h2>
+<p>実数集合に対する式(1)の区間演算と、浮動小数点数を用いて機械上で保証を成立させることは別です。例えば、計算された下端が真の下限以下、上端が真の上限以上であるように、外向き丸めなどを適切に扱う必要があります。IEEE 1788.1は、2進浮動小数点の端点を用いる簡略化された区間演算の標準です。<a href="#ref-2">［2］</a></p>
+<p>本教材で扱う面積の整数値は数学的な漸化式から導いています。一方、図形の頂点座標には三角関数の浮動小数点近似が入ります。したがって、本教材のSVGは<strong>証明を理解するための可視化</strong>であり、計算機を使った厳密な包含証明そのものではありません。</p>
+<h2 id="education">7．授業での問いと今後の展開</h2>
+<p>学生には、「何が正しく保証されているのか」「どの情報を捨てた結果、区間が大きくなったのか」を分けて説明してもらいたいと思います。依存性問題では同じ変数であるという関係、Wrapping effectでは回転した集合の形が失われます。座標系を変更して平行四辺形やより豊かな集合表現を使う方法は、過大評価を抑える研究へつながります。<a href="#ref-1">［1］</a></p>
+<p>次の発展題材は区間Newton法や精度保証付き固有値計算です。ただし、実装段階では専用の丸め制御または信頼できる検証済みライブラリが不可欠になります。幾何学的な教材と、精度保証付きプログラムの境界を曖昧にしないことを今後も重視します。</p>
+<h2 id="references">参考文献・資料</h2>
+<ol>
+<li id="ref-1">Szczelina, W. and Zgliczyński, P., <a href="https://doi.org/10.1007/s10208-017-9369-5">Algorithm for Rigorous Integration of Delay Differential Equations and the Computer-Assisted Proof of Periodic Orbits in the Mackey–Glass Equation</a>, <i>Foundations of Computational Mathematics</i>（依存性問題、Wrapping effectとその抑制の説明）.</li>
+<li id="ref-2">IEEE, <a href="https://standards.ieee.org/ieee/1788.1/6074/">IEEE 1788.1-2017 — IEEE Standard for Interval Arithmetic (Simplified)</a>（機械上の区間演算の仕様）.</li>
+<li id="ref-3">OpenAI, <a href="https://developers.openai.com/codex/">Codex Documentation</a>.</li>
+</ol>
+<p><a href="../demos/interval-arithmetic.html">区間演算の教材</a> ／ <a href="codex-math-02.html">第2回</a> ／ <a href="../">ブログ一覧</a></p>
+</article>
+<aside class="article-side" aria-label="記事内ナビゲーション"><nav class="toc" aria-label="目次"><div class="toc-title">Contents</div>
+<a href="#intro">Introduction</a><a href="#dependency">1．依存性問題</a><a href="#dependency-demo">2．操作教材</a><a href="#wrapping">3．Wrapping effect</a><a href="#implementation">4．Codex実装</a><a href="#verification">5．数学的テスト</a><a href="#guarantee">6．精度保証との違い</a><a href="#education">7．授業への展開</a><a href="#references">参考文献</a>
+</nav><div class="series-nav"><b>Codexで作る大学数学教材</b><a href="codex-math-01.html">第1回：固有値と対角化</a><a href="codex-math-02.html">第2回：直交射影</a><a href="../#codex-math-education">シリーズ一覧</a></div></aside>
+</div>
+<nav class="article-footer-nav" aria-label="関連記事"><div class="navbox">
+<a href="codex-math-02.html"><span>第2回</span>直交射影と最小二乗法</a>
+<a href="../demos/interval-arithmetic.html"><span>Interactive demo</span>区間演算とWrapping effect</a>
+</div></nav>
+</main>
+<footer class="footer"><div class="shell footer-inner"><span>© 2026 Hiroki Ishizaka</span><span>Research Notes · Numerical Analysis</span></div></footer>
+<script src="../../js/modern-ui.js"></script>
+</body>
+</html>
