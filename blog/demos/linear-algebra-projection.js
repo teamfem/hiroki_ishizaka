@@ -33,7 +33,7 @@
       guess=value;
       const p=projection(t);
       result={optimal:p.coefficient,optimalCost:p.squaredResidual,guessCost:cost(t,value),
-        residualDot:p.normalDot,projection:p.point};
+        residualDot:p.normalDot};
       return getState();
     }
     function nextProof(){if(!result)throw new Error('predict first');step=Math.min(3,step+1);return getState();}
