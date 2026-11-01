@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第2回：直交射影と最小二乗法 — Codexで作る大学数学教材 | Hiroki Ishizaka</title>
+<meta name="description" content="直交射影と最小二乗法を、予想・観察・証明する対話型教材の数学、Codex実装、数値検証とともに解説。">
+<meta name="keywords" content="Codex,数学教育,線形代数,直交射影,最小二乗法,正規方程式,数学的監査">
+<link rel="icon" href="../../favicon.ico">
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/codex-math-02.html">
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]}};</script>
+<script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+.lesson-callout{padding:14px 18px;border:1px solid #b7cfe2;border-left:4px solid #2879ae;background:#f5f9fc;border-radius:7px;margin:18px 0}
+.lesson-code{padding:14px 16px;background:#172334;color:#f2f6fb;border-radius:9px;overflow:auto;white-space:pre;font-size:.85rem;line-height:1.6}
+.lesson-caption{font-size:.86rem;color:#465e75}
+.lesson-table{border-collapse:collapse;width:100%;margin:16px 0}.lesson-table th,.lesson-table td{border:1px solid #c9d5df;padding:10px;text-align:left;vertical-align:top}
+.lesson-demo{display:inline-block;background:#1d628e;color:white!important;border-radius:8px;text-decoration:none;padding:11px 18px;margin:8px 0 12px;font-weight:700}
+.article-body .lesson-demo{display:inline-flex;color:#fff!important;background:#1d628e;border:1px solid #1d628e;text-decoration:none;border-radius:10px;padding:12px 18px;font-weight:700;align-items:center;justify-content:center}
+.article-body .lesson-demo:hover{background:#164c70;color:#fff!important}
+.article-body .lesson-table{display:block;max-width:100%;overflow-x:auto}
+.article-body .lesson-code{white-space:pre;overflow-x:auto}
+/* MathJax adds an inline min-width for equation numbers; keep scrolling local. */
+.article-body mjx-container[display="true"]{min-width:0!important;max-width:100%;overflow-x:auto;overflow-y:hidden}
+.modern-blog-post .footer{color:#536678}
+</style>
+</head>
+<body class="modern-blog-post" id="top">
+<header class="topbar">
+<div class="shell nav">
+<a class="brand" href="../../">Hiroki Ishizaka<small>Numerical Analysis · PDEs · FEM</small></a>
+<nav class="navlinks" aria-label="Primary navigation">
+<a href="../../research/">Research</a>
+<a href="../../publications/">Publications</a>
+<a href="../../fem/">Visions</a>
+<a href="../../suppl/">Education &amp; Learning</a>
+<a href="../" aria-current="page">Blog</a>
+<a href="../../geo/">Geometry</a>
+<a href="../../links/">Links</a>
+<a href="../../contact/">Contact</a>
+</nav></div></header>
+<main id="main-content">
+<section class="article-hero">
+<div class="shell">
+<nav class="crumbs" aria-label="Breadcrumb"><a href="../../">Home</a><span>／</span><a href="../">Blog</a><span>／</span><span>Codexで作る大学数学教材</span></nav>
+<div class="article-series">Mathematics Education with Codex · 第2回</div>
+<h1>直交射影と最小二乗法 — 最も近い点を証明する</h1>
+<div class="article-meta"><span><b>線形代数</b> · 数学教育とAI</span><time datetime="2026-11-02">2nd November 2026</time></div>
+</div>
+</section>
+<div class="article-layout">
+<article class="article-body">
+<h2 id="intro">Introduction：近い点を探すだけで十分だろうか</h2>
+<p>第1回は、固有値が同じでも対角化可能性が変わる例を扱いました。第2回では、ベクトルを直線上の点で近似する問題を考えます。点を動かすだけなら簡単ですが、なぜその点が最も近いのかは、内積と直交性を使って説明する必要があります。</p>
+<div class="lesson-callout"><b>問い</b><p>最も近い点は「見た目」で決まるのでしょうか。それとも、すべての候補点に対して最小であることを証明できるのでしょうか。</p></div>
+<h2 id="problem">1．数学的問題を設定する</h2>
+<p>固定ベクトル \(b=(2,1)^{\top}\) と、傾き \(t\in[-2,2]\) に依存する方向ベクトル \(a(t)=(1,t)^{\top}\) を考えます。直線 \(L(t)=\operatorname{span}\{a(t)\}\) 上の点 \(q=\alpha a(t)\) を動かし、次の二乗誤差を最小化します。</p>
+\[
+F_t(\alpha)=\|b-\alpha a(t)\|_{\mathbb R^2}^{2}
+=(2-\alpha)^2+(1-t\alpha)^2.
+\tag{1}
+\]
+<p>この問題は、行列 \(A(t)\in\mathbb R^{2\times1}\) を列ベクトル \(a(t)\) とした最小二乗問題 \(\min_{\alpha\in\mathbb R}\|A(t)\alpha-b\|_{\mathbb R^2}^2\) です。</p>
+<h2 id="derivation">2．最良近似の係数を導く</h2>
+<p>\(\|a(t)\|_{\mathbb R^2}^2=1+t^2>0\) なので、式(1)を \(\alpha\) で微分すると、停留条件は</p>
+\[
+F_t'(\alpha)=2\bigl((1+t^2)\alpha-(2+t)\bigr)=0.
+\tag{2}
+\]
+<p>従って、候補係数は</p>
+\[
+\alpha_*(t)=\frac{2+t}{1+t^2},\qquad
+p(t)=\alpha_*(t)a(t).
+\tag{3}
+\]
+<p>最良近似点 \(p(t)\) に対応する残差を \(r(t)=b-p(t)\) とおきます。このとき</p>
+\[
+(a(t),r(t))_{\mathbb R^2}
+=(2+t)-(1+t^2)\alpha_*(t)=0.
+\tag{4}
+\]
+<p>つまり、残差は近似空間 \(L(t)\) に直交します。さらに、任意の \(\alpha\in\mathbb R\) に対して</p>
+\[
+\|b-\alpha a(t)\|_{\mathbb R^2}^{2}
+=\|b-p(t)\|_{\mathbb R^2}^{2}
++(\alpha-\alpha_*(t))^2\|a(t)\|_{\mathbb R^2}^{2}.
+\tag{5}
+\]
+<p>式(5)はピタゴラスの定理です。第2項が非負で、\(\alpha=\alpha_*\) 以外では正になるので、式(3)が<strong>一意の最小二乗解</strong>であることが証明できました。</p>
+<h2 id="demo">3．予想してから観察する</h2>
+<p><a class="lesson-demo" href="../demos/linear-algebra-projection.html">直交射影の操作教材を開く</a></p>
+<p>まず傾き \(t\) と候補係数 \(\alpha\) を選び、最良近似点を予想してください。予想の確定後に、候補点 \(q=\alpha a(t)\)、最良近似点 \(p=\alpha_*a(t)\)、それぞれから \(b\) への残差を表示します。最適係数、二乗誤差、残差と方向ベクトルの内積も数値で比較できます。</p>
+<p>例えば \(t=\tfrac12\) では \(b=2a(\tfrac12)\) が成り立つため、最小二乗誤差は0です。一方、\(t=-2\) では \(a(-2)\) と \(b\) が直交しているため、射影は原点になります。どちらも式(3)から説明できます。</p>
+<h2 id="implementation">4．Codexへの指示と実装方針</h2>
+<p>今回も、数学的な式を先に定め、それから画面とテストを作る順序を守りました。実装用の指示の要点を示します。</p>
+<pre class="lesson-code">b=(2,1), a(t)=(1,t), -2<=t<=2 とする。
+学生が候補係数 alpha を予想してから結果を表示する。
+alpha*=(2+t)/(1+t^2) を使って直交射影を計算する。
+候補点、射影点、残差を別の色と線種で描く。
+残差の直交性とピタゴラスの恒等式を3段階で証明する。
+tを変更したら、予想・観察・証明を初期化する。
+式と表示の対応を独立テストで検証する。
+数値実験は証明の代用としない。</pre>
+<p>数学モデルは <code>blog/demos/linear-algebra-projection.js</code> に置き、<code>coefficient(t)</code>、<code>projection(t)</code>、<code>cost(t,alpha)</code> の関数を分けています。描画と学習状態は別の処理が担います。ブラウザでは数値を小数に丸めて表示しますが、証明は上の恒等式に依拠しています。</p>
+<h2 id="verification">5．テストの観点と再現方法</h2>
+<p>独立テストでは、41個の \(t\) に対して、射影点の座標、残差の直交性、式(5)と最小性を調べます。特別なケース \(t=\tfrac12\) と \(t=-2\) も確認します。状態管理のテストでは、予想前に結果を返さないこと、パラメータを変更したら学習状態が消えることを調べます。</p>
+<pre class="lesson-code">node --test tests/projection-math.test.js</pre>
+<p>別途PlaywrightとChromiumを用意すると、実際のブラウザでの操作も検査できます。現在のリポジトリには <code>package.json</code> を追加せず、検証用依存ライブラリは公開教材から分離しています。</p>
+<pre class="lesson-code">npm install --no-save --no-package-lock playwright
+# Linux: Chromiumが /usr/bin/chromium にある場合
+PROJECTION_BROWSER_TESTS=1 node --test tests/projection-math.test.js</pre>
+<p>macOSでGoogle Chromeを使う場合は、実行ファイルの場所を環境変数 <code>PROJECTION_CHROMIUM_PATH</code> で指定します。</p>
+<pre class="lesson-code">PROJECTION_CHROMIUM_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" PROJECTION_BROWSER_TESTS=1 node --test tests/projection-math.test.js</pre>
+<h2 id="generality">6．一般の最小二乗問題との関係</h2>
+<p>より一般に \(A\in\mathbb R^{m\times n}\)、\(b\in\mathbb R^m\) に対して \(\|Ax-b\|_{\mathbb R^m}^2\) を最小化すると、正規方程式</p>
+\[
+A^\top Ax=A^\top b
+\tag{6}
+\]
+<p>を得ます。係数ベクトル \(x\) が一意になるためには、\(A\) の列が一次独立であることが必要です。一方、射影点 \(Ax\) は、\(\operatorname{range}(A)\) への直交射影として一意です。今回の \(A(t)=a(t)\) はどの \(t\) でも零列でないため、最良係数が一意に決まります。<a href="#ref-1">［1］</a><a href="#ref-2">［2］</a></p>
+<p>実際の大規模計算では、正規方程式を直接解くと条件数が悪化することがあります。QR分解や特異値分解が重要になる理由については、別の教材で扱う余地があります。</p>
+<h2 id="education">7．授業で考えてほしいこと</h2>
+<p>候補係数を0.1刻みで動かす操作だけでは、最小性を厳密に確かめられません。学生には、観察後に式(4)と式(5)の意味を説明してもらいます。また、候補係数が最適値と一致しない場合でも、なぜ誤差が増えるかを式(5)から説明できます。自分の予想が正解したかどうかだけでなく、一般の係数に対する証明を重視します。</p>
+<h2 id="references">参考文献・資料</h2>
+<ol>
+<li id="ref-1">Dahleh, M., Dahleh, M. A. and Verghese, G., <a href="https://eng.libretexts.org/Bookshelves/Industrial_and_Systems_Engineering/Book%3A_Dynamic_Systems_and_Control_%28Dahleh_Dahleh_and_Verghese%29/02%3A_Least_Squares_Estimation/2.05%3A_The_Projection_Theorem_and_the_Least_Squares_Estimate">The Projection Theorem and the Least Squares Estimate</a>, MIT OpenCourseWare / Engineering LibreTexts.</li>
+<li id="ref-2">Massachusetts Institute of Technology, <a href="https://web.mit.edu/~linalg/webpage/Fall2022/pset6sol.html">18.06 Problem Set 6 Solutions</a>, 2022（階数と最小二乗解の一意性）.</li>
+<li id="ref-3">OpenAI, <a href="https://developers.openai.com/codex/">Codex Documentation</a>.</li>
+</ol>
+<p><a href="../demos/linear-algebra-projection.html">操作教材へ戻る</a> ／ <a href="codex-math-01.html">第1回</a> ／ <a href="../">ブログ一覧</a></p>
+</article>
+<aside class="article-side" aria-label="記事内ナビゲーション"><nav class="toc" aria-label="目次">
+<div class="toc-title">Contents</div>
+<a href="#intro">Introduction</a><a href="#problem">1．数学的問題</a><a href="#derivation">2．導出と証明</a><a href="#demo">3．操作教材</a><a href="#implementation">4．Codexによる実装</a><a href="#verification">5．検証</a><a href="#generality">6．一般の問題</a><a href="#education">7．授業への展開</a><a href="#references">参考文献</a>
+</nav><div class="series-nav"><b>Codexで作る大学数学教材</b><a href="codex-math-01.html">第1回：固有値と対角化</a><a href="codex-math-03.html">第3回：区間演算</a><a href="../#codex-math-education">シリーズ一覧</a></div></aside>
+</div>
+<nav class="article-footer-nav" aria-label="関連記事"><div class="navbox">
+<a href="codex-math-01.html"><span>第1回</span>固有値と対角化可能性</a>
+<a href="codex-math-03.html"><span>第3回</span>区間演算とWrapping effect</a>
+</div></nav>
+</main>
+<footer class="footer"><div class="shell footer-inner"><span>© 2026 Hiroki Ishizaka</span><span>Research Notes · Numerical Analysis</span></div></footer>
+<script src="../../js/modern-ui.js"></script>
+</body>
+</html>
