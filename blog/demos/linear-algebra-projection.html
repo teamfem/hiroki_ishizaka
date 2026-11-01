@@ -6,6 +6,8 @@
 <title>第2回教材：直交射影と最小二乗法 | Hiroki Ishizaka</title>
 <meta name="description" content="直交射影を予想・観察・証明する。残差の直交性と最小二乗法の正規方程式を操作できる教材。">
 <link rel="icon" href="../../favicon.ico">
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]},options:{skipHtmlTags:['script','noscript','style','textarea','pre','code']}};</script>
+<script id="MathJax-script" defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
 :root{font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;color:#172c3d;background:#f5f7fa}
 *{box-sizing:border-box}[hidden]{display:none!important}body{margin:0}.page{max-width:960px;margin:auto;padding:24px 18px 56px}
@@ -30,6 +32,10 @@ svg{display:block;width:min(100%,480px);height:auto;aspect-ratio:1;background:#f
 .notice{border-left:4px solid #2e779f;background:#f0f7fb;padding:12px 16px;border-radius:6px}
 @media(max-width:650px){.controls,.data{grid-template-columns:1fr 1fr}}
 @media(max-width:410px){.controls,.data{grid-template-columns:1fr}}
+
+/* Keep long typeset mathematics scrollable within its own card on small screens. */
+.card mjx-container[display="true"]{min-width:0!important;max-width:100%;overflow-x:auto;overflow-y:hidden}
+.card mjx-container:not([display="true"]){max-width:100%}
 </style>
 <script src="./linear-algebra-projection.js" defer></script>
 </head>
@@ -41,7 +47,7 @@ svg{display:block;width:min(100%,480px);height:auto;aspect-ratio:1;background:#f
 <noscript><p class="notice">操作にはJavaScriptが必要です。<a href="../posts/codex-math-02.html">解説記事</a>でも数学を確認できます。</p></noscript>
 <section class="card" aria-labelledby="prediction-title">
 <h2 id="prediction-title">1．直線と候補点を選んで予想する</h2>
-<p>方向ベクトル a(t)=(1,t)、直線 L(t)={αa(t): α∈ℝ} とします。A(t)を2行1列の行列とみなせば、これは ||A(t)α−b||² の最小化問題です。</p>
+<p>方向ベクトル \(a(t)=(1,t)^\top\)、直線 \(L(t)=\{\alpha a(t):\alpha\in\mathbb R\}\) とします。\(A(t)\) を2行1列の行列とみなせば、これは \(\|A(t)\alpha-b\|_{\mathbb R^2}^2\) の最小化問題です。</p>
 <div class="controls">
 <div><label for="t">直線の傾き t：<output id="t-output" for="t">1.0</output></label><input type="range" id="t" min="-2" max="2" step="0.1" value="1" aria-describedby="control-help"></div>
 <form id="prediction-form">
@@ -75,15 +81,15 @@ svg{display:block;width:min(100%,480px);height:auto;aspect-ratio:1;background:#f
 <button id="proof-next" type="button">証明の次の段階</button><p id="proof-progress" class="small" role="status" aria-live="polite"></p>
 <ol>
 <li class="proof-step" data-step="1" hidden><h3>段階1：二乗誤差を展開する</h3>
-<p class="formula">F(α) = ||αa(t)−b||² = (α−2)²+(tα−1)²</p>
-<p>方向 a(t)=(1,t) は零ベクトルではないので、Fはαについて狭義凸な二次式です。</p></li>
+<p class="formula">\[F_t(\alpha)=\|\alpha a(t)-b\|_{\mathbb R^2}^2=(\alpha-2)^2+(t\alpha-1)^2.\]</p>
+<p>方向 \(a(t)=(1,t)^\top\) は零ベクトルではないので、\(F_t\) は \(\alpha\) について狭義凸な二次式です。</p></li>
 <li class="proof-step" data-step="2" hidden><h3>段階2：正規方程式から最適係数を求める</h3>
-<p class="formula">F'(α) = 2((1+t²)α−(2+t)) = 0</p>
-<p class="formula">α* = (2+t)/(1+t²)</p>
-<p>射影 p=α*a(t) の残差 r=b−p について a(t)・r=0 が成立します。</p></li>
+<p class="formula">\[F_t'(\alpha)=2\bigl((1+t^2)\alpha-(2+t)\bigr)=0.\]</p>
+<p class="formula">\[\alpha_*=\frac{2+t}{1+t^2}.\]</p>
+<p>射影 \(p=\alpha_*a(t)\) の残差 \(r=b-p\) について \((a(t),r)_{\mathbb R^2}=0\) が成立します。</p></li>
 <li class="proof-step" data-step="3" hidden><h3>段階3：ピタゴラスの定理で最小性を証明する</h3>
-<p class="formula">||b−αa||² = ||b−p||² + (α−α*)²||a||²</p>
-<p>右辺の第2項は非負なので、α=α*が一意の最小点です。一般の行列Aについては、残差の直交条件 Aᵀ(b−Aα)=0 が正規方程式 AᵀAα=Aᵀb になります。ただしAの列が一次独立でない場合、係数の一意性には注意が必要です。</p></li>
+<p class="formula">\[\|b-\alpha a(t)\|_{\mathbb R^2}^2=\|b-p\|_{\mathbb R^2}^2+(\alpha-\alpha_*)^2\|a(t)\|_{\mathbb R^2}^2.\]</p>
+<p>右辺の第2項は非負なので、\(\alpha=\alpha_*\) が一意の最小点です。一般の行列 \(A\) については、残差の直交条件 \(A^\top(b-Ax)=0\) が正規方程式 \(A^\top Ax=A^\top b\) になります。ただし \(A\) の列が一次独立でない場合、係数の一意性には注意が必要です。</p></li>
 </ol>
 </section>
 <section class="card"><h2>考えてみよう</h2>

@@ -5,6 +5,8 @@
 <title>第3回教材：区間演算の依存性とWrapping effect | Hiroki Ishizaka</title>
 <meta name="description" content="区間演算の依存性問題とWrapping effectを、真の値域と区間の過大評価を比較して学ぶ数学教材。">
 <link rel="icon" href="../../favicon.ico">
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]},options:{skipHtmlTags:['script','noscript','style','textarea','pre','code']}};</script>
+<script id="MathJax-script" defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
 :root{font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;color:#172c3d;background:#f5f7fa}
 *{box-sizing:border-box}[hidden]{display:none!important}body{margin:0}.page{max-width:960px;margin:auto;padding:24px 18px 56px}
@@ -31,6 +33,10 @@ svg{display:block;width:min(100%,520px);height:auto;background:#fff;border:1px s
 .formula{padding:12px;background:#f2f6fa;border-radius:8px;overflow-x:auto;white-space:nowrap;font-family:Georgia,serif}
 details{padding:10px 0;border-top:1px solid #d9e4ed}summary{cursor:pointer;font-weight:700;padding:7px 0}
 @media(max-width:400px){.stats{grid-template-columns:1fr}}
+
+/* Keep long typeset mathematics scrollable within its own card on small screens. */
+.card mjx-container[display="true"]{min-width:0!important;max-width:100%;overflow-x:auto;overflow-y:hidden}
+.card mjx-container:not([display="true"]){max-width:100%}
 </style>
 <script src="./interval-arithmetic.js" defer></script>
 </head>
