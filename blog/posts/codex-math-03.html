@@ -47,14 +47,14 @@
 <nav class="crumbs" aria-label="Breadcrumb"><a href="../../">Home</a><span>／</span><a href="../">Blog</a><span>／</span><span>Codexで作る大学数学教材</span></nav>
 <div class="article-series">Mathematics Education with Codex · 第3回</div>
 <h1>区間演算とWrapping effect — 正しい包含が広がる理由</h1>
-<div class="article-meta"><span><b>線形代数</b> · 数学教育とAI</span><time datetime="2026-11-02">2nd November 2026</time></div>
+<div class="article-meta"><span><b>数値解析・区間解析</b> · 数学教育とAI</span><time datetime="2026-11-02">2nd November 2026</time></div>
 </div>
 </section>
 <div class="article-layout">
 <article class="article-body">
 <h2 id="intro">Introduction：包含していれば、それで十分だろうか</h2>
 <p>第2回では、近似誤差が最小であることを直交性から証明しました。第3回では、誤差を含む範囲を確保する区間演算を考えます。区間演算には、数学的に値を含むという利点があります。しかし、集合の内部の関係や形状を忘れると、区間が過度に大きくなる場合があります。</p>
-<p>そこで、区間式 \(X-X\) の依存性問題と、正方形を回転させると現れるWrapping effectを扱います。いずれも、<strong>正しい包含と鋭い包含は異なる</strong>という問題を示す例です。<a href="#ref-1">［1］</a></p>
+<p>そこで、区間式 \(X-X\) の依存性問題と、正方形を回転させると現れるWrapping effectを扱います。いずれも、<strong>正しい包含と鋭い包含は異なる</strong>という問題を示す例です。<a href="#ref-1">［1］</a><a href="#ref-3">［3］</a></p>
 <div class="lesson-callout"><b>この教材の重要な制限</b><p>今回のJavaScriptは、数学的な集合演算と幾何学的な囲い直しを可視化するものです。IEEE 1788に準拠した区間演算や外向き丸めは実装していません。したがって、実数としての包含定理の証明と、実機上の丸め誤差まで保証する精度保証付き計算を区別してください。</p></div>
 <h2 id="dependency">1．区間の引き算と依存性問題</h2>
 <p>閉区間 \(X=[a,b]\)、\(Y=[c,d]\) に対する実数集合としての区間差を</p>
@@ -127,16 +127,17 @@ INTERVAL_BROWSER_TESTS=1 node --test tests/interval-arithmetic.test.js</pre>
 <p>macOSのGoogle Chromeを使う場合は、以下のように環境変数を指定できます。</p>
 <pre class="lesson-code">INTERVAL_CHROMIUM_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" INTERVAL_BROWSER_TESTS=1 node --test tests/interval-arithmetic.test.js</pre>
 <h2 id="guarantee">6．精度保証付き数値計算との違い</h2>
-<p>実数集合に対する式(1)の区間演算と、浮動小数点数を用いて機械上で保証を成立させることは別です。例えば、計算された下端が真の下限以下、上端が真の上限以上であるように、外向き丸めなどを適切に扱う必要があります。IEEE 1788.1は、2進浮動小数点の端点を用いる簡略化された区間演算の標準です。<a href="#ref-2">［2］</a></p>
+<p>実数集合に対する式(1)の区間演算と、浮動小数点数を用いて機械上で保証を成立させることは別です。例えば、計算された下端が真の下限以下、上端が真の上限以上であるように、外向き丸めなどを適切に扱う必要があります。IEEE 1788.1-2017はIEEE 1788-2015の簡略化された部分集合であり、端点にIEEE 754 binary64（倍精度浮動小数点数）を用いる区間演算と、例外を扱うためのデコレーションなどを規定しています。<a href="#ref-2">［2］</a></p>
 <p>本教材で扱う面積の整数値は数学的な漸化式から導いています。一方、図形の頂点座標には三角関数の浮動小数点近似が入ります。したがって、本教材のSVGは<strong>証明を理解するための可視化</strong>であり、計算機を使った厳密な包含証明そのものではありません。</p>
 <h2 id="education">7．授業での問いと今後の展開</h2>
-<p>学生には、「何が正しく保証されているのか」「どの情報を捨てた結果、区間が大きくなったのか」を分けて説明してもらいたいと思います。依存性問題では同じ変数であるという関係、Wrapping effectでは回転した集合の形が失われます。座標系を変更して平行四辺形やより豊かな集合表現を使う方法は、過大評価を抑える研究へつながります。<a href="#ref-1">［1］</a></p>
+<p>学生には、「何が正しく保証されているのか」「どの情報を捨てた結果、区間が大きくなったのか」を分けて説明してもらいたいと思います。依存性問題では同じ変数であるという関係、Wrapping effectでは回転した集合の形が失われます。座標変換や平行四辺形など、より豊かな集合表現を利用する考え方は、過大評価を抑える研究へつながります。例えば、Lohner型の検証計算法では座標変換を利用してWrapping effectを制御します。ただし、単に図形を平行四辺形として描くだけで計算機上の厳密な包含が保証されるわけではありません。<a href="#ref-1">［1］</a><a href="#ref-3">［3］</a></p>
 <p>次の発展題材は区間Newton法や精度保証付き固有値計算です。ただし、実装段階では専用の丸め制御または信頼できる検証済みライブラリが不可欠になります。幾何学的な教材と、精度保証付きプログラムの境界を曖昧にしないことを今後も重視します。</p>
 <h2 id="references">参考文献・資料</h2>
 <ol>
 <li id="ref-1">Szczelina, R. and Zgliczyński, P., <a href="https://doi.org/10.1007/s10208-017-9369-5">Algorithm for Rigorous Integration of Delay Differential Equations and the Computer-Assisted Proof of Periodic Orbits in the Mackey–Glass Equation</a>, <i>Foundations of Computational Mathematics</i>, 18 (2018), 1299–1332（依存性問題、Wrapping effectとその抑制の説明）.</li>
 <li id="ref-2">IEEE, <a href="https://standards.ieee.org/ieee/1788.1/6074/">IEEE 1788.1-2017 — IEEE Standard for Interval Arithmetic (Simplified)</a>（機械上の区間演算の仕様）.</li>
-<li id="ref-3">OpenAI, <a href="https://developers.openai.com/codex/">Codex Documentation</a>.</li>
+<li id="ref-3">R. E. Moore, R. B. Kearfott and M. J. Cloud, <i>Introduction to Interval Analysis</i>, SIAM, 2009, <a href="https://doi.org/10.1137/1.9780898717716">doi:10.1137/1.9780898717716</a>.</li>
+<li id="ref-4">OpenAI, <a href="https://developers.openai.com/codex/">Codex Documentation</a>.</li>
 </ol>
 <p><a href="../demos/interval-arithmetic.html">区間演算の教材</a> ／ <a href="codex-math-02.html">第2回</a> ／ <a href="../">ブログ一覧</a></p>
 </article>
