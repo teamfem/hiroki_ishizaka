@@ -53,9 +53,9 @@ details{padding:10px 0;border-top:1px solid #d9e4ed}summary{cursor:pointer;font-
 <label for="r">区間の上端 r：<output id="r-output" for="r">1.00</output></label>
 <input id="r" type="range" min="0" max="2" step="0.25" value="1">
 <form id="dependency-form">
-<fieldset><legend>区間式 X−X の値域を予想する</legend>
-<label class="choice"><input type="radio" name="dependency-prediction" value="zero" required>常に {0} だけになる</label>
-<label class="choice"><input type="radio" name="dependency-prediction" value="wide" required>r&gt;0 なら幅のある区間になる</label>
+<fieldset><legend>現在の r に対する区間式 X−X の結果を予想する</legend>
+<label class="choice"><input type="radio" name="dependency-prediction" value="zero" required>この r では点区間 [0,0] になる</label>
+<label class="choice"><input type="radio" name="dependency-prediction" value="wide" required>この r では幅が正の区間になる</label>
 </fieldset>
 <button type="submit" id="dep-confirm">予想を確定して比較する</button>
 </form>
@@ -78,9 +78,9 @@ details{padding:10px 0;border-top:1px solid #d9e4ed}summary{cursor:pointer;font-
 <label for="n">45度回転と囲い直しの回数：<output id="n-output" for="n">2</output></label>
 <input id="n" type="range" min="0" max="4" step="1" value="2">
 <form id="wrapping-form">
-<fieldset><legend>橙色の包含矩形の面積はどう変わると予想しますか</legend>
-<label class="choice"><input type="radio" name="wrapping-prediction" value="same" required>初期面積4のまま</label>
-<label class="choice"><input type="radio" name="wrapping-prediction" value="increase" required>囲い直す度に大きくなる（回数0の場合を除く）</label>
+<fieldset><legend>現在の回数 n に対して橙色の最終ボックスの面積を予想する</legend>
+<label class="choice"><input type="radio" name="wrapping-prediction" value="same" required>この n では面積は4である</label>
+<label class="choice"><input type="radio" name="wrapping-prediction" value="increase" required>この n では面積は4より大きい</label>
 </fieldset>
 <button type="submit" id="wrap-confirm">予想を確定して図を見る</button>
 </form>
@@ -90,9 +90,11 @@ details{padding:10px 0;border-top:1px solid #d9e4ed}summary{cursor:pointer;font-
 <p id="wrap-prediction" role="status"></p>
 <div class="stats"><div>真の集合の面積<strong>4</strong></div><div>区間ボックスの面積<strong id="wrap-area"></strong></div></div>
 <p>区間ボックスと真の集合の面積比：<strong id="wrap-ratio"></strong> 倍</p>
+<p id="wrap-scale" class="small"></p>
 <svg id="wrapping-svg" viewBox="-170 -170 340 340" role="img" aria-labelledby="wrap-figure-title wrap-figure-desc">
 <title id="wrap-figure-title">回転した正方形と包含区間ボックス</title><desc id="wrap-figure-desc">真の回転正方形と、各回に囲い直した大きい区間ボックスを比較します。</desc></svg>
 <div class="legend"><span class="blue">真の回転正方形（青）</span><span class="orange">繰返し囲い直した箱（橙の破線）</span></div>
+<p class="small">図は各回の区間ボックスを同じ画面サイズに収めるため、n ごとに表示縮尺を変更しています。青い真の正方形が縮小したわけではなく、真の面積は常に4です。面積は上の数値で比較してください。</p>
 <details><summary>証明1：回転は面積を保存する</summary>
 <p>45度回転行列 \(R\) は \(\det R=1\) なので、\(R^nB_0\) の面積は全ての \(n\) で4です。</p></details>
 <details><summary>証明2：区間ボックスの漸化式</summary>

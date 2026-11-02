@@ -36,7 +36,7 @@
  function createLesson(){
   let r=1,n=2,dependencyGuess=null,wrapGuess=null;
   function getState(){return Object.freeze({r,n,dependencyGuess,wrapGuess,
-      dependencyResult:dependencyGuess===null?null:Object.freeze({correct:dependencyGuess==='zero'?(r===0):r>0,data:dependency(r)}),
+      dependencyResult:dependencyGuess===null?null:Object.freeze({correct:dependencyGuess===(r===0?'zero':'wide'),data:dependency(r)}),
       wrapResult:wrapGuess===null?null:Object.freeze({correct:wrapGuess===(n===0?'same':'increase'),data:wrapping(n)})});}
   function setRadius(value){r=radius(value);dependencyGuess=null;return getState();}
   function setSteps(value){n=steps(value);wrapGuess=null;return getState();}
@@ -114,6 +114,7 @@
     byId('wrap-prediction').textContent=s.wrapResult.correct?'予想は一致しました。':'予想は一致しませんでした。';
     byId('wrap-area').textContent=String(d.boxArea);
     byId('wrap-ratio').textContent=String(d.ratio);
+    byId('wrap-scale').textContent='現在の表示範囲：軸ごとに ±'+d.halfWidth.toFixed(2)+'（nによって縮尺が変わります）。';
     wrapDraw(s.n);
    }else byId('wrapping-svg').querySelectorAll('[data-generated]').forEach(x=>x.remove());
   }

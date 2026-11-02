@@ -89,7 +89,7 @@ svg{display:block;width:min(100%,480px);height:auto;aspect-ratio:1;background:#f
 <p>射影 \(p=\alpha_*a(t)\) の残差 \(r=b-p\) について \((a(t),r)_{\mathbb R^2}=0\) が成立します。</p></li>
 <li class="proof-step" data-step="3" hidden><h3>段階3：ピタゴラスの定理で最小性を証明する</h3>
 <p class="formula">\[\|b-\alpha a(t)\|_{\mathbb R^2}^2=\|b-p\|_{\mathbb R^2}^2+(\alpha-\alpha_*)^2\|a(t)\|_{\mathbb R^2}^2.\]</p>
-<p>右辺の第2項は非負なので、\(\alpha=\alpha_*\) が一意の最小点です。一般の行列 \(A\) については、残差の直交条件 \(A^\top(b-Ax)=0\) が正規方程式 \(A^\top Ax=A^\top b\) になります。ただし \(A\) の列が一次独立でない場合、係数の一意性には注意が必要です。</p></li>
+<p>右辺の第2項は非負なので、\(\alpha=\alpha_*\) で最小値を取ります。さらに \(\|a(t)\|_{\mathbb R^2}^2=1+t^2>0\) なので、\(\alpha\ne\alpha_*\) なら第2項は正です。従って、この最小点は一意です。一般の行列 \(A\) については、残差の直交条件 \(A^\top(b-Ax)=0\) が正規方程式 \(A^\top Ax=A^\top b\) になります。ただし \(A\) の列が一次独立でない場合、係数の一意性には注意が必要です。</p></li>
 </ol>
 </section>
 <section class="card"><h2>考えてみよう</h2>
