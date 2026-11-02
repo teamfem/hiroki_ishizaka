@@ -119,14 +119,14 @@ PROJECTION_BROWSER_TESTS=1 node --test tests/projection-math.test.js</pre>
 A^\top Ax=A^\top b
 \tag{6}
 \]
-<p>を得ます。係数ベクトル \(x\) が一意になるためには、\(A\) の列が一次独立であることが必要です。一方、射影点 \(Ax\) は、\(\operatorname{range}(A)\) への直交射影として一意です。今回の \(A(t)=a(t)\) はどの \(t\) でも零列でないため、最良係数が一意に決まります。<a href="#ref-1">［1］</a><a href="#ref-2">［2］</a></p>
-<p>実際の大規模計算では、正規方程式を直接解くと条件数が悪化することがあります。QR分解や特異値分解が重要になる理由については、別の教材で扱う余地があります。</p>
+<p>を得ます。係数ベクトル \(x\) が一意になるためには、\(A\) の列が一次独立であることが必要十分です。一方、射影点 \(Ax\) は、\(\operatorname{range}(A)\) への直交射影として一意です。今回の \(A(t)=a(t)\) はどの \(t\) でも零列でないため、最良係数が一意に決まります。<a href="#ref-1">［1］</a><a href="#ref-2">［2］</a></p>
+<p>この点は大規模計算に限りません。\(A\) が列フルランクのとき、2-ノルム条件数について \(\kappa_2(A^\top A)=\kappa_2(A)^2\) が成立します。したがって、正規方程式を直接解くと条件数が二乗され、数値誤差が増幅されやすくなります。QR分解や特異値分解が重要になる理由については、別の教材で扱う余地があります。</p>
 <h2 id="education">7．授業で考えてほしいこと</h2>
 <p>候補係数を0.1刻みで動かす操作だけでは、最小性を厳密に確かめられません。学生には、観察後に式(4)と式(5)の意味を説明してもらいます。また、候補係数が最適値と一致しない場合でも、なぜ誤差が増えるかを式(5)から説明できます。自分の予想が正解したかどうかだけでなく、一般の係数に対する証明を重視します。</p>
 <h2 id="references">参考文献・資料</h2>
 <ol>
 <li id="ref-1">Dahleh, M., Dahleh, M. A. and Verghese, G., <a href="https://eng.libretexts.org/Bookshelves/Industrial_and_Systems_Engineering/Book%3A_Dynamic_Systems_and_Control_%28Dahleh_Dahleh_and_Verghese%29/02%3A_Least_Squares_Estimation/2.05%3A_The_Projection_Theorem_and_the_Least_Squares_Estimate">The Projection Theorem and the Least Squares Estimate</a>, MIT OpenCourseWare / Engineering LibreTexts.</li>
-<li id="ref-2">Massachusetts Institute of Technology, <a href="https://web.mit.edu/~linalg/webpage/Fall2022/pset6sol.html">18.06 Problem Set 6 Solutions</a>, 2022（階数と最小二乗解の一意性）.</li>
+<li id="ref-2">Massachusetts Institute of Technology, <a href="https://web.mit.edu/18.06/www/Fall2022/pset6sol.html">18.06 Problem Set 6 Solutions</a>, 2022（階数と最小二乗解の一意性）.</li>
 <li id="ref-3">OpenAI, <a href="https://developers.openai.com/codex/">Codex Documentation</a>.</li>
 </ol>
 <p><a href="../demos/linear-algebra-projection.html">操作教材へ戻る</a> ／ <a href="codex-math-01.html">第1回</a> ／ <a href="../">ブログ一覧</a></p>
