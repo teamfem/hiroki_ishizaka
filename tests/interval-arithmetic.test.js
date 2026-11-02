@@ -10,7 +10,8 @@ test('same-variable x-x has true range {0} but natural interval result [-r,r]',(
  for(let k=0;k<=8;k++){
   const r=k/4,d=dependency(r);
   assert.deepEqual(d.input,[0,r]);
-  assert.deepEqual(d.independent,[-r,r]);
+  near(d.independent[0],-r);
+  near(d.independent[1],r); // +0 と -0 の符号差は集合としての区間に影響しない。
   assert.deepEqual(d.sameVariable,[0,0]);
   near(d.overestimationWidth,2*r);
  }
@@ -69,6 +70,20 @@ test('each parameter reset invalidates its own answer; full reset invalidates bo
  assert.equal(l.getState().r,1);assert.equal(l.getState().n,2);
  assert.equal(l.getState().dependencyResult,null);assert.equal(l.getState().wrapResult,null);
 });
+test('edge cases r=0 and n=0 are scored as current-value propositions',()=>{
+ const d0=createLesson();d0.setRadius(0);d0.predictDependency('zero');
+ assert.equal(d0.getState().dependencyResult.correct,true);
+ const d1=createLesson();d1.setRadius(0);d1.predictDependency('wide');
+ assert.equal(d1.getState().dependencyResult.correct,false);
+ const d2=createLesson();d2.setRadius(.25);d2.predictDependency('wide');
+ assert.equal(d2.getState().dependencyResult.correct,true);
+ const w0=createLesson();w0.setSteps(0);w0.predictWrapping('same');
+ assert.equal(w0.getState().wrapResult.correct,true);
+ const w1=createLesson();w1.setSteps(0);w1.predictWrapping('increase');
+ assert.equal(w1.getState().wrapResult.correct,false);
+ const w2=createLesson();w2.setSteps(1);w2.predictWrapping('increase');
+ assert.equal(w2.getState().wrapResult.correct,true);
+});
 test('prediction input validation is explicit',()=>{
  const l=createLesson();
  assert.throws(()=>l.predictDependency('incorrect'),TypeError);
@@ -121,8 +136,9 @@ test('browser: interval radius cases and all wrapping steps at mobile and deskto
     const r=k/4;
     await page.locator('#r').evaluate((el,v)=>{el.value=String(v);el.dispatchEvent(new Event('input',{bubbles:true}));},r);
     assert.equal(await page.locator('#dependency-answer').isVisible(),false);
-    await page.locator('#dependency-form input[value="wide"]').check();
+    await page.locator('#dependency-form input[value="'+(r===0?'zero':'wide')+'"]').check();
     await page.locator('#dep-confirm').click();
+    assert.match(await page.locator('#dep-prediction').textContent(),/一致しました/);
     near(Number(await page.locator('#dep-width').textContent()),2*r);
     assert.ok(await page.locator('#dependency-svg [data-generated]').count());
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth)<=width);
@@ -130,9 +146,11 @@ test('browser: interval radius cases and all wrapping steps at mobile and deskto
    for(let n=0;n<=4;n++){
     await page.locator('#n').evaluate((el,v)=>{el.value=String(v);el.dispatchEvent(new Event('input',{bubbles:true}));},n);
     assert.equal(await page.locator('#wrapping-answer').isVisible(),false);
-    await page.locator('#wrapping-form input[value="increase"]').check();
+    await page.locator('#wrapping-form input[value="'+(n===0?'same':'increase')+'"]').check();
     await page.locator('#wrap-confirm').click();
+    assert.match(await page.locator('#wrap-prediction').textContent(),/一致しました/);
     assert.equal(Number(await page.locator('#wrap-area').textContent()),4*2**n);
+    assert.match(await page.locator('#wrap-scale').textContent(),/縮尺が変わります/);
     assert.ok(await page.locator('#wrapping-svg polygon').count());
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth)<=width);
    }
