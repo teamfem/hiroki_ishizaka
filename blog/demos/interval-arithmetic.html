@@ -47,6 +47,21 @@ details{padding:10px 0;border-top:1px solid #d9e4ed}summary{cursor:pointer;font-
 <ol class="steps"><li>予想する</li><li>観察する</li><li>証明する</li></ol>
 <p class="alert"><strong>数学上の注意：</strong>この教材は実数集合に対する区間操作と幾何学的な囲い直しの概念図です。JavaScriptの通常の浮動小数点演算を使用して描画しており、外向き丸めを備えた精度保証付き区間演算ライブラリではありません。表示された小数値を厳密な数値保証に用いないでください。</p>
 <noscript><p class="alert">操作にはJavaScriptが必要です。<a href="../posts/codex-math-03.html">解説記事</a>では証明を読めます。</p></noscript>
+<section class="card" aria-labelledby="basics-section">
+<h2 id="basics-section">はじめに：区間の意味と四則演算</h2>
+<p>区間 \(X=[a,b]\) は、\(a\le x\le b\) を満たす実数をすべて集めた集合です。例えば、真の値が \(1\) 以上 \(2\) 以下と分かっていれば \(X=[1,2]\) と表せます。区間演算では、二つの区間から選んだ数を<strong>それぞれ独立に</strong>動かして、計算結果が取り得る範囲を求めます。</p>
+<p>例として \(X=[1,2]\)、\(Y=[3,4]\) のとき、</p>
+<div class="stats">
+<div>和 \(X+Y\)<strong>\([4,6]\)</strong></div>
+<div>差 \(X-Y\)<strong>\([-3,-1]\)</strong></div>
+<div>積 \(XY\)<strong>\([3,8]\)</strong></div>
+<div>商 \(X/Y\)<strong>\([1/4,2/3]\)</strong></div>
+</div>
+<p class="small">商の演算は、ここでは分母の区間が0を含まない場合だけを扱います。これらは実数集合としての厳密な演算式であり、このページのJavaScriptが外向き丸めを保証するという意味ではありません。</p>
+<details><summary>なぜ差は \([-3,-1]\) になるのか</summary>
+<p>最小値は \(1-4=-3\)、最大値は \(2-3=-1\) です。両者を含む区間 \([-3,-1]\) が結果になります。</p></details>
+<p><a href="../posts/codex-math-03.html#interval-basics">区間の定義・包含保証・四則演算を基礎から読む</a></p>
+</section>
 <section class="card" aria-labelledby="dependency-section">
 <h2 id="dependency-section">1．依存性問題：x−x は本当に広がるか</h2>
 <p>集合 \(X=[0,r]\) を考えます。同じ \(x\in X\) を2回使う関数 \(f(x)=x-x\) の値域は \(\{0\}\) ですが、独立した区間として \(X-X\) を計算するとどうなるでしょうか。</p>
