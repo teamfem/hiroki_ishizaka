@@ -205,6 +205,35 @@ INTERVAL_BROWSER_TESTS=1 node --test tests/interval-arithmetic.test.js</pre>
 <h2 id="guarantee">9．精度保証付き数値計算との違い</h2>
 <p>実数集合に対する式(1)の区間演算と、浮動小数点数を用いて機械上で保証を成立させることは別です。例えば、計算された下端が真の下限以下、上端が真の上限以上であるように、外向き丸めなどを適切に扱う必要があります。入力値自体が誤差を含む場合は、その入力を覆う区間を正しく作ることも必要です。IEEE 1788.1-2017はIEEE 1788-2015の簡略化された部分集合であり、端点にIEEE 754 binary64（倍精度浮動小数点数）を用いる区間演算と、例外を扱うためのデコレーションなどを規定しています。<a href="#ref-2">［2］</a></p>
 <p>本教材で扱う面積の整数値は数学的な漸化式から導いています。一方、図形の頂点座標には三角関数の浮動小数点近似が入ります。したがって、本教材のSVGは<strong>証明を理解するための可視化</strong>であり、計算機を使った厳密な包含証明そのものではありません。</p>
+<h2 id="anisotropic-column">発展コラム：異方性メッシュと区間除算</h2>
+<p>区間演算の問題は、有限要素法にも現れます。例えば、横方向の長さが \(1\)、縦方向の長さが \(\varepsilon>0\) の直角三角形を考えましょう。基準三角形からこの三角形へのアフィン写像のヤコビ行列は、単純な座標系では</p>
+\[
+J_\varepsilon=
+\begin{pmatrix}1&amp;0\\0&amp;\varepsilon\end{pmatrix},
+\qquad
+J_\varepsilon^{-1}=
+\begin{pmatrix}1&amp;0\\0&amp;1/\varepsilon\end{pmatrix}
+\]
+<p>と書けます。薄い方向には \(1/\varepsilon\) という大きな係数が現れます。これは区間演算の欠点ではなく、実際の幾何学的な伸縮が逆写像に反映されているためです。</p>
+<p>次に、縦方向の長さが一点としてではなく、</p>
+\[
+\varepsilon\in E=[\varepsilon_0-\delta,\varepsilon_0+\delta],
+\qquad 0<\delta<\varepsilon_0
+\]
+<p>という区間で与えられたとします。実数上の厳密な区間除算は</p>
+\[
+\frac1E=
+\left[\frac1{\varepsilon_0+\delta},
+\frac1{\varepsilon_0-\delta}\right],
+\qquad
+\operatorname{wid}\!\left(\frac1E\right)
+=\frac{2\delta}{\varepsilon_0^2-\delta^2}.
+\]
+<p>従って、\(\delta\) が小さくても、\(\varepsilon_0\) がさらに小さいと逆数の区間幅は大きくなり得ます。これは<strong>入力に本当に存在する不確かさの増幅</strong>です。一方、複数の座標に共通して現れる変数を独立に囲ってしまったために区間が広がる場合は、先ほど学んだ<strong>依存性による過大評価</strong>です。この二つは区別しなければなりません。</p>
+<div class="lesson-callout"><b>非退化性を証明できないことと、実際に退化していることは別</b>
+<p>一般の三角形では、逆写像の計算にヤコビ行列の行列式が現れます。真の行列式が正であっても、過大な包含区間が \(0\) を含めば、その区間だけから逆数の有界性を保証できません。しかし、それは三角形が退化したという証明ではなく、<strong>現在の区間評価では判定できない</strong>ということです。外向き丸めによる厳密な包含を保つことと、包含区間を十分に鋭く保つことの両方が重要になります。</p></div>
+<p>異方性メッシュでは、要素形状と連立一次方程式の条件数も問題になります。ただし、ここで示した単純な逆写像の例だけから、有限要素系全体の精度保証の可否を判断することはできません。異方性メッシュ上の有限要素行列の条件数については既存研究があります。<a href="#ref-5">［5］</a> また、PDEの精度保証付き計算の一般的な背景については <a href="#ref-6">［6］</a> を参照してください。</p>
+<p><strong>考えてみよう：</strong>\(\varepsilon\) が正の一点として正確に分かっている場合と、\(E\) に含まれることしか分からない場合とで、逆数の「大きさ」と「区間幅」はどう違うでしょうか。異方性のために大きくなる量と、区間評価によって不要に大きくなる量を、混同しないことが出発点です。</p>
 <h2 id="education">10．授業での問いと今後の展開</h2>
 <p>学生には、「何が正しく保証されているのか」「どの情報を捨てた結果、区間が大きくなったのか」を分けて説明してもらいたいと思います。依存性問題では同じ変数であるという関係、Wrapping effectでは回転した集合の形が失われます。座標変換や平行四辺形など、より豊かな集合表現を利用する考え方は、過大評価を抑える研究へつながります。例えば、Lohner型の検証計算法では座標変換を利用してWrapping effectを制御します。ただし、単に図形を平行四辺形として描くだけで計算機上の厳密な包含が保証されるわけではありません。<a href="#ref-1">［1］</a><a href="#ref-3">［3］</a></p>
 <p>次の発展題材は区間Newton法や精度保証付き固有値計算です。ただし、実装段階では専用の丸め制御または信頼できる検証済みライブラリが不可欠になります。幾何学的な教材と、精度保証付きプログラムの境界を曖昧にしないことを今後も重視します。</p>
@@ -214,11 +243,13 @@ INTERVAL_BROWSER_TESTS=1 node --test tests/interval-arithmetic.test.js</pre>
 <li id="ref-2">IEEE, <a href="https://standards.ieee.org/ieee/1788.1/6074/">IEEE 1788.1-2017 — IEEE Standard for Interval Arithmetic (Simplified)</a>（機械上の区間演算の仕様）.</li>
 <li id="ref-3">R. E. Moore, R. B. Kearfott and M. J. Cloud, <i>Introduction to Interval Analysis</i>, SIAM, 2009, <a href="https://doi.org/10.1137/1.9780898717716">doi:10.1137/1.9780898717716</a>.</li>
 <li id="ref-4">OpenAI, <a href="https://developers.openai.com/codex/">Codex Documentation</a>.</li>
+<li id="ref-5">L. Kamenski, W. Huang and H. Xu, <i>Conditioning of finite element equations with arbitrary anisotropic meshes</i>, <i>Math. Comp.</i> 83 (2014), 2187–2211, <a href="https://doi.org/10.1090/S0025-5718-2014-02822-6">doi:10.1090/S0025-5718-2014-02822-6</a>.</li>
+<li id="ref-6">M. T. Nakao, M. Plum and Y. Watanabe, <i>Numerical Verification Methods and Computer-Assisted Proofs for Partial Differential Equations</i>, Springer, 2019, <a href="https://doi.org/10.1007/978-981-13-7669-6">doi:10.1007/978-981-13-7669-6</a>.</li>
 </ol>
 <p><a href="../demos/interval-arithmetic.html">区間演算の教材</a> ／ <a href="codex-math-02.html">第2回</a> ／ <a href="../">ブログ一覧</a></p>
 </article>
 <aside class="article-side" aria-label="記事内ナビゲーション"><nav class="toc" aria-label="目次"><div class="toc-title">Contents</div>
-<a href="#intro">Introduction</a><a href="#interval-basics">1．区間の定義</a><a href="#interval-operations">2．四則演算</a><a href="#interval-inclusion">3．包含保証</a><a href="#dependency">4．依存性問題</a><a href="#dependency-demo">5．操作教材</a><a href="#wrapping">6．Wrapping effect</a><a href="#implementation">7．Codex実装</a><a href="#verification">8．数学的テスト</a><a href="#guarantee">9．精度保証との違い</a><a href="#education">10．授業への展開</a><a href="#references">参考文献</a>
+<a href="#intro">Introduction</a><a href="#interval-basics">1．区間の定義</a><a href="#interval-operations">2．四則演算</a><a href="#interval-inclusion">3．包含保証</a><a href="#dependency">4．依存性問題</a><a href="#dependency-demo">5．操作教材</a><a href="#wrapping">6．Wrapping effect</a><a href="#implementation">7．Codex実装</a><a href="#verification">8．数学的テスト</a><a href="#guarantee">9．精度保証との違い</a><a href="#anisotropic-column">発展：異方性メッシュ</a><a href="#education">10．授業への展開</a><a href="#references">参考文献</a>
 </nav><div class="series-nav"><b>Codexで作る大学数学教材</b><a href="codex-math-01.html">第1回：固有値と対角化</a><a href="codex-math-02.html">第2回：直交射影</a><a href="../#codex-math-education">シリーズ一覧</a></div></aside>
 </div>
 <nav class="article-footer-nav" aria-label="関連記事"><div class="navbox">
