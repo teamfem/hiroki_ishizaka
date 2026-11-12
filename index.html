@@ -6,7 +6,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ISHIZAKA Hiroki — Numerical Analysis</title>
-  <meta name="description" content="Hiroki Ishizaka — Mathematics for Trustworthy Simulation: certified finite element analysis, stable reduction of unresolved dynamics, and AI4Math.">
+  <meta name="description" content="Hiroki Ishizaka (石坂 宏樹) — 未解像ダイナミクスの安定縮約理論 (stable reduction theory for unresolved dynamics), certified finite element analysis under computable geometric conditions, and AI4Math.">
   <style>
 .manuscript-link-pending { display: inline-block; margin-top: 10px; padding-block: 4px; font-size: 13px; color: var(--muted); }
 :root {
@@ -107,6 +107,7 @@ section { padding: 58px 0; }
 .programmes { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
 .programme { display: flex; flex-direction: column; padding: 28px 30px; border: 1px solid var(--line); border-top: 3px solid var(--teal); border-radius: 7px; }
 .programme .section-label { margin-bottom: 11px; }
+.programme-title-ja { display: block; margin-top: 8px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans JP", sans-serif; font-size: 17px; font-weight: 600; line-height: 1.5; }
 .programme p { color: #455267; max-width: 58ch; }
 .aim { padding-top: 17px; border-top: 1px solid var(--line); }
 .aim strong { color: var(--ink); font-size: 14px; }
@@ -284,7 +285,7 @@ footer { border-top: 1px solid var(--line); padding: 24px 0 30px; color: var(--m
           </article>
           <article class="programme" id="stable-reduction">
             <div class="section-label">Programme II · Evolution equations</div>
-            <h3>Stable reduction of unresolved dynamics</h3>
+            <h3>Stable reduction of unresolved dynamics<span class="programme-title-ja" lang="ja">未解像ダイナミクスの安定縮約理論</span></h3>
             <p>My research asks what remains of a dynamical system when unresolved degrees of freedom are eliminated. A reduced model may reproduce observations yet lose stability, dissipation or long-time behaviour. I ask when its predictions remain mathematically justified.</p>
             <p>I analyse discarded states using operator-valued memory, delay terms and nonlocal closures, alongside coercivity, appropriate solution spaces and quantitative stability estimates. These are tools for tracking information loss, identifying mechanisms of stability or instability, and measuring the difference between full and reduced dynamics.</p>
             <p class="aim"><strong>Aim</strong><br>To establish mathematical criteria for deciding when a reduction is admissible, when it must be rejected, and when the available information is insufficient for certification.</p>
