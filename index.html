@@ -130,10 +130,30 @@ section { padding: 58px 0; }
 .publication-row h3 a:hover { color: var(--teal); text-decoration: underline; }
 .publication-row p, .manuscript-row p { font-size: 14px; color: var(--muted); margin: 0; max-width: 85ch; }
 .manuscripts { border-block: 1px solid var(--line); background: var(--soft); }
-.manuscript-list { display: grid; grid-template-columns: 1fr 1fr; gap: 0 38px; }
-.manuscript-row { padding: 22px 0; border-top: 1px solid var(--line); }
-.manuscript-row h3 { font-size: 19px; }
-.manuscript-row > a { display: inline-block; margin-top: 10px; font-size: 13px; font-weight: 650; padding-block: 4px; }
+.manuscript-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.manuscript-row {
+  display: flex; flex-direction: column; min-width: 0; padding: 23px 25px;
+  border: 1px solid var(--line); border-radius: 9px; background: var(--paper);
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+.manuscript-row:hover {
+  border-color: #b8d3d0; box-shadow: 0 5px 18px rgba(23,35,58,.055);
+  transform: translateY(-2px);
+}
+.manuscript-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 13px; }
+.manuscript-code {
+  display: inline-flex; align-items: center; min-height: 27px;
+  padding: 2px 9px; border-radius: 5px; background: #eaf3f1;
+  color: var(--teal); font-size: 12px; font-weight: 750; letter-spacing: .02em;
+}
+.manuscript-topic { color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .02em; }
+.manuscript-row h3 { font-size: 19px; line-height: 1.48; margin: 0 0 18px; }
+.manuscript-footer { margin-top: auto; padding-top: 12px; border-top: 1px solid #e9edf1; }
+.manuscript-footer a { font-size: 13px; font-weight: 700; text-decoration: none; }
+.manuscript-footer a:hover { text-decoration: underline; }
+.manuscript-pending { font-size: 13px; color: var(--muted); }
+.manuscript-note { margin: 20px 0 0; font-size: 13px; color: var(--muted); }
+.manuscript-note a { font-weight: 650; }
 .about-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 55px; align-items: start; }
 .about-copy p { color: #455267; max-width: 65ch; }
 .contact { padding-left: 28px; border-left: 1px solid var(--line); }
@@ -184,8 +204,12 @@ footer { border-top: 1px solid var(--line); padding: 24px 0 30px; color: var(--m
   .lead { font-size: 16px; }
   .publication-row h3, .manuscript-row h3 { font-size: 19px; }
 }
+@media (max-width: 760px) {
+  .manuscript-list { grid-template-columns: 1fr; }
+}
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  .manuscript-row { transition: none; }
 }
   </style>
 </head>
@@ -363,65 +387,111 @@ footer { border-top: 1px solid var(--line); padding: 24px 0 30px; color: var(--m
       <div class="wrap">
         <div class="section-head">
           <h2 id="manuscripts-title">Public manuscripts</h2>
-          <p>Current public manuscripts [S2]–[S4] and [S6]–[S12], with links to arXiv. Former [S1] and [S5] are now listed under peer-reviewed publications.</p>
+          <p>Submitted manuscripts and preprints · 2026. Research on finite elements, stable reduction, and memory-dependent PDEs.</p>
         </div>
-
         <div class="manuscript-list">
-        <article class="manuscript-row">
-          <div class="date">[S12] · 2026 · </div>
-          <h3>Certified Finite Element Error Bounds for Diffusion Equations with Measure-Valued Principal-Part Delays</h3>
-          <a href="">arXiv  →</a>
-        </article>
-        
-        <div class="manuscript-list">
-        <article class="manuscript-row">
-          <div class="date">[S11] · 2026 · </div>
-          <h3>Information Limits for Stable Reduction of Coupled Diffusion Systems</h3>
-          <a href="https://arxiv.org/abs/2611.02977">arXiv 2611.02977 →</a>
-        </article>
-          
-        <article class="manuscript-row">
-          <div class="date">[S10] · 2026 · </div>
-          <h3>Inverse monotonicity of the Crouzeix--Raviart method beyond local \(Z\)-matrix conditions</h3>
-          <a href="">arXiv  →</a>
-        </article>
-        <article class="manuscript-row">
-          <div class="date">[S9] · 2026 · Memory / delay</div>
-          <h3>Sharp Wasserstein stability and small-delay thresholds for evolution equations with measure-valued principal-part delays</h3>
-          <a href="https://arxiv.org/abs/2610.24635">arXiv 2610.24635 →</a>
-        </article>
-        <article class="manuscript-row">
-          <div class="date">[S8] · 2026 · Spherical FEM</div>
-          <h3>Anisotropic Lagrange interpolation on exact spherical triangles</h3>
-          <a href="https://arxiv.org/abs/2610.09686">arXiv 2610.09686 →</a>
-        </article>
-        <article class="manuscript-row">
-          <div class="date">[S7] · 2026 · Anisotropic FEM</div>
-          <h3>Crouzeix–Raviart–Marini realisation of computable a priori L²-error bounds on anisotropic meshes</h3>
-          <a href="https://arxiv.org/abs/2609.06057">arXiv 2609.06057 →</a>
-        </article>
-        <article class="manuscript-row">
-          <div class="date">[S6] · 2026 · Spherical FEM</div>
-          <h3>Exact characterisation of maximum-angle conditions for spherical finite element meshes</h3>
-          <a href="https://arxiv.org/abs/2608.11353">arXiv 2608.11353 →</a>
-        </article>
-        <article class="manuscript-row">
-          <div class="date">[S4] · 2026 · Degenerate diffusion</div>
-          <h3>Graph-space well-posedness for diffusion equations with degenerate instantaneous diffusion</h3>
-          <p>Stable functional setting for degenerate history-dependent evolution.</p>
-          <a href="https://arxiv.org/abs/2607.12871">arXiv 2607.12871 →</a>
-        </article>
-        <article class="manuscript-row">
-          <div class="date">[S3] · 2026 · Memory stability</div>
-          <h3>High-frequency coercivity loss for completely monotone memory on bounded time intervals</h3>
-          <a href="https://arxiv.org/abs/2607.12482">arXiv 2607.12482 →</a>
-        </article>
-        <article class="manuscript-row">
-          <div class="date">[S2] · 2026 · Exact-curved FEM</div>
-          <h3>Exact-curved Lagrange finite elements for the Poisson problem in two dimensions</h3>
-          <a href="https://arxiv.org/abs/2605.26566">arXiv 2605.26566 →</a>
-        </article>
+          <article class="manuscript-row" aria-labelledby="manuscript-s12-title">
+            <div class="manuscript-top">
+              <span class="manuscript-code">[S12]</span>
+              <span class="manuscript-topic">Delayed diffusion</span>
+            </div>
+            <h3 id="manuscript-s12-title">Certified Finite Element Error Bounds for Diffusion Equations with Measure-Valued Principal-Part Delays</h3>
+            <div class="manuscript-footer">
+              <span class="manuscript-pending">arXiv link not yet available</span>
+            </div>
+          </article>
+          <article class="manuscript-row" aria-labelledby="manuscript-s11-title">
+            <div class="manuscript-top">
+              <span class="manuscript-code">[S11]</span>
+              <span class="manuscript-topic">Stable reduction</span>
+            </div>
+            <h3 id="manuscript-s11-title">Information Limits for Stable Reduction of Coupled Diffusion Systems</h3>
+            <div class="manuscript-footer">
+              <a href="https://arxiv.org/abs/2611.02977" aria-label="Read [S11] on arXiv">Read on arXiv <span aria-hidden="true">↗</span></a>
+            </div>
+          </article>
+          <article class="manuscript-row" aria-labelledby="manuscript-s10-title">
+            <div class="manuscript-top">
+              <span class="manuscript-code">[S10]</span>
+              <span class="manuscript-topic">Nonconforming FEM</span>
+            </div>
+            <h3 id="manuscript-s10-title">Inverse monotonicity of the Crouzeix–Raviart method beyond local \(Z\)-matrix conditions</h3>
+            <div class="manuscript-footer">
+              <span class="manuscript-pending">arXiv link not yet available</span>
+            </div>
+          </article>
+          <article class="manuscript-row" aria-labelledby="manuscript-s9-title">
+            <div class="manuscript-top">
+              <span class="manuscript-code">[S9]</span>
+              <span class="manuscript-topic">Memory & delay</span>
+            </div>
+            <h3 id="manuscript-s9-title">Sharp Wasserstein stability and small-delay thresholds for evolution equations with measure-valued principal-part delays</h3>
+            <div class="manuscript-footer">
+              <a href="https://arxiv.org/abs/2610.24635" aria-label="Read [S9] on arXiv">Read on arXiv <span aria-hidden="true">↗</span></a>
+            </div>
+          </article>
+          <article class="manuscript-row" aria-labelledby="manuscript-s8-title">
+            <div class="manuscript-top">
+              <span class="manuscript-code">[S8]</span>
+              <span class="manuscript-topic">Spherical FEM</span>
+            </div>
+            <h3 id="manuscript-s8-title">Anisotropic Lagrange interpolation on exact spherical triangles</h3>
+            <div class="manuscript-footer">
+              <a href="https://arxiv.org/abs/2610.09686" aria-label="Read [S8] on arXiv">Read on arXiv <span aria-hidden="true">↗</span></a>
+            </div>
+          </article>
+          <article class="manuscript-row" aria-labelledby="manuscript-s7-title">
+            <div class="manuscript-top">
+              <span class="manuscript-code">[S7]</span>
+              <span class="manuscript-topic">Anisotropic FEM</span>
+            </div>
+            <h3 id="manuscript-s7-title">Crouzeix–Raviart–Marini realisation of computable a priori L²-error bounds on anisotropic meshes</h3>
+            <div class="manuscript-footer">
+              <a href="https://arxiv.org/abs/2609.06057" aria-label="Read [S7] on arXiv">Read on arXiv <span aria-hidden="true">↗</span></a>
+            </div>
+          </article>
+          <article class="manuscript-row" aria-labelledby="manuscript-s6-title">
+            <div class="manuscript-top">
+              <span class="manuscript-code">[S6]</span>
+              <span class="manuscript-topic">Spherical geometry</span>
+            </div>
+            <h3 id="manuscript-s6-title">Exact characterisation of maximum-angle conditions for spherical finite element meshes</h3>
+            <div class="manuscript-footer">
+              <a href="https://arxiv.org/abs/2608.11353" aria-label="Read [S6] on arXiv">Read on arXiv <span aria-hidden="true">↗</span></a>
+            </div>
+          </article>
+          <article class="manuscript-row" aria-labelledby="manuscript-s4-title">
+            <div class="manuscript-top">
+              <span class="manuscript-code">[S4]</span>
+              <span class="manuscript-topic">Degenerate diffusion</span>
+            </div>
+            <h3 id="manuscript-s4-title">Graph-space well-posedness for diffusion equations with degenerate instantaneous diffusion</h3>
+            <div class="manuscript-footer">
+              <a href="https://arxiv.org/abs/2607.12871" aria-label="Read [S4] on arXiv">Read on arXiv <span aria-hidden="true">↗</span></a>
+            </div>
+          </article>
+          <article class="manuscript-row" aria-labelledby="manuscript-s3-title">
+            <div class="manuscript-top">
+              <span class="manuscript-code">[S3]</span>
+              <span class="manuscript-topic">Memory stability</span>
+            </div>
+            <h3 id="manuscript-s3-title">High-frequency coercivity loss for completely monotone memory on bounded time intervals</h3>
+            <div class="manuscript-footer">
+              <a href="https://arxiv.org/abs/2607.12482" aria-label="Read [S3] on arXiv">Read on arXiv <span aria-hidden="true">↗</span></a>
+            </div>
+          </article>
+          <article class="manuscript-row" aria-labelledby="manuscript-s2-title">
+            <div class="manuscript-top">
+              <span class="manuscript-code">[S2]</span>
+              <span class="manuscript-topic">Exact-curved FEM</span>
+            </div>
+            <h3 id="manuscript-s2-title">Exact-curved Lagrange finite elements for the Poisson problem in two dimensions</h3>
+            <div class="manuscript-footer">
+              <a href="https://arxiv.org/abs/2605.26566" aria-label="Read [S2] on arXiv">Read on arXiv <span aria-hidden="true">↗</span></a>
+            </div>
+          </article>
         </div>
+        <p class="manuscript-note">Former [S1] and [S5] are now included under <a href="publications/">peer-reviewed publications</a>.</p>
       </div>
     </section>
 
