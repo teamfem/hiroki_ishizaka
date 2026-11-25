@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第1回：数学的証明をLeanで確かめる — 二次元のCauchy–Schwarz不等式 | Hiroki Ishizaka</title>
+<meta name="description" content="線形代数と数値解析をLeanで学ぶ連載の第1回。二次元のCauchy–Schwarz不等式を恒等式から証明する。">
+<link rel="icon" href="../../favicon.ico">
+<link rel="stylesheet" href="../../css/modern.css">
+<link rel="stylesheet" href="../../css/blog-post-modern.css">
+<link rel="canonical" href="https://teamfem.github.io/hiroki_ishizaka/blog/posts/lean-math-01.html">
+<script>window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']]}};</script>
+<script async id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+.lesson-code{padding:14px 16px;background:#172334;color:#f2f6fb;border-radius:9px;overflow:auto;white-space:pre;font-size:.85rem;line-height:1.6}
+.article-body mjx-container[display="true"]{min-width:0!important;max-width:100%;overflow-x:auto;overflow-y:hidden}
+</style>
+</head>
+<body class="modern-blog-post" id="top">
+<header class="topbar">
+<div class="shell nav">
+<a class="brand" href="../../">Hiroki Ishizaka<small>Numerical Analysis · PDEs · FEM</small></a>
+<nav class="navlinks" aria-label="Primary navigation">
+<a href="../../research/">Research</a>
+<a href="../../publications/">Publications</a>
+<a href="../../fem/">Visions</a>
+<a href="../../suppl/">Education &amp; Learning</a>
+<a href="../" aria-current="page">Blog</a>
+<a href="../../geo/">Geometry</a>
+<a href="../../links/">Links</a>
+<a href="../../contact/">Contact</a>
+</nav></div></header>
+
+<main id="main-content">
+<section class="article-hero"><div class="shell">
+<nav class="crumbs" aria-label="Breadcrumb"><a href="../../">Home</a><span>／</span><a href="../#lean-math-education">Blog</a><span>／</span><span>Leanで学ぶ線形代数と数値解析</span></nav>
+<div class="article-series">Linear Algebra and Numerical Analysis with Lean · 第1回</div>
+<h1>第1回：数学的証明をLeanで確かめる — 二次元のCauchy–Schwarz不等式</h1>
+<div class="article-meta"><span><b>線形代数</b> · 形式検証</span></div>
+</div></section>
+<div class="article-layout"><article class="article-body">
+<h2 id="intro">1．計算することと証明すること</h2>
+<p>この連載では，線形代数と数値解析を題材に，定理証明支援系Leanの使い方を学びます．数学の定義や定理を理解することを出発点とし，紙と鉛筆で証明した後に，その論理をLeanで表現します．計算機に証明を任せるだけではなく，何を仮定し，何が保証されたのかを自分で説明できるようになることを目指します．</p>
+<p>最初の問題は，二つのベクトルの内積の大きさを評価することです．数値解析では，このような不等式が誤差評価や安定性の証明の出発点になります．</p>
+<h2 id="math">2．数学的な証明</h2>
+<p>任意の実数 \(a,b,c,d\) に対して，\(x=(a,b)^{\top}\)，\(y=(c,d)^{\top}\) とおきます．ユークリッド内積を \((x,y)_{\mathbb R^2}=ac+bd\)，ノルムを \(\|x\|_{\mathbb R^2}=\sqrt{a^2+b^2}\) と定義します．</p>
+<p>次の恒等式を展開によって確かめてください．</p>
+\[
+(a^2+b^2)(c^2+d^2)-(ac+bd)^2=(ad-bc)^2.
+\tag{1}
+\]
+<p>右辺は非負なので，</p>
+\[
+(ac+bd)^2\le (a^2+b^2)(c^2+d^2).
+\tag{2}
+\]
+<p>両辺は非負であり，平方根を取れば</p>
+\[
+|(x,y)_{\mathbb R^2}|\le
+\|x\|_{\mathbb R^2}\|y\|_{\mathbb R^2}
+\tag{3}
+\]
+<p>を得ます．これがCauchy–Schwarzの不等式です．式(1)から，等号成立条件が \(ad-bc=0\) であることも分かります．これは二つのベクトルが線形従属であることと同値です（零ベクトルの場合を含みます）．</p>
+<h2 id="lean">3．Leanで式(1)と式(2)を記述する</h2>
+<p><a href="https://live.lean-lang.org/">Lean Web</a>を開けば，小さな例をブラウザから試せます．以下のコードではMathlibを読み込みます．環境によっては読み込みに時間がかかります．</p>
+<pre class="lesson-code"><code>import Mathlib
+
+namespace LeanMathSeries
+
+-- Lagrange's identity in dimension two.
+theorem lagrange_identity (a b c d : ℝ) :
+    (a^2 + b^2) * (c^2 + d^2) - (a*c + b*d)^2 =
+      (a*d - b*c)^2 := by
+  ring
+
+-- The squared Cauchy–Schwarz inequality.
+theorem dot_sq_le (a b c d : ℝ) :
+    (a*c + b*d)^2 ≤ (a^2 + b^2) * (c^2 + d^2) := by
+  apply sub_nonneg.mp
+  rw [lagrange_identity]
+  exact sq_nonneg (a*d - b*c)
+
+-- A concrete counterexample to equality for every pair of vectors.
+example : ((1 : ℝ)*0 + 0*1)^2 ≠ (1^2 + 0^2)*(0^2 + 1^2) := by
+  norm_num
+
+#print axioms lagrange_identity
+#print axioms dot_sq_le
+
+end LeanMathSeries
+</code></pre>
+<p><a href="../lean/LeanMath01.lean">Leanソースファイル</a>．この原稿では式(1)と式(2)を形式化の対象とし，式(3)および等号条件の形式化は次の課題とします．コードは公開前の実行確認が必要な下書きです．</p>
+<p><code>theorem</code>は証明する命題を宣言し，<code>(a b c d : ℝ)</code>は四つの変数が任意の実数であることを表します．<code>ring</code>は多項式恒等式の証明に使うタクティクです．<code>sub_nonneg.mp</code>で差の非負性に帰着し，<code>rw</code>で式(1)を書き換えに使い，<code>sq_nonneg</code>で実数の二乗が非負であることを適用します．</p>
+<p><code>#print axioms</code>は定理が依存する公理を調べるためのコマンドです．証明を未完成のまま許す<code>sorry</code>は完成版には残しません．Leanが検査するのは記述した命題の証明であり，数学的な目的に合う命題を記述できているかは別に確かめる必要があります．</p>
+<h2 id="exercise">4．条件を変えてみる</h2>
+<p>不等式(2)を，任意のベクトルに対して成り立つ等式に変更することはできません．例えば \(x=(1,0)^\top\)，\(y=(0,1)^\top\) では左辺は0，右辺は1です．コードの最後の<code>example</code>はこの反例を記述しています．</p>
+<ol><li>式(1)の両辺を展開し，自分で証明してください．</li><li>等号が成立する具体例を二つ挙げ，零ベクトルの場合も調べてください．</li><li>三次元でも式(2)に相当する不等式を証明できるか考えてください．</li><li>Leanで式(3)まで形式化するために必要な平方根の補題をMathlibで探してください．</li></ol>
+<h2 id="numerical">5．数値解析への接続</h2>
+<p>線形方程式 \(Ax=b\) の近似解を \(\widehat{x}\) とすると，残差 \(r=b-A\widehat{x}\) と誤差 \(e=x-\widehat{x}\) は \(Ae=r\) で結ばれます．正則行列の場合，誘導作用素ノルムによって \(\|e\|_{\mathbb R^n}\le\|A^{-1}\|_{\mathrm{op}}\|r\|_{\mathbb R^n}\) を得ます．小さな残差だけでは誤差の小ささを保証できません．内積やノルムの理解が，このような誤差評価につながります．</p>
+<p>ただし，実数上の定理の形式証明だけで浮動小数点演算の誤差が保証されるわけではありません．丸め誤差を含む保証には別のモデルと証明が必要です．この違いも数値解析編で扱います．</p>
+<h2 id="references">参考資料</h2>
+<ol><li><a href="https://lean-lang.org/getting-started/">Lean: Getting Started</a></li><li><a href="https://leanprover-community.github.io/mathematics_in_lean/">Mathematics in Lean</a></li><li><a href="https://leanprover.github.io/theorem_proving_in_lean4/">Theorem Proving in Lean 4</a></li><li><a href="https://mathlib.org/">Mathlib</a></li><li><a href="./codex-math-02.html">Codexで作る大学数学教材：直交射影と最小二乗法</a></li></ol>
+<p>次回予定：ベクトルと線形結合．</p>
+<p><a href="../#lean-math-education">連載目次へ戻る</a></p>
+</article><aside class="article-sidebar"><nav aria-label="目次"><h2>目次</h2><ul><li><a href="#intro">計算と証明</a></li><li><a href="#math">数学的な証明</a></li><li><a href="#lean">Leanコード</a></li><li><a href="#exercise">演習</a></li><li><a href="#numerical">数値解析への接続</a></li><li><a href="#references">参考資料</a></li></ul></nav></aside></div>
+</main><footer class="footer"><div class="shell">© 2026 Hiroki Ishizaka · Numerical Analysis · PDEs · FEM</div></footer>
+<script src="../../js/site.js"></script>
+</body></html>
