@@ -117,7 +117,7 @@
 <span class="beginner-eyebrow">BEGINNER SERIES · 大学1年生向け</span>
 <span class="beginner-title">未解像ダイナミクスの安定縮約 入門シリーズ　→</span>
 <span class="beginner-desc">微分と指数関数から偏微分方程式まで｜全6回＋特別編公開</span>
-</a><div class="blog-tabs"><a href="#chatgpt-fem">ChatGPT FEM</a><a href="#fem-architecture">FEM architecture</a><a href="#start-here">FEM start</a><a href="./stable-reduction-intro/" class="intro-tab-link">入門シリーズ：未解像ダイナミクス</a><a href="#memory-start">Memory research</a><a href="#curved-start">Exact-curved FEM</a><a href="#core">Core series</a><a href="#paradoxes">Paradoxes</a><a href="#applications">Applications</a><a href="#foundations">Foundations</a><a href="#exploratory">Exploratory</a><a href="#ai4math-method">AI4Math研究方法</a><a href="#ai-education">AI × 数学教育</a><a href="#codex-math-education" class="intro-tab-link">Codex 大学数学教材 · 第1〜3回</a></div></div></section>
+</a><div class="blog-tabs"><a href="#chatgpt-fem">ChatGPT FEM</a><a href="#fem-architecture">FEM architecture</a><a href="#start-here">FEM start</a><a href="./stable-reduction-intro/" class="intro-tab-link">入門シリーズ：未解像ダイナミクス</a><a href="#memory-start">Memory research</a><a href="#curved-start">Exact-curved FEM</a><a href="#core">Core series</a><a href="#paradoxes">Paradoxes</a><a href="#applications">Applications</a><a href="#foundations">Foundations</a><a href="#exploratory">Exploratory</a><a href="#ai4math-method">AI4Math研究方法</a><a href="#ai-education">AI × 数学教育</a><a href="#lean-math-education" class="intro-tab-link">Lean 線形代数・数値解析 · 予定</a><a href="#codex-math-education" class="intro-tab-link">Codex 大学数学教材 · 第1〜3回</a></div></div></section>
 <section id="stable-reduction-intro" class="section"><div class="shell">
 <div class="section-head"><div><div class="kicker">Beginner series · Stable reduction</div><h2>大学1年生から学ぶ未解像ダイナミクスの安定縮約</h2></div>
 <p>連立微分方程式と指数関数から始める入門シリーズ．公開済みの記事と今後の構成を，独立した目次ページにまとめました．</p></div>
@@ -131,6 +131,43 @@
 <a class="entry-card" href="./posts/unresolved_dynamics_intro_06.html"><span class="entry-label">第6回 · 最終回公開</span><h3>変数が100万個あったら？</h3><p>離散化した大規模システムから，記憶，安定性，保証の条件を総まとめ．</p></a>
 <a class="entry-card feature" href="./posts/unresolved_dynamics_intro_multiscale.html"><span class="entry-label">特別編 · マルチスケール法</span><h3>微細構造を消すと何が残るのか？</h3><p>時間尺度の分離，記憶核，有効方程式と誤差の関係を丁寧に導く．</p></a>
 </div></div></section>
+
+<section id="lean-math-education" class="section"><div class="shell">
+<div class="section-head"><div><div class="kicker">Linear Algebra and Numerical Analysis with Lean · Planned Series</div><h2>Leanで学ぶ線形代数と数値解析（連載予定）</h2></div>
+<p>数学的証明から信頼できる科学計算へ．線形代数の定義と証明を出発点として，Leanによる形式検証を学び，数値解析と有限要素法へつなぐ教育シリーズを構想しています．</p></div>
+<p class="warning"><strong>連載予定・目次案：</strong> 以下は全30回の暫定的な構成です．各回の本文・コードはまだ公開していません．掲載時期は未定で，内容・順序・回数は今後変更する場合があります．特に数値解析編・有限要素法編は，LeanとMathlibの整備状況や形式化の実現可能性を確認しながら進めます．</p>
+<div class="series-block"><div class="series-head"><div><div class="kicker">Season 1</div><h3>線形代数と数学的証明</h3></div><span class="count">全10回 · 予定</span></div><ol class="post-list"><li><span class="planned">第1回　Leanで数学を証明する — 定義・仮定・結論</span><span class="state">未公開</span></li>
+<li><span class="planned">第2回　ベクトルと線形結合</span><span class="state">未公開</span></li>
+<li><span class="planned">第3回　行列と線形写像</span><span class="state">未公開</span></li>
+<li><span class="planned">第4回　連立一次方程式 — 解の存在と一意性</span><span class="state">未公開</span></li>
+<li><span class="planned">第5回　線形独立性と基底</span><span class="state">未公開</span></li>
+<li><span class="planned">第6回　行列式と逆行列</span><span class="state">未公開</span></li>
+<li><span class="planned">第7回　固有値と固有ベクトル</span><span class="state">未公開</span></li>
+<li><span class="planned">第8回　内積とノルム — Cauchy–Schwarz不等式</span><span class="state">未公開</span></li>
+<li><span class="planned">第9回　直交射影と最良近似</span><span class="state">未公開</span></li>
+<li><span class="planned">第10回　最小二乗法と正規方程式</span><span class="state">未公開</span></li></ol></div>
+<div class="series-block"><div class="series-head"><div><div class="kicker">Season 2</div><h3>数値解析と数学的保証</h3></div><span class="count">全10回 · 予定</span></div><ol class="post-list"><li><span class="planned">第11回　誤差とは何か — 絶対誤差・相対誤差</span><span class="state">未公開</span></li>
+<li><span class="planned">第12回　浮動小数点数と丸め誤差</span><span class="state">未公開</span></li>
+<li><span class="planned">第13回　区間演算と包含性</span><span class="state">未公開</span></li>
+<li><span class="planned">第14回　行列ノルムと作用素の評価</span><span class="state">未公開</span></li>
+<li><span class="planned">第15回　条件数と摂動</span><span class="state">未公開</span></li>
+<li><span class="planned">第16回　残差と誤差</span><span class="state">未公開</span></li>
+<li><span class="planned">第17回　逆行列のノルム評価とNeumann級数</span><span class="state">未公開</span></li>
+<li><span class="planned">第18回　反復法と収束性</span><span class="state">未公開</span></li>
+<li><span class="planned">第19回　補間と近似誤差</span><span class="state">未公開</span></li>
+<li><span class="planned">第20回　数値積分と求積誤差</span><span class="state">未公開</span></li></ol></div>
+<div class="series-block"><div class="series-head"><div><div class="kicker">Season 3</div><h3>有限要素法と形式検証（長期構想）</h3></div><span class="count">全10回 · 予定</span></div><ol class="post-list"><li><span class="planned">第21回　三角形とアフィン写像</span><span class="state">未公開</span></li>
+<li><span class="planned">第22回　Jacobianと変数変換</span><span class="state">未公開</span></li>
+<li><span class="planned">第23回　Lagrange補間</span><span class="state">未公開</span></li>
+<li><span class="planned">第24回　異方性メッシュと幾何条件</span><span class="state">未公開</span></li>
+<li><span class="planned">第25回　有限要素剛性行列</span><span class="state">未公開</span></li>
+<li><span class="planned">第26回　強制性と連続性</span><span class="state">未公開</span></li>
+<li><span class="planned">第27回　Galerkin直交性</span><span class="state">未公開</span></li>
+<li><span class="planned">第28回　Céaの補題</span><span class="state">未公開</span></li>
+<li><span class="planned">第29回　事後誤差評価</span><span class="state">未公開</span></li>
+<li><span class="planned">第30回　保証付き有限要素計算</span><span class="state">未公開</span></li></ol></div>
+<p>既存の<a href="#codex-math-education">Codexで作る大学数学教材</a>とも連携し，数学的理解，数値実験，厳密な証明を往復する学習を目指します．</p>
+</div></section>
 
 <section id="codex-math-education" class="section"><div class="shell">
 <div class="section-head"><div><div class="kicker">Mathematics Education with Codex · New Series</div>
