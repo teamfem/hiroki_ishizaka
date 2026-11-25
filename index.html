@@ -123,7 +123,10 @@ section { padding: 58px 0; }
 .common-question p { max-width: 75ch; margin: 0; color: #455267; }
 .ai-section { border-block: 1px solid var(--line); background: #fafbfc; }
 .ai-layout { display: grid; grid-template-columns: .75fr 1.25fr; gap: 54px; }
-.ai-layout .section-head { margin-bottom: 0; }
+.ai-layout .section-head { margin-bottom: 0; align-content: start; align-self: start; }
+.ai-layout .section-head .section-question { color: var(--navy); font-size: clamp(19px, 2.2vw, 24px); line-height: 1.45; font-weight: 650; margin-top: 8px; }
+.ai-layout .section-head .section-question-ja { font-size: 16px; line-height: 1.6; }
+.society-section .ai-copy h3:not(:first-child) { margin-top: 28px; }
 .ai-copy p { max-width: 65ch; color: #455267; }
 .ai-copy .keywords { margin-bottom: 20px; }
 .publication-list { border-top: 1px solid var(--line); }
@@ -296,6 +299,7 @@ footer { border-top: 1px solid var(--line); padding: 24px 0 30px; color: var(--m
         <span>On this page</span>
         <a href="#research">Research</a>
         <a href="#ai4math">AI4Math</a>
+        <a href="#science-and-society">Science &amp; Society</a>
         <a href="#publications">Publications</a>
         <a href="#manuscripts">Manuscripts</a>
         <a href="#about">About</a>
@@ -346,13 +350,27 @@ footer { border-top: 1px solid var(--line); padding: 24px 0 30px; color: var(--m
         <div class="section-head">
           <div class="section-label">Across both programmes</div>
           <h2 id="ai-title">AI4Math &amp;<br>Mathematical Assurance</h2>
-          <p>Mathematics for reliable scientific AI.</p>
+          <p class="section-question">When can we trust scientific predictions made by AI?</p>
+          <p class="section-question-ja" lang="ja">AIによる科学的予測は，どのような条件の下で信頼できるのか．</p>
         </div>
         <div class="ai-copy">
           <p>I am exploring mathematical foundations for reliable AI for Science. The aim is to quantify information lost through learning, model reduction and numerical discretisation, and to assess whether scientific predictions can be trusted.</p>
           <p>Current directions connect certified PDE computation, structure-preserving learning of unresolved dynamics, memory and reduced models, and self-correcting scientific computation supported by computable error bounds.</p>
           <p class="keywords">AI4Math · Mathematical assurance · Certified scientific computing · Unresolved dynamics · Structure-preserving learning</p>
           <a class="text-link" href="https://teamfem.github.io/hiroki_ishizaka/research/#ai4math">Research direction →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="society-section" id="science-and-society" aria-labelledby="society-title">
+      <div class="wrap ai-layout">
+        <div class="section-head">
+          <div class="section-label">Research philosophy in practice</div>
+          <h2 id="society-title">Science and Society</h2>
+          <p class="section-question">From real-world challenges to new mathematics.</p>
+          <p class="section-question-ja" lang="ja">現実社会の課題から，新しい数学へ．</p>
+        </div>
+        <div class="ai-copy">
           <h3>Mathematics for science and society</h3>
           <p>As AI becomes increasingly capable of solving mathematical problems, I want to devote more attention to discovering mathematical questions arising from the needs of science and society. My aim is not simply to solve existing problems more efficiently, but to develop new mathematics that helps people understand complex phenomena and make reliable decisions under uncertainty.</p>
           <p lang="ja">AIが数学の問題を解く能力を高める時代だからこそ，科学や社会が抱える課題から新しい数学の問題を見いだし，その解決に取り組みたいと考えています．既存の問題を速く解くことにとどまらず，複雑な現象の理解と，不完全な情報の下での信頼できる意思決定に貢献する数学を目指します．</p>
